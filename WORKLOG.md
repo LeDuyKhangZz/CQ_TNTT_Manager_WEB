@@ -44,31 +44,28 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-15** — Khởi tạo đặc tả
+> Cập nhật: **2026-07-15** — Phase 2 đang chạy
 
-- Bộ đặc tả nghiệp vụ/DB/workflow/architecture/permission/UI/test/phase đã được chuẩn bị.
-- Chưa audit repository thực tế.
-- Chưa scaffold hoặc xác nhận tech stack trong source.
-- Chưa có migration/code/test nào được xác minh.
-- Không task nào đang được claim.
-- Phase 0 chưa bắt đầu.
+- **`P2-T1 — XONG — Codex — 2026-07-15`**; staff profiles, mã GLV, phân công/lịch sử lớp, CRUD/RLS/UI đã hoàn tất.
+- `P1-T1..P1-T4 — XONG`; Gate Phase 1 đạt bằng fresh reset, Auth local smoke và RLS fail-closed.
+- Có 5 ngành, 14 cấp, 20 class template; one-current year và sinh lớp mặc định idempotent.
+- Login alias, đổi/reset/disable, account admin SA-only đã nối thật; không lưu/đọc mật khẩu hiện tại.
+- Kiểm tra cuối: lint/typecheck/build ✓; unit 34/34; pgTAP 67/67; Auth smoke ✓; E2E 15/15.
+- Auth/Role/RLS high-risk đang chờ Claude independent verification; không có blocker mới cho `P2-T2`.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P0-T1 — Audit/scaffold repository — chưa claim`.**
+**`P2-T2 — Guardians and students — chưa claim`.**
 
-Agent tiếp theo phải:
+Tiếp theo tạo guardian/student, mã CQ, health/sacrament và student detail tabs; không thêm promotion tab.
 
-1. Đọc `AGENTS.md`.
-2. Chạy `git status` và khảo sát repository.
-3. Xác định repo trống hay đã có code.
-4. Không xóa/làm lại source trước khi audit.
-5. Claim `P0-T1` trong mục trạng thái.
-6. Thực hiện đúng Definition of Done ở `docs/08-phase-plan.md`.
-
-Sau P0-T1, task tiếp theo dự kiến là `P0-T2 — App shell, design tokens, auth layout`.
+**Ghi chú bàn giao:**
+- `src/config/navigation.ts` đã mô hình hóa `audience`, `role`, `scope`; P0-T3 phải thực hiện lọc/guard thật ở server.
+- Account role lớp từ P2-T1 bắt buộc liên kết staff profile đã có assignment capacity/lớp khớp.
+- `npm run test:e2e` dùng production build, cổng riêng 3107 và ba viewport chuẩn để tránh chạy nhầm app đang chiếm cổng 3000.
+- `next lint` và Vite CJS vẫn có cảnh báo deprecated từ scaffold, không chặn build/test.
 
 ---
 
@@ -76,7 +73,6 @@ Sau P0-T1, task tiếp theo dự kiến là `P0-T2 — App shell, design tokens,
 
 | ID | Blocker | Ảnh hưởng | Cần gì để gỡ |
 |---|---|---|---|
-| BLK-1 | Chưa audit repository thực tế | Chưa biết scaffold mới hay tích hợp code có sẵn | Agent P0-T1 kiểm tra repo |
 | BLK-2 | Chưa có file dữ liệu Google Sheets/Excel mẫu | Chặn hoàn thiện mapping import production, không chặn Phase 0–1 | User cung cấp sau |
 | BLK-3 | Chưa biết tên bộ sách giáo lý theo từng ngành | Không chặn schema; teaching plan để text/config | Hỏi lại khi triển khai Phase 4 |
 | BLK-4 | Chưa có logo/icon ngành chính thức | UI dùng placeholder, không chặn core | User cung cấp asset |
@@ -152,4 +148,58 @@ Sau P0-T1, task tiếp theo dự kiến là `P0-T2 — App shell, design tokens,
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
-_Chưa có session code. Entry đầu tiên được thêm sau khi agent hoàn thành hoặc dừng P0-T1._
+### [2026-07-15] Phiên 8 — Codex — P2-T1
+- **Làm được:** Tạo staff profiles với mã GLV concurrency-safe, danh xưng gồm Dì/Sơ, trình độ huấn luyện; class assignments có lịch sử, one-active-class/staff, one-active-representative/class, role-capacity alignment; RPC kết thúc assignment nguyên tử; CRUD/RLS và `/staff` UI; account role lớp liên kết staff profile.
+- **File thay đổi:** migration `20260715000400`, pgTAP 005, `features/staff/**`, `/staff`, bổ sung auth provision/query/UI, unit staff schemas và generated DB types.
+- **Migration/data impact:** Thêm 2 bảng, 4 enums, sequence mã GLV, indexes/triggers/helper/RPC; fresh reset local sạch.
+- **Đã test:** `db:reset`/`db:types` ✓; pgTAP 67/67; Auth smoke ✓; `lint`/`typecheck` ✓; unit 34/34; `build` ✓; E2E 15/15.
+- **Quyết định mới:** Kết thúc assignment lớp sẽ kết thúc active class role tương ứng trong cùng transaction; role lớp mới bắt buộc assignment đúng capacity.
+- **Blocker/rủi ro:** P1 auth/role/RLS high-risk và P2-T1 RLS cần Claude independent verification trước production.
+- **Next action:** `P2-T2 — Guardians and students`.
+
+### [2026-07-15] Phiên 7 — Codex — P1-T4
+- **Làm được:** Kiểm thử JWT thật cho self/global/disabled/anon, one-active-role và account write denial; kiểm service-role boundary/invalid UUID; smoke Supabase Auth local đủ provision/login/change/reset/disable; Gate Phase 1 đạt.
+- **File thay đổi:** pgTAP `004_identity_rls_test.sql`, unit `identity-security.test.ts`, `auth/permissions.ts`, script `test-auth-flow.mjs`, package script và phase/worklog.
+- **Migration/data impact:** Không thêm migration; auth smoke tự cleanup user test.
+- **Đã test:** pgTAP 50/50; Auth smoke ✓; `lint`/`typecheck` ✓; unit 31/31; `build` ✓; E2E 15/15.
+- **Quyết định mới:** Không có.
+- **Blocker/rủi ro:** Identity/Auth/RLS high-risk vẫn cần Claude independent verification trước production.
+- **Next action:** `P2-T1 — Staff profiles and class assignments`.
+
+### [2026-07-15] Phiên 6 — Codex — P1-T3
+- **Làm được:** Nối login alias nội bộ cho student/staff/guardian/admin, đổi mật khẩu thật, profile/session guard; tạo/reset/disable account SA-only qua Admin API server-only; mật khẩu tạm ngẫu nhiên 8 ký tự chỉ trả một lần; bổ sung account admin UI.
+- **File thay đổi:** migration `20260715000300`, pgTAP 003, `features/auth/{aliases,schemas,server,components}/**`, login/change-password/admin pages và generated DB types.
+- **Migration/data impact:** Thêm RPC hẹp `complete_password_change`; không lưu plaintext/hash mật khẩu trong public schema.
+- **Đã test:** `db:reset`/`db:types` ✓; pgTAP 34/34; `lint`/`typecheck` ✓; unit 28/28; `build` ✓ (21 pages).
+- **Quyết định mới:** Auth alias chỉ dùng server action; profile email là email liên hệ, không phải alias đăng nhập.
+- **Blocker/rủi ro:** Auth/reset là high-risk — fixed, awaiting independent verification bởi Claude.
+- **Next action:** `P1-T4 — RLS identity tests` và Gate Phase 1.
+
+### [2026-07-15] Phiên 5 — Codex — P1-T2
+- **Làm được:** Tạo schema năm học/ngành/cấp/template/lớp, seed 5/14/20, one-current constraint, RPC nguyên tử set current, RPC sinh lớp idempotent, Server Actions và giao diện quản trị năm học.
+- **File thay đổi:** migration `20260715000200`, `seed.sql`, pgTAP 002, feature `academic-years/**`, trang `/admin`, Supabase client typing, unit schema test, generated DB types.
+- **Migration/data impact:** Thêm 5 bảng danh mục/nghiệp vụ và reference seed; reset local sạch.
+- **Đã test:** `db:reset`/`db:types` ✓; pgTAP 30/30; `lint`/`typecheck` ✓; unit 23/23; `build` ✓ (21 pages).
+- **Quyết định mới:** Business RPC đặt trong `public` để PostgREST gọi được, helper bảo mật vẫn ở schema `app` không expose.
+- **Blocker/rủi ro:** Không có blocker mới.
+- **Next action:** `P1-T3 — Auth alias/provision/reset`.
+
+### [2026-07-15] Phiên 4 — Codex — P1-T1
+- **Làm được:** Hoàn thiện enums, `profiles`, `role_assignments`, one-active-role, helper schema/functions fail-closed; tài khoản locked/disabled không còn role hiệu lực; session đọc profile và active assignment thật.
+- **File thay đổi:** `supabase/migrations/20260715000100_identity_foundation.sql`, `supabase/tests/001_identity_foundation_test.sql`, `src/lib/auth/session.ts`, generated `src/types/database.ts`, phase plan và WORKLOG.
+- **Migration/data impact:** Migration identity mới; reset DB local sạch, không có production data.
+- **Đã test:** `db:reset` ✓; `db:types` ✓; `test:db` 14/14; `lint` ✓; `typecheck` ✓; unit 20/20; `build` ✓ (21 pages).
+- **Quyết định mới:** Không có.
+- **Blocker/rủi ro:** Role/RLS foundation cần Claude xác minh độc lập trước production.
+- **Next action:** `P1-T2 — Academic year/sector/grade/class schema`.
+
+### [2026-07-15] Phiên 3 — Codex — P0-T3
+- **Làm được:** Tạo role constants/labels/scope, route map fail-closed, AuthContext và server guards; dashboard/direct module URL bắt buộc session; navigation lọc theo context và bỏ user/role mẫu production.
+- **File thay đổi:** `src/lib/{auth,permissions}/**`, `src/config/navigation.ts`, app shell/header/user menu, protected module routes, unit permission tests và E2E auth-guard smoke.
+- **Migration/data impact:** Không có.
+- **Đã test:** `lint`, `typecheck`, `build` ✓; unit 20/20; E2E 15/15 tại 3 viewport.
+- **Quyết định mới:** Không có; UI navigation không thay authorization server/RLS.
+- **Blocker/rủi ro:** AuthContext chưa đọc profile/active assignment cho đến P1-T1.
+- **Next action:** `P1-T1 — Core enums/helpers/migrations`.
+
+_(Giữ tối đa 6 entry gần nhất.)_

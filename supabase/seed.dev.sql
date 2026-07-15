@@ -1,0 +1,11 @@
+-- supabase/seed.dev.sql
+-- Dữ liệu mẫu CHỈ dùng cho môi trường local/dev (docs/07 §14).
+-- Mật khẩu demo chỉ dùng local, KHÔNG trùng production.
+--
+-- Sẽ bổ sung từ Phase 1+ theo docs/07 §14:
+--   2 Super Admin; Cha sở/Cha phó/XĐ trưởng/Phó XĐ/Thư ký/Thủ quỹ;
+--   Trưởng/Phó của >= 2 ngành; 2 lớp cùng ngành A/B; 2 GLV mỗi lớp; 1 Dự trưởng;
+--   2 guardians; 4 students (2 cùng lớp khác guardian); 1 staff kiêm guardian;
+--   fixtures điểm danh/kiểm tra; 2 Ban.
+--
+-- CHƯA có nội dung ở Phase 0.

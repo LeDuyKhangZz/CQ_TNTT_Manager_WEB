@@ -79,3 +79,46 @@ Nếu hai tài liệu mâu thuẫn, **không tự chọn một bên**. Ghi block
 - Database lưu thời gian: UTC
 
 Tên thương hiệu có thể đổi sau mà không làm thay đổi schema nghiệp vụ.
+
+## Phát triển (Development)
+
+Yêu cầu: Node.js >= 20 (khuyến nghị 22 — xem `.nvmrc`), Docker Desktop (cho Supabase local).
+
+```bash
+# 1. Cài dependencies
+npm install
+
+# 2. Khởi động Supabase local (in ra ANON/SERVICE key + URL)
+npm run db:start
+
+# 3. Tạo .env.local từ .env.example rồi dán khóa local vừa in ra
+#    (KHÔNG commit .env.local)
+
+# 4. Chạy dev server
+npm run dev            # http://localhost:3000
+```
+
+Lệnh kiểm tra:
+
+```bash
+npm run lint           # ESLint (next lint)
+npm run typecheck      # tsc --noEmit
+npm test               # Vitest (unit + component)
+npm run build          # Next.js production build
+npm run db:reset       # reset DB local + áp migrations + seed
+npm run db:types       # sinh lại src/types/database.ts
+npm run test:e2e       # Playwright (cần: npx playwright install)
+npm run db:stop        # dừng Supabase local
+```
+
+### Cấu trúc
+
+- `src/app` — Next.js App Router (layout, page, error/404/loading, manifest PWA).
+- `src/features/*` — module theo tính năng (docs/04): `components/`, `server/{queries,actions,permissions}`, `schemas.ts`, `types.ts`, `constants.ts`.
+- `src/components/{ui,layout,shared}` — UI dùng chung (shadcn-ready).
+- `src/lib/*` — `supabase/` (client/server/admin server-only/middleware), `errors/`, `dates/`, `utils.ts`, và các module hạ tầng khác.
+- `supabase/` — `config.toml`, `migrations/`, `tests/`, `seed.sql`, `seed.dev.sql`.
+- `tests/{unit,integration,e2e}` — kiểm thử.
+
+> Lưu ý môi trường: cổng Supabase local đã đổi sang dải `5442x` trong `supabase/config.toml`
+> để tránh dải cổng Windows-reserved (`54289–54388`) trùng mặc định `543xx`.

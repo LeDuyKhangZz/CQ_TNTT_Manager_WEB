@@ -1,0 +1,13 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "coverage/",
+    "playwright-report/",
+    "test-results/",
+    "supabase/",
+    "next-env.d.ts",
+    "src/types/database.ts"
+  ]
+}

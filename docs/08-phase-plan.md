@@ -12,7 +12,7 @@
 
 # Phase 0 — Repository bootstrap và baseline
 
-## P0-T1 — Audit/scaffold repository ☐
+## P0-T1 — Audit/scaffold repository ☑
 
 **Scope**
 
@@ -29,7 +29,7 @@
 - Supabase local start/reset được hoặc blocker ghi rõ.
 - WORKLOG cập nhật.
 
-## P0-T2 — App shell, design tokens, auth layout ☐
+## P0-T2 — App shell, design tokens, auth layout ☑
 
 - Responsive sidebar/header.
 - Mobile bottom nav.
@@ -37,7 +37,7 @@
 - Error/404/loading.
 - PWA manifest baseline.
 
-## P0-T3 — Permission/navigation skeleton ☐
+## P0-T3 — Permission/navigation skeleton ☑
 
 - Role constants.
 - Route map.
@@ -55,20 +55,20 @@
 
 # Phase 1 — Database, Auth, RLS foundation
 
-## P1-T1 — Core enums/helpers/migrations ☐
+## P1-T1 — Core enums/helpers/migrations ☑
 
 - Enums.
 - `profiles`, `role_assignments`.
 - RLS helper schema/functions.
 - One active role constraint.
 
-## P1-T2 — Academic year/sector/grade/class schema ☐
+## P1-T2 — Academic year/sector/grade/class schema ☑
 
 - Seed 5 sectors, grade levels, 20 class template.
 - Current year constraint.
 - Admin CRUD.
 
-## P1-T3 — Auth alias/provision/reset ☐
+## P1-T3 — Auth alias/provision/reset ☑
 
 - Username login.
 - Internal email alias.
@@ -76,7 +76,7 @@
 - Must change password.
 - Password never viewable.
 
-## P1-T4 — RLS identity tests ☐
+## P1-T4 — RLS identity tests ☑
 
 - Roles.
 - One active.
@@ -95,7 +95,7 @@
 
 # Phase 2 — Core people, classes, import
 
-## P2-T1 — Staff profiles and class assignments ☐
+## P2-T1 — Staff profiles and class assignments ☑
 
 - Titles incl. Dì/Sơ.
 - Formation level.
