@@ -8,7 +8,7 @@ import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 import { MobileBottomNavigation } from "./mobile-bottom-navigation";
 
-export function AppShell({ children, authContext }: { children: React.ReactNode; authContext: AuthContext }) {
+export function AppShell({ children, authContext, unreadCount }: { children: React.ReactNode; authContext: AuthContext; unreadCount: number }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const desktopItems = getDesktopNavigation(authContext);
@@ -28,7 +28,7 @@ export function AppShell({ children, authContext }: { children: React.ReactNode;
         </div>
       ) : null}
       <div className="min-h-screen lg:pl-[264px]">
-        <AppHeader authContext={authContext} title={getPageTitle(pathname)} onOpenMenu={() => setDrawerOpen(true)} />
+        <AppHeader authContext={authContext} title={getPageTitle(pathname)} unreadCount={unreadCount} onOpenMenu={() => setDrawerOpen(true)} />
         <div className="pb-24 lg:pb-0">{children}</div>
       </div>
       <MobileBottomNavigation items={mobileItems} pathname={pathname} />

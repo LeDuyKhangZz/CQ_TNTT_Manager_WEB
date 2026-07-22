@@ -1,5 +1,17 @@
-import { ProtectedModulePlaceholder } from "@/components/shared/protected-module-placeholder";
+import { PageContainer } from "@/components/layout/page-container";
+import { PageHeader } from "@/components/layout/page-header";
+import { DashboardOverview } from "@/features/dashboard/components/dashboard-overview";
+import { getDashboardData } from "@/features/dashboard/server/queries";
 
-export default function DashboardPage() {
-  return <ProtectedModulePlaceholder route="/dashboard" title="Tổng quan" description="Thông tin nổi bật của năm học hiện tại sẽ xuất hiện tại đây." phase="các phase nghiệp vụ tiếp theo" />;
+export default async function DashboardPage() {
+  const data = await getDashboardData();
+  return (
+    <PageContainer>
+      <PageHeader
+        title="Tổng quan"
+        description="Số liệu hiển thị đúng phạm vi bạn được phép xem."
+      />
+      <DashboardOverview data={data} />
+    </PageContainer>
+  );
 }

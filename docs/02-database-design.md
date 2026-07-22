@@ -746,8 +746,15 @@ Quy tắc:
 ### 11.1 `committees`
 
 - id, code, name, description, is_active, created_at, updated_at.
+- `manages_equipment boolean` — Ban giữ kho thiết bị (P6-T1). Dùng cờ thay vì so
+  sánh `code` để đổi tên Ban không làm mất kho; `equipment_items` chỉ gắn được
+  vào Ban có cờ này.
+- `sort_order` để thứ tự hiển thị ổn định.
 
-Seed 6 Ban.
+Seed 6 Ban ở `supabase/seed.sql` với id cố định `30000000-…-00000000000{1..6}`;
+chỉ Ban Kỹ thuật (`KY_THUAT`) có `manages_equipment = true`.
+
+Đọc: global read hoặc thành viên chính Ban đó. Ghi: global-write (WF-12).
 
 ### 11.2 `committee_memberships`
 
@@ -758,7 +765,13 @@ Seed 6 Ban.
 - starts_on/ends_on.
 - is_active.
 
-Constraint bằng trigger: một staff tối đa hai membership active.
+Constraint bằng trigger `app.validate_committee_membership` (SECURITY DEFINER):
+một staff tối đa hai membership active (D-47). Trigger phải là definer để đếm
+trên toàn bộ chức vụ chứ không chỉ phần người thao tác nhìn thấy qua RLS.
+
+Partial-unique `(committee_id, staff_profile_id) where is_active`: không giữ hai
+chức vụ song song trong cùng một Ban. Không hard delete — kết thúc nhiệm kỳ bằng
+`is_active = false` + `ends_on` để giữ lịch sử.
 
 ### 11.3 `committee_announcements`
 
@@ -775,6 +788,15 @@ Chỉ leader/deputy.
 - committee_id, week_start, content, checklist_json, created_by.
 
 Không giao assignee/deadline trong v1.
+
+`week_start` bị CHECK ràng phải là thứ Hai (`extract(isodow) = 1`) và unique
+`(committee_id, week_start)`: nếu không chốt mốc tuần thì hai người chọn hai
+ngày khác nhau cho cùng một tuần và unique mất tác dụng.
+
+Ba bảng nội dung Ban (11.3–11.5) dùng chung trigger
+`app.set_committee_content_author`: `created_by`/`author_staff_id` lấy từ phiên
+đăng nhập, không nhận từ client. Ghi/xóa = `app.can_write_committee_content`
+(Trưởng/Phó Ban của chính Ban đó, hoặc global-write — D-48).
 
 ### 11.6 `equipment_items`
 
@@ -805,7 +827,20 @@ Không giao assignee/deadline trong v1.
 - condition_on_return.
 - status.
 
-Constraint số lượng > 0 và không vượt available; thao tác mượn/trả nên qua RPC có row lock.
+Constraint số lượng > 0 và không vượt available; mượn/trả đi qua RPC có row lock.
+
+Hiện thực P6-T3: `authenticated` **không** có INSERT/UPDATE trên
+`equipment_loans` — mọi thao tác qua `public.borrow_equipment` và
+`public.return_equipment` (SECURITY DEFINER, `select … for update` trên thiết bị
+rồi mới ghi). `available_quantity` cũng không sửa tay được: trigger
+`app.validate_equipment_item` chặn mọi thay đổi cột này ngoài RPC.
+
+`return_equipment` nhận `restored_quantity`: phần trả được cộng lại
+`available_quantity`, phần hỏng/mất trừ khỏi `total_quantity` (WF-13 bước 5).
+Trả lại lần hai là idempotent — không cộng kho thêm lần nữa.
+
+Mượn/trả = thành viên Ban Kỹ thuật hoặc global-write; tạo/sửa danh mục =
+Trưởng/Phó Ban hoặc global-write (docs/05).
 
 ## 12. Thông báo
 
@@ -819,6 +854,14 @@ Constraint số lượng > 0 và không vượt available; thao tác mượn/tr�
 - author_profile_id.
 - published_at.
 - created_at.
+- `link_path` — deep-link tùy chọn, bị CHECK ràng vào danh sách route đã tồn tại
+  (AGENTS §8). Danh sách này lặp ở `src/features/notifications/constants.ts`;
+  đổi một bên phải đổi cả hai, có unit test canh.
+- `recipient_count` — số người nhận chốt tại thời điểm publish, để UI khỏi đếm lại.
+
+Ghi qua RPC `public.publish_notification` (kiểm quyền theo phạm vi rồi
+materialize người nhận trong cùng một giao dịch). `authenticated` không có
+INSERT trực tiếp.
 
 ### 12.2 `notification_recipients`
 
@@ -832,6 +875,16 @@ Materialize người nhận khi publish:
 Unique `(notification_id, profile_id)`.
 
 Điều này giúp đếm chưa đọc ổn định ngay cả khi người dùng đổi lớp/role sau đó.
+
+Phạm vi materialize (P6-T4): `all` = mọi tài khoản đang hoạt động; `guardians`/
+`students` = theo role active; `user` = đúng một người; `sector` = nhân sự có
+role gắn ngành đó cộng GLV đang đứng lớp thuộc ngành; `class` = GLV đứng lớp đó
+cộng phụ huynh/thiếu nhi có ghi danh đang mở; `committee` = thành viên Ban đó.
+Unique `(notification_id, profile_id)` chặn trùng khi một người thuộc nhiều
+nhánh (GLV kiêm phụ huynh, D-25).
+
+Đọc: `mark_notification_read` / `mark_all_notifications_read` chỉ đụng dòng của
+chính người gọi.
 
 ## 13. Báo cáo
 
@@ -848,8 +901,19 @@ Unique `(notification_id, profile_id)`.
 - checksum.
 - status `final`.
 - title.
+- `period_type` (week/month/year), `period_start`, `period_end`.
+- `payload_json` — bảng số liệu tại thời điểm chốt.
 
-Snapshot final không update/delete bằng user flow.
+Snapshot final không update/delete bằng user flow: `authenticated` chỉ được cấp
+SELECT và INSERT, không có UPDATE/DELETE. Trigger `app.seal_report_snapshot`
+đặt `generated_by`/`generated_at`/`status` và tính lại `checksum` (SHA-256 của
+payload + filter) phía server — client không đặt được.
+
+`payload_json` giữ số liệu, `filter_json` giữ bộ lọc đang chọn (D-52), nên tải
+lại bản chốt hôm sau vẫn ra đúng file cũ dù dữ liệu nguồn đã đổi.
+
+File Excel/PDF sinh lại từ `payload_json` khi tải; chưa dùng bucket
+`report-snapshots` nên `file_path` để trống.
 
 ### 13.2 View đề xuất
 
@@ -859,10 +923,20 @@ Snapshot final không update/delete bằng user flow.
 - `v_student_weighted_average`.
 - `v_students_at_risk`.
 - `v_dashboard_summary`.
-- `v_guardian_children`.
-- `v_next_teaching_item`.
+- `v_upcoming_teaching_items`.
+- `v_upcoming_celebrations`.
+- `v_incomplete_student_profiles`.
 
-Tất cả `security_invoker`.
+Tất cả `security_invoker` — cùng một view, mỗi vai trò cộng ra con số của đúng
+phạm vi mình đọc được, không cần policy riêng cho dashboard.
+
+`v_incomplete_student_profiles` LEFT JOIN `guardians` là cố ý: GLV lớp không đọc
+được bảng `guardians`, join thường sẽ làm view rỗng với chính người cần dùng.
+Cờ thiếu SĐT chỉ bật khi người đọc thật sự thấy được guardian.
+
+Hai hàm nguồn báo cáo `public.report_attendance_rows(year, from, to)` và
+`public.report_results_rows(year)` là SECURITY INVOKER: bản xem trước, file
+Excel/PDF và payload snapshot dùng chung một truy vấn nên không thể lệch nhau.
 
 ## 14. Sa mạc — schema dự phòng
 

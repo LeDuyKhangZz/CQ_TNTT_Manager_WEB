@@ -278,6 +278,64 @@ async function main() {
     record(staff.staffCode, `${spec.role} (${spec.className})`, spec.displayName);
   }
 
+  // ── Ban và kho thiết bị (docs/07 §14, D-47/D-49) ─────────────────────────
+  // GLV909 giữ hai Ban để fixture phản ánh đúng giới hạn tối đa hai Ban.
+  const COMMITTEE = {
+    sinhHoat: "30000000-0000-0000-0000-000000000001",
+    kyThuat: "30000000-0000-0000-0000-000000000002",
+  };
+  async function staffIdByCode(staffCode) {
+    const staff = must(
+      await admin.from("staff_profiles").select("id").eq("staff_code", staffCode).single(),
+      `Đọc hồ sơ ${staffCode}`,
+    );
+    return staff.id;
+  }
+  const committeeSpec = [
+    { committee: COMMITTEE.sinhHoat, staffCode: "GLV909", position: "leader" },
+    { committee: COMMITTEE.sinhHoat, staffCode: "GLV910", position: "deputy" },
+    { committee: COMMITTEE.sinhHoat, staffCode: "GLV911", position: "member" },
+    { committee: COMMITTEE.kyThuat, staffCode: "GLV912", position: "leader" },
+    { committee: COMMITTEE.kyThuat, staffCode: "GLV913", position: "member" },
+    { committee: COMMITTEE.kyThuat, staffCode: "GLV909", position: "member" },
+    { committee: COMMITTEE.sinhHoat, staffCode: "GLV905", position: "supreme_advisor" },
+  ];
+  for (const spec of committeeSpec) {
+    must(
+      await admin.from("committee_memberships").insert({
+        committee_id: spec.committee,
+        staff_profile_id: await staffIdByCode(spec.staffCode),
+        position: spec.position,
+        starts_on: year.start_date,
+        is_active: true,
+      }),
+      `Chức vụ Ban của ${spec.staffCode}`,
+    );
+  }
+  must(
+    await admin.from("equipment_items").insert([
+      {
+        committee_id: COMMITTEE.kyThuat,
+        asset_code: "KT-LOA-01",
+        name: "Loa kéo di động",
+        category: "Âm thanh",
+        total_quantity: 2,
+        available_quantity: 2,
+        storage_location: "Kho tầng trệt",
+      },
+      {
+        committee_id: COMMITTEE.kyThuat,
+        asset_code: "KT-MIC-01",
+        name: "Micro không dây",
+        category: "Âm thanh",
+        total_quantity: 4,
+        available_quantity: 4,
+        storage_location: "Kho tầng trệt",
+      },
+    ]),
+    "Thiết bị Ban Kỹ thuật",
+  );
+
   // ── Phụ huynh và thiếu nhi ───────────────────────────────────────────────
   async function createGuardianAccount({ fullName, phone, address, profileId = null }) {
     const guardian = must(

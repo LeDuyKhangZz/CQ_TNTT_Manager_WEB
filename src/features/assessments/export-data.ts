@@ -1,8 +1,7 @@
+import { safeSpreadsheetText } from "@/lib/exports/spreadsheet";
 import type { GradebookDetail } from "./server/queries";
 
-export function safeSpreadsheetText(value: string): string {
-  return /^[=+\-@]/.test(value.trimStart()) ? `'${value}` : value;
-}
+export { safeSpreadsheetText };
 
 export interface GradebookExportData {
   headers: string[];

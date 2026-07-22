@@ -279,9 +279,11 @@ flowchart TD
 
 ### Thông báo/lịch họp/công việc tuần
 
-- Chỉ Trưởng/Phó Ban tạo/sửa.
-- Thành viên Ban đọc.
+- Chỉ Trưởng/Phó Ban tạo/sửa/xóa; global-write cũng ghi được.
+- Thành viên Ban và cố vấn tối cao chỉ đọc.
 - `Công việc tuần` là nội dung/checklist chung, chưa có assignee/deadline.
+- Mốc tuần luôn là thứ Hai và mỗi Ban chỉ một bản cho mỗi tuần — sửa lại tuần cũ
+  là ghi đè, không tạo bản thứ hai.
 
 ## WF-13 — Mượn/trả thiết bị Ban Kỹ thuật
 
@@ -298,17 +300,24 @@ flowchart TD
 1. Mở loan đang mượn.
 2. Nhập người nhận, thời gian, tình trạng, note.
 3. RPC lock loan/item.
-4. Cộng available.
-5. Nếu hỏng/mất, cập nhật condition và số lượng theo quyết định người quản lý.
+4. Cộng available đúng phần trả được.
+5. Nếu hỏng/mất, phần không trả về kho bị trừ khỏi tổng số và cập nhật condition
+   theo quyết định người quản lý.
+6. Trả lại một phiếu đã trả là idempotent: không cộng kho thêm lần nữa.
 
 ## WF-14 — Thông báo
 
 1. Actor chọn phạm vi mà mình được phép.
 2. Nhập title/content.
 3. Publish ngay.
-4. Hệ thống materialize recipients.
+4. Hệ thống materialize recipients ngay trong cùng giao dịch với bước 3.
 5. Người dùng mở thông báo → set `read_at`.
 6. Badge dùng count unread.
+
+Danh sách người nhận chốt tại thời điểm publish: người vào lớp sau đó không nhận
+ngược, người rời lớp vẫn giữ thông báo cũ và số chưa đọc không nhảy.
+
+Deep-link kèm theo chỉ được trỏ tới route đã tồn tại; DB từ chối đường dẫn lạ.
 
 Không schedule hoặc chat.
 
@@ -317,8 +326,10 @@ Không schedule hoặc chat.
 1. Chọn năm học, phạm vi, thời gian và filter.
 2. Preview dữ liệu theo RLS.
 3. Export Excel/PDF phải dùng chính filter object hiện tại.
-4. Khi chọn `Chốt báo cáo`, server tạo snapshot/file/checksum.
-5. Snapshot final không bị thay đổi khi DB thay đổi.
+4. Khi chọn `Chốt báo cáo`, server dựng lại số liệu từ CHÍNH bộ lọc đang xem rồi
+   lưu snapshot; người chốt, thời điểm và checksum do server đặt, không nhận từ client.
+5. Snapshot final không bị thay đổi khi DB thay đổi, và không có luồng người dùng
+   nào sửa/xóa được.
 6. Chỉ user có quyền scope tương ứng tải.
 
 ## WF-16 — Lưu trữ năm học

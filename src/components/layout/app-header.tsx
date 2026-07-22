@@ -4,7 +4,7 @@ import { NotificationButton } from "./notification-button";
 import { UserMenu } from "./user-menu";
 import type { AuthContext } from "@/lib/auth/types";
 
-export function AppHeader({ authContext, title, onOpenMenu }: { authContext: AuthContext; title: string; onOpenMenu: () => void }) {
+export function AppHeader({ authContext, title, unreadCount, onOpenMenu }: { authContext: AuthContext; title: string; unreadCount: number; onOpenMenu: () => void }) {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
       <div className="flex min-h-16 items-center gap-2 px-4 sm:px-6 lg:px-8">
@@ -16,7 +16,7 @@ export function AppHeader({ authContext, title, onOpenMenu }: { authContext: Aut
           <h1 className="truncate text-base font-semibold text-foreground sm:text-lg">{title}</h1>
         </div>
         <AcademicYearSwitcher />
-        <NotificationButton />
+        <NotificationButton unreadCount={unreadCount} />
         <UserMenu authContext={authContext} />
       </div>
     </header>

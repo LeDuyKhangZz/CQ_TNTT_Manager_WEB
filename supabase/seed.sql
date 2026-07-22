@@ -58,3 +58,14 @@ insert into public.class_templates (grade_level_id, section_code, display_name, 
   ('20000000-0000-0000-0000-000000000014', null, 'Hiệp 2', 'catechism', 'full_year', 18),
   (null, null, 'Dự trưởng', 'trainee', 'semester_1', 19)
 on conflict do nothing;
+
+-- 6 Ban mặc định (D-47, docs/01 §10). Có thể thêm Ban qua UI quản trị.
+-- Chỉ Ban Kỹ thuật giữ kho thiết bị (docs/02 §11.6).
+insert into public.committees (id, code, name, description, manages_equipment, sort_order) values
+  ('30000000-0000-0000-0000-000000000001', 'SINH_HOAT', 'Ban Sinh hoạt', 'Tổ chức sinh hoạt, trò chơi, băng reo.', false, 1),
+  ('30000000-0000-0000-0000-000000000002', 'KY_THUAT', 'Ban Kỹ thuật', 'Âm thanh, ánh sáng, thiết bị và kho mượn/trả.', true, 2),
+  ('30000000-0000-0000-0000-000000000003', 'PHUNG_VU', 'Ban Phụng vụ', 'Chuẩn bị Thánh lễ và các giờ kinh.', false, 3),
+  ('30000000-0000-0000-0000-000000000004', 'TRUYEN_THONG', 'Ban Truyền thông', 'Hình ảnh, bài viết, truyền thông xứ đoàn.', false, 4),
+  ('30000000-0000-0000-0000-000000000005', 'QUAN_LY', 'Ban Quản lý', 'Hồ sơ, hậu cần và điều phối chung.', false, 5),
+  ('30000000-0000-0000-0000-000000000006', 'Y_TE', 'Ban Y tế', 'Sơ cấp cứu và chăm sóc sức khỏe khi sinh hoạt.', false, 6)
+on conflict (id) do nothing;

@@ -250,13 +250,29 @@ Guardian id derived from session.
 
 ## 12. Committees/equipment
 
+Hiện thực P6-T1..T3 — `src/features/committees/server/actions.ts` và
+`src/features/equipment/server/actions.ts`:
+
 ```ts
-createCommitteeContent
-createCommitteeMeeting
-createCommitteeWeeklyPlan
-borrowEquipment // RPC
-returnEquipment // RPC
+createCommittee
+addCommitteeMember
+updateCommitteeMemberPosition
+endCommitteeMembership          // không hard delete, giữ lịch sử nhiệm kỳ
+publishCommitteeAnnouncement
+deleteCommitteeAnnouncement
+saveCommitteeMeeting
+deleteCommitteeMeeting
+saveCommitteeWeeklyPlan         // upsert theo (committee_id, week_start)
+deleteCommitteeWeeklyPlan
+createEquipmentItem
+updateEquipmentItem
+borrowEquipment                 // RPC public.borrow_equipment
+returnEquipment                 // RPC public.return_equipment
 ```
+
+Không action nào tin quyền từ client: authorize thật nằm ở RLS/RPC, action chỉ
+dịch mã lỗi DB sang thông điệp tiếng Việt (`COMMITTEE_LIMIT_EXCEEDED`,
+`EQUIPMENT_NOT_ENOUGH`, `EQUIPMENT_AVAILABLE_READONLY`…).
 
 ## 13. Notifications
 
@@ -265,6 +281,17 @@ returnEquipment // RPC
 Input target scope. Server checks actor allowed scope.
 
 Materialize recipients in transaction. Do not create duplicate recipients.
+
+Hiện thực P6-T4 — `src/features/notifications/server/actions.ts`:
+
+```ts
+publishNotification          // RPC public.publish_notification
+markNotificationRead         // RPC public.mark_notification_read
+markAllNotificationsRead     // RPC public.mark_all_notifications_read
+```
+
+`link_path` phải nằm trong danh sách route đã tồn tại; kiểm ở cả Zod
+(`src/features/notifications/constants.ts`) lẫn CHECK trong DB.
 
 ## 14. Reports
 
@@ -276,6 +303,20 @@ finalizeReportSnapshot(filters)
 ```
 
 Use a single validated `filters` object for preview and export.
+
+Hiện thực P6-T6: bộ lọc nằm trên URL (`parseReportFilter`), và xem trước, route
+tải Excel/PDF lẫn `createReportSnapshot` đều gọi chung `buildReport(filter)` —
+một đường tính duy nhất nên file tải về không thể lệch bản đang xem (D-52).
+
+```ts
+buildReport(filter)                  // dùng chung cho preview/export/snapshot
+createReportSnapshot(filter)         // dựng lại payload từ chính filter, không nhận số liệu từ client
+GET /reports/export?…&format=xlsx|pdf
+GET /reports/snapshots/[id]/export?format=xlsx|pdf
+```
+
+`createReportSnapshot` không nhận payload từ client và không nhận checksum:
+trigger `app.seal_report_snapshot` đặt người chốt/thời điểm và tính lại SHA-256.
 
 Example:
 

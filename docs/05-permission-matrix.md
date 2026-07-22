@@ -262,6 +262,25 @@ Tên UI = role + sector.
 - Member select own committee.
 - Leader/deputy write content own committee.
 - SA select/write all.
+- Lập Ban và chức vụ Ban: global-write (WF-12). Mỗi nhân sự tối đa hai Ban đang
+  hoạt động, ràng buộc ở DB chứ không chỉ ẩn nút.
+- Kho thiết bị: đọc = thành viên Ban Kỹ thuật hoặc global read; mượn/trả = thành
+  viên Ban Kỹ thuật hoặc global-write; sửa danh mục = Trưởng/Phó Ban hoặc global-write.
+
+### Notification
+
+- Toàn hệ thống / tất cả phụ huynh / tất cả thiếu nhi / một người: global-write.
+- Theo ngành: trưởng hoặc phó chính ngành đó, hoặc global-write.
+- Theo lớp: đại diện chính lớp đó, trưởng/phó ngành của lớp đó, hoặc global-write.
+- Theo Ban: Trưởng/Phó chính Ban đó, hoặc global-write.
+- Đọc: chỉ người nằm trong danh sách nhận, tác giả, hoặc global read.
+
+### Report
+
+- Xem và xuất theo phạm vi: global read cho toàn xứ đoàn, trưởng/phó ngành cho
+  ngành mình, GLV lớp cho lớp mình.
+- Chốt báo cáo: mọi vai trò xem được phạm vi đó, trừ thủ quỹ (D-19).
+- Snapshot đã chốt: không ai sửa/xóa được qua luồng người dùng.
 
 ## 7. Feature flags
 

@@ -95,6 +95,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "absence_requests_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "absence_requests_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
@@ -121,6 +128,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "absence_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
           },
           {
             foreignKeyName: "absence_requests_updated_by_fkey"
@@ -263,6 +284,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assessment_scores_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "assessment_scores_assessment_id_fkey"
             columns: ["assessment_id"]
             isOneToOne: false
@@ -296,6 +324,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -340,6 +382,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_type_settings_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "assessment_type_settings_updated_by_fkey"
@@ -415,6 +464,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "assessments_class_id_fkey"
@@ -506,6 +562,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "attendance_sessions_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "attendance_sessions_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
@@ -583,6 +646,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_weight_settings_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: true
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "attendance_weight_settings_updated_by_fkey"
@@ -756,6 +826,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "classes_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "classes_grade_level_id_fkey"
             columns: ["grade_level_id"]
             isOneToOne: false
@@ -764,6 +841,307 @@ export type Database = {
           },
           {
             foreignKeyName: "classes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      committee_announcements: {
+        Row: {
+          author_staff_id: string | null
+          committee_id: string
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          published_at: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          author_staff_id?: string | null
+          committee_id: string
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          published_at?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          author_staff_id?: string | null
+          committee_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          published_at?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committee_announcements_author_staff_id_fkey"
+            columns: ["author_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_announcements_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_announcements_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      committee_meetings: {
+        Row: {
+          committee_id: string
+          created_at: string
+          created_by: string
+          ends_at: string | null
+          id: string
+          location: string | null
+          note: string | null
+          starts_at: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          committee_id: string
+          created_at?: string
+          created_by: string
+          ends_at?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          starts_at: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          committee_id?: string
+          created_at?: string
+          created_by?: string
+          ends_at?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committee_meetings_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_meetings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_meetings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      committee_memberships: {
+        Row: {
+          committee_id: string
+          created_at: string
+          ends_on: string | null
+          id: string
+          is_active: boolean
+          note: string | null
+          position: Database["public"]["Enums"]["committee_position"]
+          staff_profile_id: string
+          starts_on: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          committee_id: string
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          position?: Database["public"]["Enums"]["committee_position"]
+          staff_profile_id: string
+          starts_on?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          committee_id?: string
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          position?: Database["public"]["Enums"]["committee_position"]
+          staff_profile_id?: string
+          starts_on?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committee_memberships_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_memberships_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_memberships_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      committee_weekly_plans: {
+        Row: {
+          checklist_json: Json
+          committee_id: string
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          updated_at: string
+          updated_by: string | null
+          week_start: string
+        }
+        Insert: {
+          checklist_json?: Json
+          committee_id: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          week_start: string
+        }
+        Update: {
+          checklist_json?: Json
+          committee_id?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committee_weekly_plans_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_weekly_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_weekly_plans_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      committees: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          manages_equipment: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          manages_equipment?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          manages_equipment?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committees_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -823,6 +1201,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "enrollments_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "enrollments_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
@@ -844,8 +1229,190 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
+          },
+          {
             foreignKeyName: "enrollments_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_items: {
+        Row: {
+          asset_code: string
+          available_quantity: number
+          category: string | null
+          committee_id: string
+          condition: Database["public"]["Enums"]["equipment_condition"]
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          note: string | null
+          storage_location: string | null
+          total_quantity: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          asset_code: string
+          available_quantity: number
+          category?: string | null
+          committee_id: string
+          condition?: Database["public"]["Enums"]["equipment_condition"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          note?: string | null
+          storage_location?: string | null
+          total_quantity: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          asset_code?: string
+          available_quantity?: number
+          category?: string | null
+          committee_id?: string
+          condition?: Database["public"]["Enums"]["equipment_condition"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          note?: string | null
+          storage_location?: string | null
+          total_quantity?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_items_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_loans: {
+        Row: {
+          borrow_note: string | null
+          borrowed_at: string
+          borrower_staff_id: string
+          committee_id: string
+          condition_on_return:
+            | Database["public"]["Enums"]["equipment_condition"]
+            | null
+          created_at: string
+          equipment_item_id: string
+          expected_return_at: string | null
+          handed_over_by: string
+          id: string
+          quantity: number
+          received_by: string | null
+          restored_quantity: number | null
+          return_note: string | null
+          returned_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          borrow_note?: string | null
+          borrowed_at?: string
+          borrower_staff_id: string
+          committee_id: string
+          condition_on_return?:
+            | Database["public"]["Enums"]["equipment_condition"]
+            | null
+          created_at?: string
+          equipment_item_id: string
+          expected_return_at?: string | null
+          handed_over_by: string
+          id?: string
+          quantity: number
+          received_by?: string | null
+          restored_quantity?: number | null
+          return_note?: string | null
+          returned_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          borrow_note?: string | null
+          borrowed_at?: string
+          borrower_staff_id?: string
+          committee_id?: string
+          condition_on_return?:
+            | Database["public"]["Enums"]["equipment_condition"]
+            | null
+          created_at?: string
+          equipment_item_id?: string
+          expected_return_at?: string | null
+          handed_over_by?: string
+          id?: string
+          quantity?: number
+          received_by?: string | null
+          restored_quantity?: number | null
+          return_note?: string | null
+          returned_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_loans_borrower_staff_id_fkey"
+            columns: ["borrower_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_handed_over_by_fkey"
+            columns: ["handed_over_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_received_by_fkey"
+            columns: ["received_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -962,6 +1529,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gradebook_locks_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "gradebook_locks_class_id_fkey"
@@ -1102,6 +1676,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "import_batches_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "import_batches_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
@@ -1185,11 +1766,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "import_rows_created_student_id_fkey"
+            columns: ["created_student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "import_rows_created_student_id_fkey"
+            columns: ["created_student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
+          },
+          {
             foreignKeyName: "import_rows_matched_student_id_fkey"
             columns: ["matched_student_id"]
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_rows_matched_student_id_fkey"
+            columns: ["matched_student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "import_rows_matched_student_id_fkey"
+            columns: ["matched_student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -1243,6 +1852,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_entries_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "leaderboard_entries_class_id_fkey"
@@ -1325,6 +1941,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leaderboards_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "leaderboards_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
@@ -1357,6 +1980,129 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_recipients: {
+        Row: {
+          delivered_at: string
+          id: string
+          notification_id: string
+          profile_id: string
+          read_at: string | null
+        }
+        Insert: {
+          delivered_at?: string
+          id?: string
+          notification_id: string
+          profile_id: string
+          read_at?: string | null
+        }
+        Update: {
+          delivered_at?: string
+          id?: string
+          notification_id?: string
+          profile_id?: string
+          read_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_recipients_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_recipients_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          author_profile_id: string
+          content: string
+          created_at: string
+          id: string
+          link_path: string | null
+          published_at: string
+          recipient_count: number
+          target_class_id: string | null
+          target_committee_id: string | null
+          target_profile_id: string | null
+          target_sector_id: string | null
+          target_type: Database["public"]["Enums"]["notification_target_type"]
+          title: string
+        }
+        Insert: {
+          author_profile_id: string
+          content: string
+          created_at?: string
+          id?: string
+          link_path?: string | null
+          published_at?: string
+          recipient_count?: number
+          target_class_id?: string | null
+          target_committee_id?: string | null
+          target_profile_id?: string | null
+          target_sector_id?: string | null
+          target_type: Database["public"]["Enums"]["notification_target_type"]
+          title: string
+        }
+        Update: {
+          author_profile_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          link_path?: string | null
+          published_at?: string
+          recipient_count?: number
+          target_class_id?: string | null
+          target_committee_id?: string | null
+          target_profile_id?: string | null
+          target_sector_id?: string | null
+          target_type?: Database["public"]["Enums"]["notification_target_type"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_target_class_id_fkey"
+            columns: ["target_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_target_committee_id_fkey"
+            columns: ["target_committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_target_sector_id_fkey"
+            columns: ["target_sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
             referencedColumns: ["id"]
           },
         ]
@@ -1525,6 +2271,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "promotion_reviews_source_academic_year_id_fkey"
+            columns: ["source_academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "promotion_reviews_source_class_id_fkey"
             columns: ["source_class_id"]
             isOneToOne: false
@@ -1543,6 +2296,99 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_reviews_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "promotion_reviews_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
+      report_snapshots: {
+        Row: {
+          academic_year_id: string
+          checksum: string
+          file_path: string | null
+          filter_json: Json
+          generated_at: string
+          generated_by: string
+          id: string
+          payload_json: Json
+          period_end: string
+          period_start: string
+          period_type: string
+          report_type: string
+          scope_id: string | null
+          scope_type: string
+          status: string
+          title: string
+        }
+        Insert: {
+          academic_year_id: string
+          checksum: string
+          file_path?: string | null
+          filter_json?: Json
+          generated_at?: string
+          generated_by: string
+          id?: string
+          payload_json: Json
+          period_end: string
+          period_start: string
+          period_type: string
+          report_type: string
+          scope_id?: string | null
+          scope_type: string
+          status?: string
+          title: string
+        }
+        Update: {
+          academic_year_id?: string
+          checksum?: string
+          file_path?: string | null
+          filter_json?: Json
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          payload_json?: Json
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          report_type?: string
+          scope_id?: string | null
+          scope_type?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_snapshots_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_snapshots_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
+            foreignKeyName: "report_snapshots_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1597,6 +2443,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_assignments_academic_year_fk"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "role_assignments_class_fk"
@@ -1880,6 +2733,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
+          },
+          {
             foreignKeyName: "student_attendance_records_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -1940,6 +2807,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "student_comments_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "student_comments_author_profile_id_fkey"
             columns: ["author_profile_id"]
             isOneToOne: false
@@ -1966,6 +2840,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_comments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_comments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
           },
           {
             foreignKeyName: "student_comments_updated_by_fkey"
@@ -2011,6 +2899,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_health_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_health_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
           },
           {
             foreignKeyName: "student_health_profiles_updated_by_fkey"
@@ -2071,6 +2973,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_sacraments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_sacraments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
           },
           {
             foreignKeyName: "student_sacraments_updated_by_fkey"
@@ -2303,6 +3219,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "teaching_plans_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "teaching_plans_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: true
@@ -2347,7 +3270,42 @@ export type Database = {
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "attendance_sessions_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
         ]
+      }
+      v_dashboard_summary: {
+        Row: {
+          academic_year_code: string | null
+          academic_year_id: string | null
+          academic_year_status:
+            | Database["public"]["Enums"]["academic_year_status"]
+            | null
+          catechism_rate: number | null
+          class_count: number | null
+          last_session_date: string | null
+          mass_rate: number | null
+          staff_count: number | null
+          student_count: number | null
+          warned_student_count: number | null
+        }
+        Relationships: []
+      }
+      v_incomplete_student_profiles: {
+        Row: {
+          full_name: string | null
+          missing_address: boolean | null
+          missing_guardian_phone: boolean | null
+          missing_patron_feast: boolean | null
+          saint_name: string | null
+          student_id: string | null
+        }
+        Relationships: []
       }
       v_staff_attendance_summary: {
         Row: {
@@ -2368,6 +3326,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_sessions_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "staff_attendance_records_class_id_fkey"
@@ -2419,11 +3384,32 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "attendance_sessions_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
             foreignKeyName: "student_attendance_records_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -2443,6 +3429,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "academic_years"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
           },
           {
             foreignKeyName: "assessment_scores_class_id_fkey"
@@ -2465,6 +3458,125 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
+      v_students_at_risk: {
+        Row: {
+          academic_year_id: string | null
+          catechism_absence_streak: number | null
+          catechism_attendance_score: number | null
+          catechism_rate: number | null
+          class_id: string | null
+          class_name: string | null
+          full_name: string | null
+          mass_attendance_score: number | null
+          saint_name: string | null
+          student_id: string | null
+          sunday_absence_streak: number | null
+          warn_consecutive_absence: boolean | null
+          warn_consecutive_sunday: boolean | null
+          warn_low_average: boolean | null
+          warn_low_rate: boolean | null
+          weighted_average: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_sessions_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_sessions_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_student_profiles"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_upcoming_celebrations"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
+      v_upcoming_celebrations: {
+        Row: {
+          celebrated_on: string | null
+          full_name: string | null
+          kind: string | null
+          next_occurrence: string | null
+          saint_name: string | null
+          student_id: string | null
+        }
+        Relationships: []
+      }
+      v_upcoming_teaching_items: {
+        Row: {
+          academic_year_id: string | null
+          class_id: string | null
+          class_name: string | null
+          id: string | null
+          is_assessment: boolean | null
+          item_type:
+            | Database["public"]["Enums"]["teaching_plan_item_type"]
+            | null
+          planned_date: string | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teaching_plans_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teaching_plans_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
+            foreignKeyName: "teaching_plans_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: true
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -2475,6 +3587,16 @@ export type Database = {
           p_note?: string
           p_review_id: string
           p_target_class_id?: string
+        }
+        Returns: string
+      }
+      borrow_equipment: {
+        Args: {
+          p_borrower_staff_id: string
+          p_equipment_item_id: string
+          p_expected_return_at?: string
+          p_note?: string
+          p_quantity: number
         }
         Returns: string
       }
@@ -2532,6 +3654,11 @@ export type Database = {
         Returns: string
       }
       lock_gradebook: { Args: { p_class_id: string }; Returns: undefined }
+      mark_all_notifications_read: { Args: never; Returns: number }
+      mark_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: undefined
+      }
       preview_leaderboard: {
         Args: { p_custom_scores?: Json; p_leaderboard_id: string }
         Returns: {
@@ -2556,13 +3683,58 @@ export type Database = {
         Args: { p_custom_scores?: Json; p_leaderboard_id: string }
         Returns: number
       }
+      publish_notification: {
+        Args: {
+          p_content: string
+          p_link_path?: string
+          p_target_id?: string
+          p_target_type: Database["public"]["Enums"]["notification_target_type"]
+          p_title: string
+        }
+        Returns: string
+      }
       refresh_attendance_assessment_scores: {
         Args: { p_assessment_id: string }
         Returns: number
       }
+      report_attendance_rows: {
+        Args: { p_academic_year_id: string; p_from: string; p_to: string }
+        Returns: {
+          catechism_absent_count: number
+          catechism_present_rate: number
+          class_id: string
+          class_name: string
+          mass_absent_count: number
+          mass_present_rate: number
+          sector_id: string
+          session_count: number
+          student_count: number
+        }[]
+      }
+      report_results_rows: {
+        Args: { p_academic_year_id: string }
+        Returns: {
+          below_five_count: number
+          class_average: number
+          class_id: string
+          class_name: string
+          excellent_count: number
+          sector_id: string
+          student_count: number
+        }[]
+      }
       reset_attendance_score_override: {
         Args: { p_assessment_id: string; p_enrollment_id: string }
         Returns: undefined
+      }
+      return_equipment: {
+        Args: {
+          p_condition?: Database["public"]["Enums"]["equipment_condition"]
+          p_loan_id: string
+          p_note?: string
+          p_restored_quantity?: number
+        }
+        Returns: string
       }
       save_and_finalize_attendance: {
         Args: {
