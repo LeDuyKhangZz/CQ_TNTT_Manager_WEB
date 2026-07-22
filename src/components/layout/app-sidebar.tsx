@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { isNavigationItemActive, type NavigationItem } from "@/config/navigation";
@@ -22,7 +23,7 @@ export function AppSidebar({ items, pathname, mobile = false, onClose }: AppSide
       )}
     >
       <div className="flex min-h-20 items-center gap-3 border-b border-border px-5">
-        <div aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">CQ</div>
+        <Image src="/logo.png" alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-xl object-contain" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold uppercase tracking-wider text-primary">Giáo xứ Chợ Quán</p>
           <p className="truncate font-semibold text-foreground">Thiếu Nhi Thánh Thể</p>

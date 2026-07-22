@@ -348,49 +348,92 @@
 
 # Phase 6 — Ban, equipment, notifications, dashboard, reports
 
-## P6-T1 — Committees and memberships ☐
+## P6-T1 — Committees and memberships ☑
 
-- 6 seed Ban.
-- max 2.
-- positions.
-- own committee visibility.
+- 6 seed Ban — `supabase/seed.sql`, id cố định `30000000-…-00000000000{1..6}`.
+- max 2 — trigger `app.validate_committee_membership` (SECURITY DEFINER) chặn Ban thứ ba (D-47).
+- positions — enum `committee_position`: cố vấn tối cao/trưởng/phó/thành viên; không thay primary role (D-15).
+- own committee visibility — policy select = global read hoặc `committee_id = any(app.member_committee_ids())`.
 
-## P6-T2 — Ban content ☐
+> Migration `20260723000100`. Kết thúc nhiệm kỳ bằng `is_active = false` + `ends_on`,
+> không hard delete. Lập Ban và chức vụ là global-write (WF-12).
 
-- Announcement.
-- Meeting.
-- Weekly checklist.
-- leader/deputy write.
+## P6-T2 — Ban content ☑
 
-## P6-T3 — Ban Kỹ thuật equipment ☐
+- Announcement / Meeting / Weekly checklist — `committee_announcements`,
+  `committee_meetings`, `committee_weekly_plans`.
+- leader/deputy write — `app.can_write_committee_content` cho insert/update/delete;
+  thành viên và cố vấn chỉ đọc (D-48).
 
-- Item.
-- Borrow/return RPC.
-- quantity/condition.
-- who/when/note.
+> Migration `20260723000200`. Mốc công việc tuần bị CHECK ràng là thứ Hai và unique
+> theo `(committee_id, week_start)`. Tác giả lấy từ phiên đăng nhập bằng trigger,
+> không nhận từ client. v1 không có assignee/deadline (WF-12).
 
-## P6-T4 — Notifications ☐
+## P6-T3 — Ban Kỹ thuật equipment ☑
 
-- target scope.
-- recipient materialization.
-- unread.
-- valid deep-links.
+- Item — `equipment_items`, chỉ gắn được vào Ban có `manages_equipment`.
+- Borrow/return RPC — `borrow_equipment` / `return_equipment`, khóa dòng thiết bị
+  trước khi ghi; `authenticated` không có INSERT/UPDATE trên `equipment_loans`.
+- quantity/condition — `available_quantity` chỉ đổi qua RPC (trigger chặn sửa tay);
+  phần hỏng/mất khi trả rời khỏi `total_quantity` (WF-13 bước 5).
+- who/when/note — người mượn, người bàn giao, người nhận lại, thời điểm và ghi chú
+  hai chiều đều lưu trên phiếu.
 
-## P6-T5 — Dashboards ☐
+> Migration `20260723000300`. Trả lại lần hai là idempotent. Mượn/trả = thành viên
+> Ban Kỹ thuật hoặc global-write; sửa danh mục = Trưởng/Phó Ban hoặc global-write.
 
-- Global/sector/class/guardian/student.
-- agreed KPIs only.
+## P6-T4 — Notifications ☑
 
-## P6-T6 — Reports and snapshots ☐
+- target scope — 7 phạm vi theo `notification_target_type`; quyền publish kiểm trong
+  `app.can_publish_notification` (ngành cho trưởng/phó ngành, lớp cho đại diện lớp,
+  Ban cho Trưởng/Phó ban, còn lại global-write).
+- recipient materialization — `publish_notification` chốt danh sách người nhận ngay
+  khi gửi nên số chưa đọc không đổi khi người dùng chuyển lớp/đổi role.
+- unread — `mark_notification_read` / `mark_all_notifications_read`; badge ở header
+  đếm đúng `notification_recipients` chưa đọc.
+- valid deep-links — `link_path` bị CHECK ràng vào danh sách route đã tồn tại
+  (AGENTS §8); danh sách lặp ở TypeScript có unit test canh cho khỏi lệch.
 
-- weekly/month/year.
-- Excel/PDF.
-- filter preservation.
-- immutable snapshot.
+> Migration `20260723000400`. `authenticated` không INSERT thẳng vào `notifications`.
 
-## P6-T7 — RLS/E2E ☐
+## P6-T5 — Dashboards ☑
 
-### Gate Phase 6
+- Global/sector/class/guardian/student — một trang `/dashboard` dựng trên view
+  `security_invoker`, nên mỗi vai trò cộng ra con số của đúng phạm vi mình đọc được.
+- agreed KPIs only — đúng danh sách docs/01 §12: tổng thiếu nhi/GLV/lớp, tỷ lệ dự lễ
+  và học giáo lý, thiếu nhi cần quan tâm, buổi học sắp tới kèm buổi kiểm tra,
+  sinh nhật/bổn mạng, thông báo mới, công việc Ban, hồ sơ thiếu dữ liệu. Các mục đã
+  bị loại (tỷ lệ GLV/thiếu nhi, thi đua giữa ngành, lớp chưa điểm danh, lớp chưa có
+  giáo án, sắp lãnh bí tích) không được thêm lại.
+
+> Migration `20260723000500`: `v_dashboard_summary`, `v_students_at_risk`,
+> `v_upcoming_teaching_items`, `v_upcoming_celebrations`, `v_incomplete_student_profiles`.
+
+## P6-T6 — Reports and snapshots ☑
+
+- weekly/month/year — kỳ báo cáo suy từ mốc đang chọn; `year` bám theo năm học.
+- Excel/PDF — `/reports/export` và `/reports/snapshots/[id]/export`; PDF dùng Roboto
+  nhúng để giữ dấu tiếng Việt; ô chữ đi qua `safeSpreadsheetText`.
+- filter preservation — bộ lọc nằm trên URL và link tải dùng lại chính chuỗi query
+  đó; xem trước, file tải và payload snapshot cùng gọi `buildReport` (D-52).
+- immutable snapshot — `report_snapshots` chỉ cấp SELECT/INSERT cho `authenticated`;
+  trigger `app.seal_report_snapshot` đặt người chốt/thời điểm và tính lại checksum
+  SHA-256 phía server.
+
+## P6-T7 — RLS/E2E ☑
+
+- pgTAP `020..023`: 124 assertion bằng JWT thật — giới hạn hai Ban, ai đăng được nội
+  dung Ban, thành viên chỉ thấy Ban mình, kho chỉ thuộc Ban Kỹ thuật, tồn kho không
+  sửa tay được, trả lại idempotent, publish đúng phạm vi, người ngoài phạm vi không
+  đọc được thông báo, read state riêng từng người, view dashboard theo phạm vi,
+  snapshot bất biến và giữ nguyên filter.
+- E2E `committees.spec.ts` (3 bài × 3 viewport): Trưởng ban đăng thông báo/lịch
+  họp/công việc tuần, thành viên Ban Kỹ thuật mượn 2 trả 1 và tổng số giảm đúng,
+  người ngoài Ban mở URL trực tiếp không thấy gì; thông báo lớp tới đúng phụ huynh
+  và không tới GLV lớp khác, đánh dấu đã đọc theo từng người; báo cáo giữ đúng
+  filter, tải Excel/PDF, chốt rồi tải lại bản chốt sau khi dữ liệu nguồn bị xóa.
+
+### Gate Phase 6 ☑
 
 - Committee isolation.
 - Equipment consistency.
@@ -398,29 +441,69 @@
 - Report export matches filters.
 - Snapshot immutable.
 
----
+> **Đạt 2026-07-22.** Fresh `db:reset` áp sạch 5 migration Phase 6; pgTAP **547/547**;
+> unit/integration **156/156** (9 gate Phase 2 skip theo cờ); lint ✓ 0 warning;
+> typecheck ✓; production build ✓; toàn bộ E2E **63/63** trên 360/768/1366
+> (Phase 6: **9/9**). Bằng chứng chi tiết ở P6-T7.
 
 # Phase 7 — Production hardening và Vercel
 
-## P7-T1 — PWA and responsive QA ☐
+## P7-T1 — PWA and responsive QA ☑
 
-## P7-T2 — Full regression ☐
+- Icon 192/512 + maskable sinh từ logo chính thức (BLK-4 đã gỡ 2026-07-22).
+- `public/sw.js`: chỉ cache vỏ tĩnh, điều hướng luôn ra mạng, offline dùng trang tĩnh.
+- Responsive sweep 15 route × 3 viewport, kèm kiểm vùng bấm ≥ 44px.
+- Sửa nợ tìm được: `Button size="sm"` cao 36px → 44px; 2 label ô tick thiếu `min-h-11`.
+
+## P7-T2 — Full regression ☑
 
 - Lint/typecheck/unit/db/e2e/build.
 - 360px and 1366px.
+- 2026-07-22: pgTAP 547/547, unit 167 pass/9 skip, E2E **90/90** trên 360/768/1366.
+- Phát hiện: chạy 3 worker trên **một** database làm spec Phase 4/6 rớt ngẫu nhiên
+  (tái hiện được: 3 worker rớt 6/12, 1 worker xanh 12/12). `playwright.config.ts` nay
+  cố định `workers: 1`; suite vẫn 4,2 phút vì trước đó ba worker chỉ tranh nhau DB.
 
-## P7-T3 — Performance and indexes ☐
+## P7-T3 — Performance and indexes ☑
 
 - 900 students.
 - EXPLAIN hotspots.
+- `perf:smoke` mở rộng sang dashboard/báo cáo/thông báo (Phase 5–6 trước đây không được đo).
+- Index: đã đủ — mọi đường truy vấn thật đều có index; FK còn trống chỉ là cột `updated_by/created_by`.
+- Nút thắt thật là cách đánh giá RLS. Migration `20260724000100`:
+  `guardians` 79,9 → 8,9 ms; `profiles` 4,3 → 0,34 ms;
+  `/dashboard` hồ sơ thiếu thông tin 225 → 13 ms; `/students` 163 → 65 ms.
 
-## P7-T4 — Privacy/security review ☐
+## P7-T4 — Privacy/security review ☑
 
-## P7-T5 — Production seed/admin ☐
+Đã kiểm bằng lệnh thật, không phải đọc code:
 
-- No demo password.
-- 2 SA.
-- backup ownership.
+- Service role key **không** có trong `.next/static` (grep bằng chính khóa trong `.env.local`);
+  `src/lib/supabase/admin.ts` có `import "server-only"`.
+- `.env*` đã gitignore; chỉ `.env.example` được track.
+- Bucket `teaching-materials` private (`public=f`), giới hạn 5 MB, signed URL 60 giây.
+- Chống Excel formula injection có ở **cả hai** đường xuất file (results + reports).
+- Log chỉ có `error.digest`; không log mật khẩu/token/sức khỏe/hồ sơ.
+- Thêm header bảo vệ (`next.config.mjs`) + `tests/e2e/security.spec.ts` kiểm 3 nhóm:
+  header, ID rác trên 8 route không sinh 5xx, GLV lớp mở URL lớp khác thấy 0 em.
+
+Nợ đã thấy, chưa làm:
+
+- **Chưa có CSP.** Next App Router cần nonce cho script bootstrap; thêm vội dễ làm trắng trang.
+- `npm audit --omit=dev`: 5 advisory (2 high) — `next` → `sharp` (libvips) và `postcss`.
+  Không có bản vá trong nhánh 15.x. Mức phơi nhiễm thấp: `sharp` chỉ xử lý ảnh tĩnh của chính
+  repo (không có `remotePatterns`, người dùng không upload ảnh qua `next/image`), `postcss` chỉ
+  chạy lúc build. Lên Next 16 là thay đổi lớn, không làm trong Phase 7.
+
+## P7-T5 — Production seed/admin ☑
+
+- No demo password. → `scripts/seed-production.mjs`: mật khẩu tạm 8 ký tự ngẫu nhiên
+  (`node:crypto`), in một lần, `must_change_password = true`.
+- 2 SA. → đúng hai tài khoản D-16, không tạo dữ liệu mẫu nào khác.
+- backup ownership. → docs/12 §8 "Ai chịu trách nhiệm backup" — **chờ user xác nhận**.
+- Hai lớp bảo vệ: bắt gõ đúng hostname project, và từ chối nếu `profiles` đã có dòng.
+- Đã chạy thật trên DB local sạch: 2 profiles (cả hai buộc đổi mật khẩu), 2 role
+  super_admin, 19 lớp, 1 năm học current, 0 staff/student/guardian. Chạy lần hai bị chặn.
 
 ## P7-T6 — Deploy Supabase/Vercel Hobby ☐
 

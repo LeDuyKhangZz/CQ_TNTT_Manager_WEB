@@ -44,21 +44,96 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-22** — Gate Phase 5 đã đạt
+> Cập nhật: **2026-07-22** — Phase 7 đang chạy, T1..T5 xong
 
-- **`P5-T7 + Gate Phase 5 — XONG — Codex — 2026-07-22`**; fresh 423/423 pgTAP, 137/137 unit/integration, build và full E2E 54/54 trên 3 viewport.
-- **`P5-T6 — XONG — Codex — 2026-07-22`**; portal ownership lọc tường minh điểm/nhận xét/Top 5 published, kể cả GLV kiêm phụ huynh.
-- **`P5-T5 — XONG — Codex — 2026-07-22`**; đề nghị/duyệt nguyên tử, A/B, repeat/pause/withdraw và Hiệp 2 → Dự trưởng; pgTAP 32 assertion.
-- **`P5-T4 — XONG — Codex — 2026-07-22`**; feature flag, assessment/average/custom source, Top 5 immutable snapshot và portal isolation.
-- **`P5-T3 — XONG — Codex — 2026-07-22`**; representative lock, SA unlock, Excel/PDF Unicode theo đúng lớp.
-- **`P5-T2 — XONG — Codex — 2026-07-22`**; hai đề xuất chuyên cần, override bền khi refresh, public/internal comments; RLS JWT thật.
+- **`P7-T1..P7-T5 — XONG — Claude — 2026-07-22`**; PWA + responsive QA, full regression,
+  hiệu năng/RLS, privacy review, seed production. Chi tiết ở nhật ký Phiên 23.
+- **`P7-T6/T7 — CHƯA LÀM`**; chờ user cấp Supabase production + Vercel (BLK-5/BLK-6).
+- **`P6-T1..P6-T7 + Gate Phase 6 — XONG — Claude — 2026-07-22`**; fresh 547/547 pgTAP,
+  lint/typecheck/build xanh và full E2E 63/63 trên 3 viewport.
+- **BLK-4 đã gỡ**; user cấp `logo_TNTT_CHOQUAN.jpg`, icon PWA/favicon/sidebar dùng logo thật.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P6-T1 — Committees and memberships`** là task kế tiếp: seed 6 Ban, giới hạn tối đa 2 Ban đang
-hoạt động mỗi nhân sự, chức vụ và RLS chỉ hiện Ban của mình/theo quyền điều hành.
+**`P7-T6 — Deploy Supabase/Vercel Hobby`** là task kế tiếp. P7-T1..T5 đã xong và có bằng chứng
+chạy thật; T6/T7 chỉ chờ user tạo project thật (BLK-5) — cách lấy từng khóa đã ghi ở
+docs/12 §4 và §5. Agent **không** tự tạo project, không tự đặt env trên Vercel, không commit
+secret; user tự làm hai việc đó rồi báo lại URL để chạy smoke.
+
+**Ghi chú bàn giao Phase 7 (đọc trước khi đụng vào PWA/hiệu năng/deploy):**
+- **Service worker cố ý không cache HTML.** `public/sw.js` chỉ cache `/_next/static/`,
+  `/icons/` và `offline.html`; điều hướng luôn ra mạng. Máy phòng học là máy dùng chung —
+  một trang roster nằm lại trong cache là rò hồ sơ thiếu nhi cho người đăng nhập kế tiếp.
+  `tests/unit/service-worker.test.ts` nạp thẳng file thật vào scope giả và bấm thử từng loại
+  request; đổi quy tắc cache mà không sửa test là test sẽ đỏ.
+- **Đổi PRECACHE hoặc quy tắc cache thì phải tăng `VERSION` trong `sw.js`**, nếu không máy
+  đã cài vẫn giữ danh sách cũ.
+- **`Button size="sm"` nay cao 44px, không phải 36px.** `sm` là nút *hẹp ngang*, không phải
+  nút thấp. Đừng "trả lại cho gọn" — `tests/e2e/responsive.spec.ts` quét 15 route × 3 viewport
+  và sẽ bắt lại ngay.
+- **Ô tick đo vùng bấm theo `<label>` bao quanh**, không theo chính cái ô: ô tick gốc của
+  trình duyệt luôn 16–20px. Label phải có `min-h-11`.
+- **E2E nay chạy 1 worker, kể cả local.** Ba project viewport dùng chung **một** database;
+  chạy 3 worker là ba phiên cùng ghi vào cùng lớp/giáo án/báo cáo. Spec Phase 4/6 rớt ngẫu
+  nhiên vì vậy (đã tái hiện: 3 worker rớt 6/12, 1 worker xanh 12/12). Đừng nâng lại
+  `workers` để cho nhanh — muốn nhanh thì phải cho mỗi project một database riêng.
+- **Snapshot báo cáo kiểm theo `payload_json`/`checksum`, không theo kích thước file.**
+  File Excel sinh lại từ payload mỗi lần tải và ExcelJS nhúng mốc thời gian, nên hai lần tải
+  cùng một snapshot lệch nhau một byte là chuyện bình thường — cái phải bất biến là payload.
+- **Nút thắt hiệu năng là cách đánh giá RLS, không phải index.** Index đã đủ cho mọi đường
+  truy vấn thật. Policy SELECT phải viết `(select app.can_...())` để Postgres nâng lên
+  InitPlan; gọi trần thì hàm chạy lại cho **từng dòng** (đo được: `guardians` 79,9 → 8,9 ms).
+  Migration `20260724000100` sửa `guardians` + `profiles`; các bảng còn lại hiện đủ nhỏ.
+- **`seed:dev` tuyệt đối không được chạy trên project thật** (mật khẩu chung `123456`).
+  Production dùng `npm run seed:prod`, xem docs/12 §4b.
+- **Chưa có CSP.** Next App Router cần nonce cho script bootstrap; thêm vội dễ làm trắng trang.
+- `npm audit --omit=dev` còn 5 advisory (2 high) qua `next` → `sharp`/`postcss`; nhánh 15.x
+  chưa có bản vá. Phơi nhiễm thấp (đã phân tích ở docs/08 P7-T4), không lên Next 16 ở Phase 7.
+
+**Bằng chứng Gate Phase 6:** fresh `db:reset` áp sạch 5 migration Phase 6; pgTAP **547/547**
+(`020..023` thêm 124 assertion bằng JWT thật); unit/integration **156/156** (9 gate Phase 2 skip
+theo cờ); lint ✓ 0 warning; typecheck ✓; production build ✓; full E2E **63/63** trên ba viewport,
+riêng Phase 6 **9/9**: Trưởng ban đăng nội dung và người ngoài Ban mở URL trực tiếp không thấy gì;
+thành viên Ban Kỹ thuật mượn 2 trả 1 và tổng số giảm đúng; thông báo lớp tới đúng phụ huynh,
+không tới GLV lớp khác, đánh dấu đã đọc theo từng người; báo cáo giữ đúng filter, chốt rồi tải
+lại bản chốt nguyên vẹn sau khi dữ liệu nguồn bị xóa.
+
+**Ghi chú bàn giao Phase 6 (đọc trước khi đụng vào Ban/thông báo/báo cáo):**
+- **Mọi thao tác đổi tồn kho đi qua RPC.** `authenticated` không có INSERT/UPDATE trên
+  `equipment_loans`, và trigger `app.validate_equipment_item` chặn sửa tay `available_quantity`
+  (dựa vào biến phiên `app.equipment_rpc` mà chỉ hai RPC đặt). Đừng "dọn dẹp" trigger này.
+- **`app.validate_committee_membership` phải là SECURITY DEFINER.** Trigger đếm số Ban đang
+  hoạt động của nhân sự; chạy dưới RLS thì người chỉ thấy một Ban sẽ lách được giới hạn D-47.
+  Bản đầu không phải definer và pgTAP bắt được ngay.
+- **Danh sách deep-link hợp lệ nằm ở HAI nơi**: CHECK `notifications_link_known_route` trong
+  migration `20260723000400` và `NOTIFICATION_LINK_ROUTES` ở
+  `src/features/notifications/constants.ts`. `tests/unit/notification-schemas.test.ts` đọc thẳng
+  file migration để canh hai bên khớp nhau — thêm route mới phải sửa cả hai.
+- **`v_incomplete_student_profiles` dùng LEFT JOIN `guardians` có chủ ý.** GLV lớp không đọc được
+  bảng `guardians` (policy `guardians_select_scope`), join thường làm view rỗng với đúng người cần
+  dùng nó. Cờ thiếu SĐT chỉ bật khi người đọc thật sự thấy được guardian — nói "thiếu" trong khi
+  chỉ là "không có quyền xem" thì tệ hơn im lặng.
+- **Báo cáo chỉ có MỘT đường tính.** Xem trước, `/reports/export` và `createReportSnapshot` đều gọi
+  `buildReport(filter)`; bộ lọc nằm trên URL nên link tải dùng lại chính chuỗi query (D-52). Đừng
+  thêm đường tính thứ hai cho export.
+- **Snapshot bất biến bằng cách không cấp quyền**, không phải bằng trigger chặn: `authenticated`
+  chỉ có SELECT/INSERT trên `report_snapshots`. Checksum/generated_by/generated_at do trigger
+  `app.seal_report_snapshot` đặt lại, giá trị client gửi lên bị bỏ.
+- **Báo cáo kết quả học tập tính cho cả năm học**, khoảng ngày chỉ ràng buộc báo cáo chuyên cần.
+  UI có ghi rõ; nếu sau này cần chia kỳ cho điểm thì phải quyết định cột mốc nào là nguồn.
+- **`seed:dev` nay dựng sẵn chức vụ Ban**: GLV909 Trưởng Ban Sinh hoạt **và** thành viên Ban Kỹ
+  thuật (đúng hai Ban), GLV910 Phó Ban Sinh hoạt, GLV912 Trưởng Ban Kỹ thuật, GLV905 cố vấn tối
+  cao, cộng 2 thiết bị mẫu. GLV907 (Trưởng ngành Thiếu) cố ý **không** thuộc Ban nào để E2E kiểm
+  được trạng thái rỗng và chặn URL trực tiếp.
+
+**Nợ đã thấy, chưa làm (Phase 6):**
+- Chưa dùng bucket `report-snapshots`: file Excel/PDF sinh lại từ `payload_json` khi tải, cột
+  `file_path` để trống. Đủ cho yêu cầu "snapshot không đổi", nhưng docs/02 §15 vẫn liệt kê bucket.
+- Chưa có trang quản trị Ban tập trung cho Super Admin (thêm/ngưng Ban làm ngay ở `/committees`).
+- Thông báo chưa có phân trang; hộp thư giới hạn 50 dòng gần nhất.
+- Chưa có báo cáo theo ngành dạng gộp nhiều lớp thành một dòng — hiện luôn liệt kê theo lớp.
 
 **Bằng chứng Gate Phase 5:** fresh reset + pgTAP **423/423**; unit/integration **137/137**
 (9 gate Phase 2 skip đúng theo cờ); lint/typecheck/build xanh; full E2E **54/54** trên ba viewport.
@@ -78,7 +153,8 @@ toàn bộ **48/48** test qua ba viewport. `perf:smoke` đo lớp Ấu 1A 60 em/
 - `.env.local` đã tạo từ `npx supabase status` (cổng API **54421**, DB **54422**). File này bị
   gitignore, không commit. Không có nó thì `npm run seed:dev`/`perf:smoke`/`test:auth` không chạy.
 - `npm run seed:dev` — dựng fixture docs/07 §14. **Chỉ chạy trên DB vừa reset**, script tự từ chối
-  nếu `profiles` đã có dòng. Mật khẩu chung local: `matkhau-dev-2026`.
+  nếu `profiles` đã có dòng. Mật khẩu chung local: `123456` (đọc `DEV_PASSWORD` trong
+  `scripts/seed-dev.mjs`; ghi chú cũ trong WORKLOG ghi sai giá trị này).
 - Mã GLV của fixture **đặt tay dải GLV901–GLV913**, không lấy từ sequence: pgTAP tiêu thụ
   `staff_code_seq` nên mã sinh tự động đổi theo số lần chạy test và làm E2E gãy.
   GLV901 = Xứ đoàn trưởng (global write), GLV905 = Trưởng ngành Ấu, GLV910 = GLV lớp Ấu 1A kiêm
@@ -204,7 +280,7 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 | BLK-2b | Không có file mẫu danh sách GLV (sheet `GIAO_LY_VIEN` không tồn tại trong bộ file thật) | Chặn import GLV; không chặn import thiếu nhi | User cung cấp file GLV |
 | BLK-2c | **84/489** dòng dữ liệu thật không import được vì thiếu SĐT phụ huynh hoặc ngày sinh (đo lại ở Gate Phase 2 trên đủ 18 sổ; nặng nhất là 2 sổ Chiên Con: 34/50 và 23/52) | Các dòng này không import được | Xứ đoàn bổ sung dữ liệu vào file nguồn |
 | BLK-3 | Chưa biết tên bộ sách giáo lý theo từng ngành | Không chặn schema; teaching plan để text/config | Hỏi lại khi triển khai Phase 4 |
-| BLK-4 | Chưa có logo/icon ngành chính thức | UI dùng placeholder, không chặn core | User cung cấp asset |
+| ~~BLK-4~~ | ~~Chưa có logo/icon ngành chính thức~~ | **ĐÃ GỠ 2026-07-22** — user cấp `logo_TNTT_CHOQUAN.jpg`; icon PWA 192/512 + maskable, favicon, apple-icon và logo sidebar/đăng nhập đều sinh từ file này | — |
 | BLK-5 | Chưa có Supabase production credentials | Chặn deploy Phase 7, không chặn local | Tạo Supabase project production |
 | BLK-6 | Chưa có domain riêng | Không chặn deploy bằng Vercel domain | User mua/cấu hình nếu cần |
 | BLK-7 | Nghiệp vụ Sa mạc còn câu hỏi mở | Chặn Phase 8 | Hỏi lại theo `docs/13-summer-camp-backlog.md` |
@@ -279,6 +355,87 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-22] Phiên 23 — Claude — P7-T1..P7-T5
+
+- **Làm được:** Năm task đầu Phase 7. (1) **PWA**: icon 192/512 + maskable + apple-icon +
+  favicon sinh từ logo thật user cấp giữa phiên (gỡ BLK-4, đã bỏ dải chữ ở đáy logo vì ở
+  192px nó chỉ còn là vệt mờ); `public/sw.js` viết tay, không thêm dependency, chỉ cache vỏ
+  tĩnh, điều hướng luôn ra mạng và rớt mạng thì trả `offline.html` tĩnh; `next.config.mjs`
+  bắt `sw.js` phải revalidate. Logo thay hai chỗ "CQ" placeholder ở trang đăng nhập và
+  sidebar, bỏ dòng "Giao diện nền tảng · P0-T2" còn sót. (2) **Responsive QA** quét 15 route
+  × 3 viewport, kiểm cả tràn ngang lẫn vùng bấm ≥ 44px — bắt được nợ thật: `Button size="sm"`
+  cao 36px (31 chỗ dùng) và 2 label ô tick thiếu `min-h-11`. (3) **Full regression** từ DB
+  sạch. (4) **Hiệu năng**: mở rộng `perf:smoke` sang dashboard/báo cáo/thông báo (Phase 5–6
+  trước nay không được đo), rồi EXPLAIN dưới RLS thật tìm ra nút thắt là policy gọi helper
+  theo từng dòng chứ không phải thiếu index. (5) **Privacy review** bằng lệnh thật + header
+  bảo vệ + `tests/e2e/security.spec.ts`. (6) **`scripts/seed-production.mjs`**: mật khẩu tạm
+  ngẫu nhiên, ép đổi lần đầu, không dữ liệu mẫu.
+- **File thay đổi:** mới `public/{sw.js,offline.html,logo.png}`, `public/icons/*` (4 PNG),
+  `src/app/{icon.png,apple-icon.png}`, `src/components/pwa/service-worker-registrar.tsx`,
+  `supabase/migrations/20260724000100_rls_initplan_hot_reads.sql`,
+  `scripts/seed-production.mjs`, `tests/unit/service-worker.test.ts`,
+  `tests/e2e/{pwa,responsive,security}.spec.ts`. Sửa `src/app/{layout,manifest}.ts(x)`,
+  `src/app/(auth)/layout.tsx`, `src/components/layout/app-sidebar.tsx`,
+  `src/components/ui/button.tsx`, `src/app/(dashboard)/students/{page,[studentId]/page}.tsx`,
+  `src/app/(dashboard)/classes/[classId]/page.tsx`, `src/middleware.ts`, `next.config.mjs`,
+  `scripts/perf-smoke.mjs`, `package.json`, docs/08, docs/12. Xóa `src/app/icon.svg`.
+- **Migration/data impact:** Một migration, **chỉ viết lại 2 policy SELECT**
+  (`guardians_select_scope`, `profiles_select_self_or_global`) bằng scalar subquery.
+  Không thêm/bớt bảng, cột, quyền; không cần regenerate types. Fresh `db:reset` áp sạch và
+  pgTAP giữ nguyên 547/547 — đó là bằng chứng không đổi ngữ nghĩa.
+- **Đã test:** fresh `db:reset` ✓; `test:db` **547/547** (cả trước và sau migration);
+  `seed:dev` ✓; `lint` ✓ 0 warning; `typecheck` ✓; `npm test` **167 passed / 9 skipped**;
+  `build` ✓; `test:e2e` **90/90** trên 360/768/1366 (thêm 9 PWA + 9 responsive + 9 security
+  so với 63 của Phase 6). `perf:smoke` ở 911 em, JWT thật:
+  `/dashboard` hồ sơ thiếu **225 → 13 ms**, `/students` **163 → 65 ms**; EXPLAIN dưới RLS:
+  `guardians` **79,9 → 8,9 ms**, `profiles` **4,3 → 0,34 ms**. `seed:prod` chạy thật trên DB
+  local sạch: đúng 2 profile buộc đổi mật khẩu, 2 role super_admin, 19 lớp, 1 năm học, 0
+  staff/student/guardian; chạy lần hai bị chặn; gõ sai hostname bị chặn.
+- **Quyết định mới:** Không có quyết định nghiệp vụ mới. Ba quyết định kỹ thuật đã ghi ở
+  `VIỆC TIẾP THEO`: service worker không cache HTML; `sm` là nút hẹp ngang chứ không phải nút
+  thấp; policy SELECT từ nay phải bọc `(select ...)`.
+- **Blocker/rủi ro:** BLK-4 đã gỡ. BLK-5/BLK-6 vẫn chặn T6/T7 — cần user tạo Supabase project
+  và Vercel project, cách lấy từng khóa đã ghi docs/12 §4a/§5a. Nợ đã thấy: chưa có CSP;
+  `npm audit --omit=dev` còn 5 advisory (2 high) qua `next` → `sharp`/`postcss`, nhánh 15.x
+  chưa có bản vá, phơi nhiễm thấp; bảng phân công backup ở docs/12 §8 mới là đề xuất, chờ
+  user xác nhận; phép đo "publish thông báo toàn xứ đoàn" chưa đại diện vì DB local chỉ có
+  ~20 tài khoản, số thật phải đo lại sau khi có tài khoản production.
+- **Next action:** `P7-T6 — Deploy Supabase/Vercel Hobby`. User tạo project và đặt env trước;
+  agent không tự tạo, không tự đặt secret. Có URL rồi thì chạy `P7-T7 — Smoke production`.
+
+### [2026-07-22] Phiên 22 — Claude — P6-T1..P6-T7 + Gate Phase 6
+- **Làm được:** Trọn Phase 6. (1) `committees`/`committee_memberships` + seed 6 Ban id cố định,
+  trigger chặn Ban thứ ba (D-47), helper mảng `app.member_committee_ids`/`led_committee_ids` và
+  hai stub `is_committee_member`/`is_committee_leader_or_deputy` từ Phase 1 nay có thân thật.
+  (2) Thông báo/lịch họp/công việc tuần Ban, ghi chỉ Trưởng/Phó ban, tác giả lấy từ phiên đăng
+  nhập, mốc tuần ràng buộc thứ Hai. (3) Kho Ban Kỹ thuật + RPC `borrow_equipment`/
+  `return_equipment` khóa dòng, phần hỏng/mất trừ khỏi tổng số, trả lại lần hai idempotent.
+  (4) `publish_notification` kiểm quyền theo 7 phạm vi rồi materialize người nhận cùng giao dịch;
+  read state theo từng người; badge header đếm thật; deep-link có allowlist ở cả DB lẫn Zod.
+  (5) `/dashboard` thật dựng trên 5 view `security_invoker`, đúng danh sách KPI docs/01 §12.
+  (6) `/reports` tuần/tháng/năm học, Excel/PDF, chốt snapshot bất biến giữ nguyên filter và số liệu.
+- **File thay đổi:** mới migration `20260723000100..00500`, pgTAP `020..023`,
+  `src/features/{committees,equipment,notifications,dashboard,reports}/**`,
+  route `/committees/[committeeId]`, `/reports/export`, `/reports/snapshots/[id]/export`,
+  `src/lib/exports/{spreadsheet,http}.ts`, `tests/e2e/committees.spec.ts`, 3 bộ unit mới.
+  Sửa `supabase/seed.sql` (6 Ban), `scripts/seed-dev.mjs` (chức vụ Ban + thiết bị mẫu), 4 trang
+  placeholder, `app-shell`/`app-header`/`notification-button` (badge chưa đọc),
+  `(dashboard)/layout.tsx`, `src/features/assessments/export-data.ts`, generated types, docs 02/03/05/08/11.
+- **Migration/data impact:** Thêm 10 bảng, 5 view, 2 hàm nguồn báo cáo, 5 RPC public và
+  ~12 hàm/trigger `app.*`; seed thêm 6 Ban. Không sửa migration cũ. Fresh `db:reset` áp sạch;
+  DB local sau gate có fixture dev + dữ liệu E2E Phase 3/4/5/6, không chạm `../Excel mẫu`.
+- **Đã test:** fresh `db:reset` ✓; `test:db` **547/547**; `seed:dev` ✓; `lint` ✓ 0 warning;
+  `typecheck` ✓; `npm test` **156 passed / 9 skipped** (skip đúng theo cờ `GATE_PHASE2`);
+  `build` ✓ (5 route mới); `test:e2e` **63/63** trên 360/768/1366 (Phase 6 **9/9**);
+  `git diff --check` ✓.
+- **Quyết định mới:** Không có quyết định nghiệp vụ mới; D-47..D-52 giữ nguyên. Chi tiết hiện thực
+  đã ghi ở `VIỆC TIẾP THEO`: cờ `manages_equipment` thay vì so mã Ban; snapshot lưu `payload_json`
+  trong DB thay vì bucket; báo cáo kết quả tính theo cả năm học.
+- **Blocker/rủi ro:** Không có blocker Phase 6. BLK-5/BLK-6 vẫn mở nhưng chỉ chặn P7-T6/T7.
+  Nợ chưa làm đã liệt kê ở `VIỆC TIẾP THEO`. Cảnh báo deprecation `next lint`/Vite CJS không
+  làm fail gate.
+- **Next action:** `P7-T1 — PWA and responsive QA`; claim task trước khi code.
 
 ### [2026-07-22] Phiên 21 — Codex — P5-T1..P5-T7 + Gate Phase 5
 - **Làm được:** Hoàn tất Phase 5: cột điểm động/hệ số/null≠0; hai đề xuất chuyên cần với override;
@@ -403,23 +560,5 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
   nhận đơn xin nghỉ trên trang điểm danh.
 - **Next action:** `P3-T6 — Attendance security/concurrency tests` rồi `Gate Phase 3`. Xem
   `VIỆC TIẾP THEO` để biết ba mục còn thiếu cụ thể.
-
-### [2026-07-21] Phiên 17 — Claude — Gate Phase 2
-- **Làm được:** Đóng Gate Phase 2 bằng bằng chứng chạy thật. (1) `scripts/seed-dev.mjs` dựng bộ fixture docs/07 §14 (năm học hiện hành + 19 lớp tạo qua phiên Super Admin thật chứ không phải service role, 20 tài khoản đủ vai trò, GLV kiêm phụ huynh, 4 thiếu nhi). (2) `tests/integration/gate-phase2-import.test.ts` chạy đúng pipeline `/imports` bằng JWT Xứ đoàn trưởng trên **18 sổ lớp thật**: parse 489, ghi 405, 84 dòng bị chặn do file gốc thiếu dữ liệu, 0 dòng hỏng khi ghi. (3) `scripts/perf-smoke.mjs` bơm lên 900 em rồi đo — phát hiện RLS gọi hàm theo từng dòng, GLV lớp đọc `students` mất **2.458 ms**/43.504 buffer. (4) Migration `20260721000200_scope_lookup_performance.sql` chuyển 5 policy SELECT sang so khớp mảng phạm vi tính một lần (InitPlan) → `/students` 1.420→**109 ms**, GLV lớp 3.684→**47 ms**, tầng DB 2.458→**28,9 ms**. (5) `tests/integration/gate-phase2-scope.test.ts` kiểm cross-scope lại trên chính bộ 900 em. (6) `tests/e2e/authenticated-shell.spec.ts` đăng nhập thật đi hết trang Phase 2 ở 3 viewport. (7) Sửa `/imports` chặn sai role bằng redirect `/access-denied` thay vì ném lỗi.
-- **File thay đổi:** mới `supabase/migrations/20260721000200_scope_lookup_performance.sql`, `scripts/seed-dev.mjs`, `scripts/perf-smoke.mjs`, `tests/integration/gate-phase2-import.test.ts`, `tests/integration/gate-phase2-scope.test.ts`, `tests/e2e/authenticated-shell.spec.ts`, `.env.local` (gitignore). Sửa `src/features/imports/server/permissions.ts` (+`requireImportPage`), `src/app/(dashboard)/imports/page.tsx` + `[batchId]/page.tsx`, `package.json` (scripts `seed:dev`, `perf:smoke`, `test:auth` thêm `--env-file`), `docs/08-phase-plan.md`, `WORKLOG.md`.
-- **Migration/data impact:** Thêm 4 hàm `app.*` trả mảng và viết lại 5 policy SELECT (students, health, bí tích, enrollments, class_staff_assignments). **Không đổi quyền** — mỗi hàm mới ứng 1-1 một nhánh của helper cũ; helper cũ giữ nguyên. Không thêm/bỏ bảng, không sửa migration cũ. Fresh `db:reset` áp dụng sạch. Không cần regenerate types (hàm nằm ở schema `app`).
-- **Đã test:** `db:reset` ✓; `test:db` pgTAP **186/186** sau khi đổi policy; gate import **1/1** (405/489 dòng, 0 hỏng); gate scope **8/8** trên 900 em; `perf:smoke` (6 phép đo, xem docs/08); `lint` ✓ 0 warning; `typecheck` ✓; `build` ✓; unit+integration **110/110** (9 skip vì thiếu cờ `GATE_PHASE2`); `test:e2e` **33/33** (15 cũ + 18 mới) trên 360/768/1366.
-- **Quyết định mới:** Không có quyết định nghiệp vụ mới. Hai quyết định kỹ thuật: (1) fixture dev dùng dải mã cố định **GLV901–GLV913** vì pgTAP tiêu thụ `staff_code_seq` làm mã sinh tự động không ổn định; (2) policy RLS từ nay viết theo **tập hợp tính một lần**, không gọi helper theo từng dòng.
-- **Blocker/rủi ro:** BLK-2c cập nhật số liệu (84/489 chứ không phải 61/302). Nợ chưa làm: trang review import bắt chọn giới tính từng dòng một form (rất cực với sổ 50 dòng); `/students` chưa phân trang; export báo cáo lỗi ra file; import GLV (BLK-2b); E2E cho luồng upload→review→commit. DB local đang có 900 em nên `test:db` sẽ đỏ tới khi `db:reset` — đúng hành vi, không phải regression.
-- **Next action:** `P3-T1 — Attendance session/RPC locking`. **Phase 3 chưa động gì**; phiên này đã hứa P3-T1..T4 nhưng dừng lại sau Gate theo yêu cầu user. Xem `VIỆC TIẾP THEO` để biết enum/cột đã có sẵn và khuôn RLS phải theo.
-
-### [2026-07-21] Phiên 16 — Claude — P2-T4
-- **Làm được:** Import Excel dry-run/commit hoàn chỉnh. Khảo sát bộ file thật `Excel mẫu/` (11 sổ lớp): sheet `SYLL` 19 cột A–S nhất quán ở 4 ngành lớn, Chiên Con dùng `DS_dau_nam` (SYLL trống, tên tách 2 cột), không có sheet GLV. Migration staging `import_batches`/`import_rows` + RPC `commit_import_rows` (chunk 100/transaction, guardian reuse theo phone, student code từ sequence, lỗi một dòng ghi lên chính dòng đó). Parser exceljs 3 layout + chọn sheet giàu dữ liệu nhất; chuẩn hóa ngày (dd/MM/yyyy, serial, dd/MM, khoảng trắng lạ), SĐT VN, tên ALL CAPS, alias lớp, marker rỗng "CHƯA"/"Không"; guardian pick giám hộ>cha>mẹ, người còn lại giữ vào ghi chú; dedup High/Medium/Low + trùng trong cùng file. UI `/imports` + `/imports/[batchId]` (review, chọn giới tính, tạo mới/ghép/bỏ qua, commit), route tải template.
-- **File thay đổi:** migration `20260721000100_import_batches.sql`, pgTAP `011_imports_test.sql`, `src/features/imports/**` (normalize, columns, parse, build-row, dedup, template, server/{permissions,queries,actions}), `src/app/(dashboard)/imports/**`, `route-map.ts`, `navigation.ts`, `vitest.config.ts`, tests unit `import-normalize`/`import-rows`, integration `import-sample-workbooks`, `package.json` (+exceljs), `src/types/database.ts`, docs 08/09.
-- **Migration/data impact:** Thêm 2 bảng staging + 3 enum + 1 RPC. Không sửa migration cũ, không đụng bảng nghiệp vụ. Fresh `db:reset` sạch; generated types đã cập nhật.
-- **Đã test:** `db:reset` ✓; `test:db` pgTAP **186/186** (011: 26 mới, gồm RLS chặn GLV/phụ huynh, dry-run không ghi business table, guardian reuse, skip, lỗi 1 dòng không giết chunk, re-commit không nhân đôi); unit+integration **110/110** (43 → 110); `lint` ✓ 0 warning; `typecheck` ✓; `build` ✓ (3 route mới). Đo pipeline trên 302 dòng thật: **241 ghi được (80%)**, 61 lỗi do dữ liệu gốc thiếu.
-- **Quyết định mới:** (1) Dùng **exceljs**, loại SheetJS vì `xlsx` npm 0.18.5 dính CVE HIGH không có bản vá đúng ngay đường parse file upload. (2) Thiếu giới tính là **cảnh báo** + người duyệt chọn trên UI, commit chặn nếu chưa chọn (SYLL không có cột này, 83% dòng). (3) **Chọn lớp đích khi upload** cho sheet không có cột lớp; cột lớp trong file vẫn thắng.
-- **Blocker/rủi ro:** BLK-2 đã gỡ; thêm BLK-2b (không có file mẫu GLV) và BLK-2c (dữ liệu gốc thiếu SĐT/ngày sinh). Chưa có export file báo cáo lỗi và chưa E2E luồng upload→commit. Test integration đọc file **ngoài repo** vì chứa dữ liệu cá nhân thật của trẻ em — không được copy vào repo.
-- **Next action:** `Gate Phase 2` — import dữ liệu mẫu end-to-end trên local, perf smoke 900 dòng, rà UI.
 
 _(Giữ tối đa 6 entry gần nhất.)_

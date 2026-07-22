@@ -432,6 +432,79 @@ async function main() {
     results,
   );
 
+  // ── Phase 5/6: dashboard, báo cáo, thông báo ─────────────────────────────
+  // Ba nhóm này gộp toàn xứ đoàn trong một truy vấn nên chúng mới là chỗ 900 em
+  // gây đau, chứ không phải danh sách lớp. P7-T3 thêm vào đây để có số thật.
+
+  await measure(
+    "/dashboard — KPI tổng hợp toàn xứ đoàn",
+    () =>
+      globalWrite
+        .from("v_dashboard_summary")
+        .select("*")
+        .eq("academic_year_id", year.id)
+        .maybeSingle(),
+    results,
+  );
+
+  await measure(
+    "/dashboard — 10 em cần lưu ý (chuỗi vắng + tỷ lệ)",
+    () =>
+      globalWrite
+        .from("v_students_at_risk")
+        .select("*")
+        .eq("academic_year_id", year.id)
+        .limit(10),
+    results,
+  );
+
+  await measure(
+    "/dashboard — hồ sơ còn thiếu thông tin (đếm toàn bộ)",
+    () =>
+      globalWrite
+        .from("v_incomplete_student_profiles")
+        .select("student_id", { count: "exact", head: true }),
+    results,
+  );
+
+  await measure(
+    "/reports — chuyên cần cả năm học, mọi lớp",
+    () =>
+      globalWrite.rpc("report_attendance_rows", {
+        p_academic_year_id: year.id,
+        p_from: year.start_date,
+        p_to: attendanceDates[attendanceDates.length - 1],
+      }),
+    results,
+  );
+
+  await measure(
+    "/reports — kết quả học tập cả năm học, mọi lớp",
+    () => globalWrite.rpc("report_results_rows", { p_academic_year_id: year.id }),
+    results,
+  );
+
+  await measure(
+    "Thông báo — publish toàn xứ đoàn (materialize người nhận)",
+    () =>
+      globalWrite.rpc("publish_notification", {
+        p_title: "Perf smoke — thông báo toàn xứ đoàn",
+        p_content: "Bản ghi do perf:smoke tạo, chỉ tồn tại trên DB local.",
+        p_target_type: "all",
+      }),
+    results,
+  );
+
+  await measure(
+    "Thông báo — badge chưa đọc ở header (mọi route đều chạy)",
+    () =>
+      globalWrite
+        .from("notification_recipients")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null),
+    results,
+  );
+
   const width = Math.max(...results.map((item) => item.label.length));
   process.stdout.write("Phép đo (JWT thật, Supabase local):\n");
   for (const item of results) {

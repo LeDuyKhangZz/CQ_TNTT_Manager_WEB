@@ -148,7 +148,7 @@ export default async function StudentsPage() {
                       <Label htmlFor="student-address">Địa chỉ</Label>
                       <Input id="student-address" name="address" />
                     </div>
-                    <label className="flex items-center gap-2 text-sm" htmlFor="student-hardship">
+                    <label className="flex min-h-11 items-center gap-2 text-sm" htmlFor="student-hardship">
                       <input id="student-hardship" name="hardshipFlag" type="checkbox" className="h-4 w-4" />
                       Hoàn cảnh khó khăn
                     </label>

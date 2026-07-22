@@ -199,7 +199,7 @@ export default async function StudentDetailPage({
                     <Label htmlFor="edit-notes">Ghi chú</Label>
                     <textarea id="edit-notes" name="generalNotes" defaultValue={student.generalNotes ?? ""} className={textareaClassName} />
                   </div>
-                  <label className="flex items-center gap-2 text-sm" htmlFor="edit-hardship">
+                  <label className="flex min-h-11 items-center gap-2 text-sm" htmlFor="edit-hardship">
                     <input id="edit-hardship" name="hardshipFlag" type="checkbox" defaultChecked={student.hardshipFlag} className="h-4 w-4" />
                     Hoàn cảnh khó khăn
                   </label>

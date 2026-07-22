@@ -50,13 +50,13 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ cl
                   {canManage ? (
                     <form action={endEnrollmentFromForm} className="flex flex-wrap items-end gap-2">
                       <input type="hidden" name="enrollmentId" value={item.enrollmentId} />
-                      <select name="status" className="h-9 rounded-md border border-border bg-card px-2 text-xs" defaultValue="withdrawn">
+                      <select name="status" className="h-11 rounded-md border border-border bg-card px-2 text-xs" defaultValue="withdrawn">
                         <option value="withdrawn">Rút</option>
                         <option value="completed">Hoàn thành</option>
                         <option value="transferred">Chuyển</option>
                         <option value="paused">Tạm nghỉ</option>
                       </select>
-                      <Input name="endedOn" type="date" defaultValue={today} className="h-9 w-40" required />
+                      <Input name="endedOn" type="date" defaultValue={today} className="h-11 w-40" required />
                       <Button type="submit" variant="outline" size="sm">Kết thúc</Button>
                     </form>
                   ) : null}

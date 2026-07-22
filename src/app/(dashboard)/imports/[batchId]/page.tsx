@@ -100,7 +100,7 @@ function RowCard({ row }: { row: BatchRow }) {
             id={`gender-${row.id}`}
             name="gender"
             defaultValue=""
-            className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+            className="min-h-11 rounded-md border border-input bg-background px-2 py-1 text-sm"
           >
             <option value="" disabled>
               — Chọn —
@@ -128,7 +128,7 @@ function RowCard({ row }: { row: BatchRow }) {
             id={`action-${row.id}`}
             name="action"
             defaultValue={row.action}
-            className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+            className="min-h-11 rounded-md border border-input bg-background px-2 py-1 text-sm"
           >
             <option value="create">Tạo mới</option>
             <option value="merge" disabled={!row.matchedStudentId}>

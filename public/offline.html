@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="theme-color" content="#f28c5b" />
+    <title>Mất kết nối · Thiếu Nhi Chợ Quán</title>
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" />
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background: #fff9f4;
+        color: #3f2d24;
+      }
+      main {
+        max-width: 22rem;
+        text-align: center;
+      }
+      .logo {
+        width: 4rem;
+        height: 4rem;
+        margin: 0 auto 1.25rem;
+        display: block;
+      }
+      h1 {
+        font-size: 1.25rem;
+        line-height: 1.4;
+        margin: 0 0 0.75rem;
+      }
+      p {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        margin: 0 0 1.5rem;
+        color: #6b5347;
+      }
+      button {
+        min-height: 44px;
+        padding: 0 1.5rem;
+        border: 0;
+        border-radius: 0.5rem;
+        background: #f28c5b;
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #e07a49;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="/icons/icon-192.png" alt="" />
+      <h1>Không có kết nối mạng</h1>
+      <!-- D-29..D-33: điểm danh phải ghi thẳng lên máy chủ, nên không có chế độ
+           làm việc ngoại tuyến. Nói thẳng để giáo lý viên không ngồi chờ. -->
+      <p>
+        Ứng dụng cần mạng để hiển thị dữ liệu. Hãy kiểm tra Wi-Fi hoặc 4G rồi thử lại.
+        Các thao tác điểm danh, nhập điểm chưa gửi đi sẽ không được lưu.
+      </p>
+      <button type="button" onclick="location.reload()">Thử lại</button>
+    </main>
+  </body>
+</html>

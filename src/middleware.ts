@@ -16,7 +16,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Bỏ qua static assets và file ảnh; áp dụng cho phần còn lại.
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Bỏ qua static assets, file ảnh và tài nguyên PWA; áp dụng cho phần còn
+    // lại. `sw.js`/`offline.html` phải nằm ngoài: chúng là file tĩnh không cần
+    // phiên đăng nhập, và service worker được tải cả khi chưa có phiên.
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

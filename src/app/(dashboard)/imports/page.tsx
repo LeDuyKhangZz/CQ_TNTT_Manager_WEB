@@ -99,7 +99,7 @@ export default async function ImportsPage() {
                     id="classId"
                     name="classId"
                     defaultValue=""
-                    className="block w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
+                    className="block min-h-11 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
                   >
                     <option value="">— Lấy theo cột lớp trong file —</option>
                     {classOptions.map((option) => (

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,7 +34,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorkerRegistrar />
+      </body>
     </html>
   );
 }

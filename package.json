@@ -17,6 +17,7 @@
     "test:db": "supabase test db",
     "test:auth": "node --env-file=.env.local scripts/test-auth-flow.mjs",
     "seed:dev": "node --env-file=.env.local scripts/seed-dev.mjs",
+    "seed:prod": "node --env-file=.env.production.local scripts/seed-production.mjs",
     "perf:smoke": "node --env-file=.env.local scripts/perf-smoke.mjs",
     "test:e2e": "node scripts/run-e2e.mjs",
     "db:start": "supabase start",

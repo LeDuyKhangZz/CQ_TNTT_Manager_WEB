@@ -11,7 +11,14 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 3,
+  // Một worker, kể cả ở máy local. Ba project (360/768/1366) chạy cùng bộ spec
+  // trên **một** database duy nhất, nên chạy song song là ba phiên cùng ghi vào
+  // cùng một lớp/giáo án/báo cáo. Phần lớn spec đã tự đặt tên theo project để
+  // né nhau, nhưng không phải chỗ nào cũng né được — ràng buộc "một giáo án mỗi
+  // lớp" thì không có cách nào chia. P7-T2 đo được: chạy 3 worker thì các spec
+  // Phase 4/6 rớt ngẫu nhiên, chạy 1 worker thì xanh ổn định. Suite lâu hơn
+  // nhưng gate mà xanh-đỏ tùy lúc thì không dùng được.
+  workers: 1,
   reporter: "list",
   use: {
     baseURL: e2eBaseUrl,
