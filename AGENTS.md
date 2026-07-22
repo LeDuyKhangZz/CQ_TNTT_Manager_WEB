@@ -186,7 +186,9 @@ Sau task hoặc trước khi hết phiên:
 
 - 5 ngành; Dự trưởng không phải ngành.
 - Không đơn vị TNTT ngoài ngành/lớp giáo lý.
-- 20 lớp mặc định.
+- 19 lớp mặc định: 18 lớp giáo lý thuộc 5 ngành và 1 lớp Dự trưởng chỉ hoạt động trong HK1.
+- Không có Chiên Con 3; Thiếu 3 không chia A/B.
+- Lớp Dự trưởng được tính vào tổng số lớp nhưng Dự trưởng không phải ngành.
 - Một student một lớp chính/năm.
 - Một account một role active.
 - Role ngành có sector cụ thể.

@@ -53,6 +53,16 @@ export const CLASS_ROLES: readonly AppRole[] = [
   "trainee_assistant",
 ];
 
+export const STAFF_PROFILE_ROLES: readonly AppRole[] = [
+  "group_leader",
+  "deputy_group_leader",
+  "secretary",
+  "treasurer",
+  "sector_leader",
+  "sector_deputy",
+  ...CLASS_ROLES,
+];
+
 export function isAppRole(value: unknown): value is AppRole {
   return typeof value === "string" && APP_ROLES.includes(value as AppRole);
 }

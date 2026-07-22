@@ -343,11 +343,13 @@ Về sớm: 0
 
 - Sticky student column.
 - Assessment dynamic columns.
+- Không render sẵn bộ cột cố định; lớp chỉ thấy các assessment Giáo lý viên đã tạo và có thể chỉ có Giữa kỳ + Cuối kỳ.
+- Giáo lý viên có thể thêm nhiều cột cùng loại hoặc bỏ hẳn một loại, gồm kiểm tra 15 phút.
 - Horizontal scroll desktop.
 - Mobile chọn từng assessment hoặc từng student, không ép full spreadsheet.
 - Empty = chưa nhập, không hiển thị 0.
 - Input 0..10.
-- Hệ số hiển thị ở header.
+- Hệ số hiển thị ở header và sửa được tại form cột trước khi gradebook lock.
 - Lock state rõ.
 - Export giữ filter.
 

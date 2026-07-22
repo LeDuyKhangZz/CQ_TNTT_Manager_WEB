@@ -7,8 +7,10 @@ import { createClient } from "@/lib/supabase/server";
 import {
   academicYearIdSchema,
   academicYearInputSchema,
+  attendanceSettingsSchema,
   updateClassSchema,
   type AcademicYearInput,
+  type AttendanceSettingsInput,
   type UpdateClassInput,
 } from "../schemas";
 import { requireAcademicWrite, requireSetCurrentYear } from "./permissions";
@@ -100,6 +102,45 @@ export async function updateClass(input: UpdateClassInput): Promise<AcademicActi
   } catch (error) {
     return failure(error);
   }
+}
+
+export async function updateAttendanceSettings(
+  input: AttendanceSettingsInput,
+): Promise<AcademicActionResult> {
+  try {
+    const actor = await requireAcademicWrite();
+    const parsed = attendanceSettingsSchema.parse(input);
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("academic_years")
+      .update({
+        attendance_lock_days: parsed.attendanceLockDays,
+        attendance_edit_lease_minutes: parsed.attendanceEditLeaseMinutes,
+        attendance_warning_consecutive_absences: parsed.warningConsecutiveAbsences,
+        attendance_warning_consecutive_sundays: parsed.warningConsecutiveSundays,
+        // UI nhập phần trăm cho dễ đọc; DB lưu tỷ lệ 0..1.
+        attendance_warning_rate_threshold: parsed.warningRatePercent / 100,
+        updated_by: actor.profileId,
+      })
+      .eq("id", parsed.academicYearId);
+    if (error) throw new AppError(error.code === "42501" ? "FORBIDDEN" : "VALIDATION_ERROR");
+    revalidatePath("/admin");
+    revalidatePath("/attendance");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function updateAttendanceSettingsFromForm(formData: FormData): Promise<void> {
+  await updateAttendanceSettings({
+    academicYearId: String(formData.get("academicYearId") ?? ""),
+    attendanceLockDays: Number(formData.get("attendanceLockDays") ?? 3),
+    attendanceEditLeaseMinutes: Number(formData.get("attendanceEditLeaseMinutes") ?? 15),
+    warningConsecutiveAbsences: Number(formData.get("warningConsecutiveAbsences") ?? 3),
+    warningConsecutiveSundays: Number(formData.get("warningConsecutiveSundays") ?? 3),
+    warningRatePercent: Number(formData.get("warningRatePercent") ?? 80),
+  });
 }
 
 export async function createAcademicYearFromForm(formData: FormData): Promise<void> {

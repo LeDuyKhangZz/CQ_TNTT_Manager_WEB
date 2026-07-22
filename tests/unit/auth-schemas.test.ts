@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { changePasswordSchema, loginSchema, provisionAccountSchema } from "@/features/auth/schemas";
+import {
+  adminPasswordSchema,
+  adminUsernameSchema,
+  changePasswordSchema,
+  loginSchema,
+  provisionAccountSchema,
+} from "@/features/auth/schemas";
 
 describe("loginSchema", () => {
   it("yêu cầu username và password", () => {
@@ -22,6 +28,27 @@ describe("loginSchema", () => {
       role: "sector_leader",
       academicYearId: "00000000-0000-4000-8000-000000000001",
       sectorId: "00000000-0000-4000-8000-000000000002",
+      staffProfileId: "00000000-0000-4000-8000-000000000003",
+    }).success).toBe(true);
+  });
+
+  it("requires guardian and student accounts to link their business profile", () => {
+    const base = {
+      username: "AUTH001",
+      displayName: "Tài khoản liên kết",
+      startsOn: "2026-09-01",
+    };
+    expect(provisionAccountSchema.safeParse({ ...base, role: "guardian" }).success).toBe(false);
+    expect(provisionAccountSchema.safeParse({
+      ...base,
+      role: "guardian",
+      guardianId: "00000000-0000-4000-8000-000000000001",
+    }).success).toBe(true);
+    expect(provisionAccountSchema.safeParse({ ...base, role: "student" }).success).toBe(false);
+    expect(provisionAccountSchema.safeParse({
+      ...base,
+      role: "student",
+      studentId: "00000000-0000-4000-8000-000000000002",
     }).success).toBe(true);
   });
 });
@@ -34,5 +61,14 @@ describe("changePasswordSchema", () => {
   it("từ chối mật khẩu ngắn hoặc xác nhận không khớp", () => {
     expect(changePasswordSchema.safeParse({ password: "abc123", confirmPassword: "abc123" }).success).toBe(false);
     expect(changePasswordSchema.safeParse({ password: "matkhau1", confirmPassword: "matkhau2" }).success).toBe(false);
+  });
+});
+
+describe("admin account edits", () => {
+  it("validates username and a password of at least 8 characters", () => {
+    expect(adminUsernameSchema.safeParse("GLV123").success).toBe(true);
+    expect(adminUsernameSchema.safeParse("").success).toBe(false);
+    expect(adminPasswordSchema.safeParse("matkhau1").success).toBe(true);
+    expect(adminPasswordSchema.safeParse("ngan").success).toBe(false);
   });
 });

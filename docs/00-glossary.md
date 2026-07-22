@@ -10,8 +10,8 @@ File này ngăn Claude/Codex dùng lẫn các khái niệm tương tự nhau.
 |---|---|
 | Xứ đoàn | Phạm vi tổ chức của hệ thống: Giáo xứ Chợ Quán. Không triển khai multi-tenant. |
 | Ngành | Một trong 5 ngành: Chiên Con, Ấu Nhi, Thiếu Nhi, Nghĩa Sĩ, Hiệp Sĩ. |
-| Cấp lớp | Mức 1, 2 hoặc 3 trong một ngành; riêng Hiệp Sĩ có Hiệp 1 và Hiệp 2. |
-| Nhánh lớp | A/B đối với lớp đông. Hiện chỉ áp dụng cho Ấu Nhi và Thiếu Nhi. |
+| Cấp lớp | Mức 1, 2 hoặc 3 trong một ngành; riêng Chiên Con và Hiệp Sĩ chỉ có cấp 1 và 2. |
+| Nhánh lớp | A/B đối với lớp đông. Áp dụng cho Ấu 1..3 và Thiếu 1..2; Thiếu 3 không chia nhánh. |
 | Lớp giáo lý | Đơn vị học tập và điểm danh. Không đồng nhất với phân đoàn/chi đoàn/đội. |
 | Năm học | Khoảng tháng 9 đến tháng 5. Ngày chính xác do Super Admin cấu hình. |
 | Thiếu nhi | Đoàn sinh/học viên được quản lý trong hệ thống. |
@@ -20,6 +20,7 @@ File này ngăn Claude/Codex dùng lẫn các khái niệm tương tự nhau.
 | Giáo lý viên đại diện | Người phụ trách chính của lớp, tạo kế hoạch năm và đề nghị chuyển lớp. |
 | Giáo lý viên lớp | Thành viên đứng lớp. |
 | Dự trưởng phụ tá | Nhân sự chuyển tiếp lên Huynh trưởng, được phân công hỗ trợ một lớp. Dự trưởng không phải ngành. |
+| Lớp Dự trưởng | Một lớp chuyển tiếp hoạt động trong HK1, được tính là một trong 19 lớp nhưng không thuộc ngành/cấp giáo lý. Không đồng nhất với Dự trưởng phụ tá đang được phân công vào các lớp giáo lý. |
 | Trưởng ngành | Role có tên hiển thị kèm ngành, ví dụ `Trưởng ngành Ấu Nhi`. |
 | Phó ngành | Role có tên hiển thị kèm ngành, ví dụ `Phó ngành Thiếu Nhi`. |
 | Ban | Nhóm chuyên môn như Ban Kỹ thuật, Ban Sinh hoạt. Chức vụ Ban không phải role hệ thống. |
@@ -33,10 +34,10 @@ File này ngăn Claude/Codex dùng lẫn các khái niệm tương tự nhau.
 | Đề nghị chuyển lớp | Nghiệp vụ cuối năm, không phải mục trên trang chi tiết thiếu nhi. |
 | Báo cáo đã chốt | Snapshot bất biến của báo cáo tại thời điểm công bố. |
 
-## 3. 20 lớp mặc định
+## 3. 19 lớp mặc định
 
 ```text
-Chiên Con: Chiên Con 1, Chiên Con 2, Chiên Con 3
+Chiên Con: Chiên Con 1, Chiên Con 2
 
 Ấu Nhi:
 Ấu 1A, Ấu 1B
@@ -46,14 +47,18 @@ Chiên Con: Chiên Con 1, Chiên Con 2, Chiên Con 3
 Thiếu Nhi:
 Thiếu 1A, Thiếu 1B
 Thiếu 2A, Thiếu 2B
-Thiếu 3A, Thiếu 3B
+Thiếu 3
 
 Nghĩa Sĩ: Nghĩa 1, Nghĩa 2, Nghĩa 3
 
 Hiệp Sĩ: Hiệp 1, Hiệp 2
+
+Dự trưởng: Dự trưởng (chỉ hoạt động trong HK1)
 ```
 
-Không tạo tùy tiện `Ấu 4`, `Thiếu 5`, `Hiệp 3`.
+Tổng số gồm **18 lớp giáo lý thuộc 5 ngành** và **1 lớp Dự trưởng trong HK1**. Lớp Dự trưởng được tính vào tổng số lớp vận hành nhưng Dự trưởng không phải ngành.
+
+Không có `Chiên Con 3`, `Thiếu 3A`, `Thiếu 3B` hoặc lớp Dự trưởng thứ hai. Không tạo tùy tiện `Ấu 4`, `Thiếu 4`, `Hiệp 3`.
 
 ## 4. Role hệ thống
 

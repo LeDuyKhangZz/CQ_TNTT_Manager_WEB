@@ -21,3 +21,28 @@ export async function listAcademicYears(): Promise<AcademicYearSummary[]> {
     ({ classes, ...year }) => ({ ...year, classCount: classes[0]?.count ?? 0 }),
   );
 }
+
+export type AttendanceSettings = Pick<
+  Tables<"academic_years">,
+  | "id"
+  | "code"
+  | "attendance_lock_days"
+  | "attendance_edit_lease_minutes"
+  | "attendance_warning_consecutive_absences"
+  | "attendance_warning_consecutive_sundays"
+  | "attendance_warning_rate_threshold"
+>;
+
+/** Cấu hình điểm danh của năm học hiện hành (D-32, D-33, D-58). */
+export async function getCurrentAttendanceSettings(): Promise<AttendanceSettings | null> {
+  await requireAuthContext("/admin");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("academic_years")
+    .select(
+      "id, code, attendance_lock_days, attendance_edit_lease_minutes, attendance_warning_consecutive_absences, attendance_warning_consecutive_sundays, attendance_warning_rate_threshold",
+    )
+    .eq("status", "current")
+    .maybeSingle();
+  return data ?? null;
+}

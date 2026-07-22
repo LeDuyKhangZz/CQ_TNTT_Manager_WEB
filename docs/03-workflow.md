@@ -16,17 +16,18 @@
 **Luồng:**
 
 1. Tạo năm học với code, ngày bắt đầu/kết thúc.
-2. Sao chép danh mục 20 lớp từ template.
-3. Ấu/Thiếu mặc định có A/B.
-4. Chọn các cấu hình:
+2. Sao chép danh mục 19 lớp từ template: 18 lớp giáo lý và 1 lớp Dự trưởng trong HK1.
+3. Ấu 1..3 và Thiếu 1..2 mặc định có A/B; Thiếu 3 không chia nhánh.
+4. Không tạo Chiên Con 3; lớp Dự trưởng được tính vào tổng lớp nhưng không thuộc ngành.
+5. Chọn các cấu hình:
    - khóa điểm danh sau 3 ngày;
    - lease 15 phút;
    - trọng số attendance;
    - hệ số điểm;
    - bật/tắt tính năng Top 5.
-5. Tạo các lớp ở trạng thái active.
-6. Phân công Trưởng/Phó ngành và nhân sự lớp.
-7. Chỉ khi dữ liệu sẵn sàng mới đặt năm học thành current.
+6. Tạo các lớp ở trạng thái active; lớp Dự trưởng chỉ hoạt động trong HK1.
+7. Phân công Trưởng/Phó ngành và nhân sự lớp.
+8. Chỉ khi dữ liệu sẵn sàng mới đặt năm học thành current.
 
 **Exception:**
 
@@ -54,23 +55,33 @@
 1. Tạo staff profile; sinh `GLVxxx`.
 2. Chọn danh xưng Anh/Chị/Dì/Sơ/Cha/Thầy.
 3. Tạo account.
-4. Gán đúng một primary role.
-5. Nếu role ngành, gán sector.
-6. Nếu role lớp, gán class.
-7. Có thể thêm tối đa hai membership Ban.
+4. Liên kết account với `staff_profiles`; role lớp chỉ hợp lệ khi hồ sơ có phân công đúng lớp/capacity.
+5. Gán đúng một primary role.
+6. Nếu role ngành, gán sector.
+7. Nếu role lớp, gán class.
+8. Có thể thêm tối đa hai membership Ban.
 
 ### Phụ huynh
 
 1. Username là số điện thoại chuẩn hóa.
 2. Tạo account guardian.
-3. Một guardian có thể thấy mọi con liên kết.
-4. Nếu guardian đã là Giáo lý viên, không tạo role thứ hai; liên kết guardian profile vào account hiện có.
+3. Bắt buộc gắn account vào `guardians.profile_id`; không cho lưu role guardian nếu chưa liên kết.
+4. Một guardian có thể thấy mọi con liên kết.
+5. Nếu guardian đã là Giáo lý viên, không tạo role thứ hai; liên kết guardian profile vào account hiện có.
 
 ### Quên mật khẩu
 
 - Không self-reset bằng SMS trong v1.
 - Super Admin đặt mật khẩu tạm mới.
 - Không ai xem được mật khẩu hiện tại.
+
+### Quản trị account đã có
+
+1. Super Admin có thể đổi username hoặc đặt mật khẩu mới cho account không phải Super Admin; mật khẩu mới luôn bật lại `must_change_password`.
+2. Đổi username phải đồng bộ cả email alias nội bộ của Supabase Auth và `profiles.username`.
+3. Super Admin có thể xóa account không phải Super Admin sau bước xác nhận.
+4. Xóa account giữ nguyên hồ sơ `staff_profiles`/`guardians`/`students` và đặt liên kết `profile_id` về `null`.
+5. Không cho sửa/xóa account đang đăng nhập hoặc account có active role `super_admin`.
 
 ## WF-03 — Tạo hồ sơ thiếu nhi và ghi danh
 
@@ -175,12 +186,16 @@ Không cần cron nếu Vercel Hobby không phù hợp; có thể tính qua view
 6. Có thể đổi người dạy mà không cần lý do.
 7. Phụ huynh/thiếu nhi chỉ thấy dữ liệu được phép của tuần tới.
 
-Không duyệt, không version workflow.
+Projection tuần tới chỉ gồm ngày, tên bài, phần chuẩn bị, người phụ trách và nhãn `Kiểm tra`;
+không trả mục tiêu, nội dung giáo lý/Lời Chúa, trò chơi, bài hát, bài tập, ghi chú hay tài liệu.
+
+Tài liệu đi vào bucket private `teaching-materials` (tối đa 5 MB). Representative thay/gỡ tệp;
+staff đúng phạm vi lấy signed URL 60 giây. Không duyệt, không version workflow.
 
 ## WF-08 — Tạo bài kiểm tra và nhập điểm
 
-1. Giáo lý viên lớp/đại diện tạo assessment.
-2. Chọn loại và hệ số mặc định; có thể chỉnh nếu quyền cho phép.
+1. Giáo lý viên lớp/đại diện tạo bao nhiêu assessment tùy nhu cầu thực tế của lớp; không có bộ cột bắt buộc và có thể bỏ hoàn toàn loại 15 phút.
+2. Chọn loại; hệ thống điền hệ số mặc định 1/2/3/1. Giáo lý viên có thể đổi hệ số dương của từng assessment trước khi khóa bảng điểm.
 3. Roster điểm sinh động theo enrollment.
 4. Nhập điểm 0..10.
 5. Ô trống là `null`, không phải 0.
@@ -188,6 +203,8 @@ Không duyệt, không version workflow.
 7. Nhập nhận xét công khai hoặc ghi chú nội bộ.
 8. Giáo lý viên đại diện khóa bảng điểm.
 9. Chỉ Super Admin mở lại.
+
+Ví dụ hợp lệ: lớp chỉ có hai assessment `Giữa kỳ` hệ số 2 và `Cuối kỳ` hệ số 3. Thêm, xóa hoặc đổi hệ số một assessment phải cập nhật ngay cấu trúc cột và điểm trung bình có trọng số; mọi thay đổi bị chặn sau khi khóa.
 
 Không cần người duyệt.
 
@@ -237,7 +254,8 @@ flowchart TD
     F --> H
     G --> H
     H -->|Duyệt| I[RPC đóng enrollment cũ + tạo enrollment mới nếu cần]
-    H -->|Trả lại| B
+    H -->|Từ chối| J[Đóng review là rejected]
+    J --> B
 ```
 
 ### Quy tắc
@@ -247,6 +265,8 @@ flowchart TD
 - Chỉ lớp cuối ngành xét điều kiện bí tích.
 - Cảnh báo không hard-block.
 - Approval nguyên tử.
+- Review bị từ chối có thể được đại diện gửi lại; cùng `source_enrollment_id` được cập nhật về `pending`.
+- Duyệt lại một review đã approved là idempotent, không tạo enrollment thứ hai.
 - Hiệp 2: tạo đề xuất Dự trưởng, không tạo role tự động.
 - Không hiển thị workflow này trên trang chi tiết thiếu nhi.
 

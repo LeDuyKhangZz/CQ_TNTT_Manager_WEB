@@ -39,7 +39,7 @@ try {
     must_change_password: true,
   });
   if (profileError) throw new Error("Profile provisioning failed.");
-  const { error: roleError } = await admin.from("role_assignments").insert({ profile_id: userId, role: "guardian" });
+  const { error: roleError } = await admin.from("role_assignments").insert({ profile_id: userId, role: "parish_priest" });
   if (roleError) throw new Error("Role provisioning failed.");
 
   const firstLogin = await userClient.auth.signInWithPassword({ email, password: initialPassword });

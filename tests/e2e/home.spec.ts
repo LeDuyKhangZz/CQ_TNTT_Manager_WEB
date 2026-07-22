@@ -20,6 +20,11 @@ test("admin direct URL cũng yêu cầu đăng nhập", async ({ page }) => {
 test("login và dashboard không tràn ngang", async ({ page }) => {
   for (const route of ["/login", "/change-password"]) {
     await page.goto(route);
+    // `/change-password` chuyển hướng về `/login` khi chưa đăng nhập. Đo ngay
+    // lúc đang chuyển thì hoặc "context destroyed" hoặc đo nhầm khung dở dang —
+    // bộ authenticated-shell đã phải chờ y hệt vì lý do này.
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("body").waitFor({ state: "attached" });
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,
     );

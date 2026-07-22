@@ -18,19 +18,23 @@ export interface AccountAdminOptions {
   academicYears: Array<{ id: string; name: string }>;
   sectors: Array<{ id: string; name: string }>;
   classes: Array<{ id: string; academicYearId: string; displayName: string }>;
-  staffProfiles: Array<{ id: string; label: string }>;
+  staffProfiles: Array<{ id: string; username: string; displayName: string; saintName: string | null; phone: string | null; email: string | null; label: string }>;
+  guardians: Array<{ id: string; username: string; displayName: string; label: string }>;
+  students: Array<{ id: string; username: string; displayName: string; saintName: string; label: string }>;
 }
 
 export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
   const context = await requireAuthContext("/admin");
   if (context.role !== "super_admin") throw new AppError("FORBIDDEN");
   const supabase = await createClient();
-  const [profilesResult, yearsResult, sectorsResult, classesResult, staffResult] = await Promise.all([
+  const [profilesResult, yearsResult, sectorsResult, classesResult, staffResult, guardiansResult, studentsResult] = await Promise.all([
     supabase.from("profiles").select("id, username, display_name, account_status, role_assignments(role, is_active)").order("username"),
     supabase.from("academic_years").select("id, name").order("start_date", { ascending: false }),
     supabase.from("sectors").select("id, name").order("sort_order"),
     supabase.from("classes").select("id, academic_year_id, display_name").order("display_name"),
-    supabase.from("staff_profiles").select("id, staff_code, full_name").is("profile_id", null).order("full_name"),
+    supabase.from("staff_profiles").select("id, staff_code, full_name, saint_name, phone, email").is("profile_id", null).order("full_name"),
+    supabase.from("guardians").select("id, full_name, phone").is("profile_id", null).eq("status", "active").order("full_name"),
+    supabase.from("students").select("id, student_code, saint_name, full_name").is("profile_id", null).eq("status", "active").order("full_name"),
   ]);
 
   const profiles = (profilesResult.data ?? []) as unknown as Array<{
@@ -58,7 +62,25 @@ export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
     })),
     staffProfiles: (staffResult.data ?? []).map((staff) => ({
       id: staff.id,
+      username: staff.staff_code,
+      displayName: staff.full_name,
+      saintName: staff.saint_name,
+      phone: staff.phone,
+      email: staff.email,
       label: `${staff.staff_code} · ${staff.full_name}`,
+    })),
+    guardians: (guardiansResult.data ?? []).map((guardian) => ({
+      id: guardian.id,
+      username: guardian.phone,
+      displayName: guardian.full_name,
+      label: `${guardian.full_name} · ${guardian.phone}`,
+    })),
+    students: (studentsResult.data ?? []).map((student) => ({
+      id: student.id,
+      username: student.student_code,
+      displayName: student.full_name,
+      saintName: student.saint_name,
+      label: `${student.student_code} · ${student.saint_name} ${student.full_name}`,
     })),
   };
 }

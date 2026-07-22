@@ -29,8 +29,21 @@ export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/attendance", public: false, roles: OPERATIONAL_STAFF_ROLES },
   { path: "/teaching-plan", public: false },
   { path: "/results", public: false },
+  { path: "/promotions", public: false, roles: STAFF_ROLES.filter((role) => role !== "treasurer") },
+  // Portal phụ huynh không giới hạn theo role: một GLV vẫn có thể là phụ huynh
+  // và phải vào được mục "con của tôi" (D-25). Quyền thật nằm ở RLS — trang chỉ
+  // hiện những em mà `students`/`absence_requests` cho phép đọc.
+  { path: "/parent", public: false },
+  { path: "/student", public: false, roles: ["student"] },
   { path: "/committees", public: false, roles: STAFF_ROLES },
   { path: "/reports", public: false, roles: STAFF_ROLES },
+  // Import creates students/guardians/enrollments in bulk: global-write only,
+  // matching app.can_global_write() on the import tables (docs/09 §9).
+  {
+    path: "/imports",
+    public: false,
+    roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"],
+  },
   { path: "/admin", public: false, roles: ["super_admin"] },
 ];
 

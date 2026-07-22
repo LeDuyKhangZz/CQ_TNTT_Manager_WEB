@@ -4,7 +4,7 @@ Bộ tài liệu này là nguồn sự thật để **Claude Code và Codex ph�
 
 ## Mục tiêu
 
-Xây dựng một web/PWA tiếng Việt, dễ sử dụng trên laptop và điện thoại, phục vụ khoảng **900 thiếu nhi và 20 lớp**, tập trung vào:
+Xây dựng một web/PWA tiếng Việt, dễ sử dụng trên laptop và điện thoại, phục vụ khoảng **900 thiếu nhi và 19 lớp**, tập trung vào:
 
 - Quản lý năm học, ngành, lớp và hồ sơ thiếu nhi.
 - Quản lý Huynh trưởng/Giáo lý viên/Dự trưởng phụ tá.

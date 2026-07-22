@@ -177,6 +177,9 @@ Ràng buộc:
 - `class_representative/class_teacher/trainee_assistant` bắt buộc `class_id`.
 - Global role không được có class/sector scope.
 - Trigger không cho tạo role scope sai năm học/lớp.
+- Active role `guardian` bắt buộc tồn tại đúng một `guardians.profile_id = profile_id`; active role `student` tương tự với `students.profile_id`.
+- Mọi active role mang tính GLV (Xứ đoàn/Thư ký/Thủ quỹ, ngành, lớp) bắt buộc có `staff_profiles.profile_id = profile_id`; role lớp còn bắt buộc active class assignment đúng class/capacity.
+- Khi xóa Auth account, `profiles`/`role_assignments` bị cascade; `staff_profiles.profile_id`, `guardians.profile_id`, `students.profile_id` dùng `on delete set null` để giữ hồ sơ nghiệp vụ.
 
 ### 3.3 `login_alias_rules`
 
@@ -205,6 +208,9 @@ Nếu triển khai bảng mapping, bảng đó chỉ server/service-role đọc;
 | top5_enabled | boolean |
 | attendance_lock_days | smallint default 3 |
 | attendance_edit_lease_minutes | smallint default 15 |
+| attendance_warning_consecutive_absences | smallint default 3 (D-58) |
+| attendance_warning_consecutive_sundays | smallint default 3 (D-58) |
+| attendance_warning_rate_threshold | numeric(4,3) default 0.800 (D-58) |
 | retention_until | date |
 | created_at/updated_at/updated_by | metadata |
 
@@ -228,7 +234,7 @@ Seed cố định:
 |---|---|
 | id | PK |
 | sector_id | FK |
-| level_number | 1..3 |
+| level_number | 1..3; Chiên Con và Hiệp Sĩ chỉ seed 1..2 |
 | display_name | Chiên Con 1, Ấu 1, ... |
 | next_grade_level_id | nullable self FK |
 | is_sector_final_level | boolean |
@@ -239,11 +245,15 @@ Seed cố định:
 
 Seed:
 
-- Chiên Con 1..3.
+- Chiên Con 1..2.
 - Ấu 1..3.
 - Thiếu 1..3.
 - Nghĩa 1..3.
 - Hiệp 1..2.
+
+Tổng cộng 13 cấp giáo lý. Việc cho phép nhánh phải cấu hình theo cấp: Ấu 1..3 và Thiếu 1..2 cho phép A/B; Thiếu 3 không cho phép nhánh. Không suy ra A/B cho mọi cấp chỉ từ ngành Thiếu Nhi.
+
+Lớp Dự trưởng HK1 không phải `grade_level`, không được gắn giả vào ngành Hiệp Sĩ hoặc tạo ngành thứ sáu.
 
 ### 4.4 `classes`
 
@@ -251,7 +261,9 @@ Seed:
 |---|---|
 | id | uuid PK |
 | academic_year_id | FK |
-| grade_level_id | FK |
+| grade_level_id | FK; bắt buộc với lớp giáo lý, để trống với lớp Dự trưởng |
+| class_kind | `catechism` hoặc `trainee`; mặc định `catechism` |
+| term_scope | `full_year` hoặc `semester_1`; lớp Dự trưởng bắt buộc `semester_1` |
 | section_code | nullable text, `A`/`B` |
 | display_name | text |
 | status | active/inactive/closed |
@@ -259,13 +271,16 @@ Seed:
 | notes | text nullable |
 | created_at/updated_at/updated_by | metadata |
 
-Unique: `(academic_year_id, grade_level_id, coalesce(section_code,''))`.
+Unique: lớp giáo lý dùng `(academic_year_id, grade_level_id, coalesce(section_code,''))`; mỗi năm học chỉ có tối đa một lớp `trainee`.
 
 Check:
 
-- Chỉ Ấu/Thiếu cho phép section A/B theo seed/config.
+- Chỉ Ấu 1..3 và Thiếu 1..2 cho phép section A/B theo seed/config; Thiếu 3 không có section.
 - Không tạo level ngoài `grade_levels`.
 - `display_name` có thể được generated/validated từ grade + section.
+- Lớp `trainee` có tên hiển thị `Dự trưởng`, không có `grade_level_id`/`section_code`, không thuộc sector và chỉ hoạt động trong HK1.
+
+`class_templates` phải seed đúng 19 dòng: 18 lớp giáo lý và 1 lớp Dự trưởng HK1. Template Dự trưởng phải giữ các ràng buộc `class_kind`/`term_scope` tương ứng khi sinh lớp cho năm học.
 
 ## 5. Hồ sơ nhân sự
 
@@ -420,11 +435,19 @@ Constraint:
 
 Unique `(class_id, attendance_date, meeting_type)`.
 
+Đã hiện thực ở `20260721000300_attendance_sessions.sql`, thêm so với bảng trên:
+`academic_year_id`, `finalized_by`, `unlocked_at`, `unlocked_by`.
+
 Rules:
 
-- `locked_at = finalized_at + academic_year.attendance_lock_days`.
+- `locked_at = finalized_at + academic_year.attendance_lock_days`. Chốt lại lần nữa **không** đẩy
+  lùi mốc này: `finalized_at` giữ nguyên lần chốt đầu tiên, nếu không thì bấm chốt lại là gia hạn
+  vô hạn cửa sổ sửa.
 - Lease hết hạn khi `last_activity_at + lease_minutes < now()`.
 - Chỉ một editor hợp lệ.
+- CHECK chặn ngày không phải thứ Năm/Chúa nhật (D-29).
+- `unlocked_at` khác null nghĩa là Super Admin vừa mở khóa: từ lúc đó tới khi chốt lại, chỉ Super
+  Admin ghi được (D-33). Chốt lại xóa cờ và đặt `locked_at` mới.
 
 ### 7.2 `student_attendance_records`
 
@@ -440,10 +463,16 @@ Rules:
 
 Unique `(attendance_session_id, enrollment_id)`.
 
+Thêm ba cột **phi chuẩn hóa cho RLS**: `class_id`, `student_id`, `session_finalized_at`. Chúng suy
+ra hoàn toàn từ session và enrollment, do trigger `app.sync_student_attendance_keys` điền — client
+không đặt được. Lý do: Gate Phase 2 đo được policy gọi hàm theo từng dòng làm bảng 900 dòng mất
+2,4 s, nên policy ở đây chỉ so cột với mảng phạm vi tính một lần. `staff_attendance_records` cũng
+theo khuôn này với `class_id`, `staff_profile_id`, `session_finalized_at`.
+
 Trigger:
 
 - Enrollment phải thuộc class của session và đang mở tại ngày điểm danh.
-- Khi session hoàn tất, mọi roster active phải có record.
+- Khi session hoàn tất, mọi roster active phải có record (kiểm trong RPC finalize).
 - Client không được tự đổi session/class qua update.
 
 ### 7.3 `staff_attendance_records`
@@ -468,6 +497,46 @@ Theo academic year:
 | 1.0 | 0.8 | 0.8 | 0.5 | 0.0 |
 
 Có thể tách mass/catechism nếu sau này cần.
+
+Trigger trên `academic_years` tự tạo một dòng cho mỗi năm học mới: view thống kê join thẳng vào
+bảng này nên thiếu dòng là mất sạch số liệu của năm đó.
+
+### 7.5 `absence_requests`
+
+| Cột | Ghi chú |
+|---|---|
+| id | uuid PK |
+| student_id | FK |
+| class_id / academic_year_id | suy ra từ ghi danh đang mở, trigger điền, client không đặt được |
+| absence_date | date, CHECK đúng thứ Năm/Chúa nhật |
+| meeting_type | thursday/sunday |
+| reason | bắt buộc, <= 500 ký tự |
+| status | pending/acknowledged/cancelled |
+| staff_note, reviewed_by, reviewed_at | phần của giáo lý viên |
+| created_by | FK profiles |
+
+Partial unique `(student_id, absence_date, meeting_type)` khi `status <> 'cancelled'`.
+
+Rules (WF-10):
+
+- Chỉ phụ huynh của chính em đó tạo được đơn; thiếu nhi không tự xin nghỉ.
+- Người gửi chỉ được **hủy** đơn còn đang chờ, không sửa lý do, không tự duyệt.
+- Giáo lý viên ghi nhận và ghi chú, nhưng **không hủy đơn của phụ huynh**.
+- Đơn **không bao giờ** tự ghi vào `student_attendance_records`; nó chỉ hiện lên trang điểm danh
+  như gợi ý, người điểm danh vẫn tự chọn.
+
+### 7.6 View chuyên cần
+
+- `v_student_attendance_summary` — theo em/năm học, **chỉ đếm buổi đã chốt**: tỷ lệ có trọng số,
+  hai điểm thang 10 tách riêng Lễ và Giáo lý (D-59), chuỗi vắng liên tiếp, chuỗi Chúa nhật vắng lễ,
+  số buổi lệch Lễ/Giáo lý, và ba cờ cảnh báo so với ngưỡng của năm học (D-58).
+- `v_class_attendance_summary` — gộp theo lớp, dựng trên view trên.
+- `v_staff_attendance_summary` — chuyên cần giáo lý viên theo lớp/năm học.
+
+Cả ba dùng `security_invoker` nên phụ huynh/thiếu nhi đọc view vẫn chỉ thấy phần của mình.
+
+Ngưỡng cảnh báo nằm ở `academic_years`: `attendance_warning_consecutive_absences` (mặc định 3),
+`attendance_warning_consecutive_sundays` (3), `attendance_warning_rate_threshold` (0.800).
 
 ## 8. Giáo án và lịch dạy
 
@@ -498,14 +567,20 @@ Có thể tách mass/catechism nếu sau này cần.
 | song | text nullable |
 | homework | text nullable |
 | preparation | text nullable |
-| material_path | text nullable |
+| material_path | text nullable, unique khi có giá trị |
+| material_name | text nullable |
+| material_mime_type | text nullable, allowlist PDF/Office/image/text |
+| material_size | bigint nullable, 1 byte..5 MB |
 | teacher_staff_id | FK |
 | item_type | lesson/assessment |
-| assessment_id | nullable FK |
 | note | nullable |
 | created_at/updated_at/updated_by | |
 
-Unique `(teaching_plan_id, planned_date)` theo yêu cầu một bài/tuần; nếu thực tế có nhiều mục một ngày, đổi thành `(plan_id, planned_date, sequence_no)`.
+Unique `(teaching_plan_id, planned_date)` theo quyết định hiện tại một mục/ngày; nếu thực tế có nhiều mục một ngày, đổi thành `(teaching_plan_id, planned_date, sequence_no)`. Ngày phải nằm trong năm học của lớp; `lesson` bắt buộc có người dạy đang được phân công vào lớp tại ngày đó.
+
+RLS bảng gốc chỉ cho staff trong phạm vi lớp đọc. Representative lớp hoặc nhóm global-write được ghi.
+Guardian/student không đọc bảng gốc; `get_week_ahead_teaching_items(from, days)` là projection
+`security definer` chỉ trả `class`, ngày, tên, chuẩn bị, loại mục và người dạy.
 
 ## 9. Kiểm tra và bảng điểm
 
@@ -519,7 +594,7 @@ Theo academic year:
 | academic_year_id | FK |
 | kind | assessment_kind |
 | display_name | text |
-| default_weight | numeric |
+| default_weight | numeric(5,2), check 0 < x <= 100 |
 | is_active | boolean |
 
 Seed: quiz 1, midterm 2, final 3, attendance 1.
@@ -535,10 +610,12 @@ Seed: quiz 1, midterm 2, final 3, attendance 1.
 | title | text |
 | assessment_date | date nullable |
 | max_score | numeric default 10, check 0 < x <= 10 |
-| weight | numeric > 0 |
+| weight | numeric(5,2), check 0 < x <= 100; copy từ default và cho phép staff lớp chỉnh trước lock |
 | is_published | boolean |
 | created_by | uuid |
 | created_at/updated_at/updated_by | |
+
+Không đặt unique theo `(class_id, kind)` và không đặt quota số assessment: một lớp có thể không dùng một loại nào hoặc tạo nhiều assessment cùng loại. Hệ thống không seed assessment bắt buộc cho từng lớp; chỉ seed cấu hình loại và hệ số mặc định.
 
 ### 9.3 `assessment_scores`
 
@@ -547,8 +624,12 @@ Seed: quiz 1, midterm 2, final 3, attendance 1.
 | id | uuid PK |
 | assessment_id | FK |
 | enrollment_id | FK |
+| class_id/academic_year_id/student_id | Scope keys do trigger suy ra, phục vụ RLS/index |
 | score | numeric(4,2), 0..10 nullable |
+| system_suggested_score | Đề xuất chuyên cần nullable |
+| is_manual_override | Giữ điểm chỉnh tay khi refresh đề xuất |
 | note | nullable |
+| assessment_published | Cờ phi chuẩn hóa đồng bộ từ assessment để portal RLS |
 | graded_by | uuid |
 | graded_at | timestamptz |
 | created_at/updated_at | |
@@ -557,19 +638,12 @@ Unique `(assessment_id, enrollment_id)`.
 
 Trigger enrollment cùng class/year.
 
-### 9.4 `attendance_score_overrides`
+### 9.4 Điểm chuyên cần và override
 
-| Cột | Ghi chú |
-|---|---|
-| id | uuid PK |
-| class_id | FK |
-| enrollment_id | FK |
-| academic_year_id | FK |
-| calculated_score | numeric |
-| final_score | numeric |
-| overridden_by | nullable |
-| note | nullable |
-| updated_at | |
+Không có bảng override tách rời. Cột `system_suggested_score`, `score` và
+`is_manual_override` trên `assessment_scores` giữ đề xuất, điểm cuối và trạng thái chỉnh tay.
+`refresh_attendance_assessment_scores` chỉ cập nhật đề xuất/dòng chưa override;
+`reset_attendance_score_override` đưa một dòng về lại đề xuất hệ thống.
 
 ### 9.5 `student_comments`
 
@@ -577,6 +651,7 @@ Trigger enrollment cùng class/year.
 |---|---|
 | id | uuid PK |
 | enrollment_id | FK |
+| class_id/academic_year_id/student_id | Scope keys do trigger suy ra |
 | visibility | comment_visibility |
 | content | text |
 | author_profile_id | FK |
@@ -588,11 +663,13 @@ Trigger enrollment cùng class/year.
 | Cột | Ghi chú |
 |---|---|
 | class_id | PK/FK |
+| academic_year_id | FK |
 | locked_at | timestamptz |
 | locked_by | uuid |
 | unlocked_at | nullable |
 | unlocked_by | nullable |
 | is_locked | boolean |
+| results_published_at/results_published_by | nullable, dành cho mốc công bố tổng thể |
 
 Chỉ class representative khóa; Super Admin mở.
 
@@ -609,7 +686,8 @@ Chỉ class representative khóa; Super Admin mở.
 | top_n | smallint default 5, check = 5 trong v1 |
 | is_published | boolean |
 | published_at | nullable |
-| created_by | uuid |
+| published_by | nullable uuid |
+| created_by/updated_by | uuid |
 | created_at/updated_at | |
 
 ### 9.8 `leaderboard_entries`
@@ -621,9 +699,12 @@ Dùng cho custom competition hoặc snapshot khi publish.
 | id | uuid PK |
 | leaderboard_id | FK |
 | enrollment_id | FK |
+| class_id/academic_year_id | Scope keys snapshot |
 | rank | smallint 1..5 |
 | score | numeric nullable |
 | title | nullable |
+| saint_name_snapshot/full_name_snapshot | Tên bất biến khi publish |
+| leaderboard_published | Cờ phi chuẩn hóa cho portal RLS |
 | created_at | |
 
 Unique rank và enrollment trong leaderboard.
@@ -636,7 +717,9 @@ Unique rank và enrollment trong leaderboard.
 |---|---|
 | id | uuid PK |
 | source_enrollment_id | unique FK |
+| source_class_id/source_academic_year_id/student_id | Scope keys bất biến của đề xuất |
 | proposed_target_class_id | nullable FK |
+| propose_trainee | boolean |
 | proposed_status | promotion_status |
 | warning_snapshot | jsonb |
 | representative_note | nullable |
@@ -646,6 +729,7 @@ Unique rank và enrollment trong leaderboard.
 | reviewed_at | nullable |
 | review_note | nullable |
 | final_status | promotion_status |
+| approved_target_class_id | nullable FK |
 | created_enrollment_id | nullable FK |
 | created_at/updated_at | |
 
@@ -805,7 +889,10 @@ Chi tiết tại `docs/13-summer-camp-backlog.md`.
 | `report-snapshots` | No | PDF/XLSX đã chốt |
 | `camp-receipts` | No | Phase 8 |
 
-Dùng signed URL ngắn hạn. Không public bucket cho dữ liệu cá nhân.
+`teaching-materials` giới hạn 5 MB, allowlist MIME và path
+`{class_id}/{teaching_plan_item_id}/{uuid}-{safe_filename}`. Chỉ representative/global-write tải lên,
+thay hoặc xóa; staff đúng phạm vi lớp tải bằng signed URL 60 giây. Guardian/student không có policy
+đọc tài liệu. Các bucket đều dùng signed URL ngắn hạn; không public bucket cho dữ liệu cá nhân.
 
 ## 16. Index chính
 

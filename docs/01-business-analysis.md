@@ -2,7 +2,7 @@
 
 ## 1. Tóm tắt sản phẩm
 
-`CQ TNTT Manager` là web/PWA nội bộ dành cho Giáo xứ Chợ Quán để quản lý khoảng 900 thiếu nhi và 20 lớp giáo lý.
+`CQ TNTT Manager` là web/PWA nội bộ dành cho Giáo xứ Chợ Quán để quản lý khoảng 900 thiếu nhi và 19 lớp.
 
 Sản phẩm ưu tiên ba mục tiêu:
 
@@ -19,7 +19,9 @@ Sản phẩm ưu tiên ba mục tiêu:
 - Dashboard theo role.
 - Năm học.
 - 5 ngành.
-- 20 lớp mặc định, hỗ trợ nhánh A/B.
+- 19 lớp mặc định: 18 lớp giáo lý thuộc 5 ngành và 1 lớp Dự trưởng trong HK1.
+- Ấu 1..3 và Thiếu 1..2 có nhánh A/B; Thiếu 3 là một lớp, không chia nhánh.
+- Không có Chiên Con 3.
 - Hồ sơ thiếu nhi.
 - Một người giám hộ cho mỗi thiếu nhi.
 - Hồ sơ Huynh trưởng/Giáo lý viên/Dự trưởng.
@@ -73,12 +75,14 @@ Người dùng dự kiến: Khang Nhỏ và Mr. Đạt.
 Mục tiêu:
 
 - Cấu hình toàn hệ thống.
-- Quản lý tài khoản, username và đặt lại mật khẩu.
+- Quản lý tài khoản: tạo, sửa username, đặt mật khẩu mới, vô hiệu hóa và xóa account không phải Super Admin.
 - Mở khóa điểm danh/bảng điểm.
 - Quản lý năm học, role và phạm vi.
 - Import dữ liệu.
 - Xem/sửa mọi module.
 - Không được xem mật khẩu hiện tại vì hệ thống không lưu mật khẩu dạng đọc được.
+- Không tự sửa/xóa account đang đăng nhập và không sửa/xóa account Super Admin khác qua luồng quản trị thông thường.
+- Xóa account chỉ xóa khả năng đăng nhập/role; hồ sơ nhân sự, guardian và student phải được giữ lại rồi bỏ liên kết account.
 
 ### 3.2 Cấp cao Xứ đoàn
 
@@ -109,6 +113,8 @@ Mục tiêu:
 - Nếu được phân công vào một lớp, có thể thực hiện nghiệp vụ lớp đó.
 
 ### 3.4 Giáo lý viên đại diện
+
+Mọi account mang role Giáo lý viên (`group_leader`, `deputy_group_leader`, `secretary`, `treasurer`, role ngành và role lớp) bắt buộc liên kết đúng một `staff_profiles` record. Với role lớp, hồ sơ đó còn phải đang được phân công vào chính lớp với capacity tương ứng. Super Admin và Cha sở/Cha phó không bị ép liên kết hồ sơ GLV.
 
 - Quản lý lớp được phân công.
 - Tạo kế hoạch giảng dạy năm.
@@ -141,10 +147,13 @@ Quyền gần giống Giáo lý viên lớp, nhưng thao tác nhập điểm/nh�
 - Không xem lịch sử bí tích.
 - Không chỉnh sửa hồ sơ.
 - Nếu người dùng đồng thời là Giáo lý viên và phụ huynh, giữ role Giáo lý viên nhưng có thêm mục `Con của tôi`.
+- Account có primary role `guardian` bắt buộc liên kết `guardians.profile_id`; không tạo account guardian rời hồ sơ.
 
 ### 3.8 Thiếu nhi
 
 Có tài khoản từ ngành Ấu Nhi.
+
+Account role `student` bắt buộc liên kết `students.profile_id`; không tạo account student rời hồ sơ.
 
 - Xem bản thân.
 - Xem lịch/bài tuần tới/người dạy.
@@ -182,20 +191,22 @@ Không hard delete hồ sơ; chuyển sang archived/withdrawn.
 Mặc định chuyển lớp giữ nhánh:
 
 - Ấu 1A → Ấu 2A.
-- Thiếu 2B → Thiếu 3B.
+- Thiếu 2B → Thiếu 3.
 
 Người duyệt có thể chuyển A ↔ B.
 
 ### 4.4 Lộ trình
 
 ```text
-Chiên Con 1 → Chiên Con 2 → Chiên Con 3
+Chiên Con 1 → Chiên Con 2
 → Ấu 1A/B → Ấu 2A/B → Ấu 3A/B
-→ Thiếu 1A/B → Thiếu 2A/B → Thiếu 3A/B
+→ Thiếu 1A/B → Thiếu 2A/B → Thiếu 3
 → Nghĩa 1 → Nghĩa 2 → Nghĩa 3
 → Hiệp 1 → Hiệp 2
 → Đề xuất trở thành Dự trưởng
 ```
+
+Lớp Dự trưởng đầu năm chỉ hoạt động trong HK1 và vẫn được tính là một lớp trong tổng 19 lớp. Đây là lớp chuyển tiếp, không phải ngành thứ sáu và không làm thay đổi quy tắc Hiệp 2 chỉ đề xuất trở thành Dự trưởng.
 
 ## 5. Hồ sơ thiếu nhi
 
@@ -345,15 +356,17 @@ Phụ huynh/thiếu nhi thấy:
 
 ### 8.1 Cột động
 
-Không tạo cột database mới mỗi lần kiểm tra. Mỗi bài kiểm tra là một record.
+Không tạo cột database mới mỗi lần kiểm tra. Mỗi bài kiểm tra là một record và trở thành một cột động trong bảng điểm.
 
-Loại mặc định:
+Các loại được hỗ trợ:
 
 - Kiểm tra 15 phút.
 - Giữa kỳ.
 - Cuối kỳ.
 - Chuyên cần.
 - Kiểm tra phát sinh.
+
+Giáo lý viên phụ trách lớp tự quyết định số lượng cột và loại cột cần dùng cho lớp mình. Không có số cột tối thiểu/tối đa theo từng loại, không tự sinh bộ cột cố định và không bắt buộc phải có cột kiểm tra 15 phút. Ví dụ một lớp có thể chỉ dùng hai cột `Giữa kỳ` và `Cuối kỳ`; một lớp khác có thể có nhiều bài 15 phút hoặc bài phát sinh.
 
 Thang điểm 10.
 
@@ -366,7 +379,7 @@ Cuối kỳ: 3
 Chuyên cần: 1
 ```
 
-Super Admin có thể đổi hệ số.
+Khi tạo cột, hệ thống lấy hệ số mặc định theo loại. Giáo lý viên phụ trách lớp có thể đổi hệ số riêng của từng cột thành số dương trước khi bảng điểm bị khóa; hệ thống phải tính lại điểm trung bình có trọng số. Super Admin cấu hình hệ số mặc định theo năm học và có thể sửa ở mọi lớp.
 
 ### 8.2 Điểm chuyên cần
 

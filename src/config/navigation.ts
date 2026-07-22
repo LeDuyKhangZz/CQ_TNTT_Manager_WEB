@@ -2,14 +2,17 @@ import type { LucideIcon } from "lucide-react";
 import {
   Bell,
   BookOpenCheck,
+  CalendarOff,
   ChartNoAxesCombined,
   CircleUserRound,
   ClipboardCheck,
+  FileSpreadsheet,
   GraduationCap,
   LayoutDashboard,
   PanelsTopLeft,
   School,
   Settings,
+  Shuffle,
   UserRoundCog,
   UsersRound,
 } from "lucide-react";
@@ -41,11 +44,15 @@ export const platformNavigation: readonly NavigationItem[] = [
   { href: "/classes", label: "Lớp học", icon: School, group: "Mục vụ", audiences: staffOnly, scopes: allStaffScopes },
   { href: "/staff", label: "Huynh trưởng/Giáo lý viên", icon: UserRoundCog, group: "Mục vụ", audiences: staffOnly, scopes: ["global", "sector", "class"] },
   { href: "/attendance", label: "Điểm danh", icon: ClipboardCheck, group: "Mục vụ", audiences: staffOnly, scopes: allStaffScopes },
+  { href: "/student/attendance", label: "Điểm danh của em", icon: ClipboardCheck, group: "Mục vụ", audiences: ["student"], scopes: ["ownership"] },
+  { href: "/parent/absence-requests", label: "Đơn xin nghỉ", icon: CalendarOff, group: "Mục vụ", audiences: ["guardian"], scopes: ["ownership"] },
   { href: "/teaching-plan", label: "Giáo án", icon: BookOpenCheck, group: "Mục vụ", audiences: ["staff", "guardian", "student"], scopes: ["global", "sector", "class", "ownership"] },
   { href: "/results", label: "Kết quả học tập", icon: GraduationCap, group: "Mục vụ", audiences: ["staff", "guardian", "student"], scopes: ["global", "sector", "class", "ownership"] },
+  { href: "/promotions", label: "Lên lớp/chuyển lớp", icon: Shuffle, group: "Mục vụ", audiences: staffOnly, scopes: allStaffScopes, roles: ["super_admin", "parish_priest", "chaplain", "group_leader", "deputy_group_leader", "secretary", "sector_leader", "sector_deputy", "class_representative", "class_teacher", "trainee_assistant"] },
   { href: "/committees", label: "Ban", icon: PanelsTopLeft, group: "Điều hành", audiences: staffOnly, scopes: allStaffScopes },
   { href: "/notifications", label: "Thông báo", icon: Bell, group: "Chung", audiences: ["staff", "guardian", "student"], scopes: ["global", "sector", "class", "ownership"] },
   { href: "/reports", label: "Báo cáo", icon: ChartNoAxesCombined, group: "Điều hành", audiences: staffOnly, scopes: allStaffScopes },
+  { href: "/imports", label: "Nhập dữ liệu Excel", icon: FileSpreadsheet, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"] },
   { href: "/admin", label: "Quản trị hệ thống", icon: Settings, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin"] },
 ];
 
@@ -58,23 +65,37 @@ export const accountNavigationItem: NavigationItem = {
   scopes: ["none"],
 };
 
+/** Tra theo href thay vì chỉ số: thêm mục mới vào platformNavigation không được
+ * làm lệch các preset mobile bên dưới. */
+function navItem(href: string, overrides: Partial<NavigationItem> = {}): NavigationItem {
+  const item = platformNavigation.find((entry) => entry.href === href);
+  if (!item) throw new Error(`Navigation item not found: ${href}`);
+  return { ...item, ...overrides };
+}
+
 export const classStaffMobileNavigation: readonly NavigationItem[] = [
-  { ...platformNavigation[0], label: "Trang chủ" },
-  platformNavigation[4],
-  { ...platformNavigation[2], label: "Lớp" },
-  platformNavigation[8],
+  navItem("/dashboard", { label: "Trang chủ" }),
+  navItem("/attendance"),
+  navItem("/classes", { label: "Lớp" }),
+  navItem("/notifications"),
   accountNavigationItem,
 ];
 
 const guardianMobileNavigation: readonly NavigationItem[] = [
-  { ...platformNavigation[0], label: "Trang chủ" },
-  { ...platformNavigation[5], label: "Lịch học" },
-  platformNavigation[6],
-  platformNavigation[8],
+  navItem("/dashboard", { label: "Trang chủ" }),
+  navItem("/parent/absence-requests", { label: "Xin nghỉ" }),
+  navItem("/results"),
+  navItem("/notifications"),
   accountNavigationItem,
 ];
 
-const studentMobileNavigation = guardianMobileNavigation;
+const studentMobileNavigation: readonly NavigationItem[] = [
+  navItem("/dashboard", { label: "Trang chủ" }),
+  navItem("/student/attendance", { label: "Điểm danh" }),
+  navItem("/results"),
+  navItem("/notifications"),
+  accountNavigationItem,
+];
 
 function isItemVisible(item: NavigationItem, context: AuthContext): boolean {
   if (context.role === null || context.audience === null || context.scopeKind === null) {

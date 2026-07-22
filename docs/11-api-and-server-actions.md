@@ -18,12 +18,14 @@ loginWithUsername(input)
 changeOwnPassword(input)
 adminProvisionAccount(input)     // SA only
 adminResetPassword(input)        // SA only
-adminChangeUsername(input)       // SA only
+adminSetPassword(input)          // SA only; force change
+adminUpdateUsername(input)       // SA only; Auth alias + profile
 adminSetAccountStatus(input)     // SA only
+adminDeleteAccount(input)        // SA only; preserve business profile
 assignPrimaryRole(input)         // SA only
 ```
 
-`adminResetPassword` trả password tạm một lần; không lưu/log.
+`adminResetPassword` trả password tạm một lần; không lưu/log. Các action sửa/xóa target từ chối account đang đăng nhập và mọi account có active role `super_admin`. `adminProvisionAccount` bắt buộc link `staff_profiles` cho mọi role GLV (role lớp còn kiểm tra assignment/capacity), `guardians` cho guardian và `students` cho student trước khi tạo role assignment.
 
 ## 3. Academic/classes
 
@@ -129,16 +131,40 @@ DB:
 
 DB time decides lease.
 
+### RPC `unlock_attendance_session`
+
+Super Admin only (D-33). Đưa buổi đã khóa về `completed`, xóa `locked_at`, và đặt `unlocked_at`
+để từ đó tới lần chốt tiếp theo chỉ Super Admin ghi được.
+
+### Đã hiện thực khác gì mô tả trên
+
+- Tên tham số RPC có tiền tố `p_`, cột trả về có tiền tố `out_` (tránh đụng tên cột — cùng quy ước
+  với `commit_import_rows`).
+- `claim_attendance_session` trả thêm `out_status` và `out_locked`.
+- `save_and_finalize_attendance` trả luôn số liệu tổng kết buổi để UI khỏi truy vấn lại.
+- RPC ném lỗi với **message là mã ổn định** (`FORBIDDEN`, `ATTENDANCE_LOCKED`,
+  `ATTENDANCE_ALREADY_CLAIMED`, `LEASE_NOT_EXPIRED`, `ATTENDANCE_INVALID_MEETING_DAY`,
+  `ATTENDANCE_ROSTER_INCOMPLETE`); tầng Server Action ánh xạ sang `AppErrorCode` và câu tiếng Việt.
+- Mọi thao tác ghi điểm danh **chỉ** qua các RPC này: `authenticated` không có quyền
+  INSERT/UPDATE trên `attendance_sessions`, `student_attendance_records`, `staff_attendance_records`.
+
 ## 7. Teaching plan
 
 ```ts
+ensureTeachingPlan
+updateTeachingPlanTitle
 createTeachingPlanItem
 updateTeachingPlanItem
 deleteTeachingPlanItem
 uploadTeachingMaterial
+removeTeachingMaterial
+createTeachingMaterialUrl // signed URL 60 giây, staff scope
+getWeekAheadTeachingData // gọi DB RPC safe projection
 ```
 
-Only representative write plan.
+Representative lớp hoặc global-write được ghi plan/item/material. Action kiểm quyền tường minh trước
+khi dựa vào RLS. Guardian/student chỉ dùng `get_week_ahead_teaching_items`; không nhận base row hay
+signed URL tài liệu. File tối đa 5 MB, MIME allowlist PDF/Office/image/text và bucket private.
 
 ## 8. Assessment
 
@@ -147,15 +173,18 @@ createAssessment
 updateAssessment
 deleteAssessment
 saveAssessmentScores
-calculateAttendanceScores
-saveAttendanceScoreOverride
+refreshAttendanceScores
+resetAttendanceScoreOverride
 createStudentComment
+deleteStudentComment
 lockGradebook
 unlockGradebook // SA
-publishAssessment
+setAssessmentPublished
 ```
 
 `saveAssessmentScores` should accept batch and run transaction/RPC.
+
+`createAssessment`/`updateAssessment` accept a positive per-assessment weight. They authorize against the actor's class assignment, do not enforce a required assessment kind/count, allow repeated kinds, and reject structural or weight changes after gradebook lock. Super Admin manages academic-year defaults separately.
 
 ## 9. Leaderboards
 
@@ -174,6 +203,12 @@ When publish:
 - do not recompute silently afterward.
 
 ## 10. Promotion
+
+### RPC `propose_promotion`
+
+Nhận `sourceEnrollmentId`, trạng thái đề xuất, target tùy chọn, cờ Dự trưởng và note. RPC tự lấy
+class/student/year từ enrollment, chỉ cho đại diện lớp hoặc global-write, kiểm đúng cấp/năm và
+lưu snapshot cảnh báo. Client không gửi actor/class scope.
 
 ### RPC `approve_promotion_review`
 
@@ -198,6 +233,10 @@ Transaction:
 6. update review.
 
 Idempotency: if already approved, return existing result or conflict predictably.
+
+Server Actions `proposePromotion` và `reviewPromotion` kiểm lại scope từ row đọc qua RLS trước khi
+gọi RPC. Portal dùng query ownership và luôn thêm điều kiện `is_published`/`student_visible` tường
+minh, kể cả account đồng thời là staff và guardian.
 
 ## 11. Absence request
 

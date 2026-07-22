@@ -17,6 +17,17 @@ export const academicYearInputSchema = z.object({
 
 export const academicYearIdSchema = z.string().uuid("Năm học không hợp lệ.");
 
+// D-58: ngưỡng cảnh báo chuyên cần cấu hình theo năm học, không hardcode.
+// Giới hạn ở đây phải khớp CHECK constraint trong migration ...000500.
+export const attendanceSettingsSchema = z.object({
+  academicYearId: academicYearIdSchema,
+  attendanceLockDays: z.coerce.number().int().min(0).max(30),
+  attendanceEditLeaseMinutes: z.coerce.number().int().min(1).max(60),
+  warningConsecutiveAbsences: z.coerce.number().int().min(1).max(20),
+  warningConsecutiveSundays: z.coerce.number().int().min(1).max(20),
+  warningRatePercent: z.coerce.number().int().min(1).max(100),
+});
+
 export const updateClassSchema = z.object({
   id: z.string().uuid("Lớp không hợp lệ."),
   status: z.enum(["active", "inactive", "closed"]),
@@ -24,5 +35,6 @@ export const updateClassSchema = z.object({
   notes: z.string().trim().max(1000).nullable(),
 });
 
+export type AttendanceSettingsInput = z.infer<typeof attendanceSettingsSchema>;
 export type AcademicYearInput = z.infer<typeof academicYearInputSchema>;
 export type UpdateClassInput = z.infer<typeof updateClassSchema>;

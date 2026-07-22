@@ -14,6 +14,9 @@ insert into public.profiles (id, username, display_name, account_status) values
   ('90000000-0000-4000-8000-000000000003', 'PRIEST_TEST', 'Reader Test', 'active'),
   ('90000000-0000-4000-8000-000000000004', 'LOCKED_TEST', 'Disabled Test', 'disabled');
 
+insert into public.guardians (profile_id, full_name, phone) values
+  ('90000000-0000-4000-8000-000000000002', 'Guardian Test', '0901234567');
+
 insert into public.role_assignments (profile_id, role) values
   ('90000000-0000-4000-8000-000000000001', 'super_admin'),
   ('90000000-0000-4000-8000-000000000002', 'guardian'),
@@ -21,7 +24,7 @@ insert into public.role_assignments (profile_id, role) values
   ('90000000-0000-4000-8000-000000000004', 'super_admin');
 
 select throws_ok(
-  $$insert into public.role_assignments (profile_id, role) values ('90000000-0000-4000-8000-000000000002', 'student')$$,
+  $$insert into public.role_assignments (profile_id, role) values ('90000000-0000-4000-8000-000000000002', 'parish_priest')$$,
   '23505', null, 'one active role is enforced'
 );
 select lives_ok(

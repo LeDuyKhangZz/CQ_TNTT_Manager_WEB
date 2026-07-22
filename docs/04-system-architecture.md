@@ -310,7 +310,7 @@ Nếu tác vụ báo cáo lớn, tạo theo phạm vi hợp lý hoặc chunk. Kh
 
 ## 16. NFR
 
-- 900 thiếu nhi, 20 lớp.
+- 900 thiếu nhi, 19 lớp (18 lớp giáo lý thuộc 5 ngành và 1 lớp Dự trưởng trong HK1).
 - Điểm danh một lớp cần phản hồi UI dưới khoảng 1 giây trong điều kiện mạng bình thường sau khi roster tải.
 - Bulk save attendance một lần.
 - Danh sách dùng pagination/filter server-side.

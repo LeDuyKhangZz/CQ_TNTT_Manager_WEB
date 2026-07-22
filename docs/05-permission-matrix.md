@@ -54,13 +54,13 @@
 
 Được mọi thao tác, gồm:
 
-- Tạo/sửa/khóa account.
+- Tạo/sửa/khóa/xóa account không phải Super Admin; xóa account không xóa hồ sơ nghiệp vụ.
 - Đổi username.
 - Reset password.
 - Gán role/scope.
 - Mở khóa điểm danh/bảng điểm.
 - Import.
-- Cấu hình hệ số.
+- Cấu hình hệ số mặc định theo năm học; sửa hệ số ở mọi lớp.
 - Bật Top 5.
 - Sửa mọi scope.
 
@@ -186,17 +186,21 @@ Tên UI = role + sector.
 | Archive student | SA/global-write |
 | Tạo account | SA |
 | Reset password | SA |
+| Đổi username/đặt password account không phải SA | SA |
+| Xóa account không phải SA | SA; giữ hồ sơ nghiệp vụ và bỏ link account |
 | Claim attendance | Staff assigned class |
 | Takeover attendance | Staff assigned class sau lease |
 | Finalize attendance | Editor hiện tại |
 | Sửa locked attendance | SA |
-| Tạo assessment | Representative/teacher lớp |
+| Tạo/sửa assessment, gồm hệ số từng cột | Representative/teacher lớp trước gradebook lock |
 | Nhập score | Representative/teacher; trainee nếu flag |
+| Viết nhận xét | Representative/teacher; trainee nếu flag; public hoặc staff-only |
 | Lock gradebook | Representative |
 | Unlock gradebook | SA |
 | Create promotion proposal | Representative |
 | Approve promotion | Sector leader/deputy đúng sector |
 | Publish Top 5 | Representative nếu feature enabled; SA |
+| Xem result portal | Guardian chỉ con mình; student chỉ chính mình; chỉ assessment/comment/Top 5 đã publish |
 | Ban post/meeting/weekly plan | Committee leader/deputy |
 | Borrow/return equipment | Member Ban KT có quyền; leader/deputy mặc định |
 | Publish global notification | SA/global-write |
@@ -230,6 +234,15 @@ Tên UI = role + sector.
 - Sector role can select sector.
 - Guardian/student select own records only after finalized.
 - Locked update only SA RPC.
+
+### Teaching plan
+
+- Global-write hoặc representative lớp tạo/sửa/xóa kế hoạch và mục giáo án.
+- Class staff xem đầy đủ giáo án; sector/global-read xem trong phạm vi tương ứng.
+- Guardian/student không `SELECT` bảng gốc, chỉ gọi safe RPC cho 7 ngày tới.
+- Safe RPC không trả nội dung nội bộ hoặc tài liệu.
+- Bucket `teaching-materials` private: representative/global-write upload/remove; staff đúng phạm vi
+  tải qua signed URL 60 giây; guardian/student không đọc object.
 
 ### Assessment scores
 

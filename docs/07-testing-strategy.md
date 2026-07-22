@@ -162,11 +162,15 @@ Hai guardian có con cùng lớp:
 ## 7. Grade tests
 
 - Dynamic assessment appears as column.
+- Class with only midterm and final is valid; quiz 15m is not required.
+- Multiple assessments of the same kind are valid; no per-kind column quota.
 - 0 valid.
 - Empty null.
 - Score >10 rejected DB.
 - Enrollment/class mismatch rejected.
 - Weight calculation.
+- Assigned teacher can change a positive assessment weight before lock; recalculation uses the new weight.
+- Zero/negative/out-of-range weight rejected; weight change after lock rejected.
 - Attendance suggestion.
 - Teacher override.
 - Lock blocks update.
@@ -187,6 +191,12 @@ Hai guardian có con cùng lớp:
 - Failure leaves old enrollment unchanged.
 - Hiệp 2 proposal creates no staff account automatically.
 - Warnings do not block approval.
+
+Gate Phase 5 hiện thực thi bằng `supabase/tests/016..019` và
+`tests/e2e/results.spec.ts`: ba viewport dùng ba lớp độc lập, bấm thật từ tạo/nhập/publish điểm,
+public/internal comment, Top 5 năm vị trí, Excel/PDF, khóa/mở khóa, đề xuất/duyệt promotion đến
+portal guardian/student. E2E kiểm draft/internal/cross-class không xuất hiện và poll cả hai đầu
+enrollment của giao dịch chuyển lớp.
 
 ## 9. Account tests
 
@@ -226,7 +236,7 @@ Hai guardian có con cùng lớp:
 
 Không cần load test lớn, nhưng trước production:
 
-- Seed 900 students/20 classes.
+- Seed 900 students/19 classes, gồm lớp Dự trưởng chỉ hoạt động trong HK1.
 - Load class roster.
 - Finalize ~60–100 records.
 - Student list pagination.
