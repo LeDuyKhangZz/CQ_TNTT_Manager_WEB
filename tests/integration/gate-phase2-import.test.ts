@@ -22,6 +22,7 @@ import { buildRow, type ClassLookup } from "@/features/imports/build-row";
 import { findDuplicate, findInFileDuplicates, type ExistingStudent } from "@/features/imports/dedup";
 import { classAliasKey } from "@/features/imports/normalize";
 import { parseWorkbook } from "@/features/imports/parse";
+import { decideDuplicateRow, hasPendingDuplicate } from "@/features/imports/row-decision";
 
 /** Vitest không nạp .env.local, mà script seed/gate đều cần khóa local. */
 function loadEnvLocal() {
@@ -71,6 +72,10 @@ interface FileReport {
   parsed: number;
   staged: { valid: number; warning: number; error: number };
   committed: number;
+  created: number;
+  merged: number;
+  enrollmentCreated: number;
+  duplicateConfirmed: number;
   failed: number;
   parseError?: string;
 }
@@ -85,6 +90,9 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
   let profileId: string;
   let yearId: string;
   let classLookup: ClassLookup;
+  let baselineStudentCount = 0;
+  let baselineEnrollmentCount = 0;
+  let provedPendingGuard = false;
   const reports: FileReport[] = [];
 
   beforeAll(async () => {
@@ -120,6 +128,17 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
     for (const row of classes ?? []) lookup.set(classAliasKey(row.display_name), row.id);
     classLookup = lookup;
     expect(lookup.size).toBe(19);
+
+    const students = await user.from("students").select("id", { count: "exact", head: true });
+    const enrollments = await user
+      .from("enrollments")
+      .select("id", { count: "exact", head: true })
+      .eq("academic_year_id", yearId)
+      .eq("status", "active");
+    expect(students.error).toBeNull();
+    expect(enrollments.error).toBeNull();
+    baselineStudentCount = students.count ?? 0;
+    baselineEnrollmentCount = enrollments.count ?? 0;
   });
 
   it(
@@ -133,6 +152,10 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
           parsed: 0,
           staged: { valid: 0, warning: 0, error: 0 },
           committed: 0,
+          created: 0,
+          merged: 0,
+          enrollmentCreated: 0,
+          duplicateConfirmed: 0,
           failed: 0,
         };
         reports.push(report);
@@ -151,10 +174,11 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
         expect(fallbackClassId, `không tìm thấy lớp ${roster.targetClass}`).toBeTruthy();
 
         // Cùng nguồn dữ liệu dedup mà server action dùng: học sinh đã có hồ sơ.
+        // M12-A bỏ bộ lọc `status='active'` theo AC-20 — em đã nghỉ nay quay lại
+        // phải được cảnh báo trùng, không phải được tạo hồ sơ thứ hai.
         const { data: existingRows } = await user
           .from("students")
-          .select("id, student_code, full_name, date_of_birth, guardians(phone)")
-          .eq("status", "active");
+          .select("id, student_code, full_name, date_of_birth, status, guardians(phone)");
         const existing: ExistingStudent[] = (existingRows ?? []).map((row: any) => {
           const guardian = row.guardians;
           const phone = Array.isArray(guardian) ? (guardian[0]?.phone ?? null) : (guardian?.phone ?? null);
@@ -166,6 +190,9 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
             guardianPhone: phone,
           };
         });
+        const statusById = new Map<string, string>(
+          (existingRows ?? []).map((row: any) => [row.id as string, row.status as string]),
+        );
 
         const built = parsed.rows.map((row) =>
           buildRow(row, classLookup, {
@@ -191,12 +218,21 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
         const rowsPayload = built.map((row, index) => {
           const warnings = [...row.warnings];
           const duplicate = findDuplicate(row.normalized, existing);
-          if (duplicate) {
-            warnings.push({
-              field: "duplicate",
-              message: `[${duplicate.level}] ${duplicate.reason}`,
-            });
-          }
+          // 🔴 M12-A: quyết định mặc định của dòng trùng gọi ĐÚNG hàm mà
+          // `createDryRunBatch` gọi. Chép tay lần thứ hai ở đây là dựng lại đúng
+          // loại lệch mà M03-B vừa diệt ở luật dò trùng — cổng Phase 2 sẽ đo một
+          // hệ thống khác với hệ thống người dùng đang bấm.
+          const decision = decideDuplicateRow(
+            duplicate
+              ? {
+                  level: duplicate.level,
+                  studentId: duplicate.student.id,
+                  reason: duplicate.reason,
+                  status: statusById.get(duplicate.student.id) ?? "active",
+                }
+              : null,
+          );
+          if (decision.warning) warnings.push(decision.warning);
           const inFile = inFileConflicts.get(index);
           if (inFile) warnings.push({ field: "duplicate", message: inFile });
 
@@ -213,7 +249,7 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
             errors_json: JSON.parse(JSON.stringify(row.errors)),
             warnings_json: JSON.parse(JSON.stringify(warnings)),
             matched_student_id: duplicate?.student.id ?? null,
-            action: "create" as const,
+            action: decision.action,
           };
         });
 
@@ -227,7 +263,7 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
         // đây KHÔNG phải dữ liệu giới tính thật của các em.
         const { data: pendingRows } = await user
           .from("import_rows")
-          .select("id, normalized_json, warnings_json")
+          .select("id, action, normalized_json, warnings_json")
           .eq("batch_id", batch!.id)
           .in("status", ["valid", "warning"])
           .order("row_number");
@@ -248,7 +284,35 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
             .eq("id", row.id);
         }
 
+        const duplicateRows = (pendingRows ?? []).filter((row) =>
+          hasPendingDuplicate((row.warnings_json ?? []) as { field: string; message: string }[]),
+        );
+
+        // Prove once that the public RPC itself rejects an unresolved marker;
+        // this is the DB boundary D-133 needs, independent of the Server Action.
+        if (!provedPendingGuard && duplicateRows.length > 0) {
+          const unresolved = duplicateRows[0];
+          const preflight = await user.rpc("commit_import_rows", {
+            p_batch_id: batch!.id,
+            p_row_ids: [unresolved.id],
+          });
+          expect(preflight.error?.message).toContain("IMPORT_DUPLICATE_REVIEW_REQUIRED");
+          provedPendingGuard = true;
+        }
+
+        // This gate stands in for the explicit per-row confirmation click. It
+        // must use the authoritative RPC, never rewrite warnings_json directly.
+        for (const row of duplicateRows) {
+          const confirmation = await user.rpc("confirm_import_duplicate", {
+            p_row_id: row.id,
+            p_action: row.action,
+          });
+          expect(confirmation.error, `confirm duplicate ${roster.file}`).toBeNull();
+          report.duplicateConfirmed += 1;
+        }
+
         const ids = (pendingRows ?? []).map((row) => row.id);
+        const actionById = new Map((pendingRows ?? []).map((row) => [row.id, row.action]));
         for (let offset = 0; offset < ids.length; offset += COMMIT_CHUNK_SIZE) {
           const chunk = ids.slice(offset, offset + COMMIT_CHUNK_SIZE);
           const { data, error } = await user.rpc("commit_import_rows", {
@@ -257,7 +321,12 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
           });
           expect(error, `commit ${roster.file}`).toBeNull();
           for (const result of (data ?? []) as any[]) {
-            if (result.out_committed) report.committed += 1;
+            if (result.out_committed) {
+              report.committed += 1;
+              if (actionById.get(result.out_row_id) === "merge") report.merged += 1;
+              else report.created += 1;
+              if (result.out_enrollment_created) report.enrollmentCreated += 1;
+            }
             else if (result.out_error_message) report.failed += 1;
           }
         }
@@ -277,9 +346,22 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
           parsed: acc.parsed + report.parsed,
           error: acc.error + report.staged.error,
           committed: acc.committed + report.committed,
+          created: acc.created + report.created,
+          merged: acc.merged + report.merged,
+          enrollmentCreated: acc.enrollmentCreated + report.enrollmentCreated,
+          duplicateConfirmed: acc.duplicateConfirmed + report.duplicateConfirmed,
           failed: acc.failed + report.failed,
         }),
-        { parsed: 0, error: 0, committed: 0, failed: 0 },
+        {
+          parsed: 0,
+          error: 0,
+          committed: 0,
+          created: 0,
+          merged: 0,
+          enrollmentCreated: 0,
+          duplicateConfirmed: 0,
+          failed: 0,
+        },
       );
       process.stdout.write(
         `\nTỔNG: parse ${totals.parsed} · lỗi dữ liệu nguồn ${totals.error} · ghi được ${totals.committed} · hỏng khi ghi ${totals.failed}\n`,
@@ -289,6 +371,8 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
       // dòng, không phải từ constraint DB.
       expect(totals.failed).toBe(0);
       expect(totals.committed).toBeGreaterThan(200);
+      expect(provedPendingGuard).toBe(true);
+      expect(totals.created + totals.merged).toBe(totals.committed);
 
       // Dữ liệu thật sự nằm trong bảng nghiệp vụ, có ghi danh đúng năm học.
       const { count: studentCount } = await user
@@ -302,9 +386,10 @@ describeGate("Gate Phase 2 — import sổ lớp thật", () => {
       process.stdout.write(
         `Sau import: ${studentCount} thiếu nhi, ${enrollmentCount} ghi danh đang mở.\n`,
       );
-      // 4 em từ seed dev cộng với số dòng vừa ghi.
-      expect(studentCount).toBe(totals.committed + 4);
-      expect(enrollmentCount).toBe(totals.committed + 4);
+      // Merge tái sử dụng hồ sơ và D-11 có thể giữ ghi danh đang mở. Đếm theo
+      // tác động thật của RPC, không đồng nhất "committed row" với "new row".
+      expect(studentCount).toBe(baselineStudentCount + totals.created);
+      expect(enrollmentCount).toBe(baselineEnrollmentCount + totals.enrollmentCreated);
 
       // Tiếng Việt có dấu phải còn nguyên sau khi qua Excel → JSON → Postgres.
       const { data: sample } = await user

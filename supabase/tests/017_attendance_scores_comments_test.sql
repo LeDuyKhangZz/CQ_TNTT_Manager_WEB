@@ -55,14 +55,31 @@ values
   ('ca000000-0000-4000-8000-000000000001', 'c6000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001', 'attendance', 'Chuyên cần Lễ', 1, 'mass', 'c1000000-0000-4000-8000-000000000001', 'c1000000-0000-4000-8000-000000000001'),
   ('ca000000-0000-4000-8000-000000000002', 'c6000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001', 'attendance', 'Chuyên cần Giáo lý', 1, 'catechism', 'c1000000-0000-4000-8000-000000000001', 'c1000000-0000-4000-8000-000000000001');
 
-select is(public.refresh_attendance_assessment_scores('ca000000-0000-4000-8000-000000000001'), 2, 'lấy đề xuất Lễ cho đủ roster');
-select is(public.refresh_attendance_assessment_scores('ca000000-0000-4000-8000-000000000002'), 2, 'lấy đề xuất Giáo lý cho đủ roster');
+-- M07-B · TB-M07-04 — hàm nay trả **hai** số `(out_refreshed, out_skipped_manual)`
+-- thay cho một `integer`, nên ba lời gọi dưới đây phải đọc theo cột.
+select is(
+  (select out_refreshed from public.refresh_attendance_assessment_scores('ca000000-0000-4000-8000-000000000001')),
+  2, 'lấy đề xuất Lễ cho đủ roster'
+);
+select is(
+  (select out_refreshed from public.refresh_attendance_assessment_scores('ca000000-0000-4000-8000-000000000002')),
+  2, 'lấy đề xuất Giáo lý cho đủ roster'
+);
 select is((select score from public.assessment_scores where assessment_id = 'ca000000-0000-4000-8000-000000000001' and enrollment_id = 'c4000000-0000-4000-8000-000000000001'), 10.00::numeric, 'đề xuất Lễ tính riêng là 10');
 select is((select score from public.assessment_scores where assessment_id = 'ca000000-0000-4000-8000-000000000002' and enrollment_id = 'c4000000-0000-4000-8000-000000000001'), 0.00::numeric, 'đề xuất Giáo lý tính riêng là 0');
 select ok(not (select is_manual_override from public.assessment_scores where assessment_id = 'ca000000-0000-4000-8000-000000000001' and enrollment_id = 'c4000000-0000-4000-8000-000000000001'), 'điểm hệ thống ban đầu chưa phải override');
 select is(public.save_assessment_scores('ca000000-0000-4000-8000-000000000001', '[{"enrollmentId":"c4000000-0000-4000-8000-000000000001","score":7}]'::jsonb), 1, 'GLV chỉnh tay điểm chuyên cần');
 select ok((select is_manual_override from public.assessment_scores where assessment_id = 'ca000000-0000-4000-8000-000000000001' and enrollment_id = 'c4000000-0000-4000-8000-000000000001'), 'đánh dấu override sau chỉnh tay');
-select is(public.refresh_attendance_assessment_scores('ca000000-0000-4000-8000-000000000001'), 2, 'refresh lại đề xuất không lỗi');
+-- 🔴 M07-B · TB-M07-04 / AC-04-01 — và đây là chỗ con số cũ **nói sai**: nó đếm
+-- gộp cả dòng bị bỏ qua, nên màn hình báo *"Đã cập nhật 2 đề xuất"* trong khi
+-- đúng **một** dòng đổi và một dòng bị giữ nguyên vì đang chỉnh tay. Người dùng
+-- mở bảng ra thấy không khớp và không có gì giải thích.
+select results_eq(
+  $$select out_refreshed, out_skipped_manual
+    from public.refresh_attendance_assessment_scores('ca000000-0000-4000-8000-000000000001')$$,
+  $$values (1, 1)$$,
+  'TB-M07-04: 1 ô cập nhật · 1 ô đang chỉnh tay được giữ nguyên, hai số tách nhau'
+);
 select is((select score from public.assessment_scores where assessment_id = 'ca000000-0000-4000-8000-000000000001' and enrollment_id = 'c4000000-0000-4000-8000-000000000001'), 7.00::numeric, 'refresh giữ nguyên điểm override');
 select lives_ok($$select public.reset_attendance_score_override('ca000000-0000-4000-8000-000000000001', 'c4000000-0000-4000-8000-000000000001')$$, 'GLV dùng lại đề xuất hệ thống');
 select is((select score from public.assessment_scores where assessment_id = 'ca000000-0000-4000-8000-000000000001' and enrollment_id = 'c4000000-0000-4000-8000-000000000001'), 10.00::numeric, 'reset khôi phục đúng đề xuất');

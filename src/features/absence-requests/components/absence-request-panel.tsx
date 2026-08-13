@@ -6,11 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
+import { Input, inputBaseClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MEETING_TYPE_LABELS } from "@/features/attendance/constants";
+import { PortalEmptyState } from "@/features/portal/components/portal-empty-state";
 import { formatDateVi } from "@/lib/dates";
+import type { AppAudience } from "@/lib/permissions/roles";
+import { cn } from "@/lib/utils";
 import type { PortalAbsenceRequest, PortalChild } from "@/features/portal/server/queries";
+import type { PortalChildrenStatus } from "@/features/portal/status";
 import { ABSENCE_REQUEST_STATUS_LABELS } from "../schemas";
 import { cancelAbsenceRequest, createAbsenceRequest } from "../server/actions";
 
@@ -22,7 +26,7 @@ import { cancelAbsenceRequest, createAbsenceRequest } from "../server/actions";
  * `router.refresh()` sau khi action trả về là cách khắc phục đang dùng ở trang
  * điểm danh. Lỗi cũng hiện ngay tại chỗ thay vì nhét qua query string.
  */
-const selectClassName = "h-11 w-full rounded-md border border-border bg-card px-3 text-sm";
+const selectClassName = cn(inputBaseClassName, "h-control");
 
 const statusVariants = {
   pending: "warning",
@@ -33,9 +37,13 @@ const statusVariants = {
 export function AbsenceRequestPanel({
   students,
   requests,
+  childrenStatus,
+  audience,
 }: {
   students: readonly PortalChild[];
   requests: readonly PortalAbsenceRequest[];
+  childrenStatus: PortalChildrenStatus;
+  audience: AppAudience | null;
 }) {
   const router = useRouter();
   const [studentId, setStudentId] = useState(students[0]?.id ?? "");
@@ -75,17 +83,19 @@ export function AbsenceRequestPanel({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(18rem,0.6fr)_minmax(0,1.4fr)]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gửi đơn mới</CardTitle>
-          <CardDescription>Xứ đoàn sinh hoạt thứ Năm và Chúa nhật.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {students.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Tài khoản của bạn chưa gắn với hồ sơ thiếu nhi nào.
-            </p>
-          ) : (
+      {students.length === 0 ? (
+        <PortalEmptyState
+          reason={childrenStatus === "no_children" ? "no_children" : "not_linked"}
+          audience={audience}
+          className="min-h-full"
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Gửi đơn mới</CardTitle>
+            <CardDescription>Xứ đoàn sinh hoạt thứ Năm và Chúa nhật.</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="absence-student">Thiếu nhi</Label>
@@ -129,19 +139,25 @@ export function AbsenceRequestPanel({
                 Gửi đơn
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Đơn đã gửi</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {requests.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Chưa có đơn nào.</p>
-          ) : (
-            requests.map((request) => (
+      {requests.length === 0 ? (
+        <PortalEmptyState
+          reason="no_data"
+          audience={audience}
+          title="Chưa có đơn xin nghỉ nào"
+          description="Chưa có đơn xin nghỉ nào trong phạm vi tài khoản này. Đơn mới gửi sẽ xuất hiện tại đây."
+          className="min-h-full"
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Đơn đã gửi</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {requests.map((request) => (
               // data-absence-date là móc ổn định cho E2E: bám vào cây div lồng
               // nhau thì test gãy mỗi lần đổi layout.
               <div
@@ -178,10 +194,10 @@ export function AbsenceRequestPanel({
                   </Button>
                 ) : null}
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

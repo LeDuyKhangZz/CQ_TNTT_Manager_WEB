@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CLOSE_ENROLLMENT_REASONS } from "./enrollment-status";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày không hợp lệ.");
 const nullableNotes = z
@@ -15,20 +16,33 @@ export const enrollStudentSchema = z.object({
   notes: nullableNotes,
 });
 
-// Statuses that close an open enrollment (D-11: only one open enrollment/year).
-export const CLOSE_ENROLLMENT_STATUSES = [
-  "completed",
-  "withdrawn",
-  "transferred",
-  "paused",
-  "repeating",
-] as const;
-
-export const endEnrollmentSchema = z.object({
+const enrollmentIdSchema = z.object({
   enrollmentId: z.string().uuid("Ghi danh không hợp lệ."),
-  status: z.enum(CLOSE_ENROLLMENT_STATUSES),
+});
+
+/**
+ * TB-F10 / BR-M03-N01 — "Tạm nghỉ" và "Khôi phục" **không nhận ngày kết thúc**.
+ *
+ * 🔴 Đây là dòng sửa lỗi CRITICAL F10. Bản cũ gộp `paused` vào cùng một schema với
+ * các trạng thái đóng, mà schema đó bắt buộc có `endedOn` — nên mọi lượt "Tạm nghỉ"
+ * đều gửi kèm một ngày và **luôn** vi phạm CHECK `enrollments_open_has_no_end`
+ * (`20260716000500:19-20`). Không có ô nào để gửi ngày thì không có cách nào vi phạm.
+ */
+export const pauseEnrollmentSchema = enrollmentIdSchema;
+export const resumeEnrollmentSchema = enrollmentIdSchema;
+
+/**
+ * BR-M03-N02 — trạng thái đóng, bắt buộc có `ended_on`. Danh sách lấy thẳng từ
+ * `enrollment-status.ts` để **một chỗ duy nhất** định nghĩa "thế nào là đóng"; hai
+ * bản chép tay chính là gốc rễ của F10.
+ */
+export const closeEnrollmentSchema = z.object({
+  enrollmentId: z.string().uuid("Ghi danh không hợp lệ."),
+  status: z.enum(CLOSE_ENROLLMENT_REASONS),
   endedOn: isoDate,
 });
 
 export type EnrollStudentInput = z.infer<typeof enrollStudentSchema>;
-export type EndEnrollmentInput = z.infer<typeof endEnrollmentSchema>;
+export type PauseEnrollmentInput = z.infer<typeof pauseEnrollmentSchema>;
+export type ResumeEnrollmentInput = z.infer<typeof resumeEnrollmentSchema>;
+export type CloseEnrollmentInput = z.infer<typeof closeEnrollmentSchema>;

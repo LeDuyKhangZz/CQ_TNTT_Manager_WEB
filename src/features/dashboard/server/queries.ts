@@ -48,6 +48,31 @@ export interface CommitteeTask {
 
 export interface DashboardData {
   audience: AppAudience | null;
+  /**
+   * D-170 — người này đọc được **số gộp** nhưng không đọc được danh sách tên.
+   *
+   * Hiện chỉ đúng với Thủ quỹ. Cần một cờ riêng chứ không suy từ `audience` vì
+   * họ vẫn là `staff`: nếu không nói ra, thẻ "Cần quan tâm" sẽ hiện tiêu đề
+   * *"12 em đang có cảnh báo"* ngay trên một danh sách rỗng kèm câu *"Không có
+   * em nào cần lưu ý trong phạm vi của bạn"* — hai câu nói ngược nhau trong
+   * cùng một thẻ, đúng thứ bệnh của module này.
+   */
+  aggregateOnly: boolean;
+  /**
+   * F05 — chỉ Quản trị viên hệ thống vào được `/admin`. Thẻ "chưa có năm học"
+   * từng dẫn **mọi** vai trò tới đó, tức màn hình đầu tiên sau khi đăng nhập
+   * mời người dùng đi vào một trang chắc chắn từ chối họ.
+   */
+  canOpenAdmin: boolean;
+  /**
+   * N-2 — có truy vấn nào của trang này hỏng không.
+   *
+   * Bảy truy vấn dưới đây từng bỏ qua `error` của Supabase hoàn toàn, nên một
+   * mục hỏng và một mục rỗng hiện ra **giống hệt nhau**. Với trang mà ai cũng
+   * đổ vào ngay sau khi đăng nhập, đó là cách nhanh nhất để một sự cố thật bị
+   * đọc thành "xứ đoàn chưa có dữ liệu".
+   */
+  hasLoadError: boolean;
   kpis: DashboardKpis | null;
   atRisk: AtRiskStudent[];
   upcoming: UpcomingItem[];
@@ -74,6 +99,7 @@ function riskReasons(row: {
 export async function getDashboardData(): Promise<DashboardData> {
   const context = await requireRouteAccess("/dashboard");
   const supabase = await createClient();
+  const aggregateOnly = context.role === "treasurer";
 
   const { data: currentYear } = await supabase
     .from("academic_years")
@@ -84,13 +110,18 @@ export async function getDashboardData(): Promise<DashboardData> {
   // Không có năm học hiện hành thì mọi thống kê theo năm đều vô nghĩa; trả về
   // khung rỗng để trang hướng dẫn sang /admin thay vì hiện số 0 gây hiểu nhầm.
   if (!currentYear) {
-    const { data: notificationRows } = await supabase
+    // 🔴 M10-A · BR-M10-20 — xem ghi chú ở nhánh chính bên dưới.
+    const { data: notificationRows, error: notificationError } = await supabase
       .from("notification_recipients")
       .select("read_at, notifications(id, title, published_at)")
+      .eq("profile_id", context.profileId)
       .order("delivered_at", { ascending: false })
       .limit(5);
     return {
       audience: context.audience,
+      aggregateOnly,
+      canOpenAdmin: context.role === "super_admin",
+      hasLoadError: notificationError !== null,
       kpis: null,
       atRisk: [],
       upcoming: [],
@@ -107,15 +138,30 @@ export async function getDashboardData(): Promise<DashboardData> {
   }
 
   const [
-    { data: summary },
-    { data: atRiskRows },
-    { data: upcomingRows },
-    { data: celebrationRows },
-    { count: incompleteCount },
-    { data: planRows },
-    { data: notificationRows },
+    { data: summary, error: summaryError },
+    { data: atRiskRows, error: atRiskError },
+    { data: upcomingRows, error: upcomingError },
+    { data: celebrationRows, error: celebrationError },
+    { count: incompleteCount, error: incompleteError },
+    { data: planRows, error: planError },
+    { data: notificationRows, error: notificationError },
   ] = await Promise.all([
-    supabase.from("v_dashboard_summary").select("*").eq("academic_year_id", currentYear.id).maybeSingle(),
+    // 🔴 D-170 — Thủ quỹ đi qua cửa sổ hẹp, không đi qua view.
+    //
+    // `v_dashboard_summary` là `security_invoker`, nên ba trong bốn con số của
+    // nó bị RLS của bảng gốc cắt về **0** với Thủ quỹ, và ô "Lớp" thì bị mệnh đề
+    // phạm vi viết tay trong view cắt về **0** nốt (D-169). Đo trên cơ sở dữ liệu
+    // thật ngày 2026-08-12: `0 · 0 · 0 · null`. Đó không phải "chưa biết", đó là
+    // **nói sai** — trang tổng quan báo với một chức việc cấp xứ đoàn rằng xứ
+    // đoàn có 0 thiếu nhi.
+    //
+    // Không sửa view: xem lời giải thích dài ở migration `20260812000100`. Tóm
+    // tắt: sửa view chỉ nới được đúng ô "Lớp" và sẽ dựng lại đúng cái bệnh
+    // "bốn số cạnh nhau nói hai chuyện" mà D-169 vừa chữa hôm qua.
+    aggregateOnly
+      ? supabase.rpc("dashboard_summary_for_treasurer", { p_academic_year_id: currentYear.id })
+        .maybeSingle()
+      : supabase.from("v_dashboard_summary").select("*").eq("academic_year_id", currentYear.id).maybeSingle(),
     supabase
       .from("v_students_at_risk")
       .select("*")
@@ -134,15 +180,44 @@ export async function getDashboardData(): Promise<DashboardData> {
       .select("week_start, checklist_json, committees(name)")
       .order("week_start", { ascending: false })
       .limit(3),
+    // 🔴 **M10-A · BR-M10-20 — CHỖ THỨ BA mắc đúng lỗi của hai luồng CRITICAL,
+    // và nó KHÔNG nằm trong phạm vi audit M10.** Bài quét mã nguồn
+    // `tests/unit/notification-inbox.test.ts` tìm ra nó.
+    //
+    // `03_AUDIT_RESULTS.md` §4.1 đã dặn trước: *"mọi truy vấn 'của tôi' trong
+    // repo cần được rà xem có dựa vào RLS để lọc thay vì lọc tường minh không"*.
+    // Đây đúng là một cái. Hậu quả ở đây **nặng hơn** hộp thư: `/dashboard` là
+    // trang mọi người đổ vào ngay sau khi đăng nhập, nên với 6 vai trò cấp xứ
+    // đoàn, ô *"Thông báo mới nhất"* của trang chủ hiện **5 dòng người-nhận mới
+    // nhất của toàn hệ thống** — kể cả tiêu đề thư riêng gửi cho người khác.
+    //
+    // Ô này thuộc M11 (Báo cáo & Dashboard, module 13/14) theo `11` §3. Sửa ở
+    // đây vì nó là **rò rỉ cùng loại** với thứ M10-A sinh ra để đóng, chỉ tốn
+    // một dòng, và chỉ **siết** phạm vi dữ liệu trả về. Đã bàn giao cho M11.
     supabase
       .from("notification_recipients")
       .select("read_at, notifications(id, title, published_at)")
+      .eq("profile_id", context.profileId)
       .order("delivered_at", { ascending: false })
       .limit(5),
   ]);
 
+  // N-2 — gom lỗi của cả bảy truy vấn thành MỘT câu ở đầu trang. Không đếm
+  // riêng từng mục: người dùng không sửa được mục nào cả, thứ họ cần biết là
+  // "trang này đang thiếu, đừng tin con số" chứ không phải tên bảng nào hỏng.
+  const loadErrors = [
+    summaryError, atRiskError, upcomingError, celebrationError,
+    incompleteError, planError, notificationError,
+  ].filter((error) => error !== null);
+  if (loadErrors.length > 0) {
+    console.error("[dashboard] truy vấn hỏng", loadErrors.map((error) => error.message));
+  }
+
   return {
     audience: context.audience,
+    aggregateOnly,
+    canOpenAdmin: context.role === "super_admin",
+    hasLoadError: loadErrors.length > 0,
     kpis: {
       academicYearCode: currentYear.code,
       studentCount: summary?.student_count ?? 0,

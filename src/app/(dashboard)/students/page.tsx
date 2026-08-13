@@ -1,67 +1,235 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { Label } from "@/components/ui/label";
+import { Pagination } from "@/components/ui/pagination";
+import { SearchInput } from "@/components/ui/search-input";
+import { Select } from "@/components/ui/select";
+import { BranchChip } from "@/components/theme/branch-chip";
+import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
-import { createGuardianFromForm } from "@/features/guardians/server/actions";
-import { createStudentFromForm } from "@/features/students/server/actions";
+import { themeKeyFromSectorCode } from "@/lib/theme/sector-palette";
+import { CreateGuardianForm } from "@/features/students/components/create-guardian-form";
+import { CreateStudentForm } from "@/features/students/components/create-student-form";
+import { studentStatusLabel } from "@/features/students/student-status";
+import {
+  hasActiveStudentFilter,
+  parseStudentCriteria,
+  studentListHref,
+  STUDENT_STATUS_FILTER_LABELS,
+  STUDENT_STATUS_FILTERS,
+} from "@/features/students/student-directory";
 import { getStudentsPageData } from "@/features/students/server/queries";
 
-const selectClassName = "h-11 w-full rounded-md border border-border bg-card px-3 text-sm";
-
-const statusLabels: Record<string, string> = {
-  active: "Đang sinh hoạt",
-  temporarily_inactive: "Tạm nghỉ",
-  withdrawn: "Đã rút",
-  archived: "Lưu trữ",
-};
-
-export default async function StudentsPage() {
-  const { students, guardians, canWrite } = await getStudentsPageData();
+/**
+ * Trang Thiếu nhi — TB-F03 (đóng M03-F03) + TB-F13 + TB-F02/F09 + D-123.
+ *
+ * 🔴 Trước M03-B trang này đổ thẳng **~900 thẻ** vào một lượt dựng, không tìm
+ * kiếm, không lọc, không phân trang: muốn tìm một em phải Ctrl+F, và trên máy
+ * 360px của Giáo lý viên đứng lớp thì đó là màn hình không dùng được (5W-F03).
+ *
+ * Thanh lọc và phân trang là `<form method="get">` + `<Link>` thật, nên **chạy
+ * không cần JavaScript** và **chép được đường dẫn trang 3** (09 §11).
+ */
+export default async function StudentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const criteria = parseStudentCriteria(await searchParams);
+  const {
+    students,
+    guardians,
+    classes,
+    sectors,
+    canWrite,
+    requiresClassOnCreate,
+    page,
+    pageSize,
+    totalItems,
+    feeScope,
+  } = await getStudentsPageData(criteria);
+  const filtered = hasActiveStudentFilter(criteria);
 
   return (
     <PageContainer>
-      <PageHeader title="Thiếu nhi" description="Hồ sơ thiếu nhi và người giám hộ." />
+      <PageHeader
+        title="Thiếu nhi"
+        description={
+          // D-67/D-129 — nói ra phạm vi ngay ở đầu trang. Một danh sách thiếu
+          // cột mà không giải thích thì người dùng tưởng hệ thống hỏng, và bài
+          // học D-108 của M04 đã ghi đúng điều đó cho một danh sách tự ẩn bớt.
+          feeScope
+            ? "Danh sách phục vụ việc thu phí: tên em, lớp, ngành và liên lạc phụ huynh. Hồ sơ chi tiết, ngày sinh, địa chỉ, sức khoẻ và bí tích không thuộc phạm vi Thủ quỹ."
+            : "Hồ sơ thiếu nhi và người giám hộ."
+        }
+      />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách thiếu nhi</CardTitle>
-            <CardDescription>Mỗi em có một người giám hộ; một người giám hộ có thể có nhiều con.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {students.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Chưa có hồ sơ thiếu nhi trong phạm vi của bạn.</p>
-            ) : (
-              students.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/students/${item.id}`}
-                  className="block rounded-md border border-border p-4 transition-colors hover:border-primary/50 hover:bg-accent/40"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium">
-                        {item.saintName} {item.fullName}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Giám hộ: {item.guardianName} · {item.guardianPhone}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {item.hardshipFlag ? <Badge variant="warning">Hoàn cảnh</Badge> : null}
-                      <Badge variant={item.status === "active" ? "success" : "secondary"}>
-                        {statusLabels[item.status] ?? item.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <FilterBar
+            legend="Lọc danh sách thiếu nhi"
+            action="/students"
+            resetHref={filtered ? "/students" : undefined}
+          >
+            <div className="sm:col-span-2 lg:col-span-1">
+              <SearchInput
+                label="Tìm theo tên thiếu nhi, mã hoặc số điện thoại phụ huynh"
+                hideLabel={false}
+                defaultValue={criteria.search}
+                placeholder="Ví dụ: tran ngoc"
+                hint="Gõ không dấu cũng tìm được."
+              />
+            </div>
+            <div>
+              <Label htmlFor="filter-sector">Ngành</Label>
+              <Select id="filter-sector" name="sector" defaultValue={criteria.sectorId} className="mt-1">
+                <option value="all">Tất cả ngành</option>
+                {sectors.map((sector) => (
+                  <option key={sector.id} value={sector.id}>
+                    {sector.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filter-class">Lớp</Label>
+              <Select id="filter-class" name="class" defaultValue={criteria.classId} className="mt-1">
+                <option value="all">Tất cả lớp</option>
+                <option value="none">Chưa xếp lớp</option>
+                {classes.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.displayName}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filter-status">Trạng thái hồ sơ</Label>
+              <Select id="filter-status" name="status" defaultValue={criteria.status} className="mt-1">
+                {STUDENT_STATUS_FILTERS.map((value) => (
+                  <option key={value} value={value}>
+                    {STUDENT_STATUS_FILTER_LABELS[value]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </FilterBar>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách thiếu nhi</CardTitle>
+              <CardDescription>
+                {totalItems === 0
+                  ? "Mỗi em có một người giám hộ; một người giám hộ có thể có nhiều con."
+                  : `${totalItems} hồ sơ trong phạm vi của bạn${
+                      criteria.status === "all"
+                        ? ""
+                        : ` · đang lọc "${STUDENT_STATUS_FILTER_LABELS[criteria.status]}"`
+                    }.`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {students.length === 0 ? (
+                /*
+                  Hai câu khác nhau cho hai tình huống khác nhau (09 §9). "Không
+                  tìm thấy" khi đang lọc mà nói "chưa có hồ sơ nào" là nói sai —
+                  người dùng sẽ đi tạo lại một em đã có.
+                */
+                <EmptyState
+                  variant="no-data"
+                  title={filtered ? "Không có em nào khớp bộ lọc" : "Chưa có hồ sơ thiếu nhi"}
+                  description={
+                    filtered
+                      ? "Thử bỏ bớt bộ lọc, hoặc gõ ít chữ hơn ở ô tìm kiếm — ô này tìm cả khi không bỏ dấu."
+                      : "Chưa có hồ sơ thiếu nhi nào trong phạm vi của bạn."
+                  }
+                  action={
+                    filtered ? (
+                      <Link href="/students" className="text-sm font-medium underline underline-offset-4">
+                        Xoá bộ lọc
+                      </Link>
+                    ) : undefined
+                  }
+                />
+              ) : (
+                /*
+                  Tên cho danh sách: vỏ ứng dụng cũng có `<li>` (thanh điều
+                  hướng), nên "mục danh sách đầu tiên trên trang" không phải là
+                  em đầu tiên. Trình đọc màn hình cũng cần biết đây là danh sách
+                  gì trước khi đọc từng em.
+                */
+                <ul aria-label="Danh sách thiếu nhi" className="space-y-3">
+                  {students.map((item) => {
+                    const row = (
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium">
+                            {item.saintName} {item.fullName}
+                          </p>
+                          <p className="text-sm text-ink-muted">
+                            Giám hộ: {item.guardianName} · {item.guardianPhone}
+                          </p>
+                          {/*
+                            `docs/06` §8 — cột Lớp. "Chưa xếp lớp" là một TIN,
+                            không phải một ô trống: đó chính là nhóm cần chú ý.
+                          */}
+                          <p className="text-sm text-ink-muted">
+                            Lớp: {item.className ?? "Chưa xếp lớp"}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {item.sectorName ? (
+                            <BranchChip
+                              themeKey={themeKeyFromSectorCode(item.sectorCode)}
+                              branchName={item.sectorName}
+                            />
+                          ) : null}
+                          {item.hardshipFlag ? <Badge variant="warning">Hoàn cảnh</Badge> : null}
+                          <Badge variant={item.status === "active" ? "success" : "secondary"}>
+                            {studentStatusLabel(item.status)}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                    return (
+                      <li key={item.id}>
+                        {/*
+                          🔴 D-67 — với Thủ quỹ, dòng KHÔNG phải là một liên kết.
+                          Trang chi tiết đọc thẳng bảng `students`, mà RLS vẫn trả
+                          0 dòng cho họ ⇒ bấm vào tên là rơi vào trang 404. Một
+                          liên kết luôn dẫn tới 404 còn tệ hơn không có liên kết:
+                          người dùng sẽ báo "hệ thống mất hồ sơ của em".
+                        */}
+                        {feeScope ? (
+                          <div className="rounded-md border border-line p-4">{row}</div>
+                        ) : (
+                          <Link
+                            href={`/students/${item.id}`}
+                            className="block rounded-md border border-line p-4 transition-colors hover:border-theme-primary hover:bg-theme-soft"
+                          >
+                            {row}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {totalItems > pageSize ? (
+                <Pagination
+                  page={page}
+                  pageSize={pageSize}
+                  totalItems={totalItems}
+                  itemLabel="thiếu nhi"
+                  buildHref={(target) => studentListHref(criteria, target)}
+                />
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
 
         {canWrite ? (
           <div className="space-y-5">
@@ -71,23 +239,7 @@ export default async function StudentsPage() {
                 <CardDescription>Tạo phụ huynh trước khi thêm con.</CardDescription>
               </CardHeader>
               <CardContent>
-                <form action={createGuardianFromForm} className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="guardian-name">Họ tên phụ huynh</Label>
-                    <Input id="guardian-name" name="fullName" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="guardian-phone">Điện thoại</Label>
-                    <Input id="guardian-phone" name="phone" inputMode="tel" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="guardian-address">Địa chỉ</Label>
-                    <Input id="guardian-address" name="address" />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    Tạo phụ huynh
-                  </Button>
-                </form>
+                <CreateGuardianForm />
               </CardContent>
             </Card>
 
@@ -98,64 +250,13 @@ export default async function StudentsPage() {
               </CardHeader>
               <CardContent>
                 {guardians.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Vui lòng tạo người giám hộ trước.</p>
+                  <p className="text-sm text-ink-muted">Vui lòng tạo người giám hộ trước.</p>
                 ) : (
-                  <form action={createStudentFromForm} className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="student-guardian">Người giám hộ</Label>
-                      <select id="student-guardian" name="guardianId" required className={selectClassName}>
-                        <option value="">Chọn phụ huynh</option>
-                        {guardians.map((guardian) => (
-                          <option key={guardian.id} value={guardian.id}>
-                            {guardian.fullName} · {guardian.phone}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="student-saint">Tên thánh</Label>
-                        <Input id="student-saint" name="saintName" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-gender">Giới tính</Label>
-                        <select id="student-gender" name="gender" className={selectClassName}>
-                          <option value="male">Nam</option>
-                          <option value="female">Nữ</option>
-                          <option value="other">Khác</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="student-name">Họ tên</Label>
-                      <Input id="student-name" name="fullName" required />
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="student-dob">Ngày sinh</Label>
-                        <Input id="student-dob" name="dateOfBirth" type="date" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student-feast">Ngày bổn mạng</Label>
-                        <Input id="student-feast" name="patronFeastDate" type="date" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="student-phone">Điện thoại (nếu có)</Label>
-                      <Input id="student-phone" name="phone" inputMode="tel" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="student-address">Địa chỉ</Label>
-                      <Input id="student-address" name="address" />
-                    </div>
-                    <label className="flex min-h-11 items-center gap-2 text-sm" htmlFor="student-hardship">
-                      <input id="student-hardship" name="hardshipFlag" type="checkbox" className="h-4 w-4" />
-                      Hoàn cảnh khó khăn
-                    </label>
-                    <Button type="submit" className="w-full">
-                      Tạo hồ sơ thiếu nhi
-                    </Button>
-                  </form>
+                  <CreateStudentForm
+                    guardians={guardians}
+                    classes={classes}
+                    requiresClass={requiresClassOnCreate}
+                  />
                 )}
               </CardContent>
             </Card>

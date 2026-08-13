@@ -1,58 +1,116 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { Label } from "@/components/ui/label";
+import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
+import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
-import { createDryRunBatch } from "@/features/imports/server/actions";
+import { formatDateTimeVi } from "@/lib/dates";
+import { ImportUploadForm } from "@/features/imports/components/import-upload-form";
+import {
+  BATCH_STATUS_FILTERS,
+  BATCH_STATUS_FILTER_LABELS,
+  batchListHref,
+  hasActiveBatchFilter,
+  parseBatchListCriteria,
+  type BatchListCriteria,
+} from "@/features/imports/batch-directory";
 import {
   getCurrentAcademicYear,
   listBatches,
   listClassOptions,
+  listImportYears,
   type BatchSummary,
 } from "@/features/imports/server/queries";
 import { requireImportPage } from "@/features/imports/server/permissions";
 
-const STATUS_LABELS: Record<string, string> = {
-  dry_run: "Đã kiểm tra, chờ xác nhận",
-  partially_committed: "Ghi một phần — còn dòng lỗi",
-  committed: "Đã ghi vào hệ thống",
-  cancelled: "Đã hủy",
+/**
+ * M12-C / TO-BE 8 / NC-01. Server Action được gửi tới **chính route đang đứng**,
+ * nên trần thời gian của trang này cũng là trần của `createDryRunBatch` — lượt
+ * nặng nhất của module: đọc một workbook tới 4 MB, dựng từng dòng, rồi dò trùng
+ * trên toàn bộ hồ sơ đã có. Mặc định của nền tảng ngắn hơn nhiều so với việc đó.
+ * **60 giây là mức trần của gói Vercel Hobby** (`docs/12` §1) — đặt cao hơn thì
+ * hỏng ở bước triển khai chứ không phải ở đây.
+ */
+export const maxDuration = 60;
+
+const STATUS_LABELS: Record<string, { label: string; variant: "success" | "warning" | "outline" }> =
+  {
+    dry_run: { label: "Đã kiểm tra, chờ xác nhận", variant: "warning" },
+    partially_committed: { label: "Ghi một phần — còn dòng lỗi", variant: "warning" },
+    committed: { label: "Đã ghi vào hệ thống", variant: "success" },
+    cancelled: { label: "Đã huỷ", variant: "outline" },
+  };
+
+const SOURCE_LABELS: Record<string, string> = {
+  syll: "sheet SYLL",
+  ds_dau_nam: "sheet DS_dau_nam",
+  template: "file mẫu chuẩn",
 };
 
-async function uploadAction(formData: FormData) {
-  "use server";
-  await createDryRunBatch(formData);
-}
+function BatchCard({ batch }: { batch: BatchSummary }) {
+  const status = STATUS_LABELS[batch.status] ?? { label: batch.status, variant: "outline" as const };
 
-function BatchRow({ batch }: { batch: BatchSummary }) {
   return (
-    <Link
-      href={`/imports/${batch.id}`}
-      className="block rounded-lg border border-border p-4 transition-colors hover:border-primary/50 hover:bg-accent/40"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <p className="font-medium break-all">{batch.filename}</p>
-        <Badge variant={batch.status === "committed" ? "secondary" : "outline"}>
-          {STATUS_LABELS[batch.status] ?? batch.status}
-        </Badge>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {batch.totalRows} dòng · hợp lệ {batch.validRows} · cảnh báo {batch.warningRows} · lỗi{" "}
-        {batch.errorRows}
-        {batch.committedRows > 0 ? ` · đã ghi ${batch.committedRows}` : ""}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Nguồn: {batch.sourceFormat === "syll" ? "sheet SYLL" : batch.sourceFormat === "ds_dau_nam" ? "sheet DS_dau_nam" : "file mẫu chuẩn"}
-      </p>
-    </Link>
+    <li>
+      <Link
+        href={`/imports/${batch.id}`}
+        className="block rounded-lg border border-line-strong p-4 transition-colors hover:border-theme-primary hover:bg-theme-soft"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <p className="break-all font-medium">{batch.filename}</p>
+          <Badge variant={status.variant}>{status.label}</Badge>
+        </div>
+        <p className="mt-1 text-sm text-ink-muted">
+          {batch.totalRows} dòng · hợp lệ {batch.validRows} · cảnh báo {batch.warningRows} · lỗi{" "}
+          {batch.errorRows}
+          {batch.committedRows > 0 ? ` · đã ghi ${batch.committedRows}` : ""}
+        </p>
+        <p className="text-xs text-ink-muted">
+          Nguồn: {SOURCE_LABELS[batch.sourceFormat] ?? batch.sourceFormat} · tải lên{" "}
+          {formatDateTimeVi(batch.createdAt)}
+          {/* TO-BE 7 — người tải lên. Không in dấu gạch vào chỗ chờ tên người
+              (bài học nợ #13 của M09): tài khoản đã xoá thì nói ra điều đó. */}
+          {batch.uploaderName ? ` bởi ${batch.uploaderName}` : " (người tải lên không còn tài khoản)"}
+          {batch.cancelledAt ? ` · huỷ ${formatDateTimeVi(batch.cancelledAt)}` : ""}
+          {batch.rawPurgedAt ? " · đã xoá dữ liệu thô" : ""}
+        </p>
+      </Link>
+    </li>
   );
 }
 
-export default async function ImportsPage() {
+/** Câu mô tả phạm vi đang xem — một danh sách tự thu hẹp mà không nói gì là bài học D-108. */
+function scopeText(criteria: BatchListCriteria, yearLabel: string | null): string {
+  const parts: string[] = [];
+  if (criteria.yearId === "all") parts.push("mọi năm học");
+  else if (yearLabel) parts.push(`năm học ${yearLabel}`);
+  if (criteria.status !== "all") parts.push(`trạng thái "${BATCH_STATUS_FILTER_LABELS[criteria.status]}"`);
+  return parts.length > 0 ? `Đang xem ${parts.join(" · ")}.` : "";
+}
+
+export default async function ImportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireImportPage();
-  const [year, batches] = await Promise.all([getCurrentAcademicYear(), listBatches()]);
-  const classOptions = year ? await listClassOptions(year.id) : [];
+  const criteria = parseBatchListCriteria(await searchParams);
+  const [year, years] = await Promise.all([getCurrentAcademicYear(), listImportYears()]);
+  const [list, classOptions] = await Promise.all([
+    listBatches(criteria, year?.id ?? null),
+    year ? listClassOptions(year.id) : Promise.resolve([]),
+  ]);
+  const filtered = hasActiveBatchFilter(criteria);
+  const selectedYear =
+    criteria.yearId === "current"
+      ? (year?.code ?? null)
+      : criteria.yearId === "all"
+        ? null
+        : (years.find((item) => item.id === criteria.yearId)?.code ?? null);
 
   return (
     <PageContainer>
@@ -62,90 +120,117 @@ export default async function ImportsPage() {
       />
 
       {!year ? (
-        <Card>
-          <CardContent className="py-6">
-            <p className="text-sm text-muted-foreground">
-              Chưa có năm học hiện hành. Vào trang Quản trị để đặt năm học trước khi nhập dữ liệu.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          variant="no-data"
+          title="Chưa có năm học hiện hành"
+          description="Nhập dữ liệu luôn ghi danh vào năm học đang áp dụng, mà hiện chưa có năm nào ở trạng thái đó. Hãy đặt năm học hiện hành ở trang Quản trị trước."
+          action={
+            <Link
+              href="/admin"
+              className="inline-flex h-control min-h-control items-center justify-center rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+            >
+              Mở trang Quản trị
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Tải file lên</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Dữ liệu sẽ được ghi danh vào năm học <strong>{year.code}</strong>. Hệ thống đọc được
-                file mẫu chuẩn, sheet <strong>SYLL</strong> hoặc sheet <strong>DS_dau_nam</strong> của
-                sổ lớp. Bước tải lên chỉ kiểm tra, chưa ghi gì vào hệ thống.
-              </p>
-
-              <form action={uploadAction} className="space-y-3">
-                <input
-                  type="file"
-                  name="file"
-                  required
-                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  className="block w-full rounded-md border border-input bg-background p-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm"
-                />
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="classId">
-                    Lớp đích (nếu file không có cột lớp)
-                  </label>
-                  <select
-                    id="classId"
-                    name="classId"
-                    defaultValue=""
-                    className="block min-h-11 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
-                  >
-                    <option value="">— Lấy theo cột lớp trong file —</option>
-                    {classOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.displayName}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-muted-foreground">
-                    Sổ lớp Chiên Con không có cột lớp — hãy chọn lớp ở đây. Dòng nào đã ghi lớp
-                    trong file thì vẫn ưu tiên giá trị trong file.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button type="submit">Kiểm tra file</Button>
-                  {/* This is a file download served by a route handler, not a
-                      page: next/link would client-navigate and break it. */}
-                  {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                  <a
-                    href="/imports/template"
-                    download
-                    className="inline-flex h-11 min-h-11 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-text transition-colors hover:bg-surface-muted"
-                  >
-                    Tải file mẫu
-                  </a>
-                </div>
-              </form>
+            <CardContent>
+              <ImportUploadForm yearCode={year.code} classOptions={classOptions} />
             </CardContent>
           </Card>
 
           <section className="space-y-3">
-            <h3 className="text-lg font-semibold">Lần nhập gần đây</h3>
-            {batches.length === 0 ? (
-              <Card>
-                <CardContent className="py-6">
-                  <p className="text-sm text-muted-foreground">Chưa có lần nhập dữ liệu nào.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-3">
-                {batches.map((batch) => (
-                  <BatchRow key={batch.id} batch={batch} />
-                ))}
+            <h2 className="text-lg font-semibold">Lần nhập gần đây</h2>
+
+            {/*
+              M12-B / TO-BE 7. Mặc định là **năm học hiện hành** (D-135): mọi lần
+              nhập đều ghi danh vào năm đang chạy, nên lần nhập của năm cũ chỉ còn
+              giá trị tra cứu. Phạm vi đang xem được nói thẳng ra bên dưới — một
+              danh sách tự ẩn bớt mà im lặng thì người dùng tưởng dữ liệu mất.
+            */}
+            <FilterBar
+              legend="Lọc danh sách lần nhập"
+              action="/imports"
+              resetHref={filtered ? "/imports" : undefined}
+            >
+              <div>
+                <Label htmlFor="filter-batch-year">Năm học</Label>
+                <Select
+                  id="filter-batch-year"
+                  name="year"
+                  defaultValue={criteria.yearId}
+                  className="mt-1"
+                >
+                  <option value="current">Năm học hiện hành</option>
+                  <option value="all">Tất cả năm học</option>
+                  {years.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.code} — {item.name}
+                    </option>
+                  ))}
+                </Select>
               </div>
+              <div>
+                <Label htmlFor="filter-batch-status">Trạng thái</Label>
+                <Select
+                  id="filter-batch-status"
+                  name="status"
+                  defaultValue={criteria.status}
+                  className="mt-1"
+                >
+                  {BATCH_STATUS_FILTERS.map((value) => (
+                    <option key={value} value={value}>
+                      {BATCH_STATUS_FILTER_LABELS[value]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </FilterBar>
+
+            {list.batches.length === 0 ? (
+              <EmptyState
+                variant="no-data"
+                title={filtered ? "Không có lần nhập nào khớp bộ lọc" : "Chưa có lần nhập dữ liệu nào"}
+                description={
+                  filtered
+                    ? `${scopeText(criteria, selectedYear)} Bỏ bớt bộ lọc để xem các lần nhập khác.`
+                    : `Năm học ${year.code} chưa có lần nhập Excel nào. Tải một file lên để bắt đầu — bước tải lên chỉ kiểm tra, chưa ghi gì vào hệ thống.`
+                }
+                action={
+                  filtered ? (
+                    <Link href="/imports" className="text-sm font-medium underline underline-offset-4">
+                      Xoá bộ lọc
+                    </Link>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <>
+                <p className="text-sm text-ink-muted">
+                  {list.totalItems} lần nhập. {scopeText(criteria, selectedYear)}
+                </p>
+                <ul aria-label="Danh sách lần nhập" className="grid gap-3">
+                  {list.batches.map((batch) => (
+                    <BatchCard key={batch.id} batch={batch} />
+                  ))}
+                </ul>
+              </>
             )}
+
+            {list.totalItems > list.pageSize ? (
+              <Pagination
+                page={list.page}
+                pageSize={list.pageSize}
+                totalItems={list.totalItems}
+                itemLabel="lần nhập"
+                buildHref={(target) => batchListHref(criteria, target)}
+              />
+            ) : null}
           </section>
         </div>
       )}

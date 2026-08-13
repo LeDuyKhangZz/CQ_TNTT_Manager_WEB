@@ -56,31 +56,92 @@ Màu ngành là metadata UI, không dùng để quyết định nghiệp vụ.
 
 ## 5. Mobile
 
-Bottom navigation tối đa 5 mục theo role.
+> **Cập nhật 2026-07-23 (Giai đoạn 2B · M14 đợt C, chủ dự án duyệt).** Mục này trước đây mô tả
+> **ba** preset cho toàn bộ hệ thống và lệch với mã nguồn ở hai chỗ. Nay có **bảy** preset, tách
+> theo phạm vi công tác (`scopeKind`) thay vì gộp chung mọi nhân sự — xem lý do ở
+> `docs/system-workflow-redesign/modules/M14-NAVIGATION-SHELL/06_UI_UX_RECOMMENDATIONS.md` §B2.
 
-### Staff lớp
+Bottom navigation tối đa 5 mục theo role. Mục thứ 5 luôn là `Tài khoản`.
+
+### Nhân sự — phạm vi lớp (Giáo lý viên đại diện · Giáo lý viên lớp · Dự trưởng phụ tá)
 
 ```text
 Trang chủ | Điểm danh | Lớp | Thông báo | Tài khoản
 ```
 
+🔴 **Preset này không được đổi.** Đây là nhóm đông nhất và đang dùng thật.
+
+### Nhân sự — phạm vi ngành (Trưởng ngành · Phó ngành)
+
+```text
+Trang chủ | Điểm danh | Lên lớp | Thông báo | Tài khoản
+```
+
+### Nhân sự — phạm vi toàn xứ đoàn (Xứ đoàn trưởng · Phó Xứ đoàn · Thư ký)
+
+```text
+Trang chủ | Thiếu nhi | Điểm danh | Báo cáo | Tài khoản
+```
+
+### Quản trị viên hệ thống
+
+```text
+Trang chủ | Điểm danh | Lớp | Quản trị | Tài khoản
+```
+
+### Vai trò chỉ đọc (Cha sở · Cha phó · Thủ quỹ)
+
+```text
+Trang chủ | Thiếu nhi | Kết quả | Báo cáo | Tài khoản
+```
+
+Ba vai trò này **không** có `Điểm danh`: `ROUTE_RULES` không cho họ vào `/attendance`, nên mục đó
+trước đây chỉ dẫn tới `/access-denied` (M14 A-11).
+
 ### Phụ huynh
 
 ```text
-Trang chủ | Con của tôi | Lịch học | Thông báo | Tài khoản
+Trang chủ | Con của tôi | Xin nghỉ | Thông báo | Tài khoản
 ```
+
+`Kết quả` lùi vào menu điều hướng đầy đủ. `Xin nghỉ` giữ chỗ trên thanh dưới vì đó là việc phụ
+huynh làm thường xuyên nhất; `Lịch học` (bản cũ) chỉ là giáo án của lớp, không phải lịch riêng
+của em nào.
 
 ### Thiếu nhi
 
 ```text
-Trang chủ | Lịch học | Kết quả | Thông báo | Tài khoản
+Trang chủ | Điểm danh | Kết quả | Thông báo | Tài khoản
 ```
 
-Các module còn lại trong menu `Thêm`.
+`Điểm danh` ở đây là **sổ điểm danh của chính em** (`/student/attendance`), thứ em thật sự cần
+theo dõi. Bản cũ ghi `Lịch học`.
+
+### Bất biến bắt buộc
+
+Không mục nào trong bottom navigation được trỏ tới route mà `canAccessRoute` trả `false` cho
+chính vai trò đó. Canh bằng unit test duyệt cả 14 vai trò (`tests/unit/navigation.test.ts`).
+
+### Các module còn lại
+
+Vào qua **nút ba gạch** ở góc trái thanh đầu trang (drawer). Bản cũ ghi "menu `Thêm`" ở ô thứ 5;
+phương án drawer được chọn vì nút ba gạch đã là một hộp thoại đúng chuẩn (bẫy focus, `Escape`
+đóng và trả focus, khoá cuộn nền — Giai đoạn 2B mục 0.7), còn một menu `Thêm` sẽ tạo **hai cửa
+cho cùng một việc**.
 
 Touch target >= 44px. Không phụ thuộc hover.
 
 ## 6. Route map
+
+> **Cập nhật 2026-07-23 (Giai đoạn 2B · M14 đợt C, chủ dự án duyệt).** Bản cũ liệt kê 10 địa chỉ
+> không tồn tại trong mã nguồn. Rà lại thì **9/10 là do gộp trang có chủ đích**, không phải nợ:
+> `/equipment` đã nằm trong `/committees/[committeeId]`; bốn trang `/admin/*` gộp thành một trang
+> `/admin` (riêng nhập Excel là `/imports`); thiếu nhi và phụ huynh dùng chung `/results`,
+> `/teaching-plan` với nhân sự thay vì có bản sao riêng `/student/*`, vì RLS đã lọc dữ liệu và hai
+> bản sao là hai chỗ để lệch nhau. Các địa chỉ đó đã được gỡ khỏi danh sách dưới đây.
+>
+> **Còn đúng một mục là nợ thật:** `/staff/[staffId]` — trang chi tiết một Giáo lý viên chưa có.
+> Ghi nợ vào **module M04 Nhân sự** (module số 4 của Giai đoạn 2B).
 
 ### Chung
 
@@ -110,32 +171,41 @@ Touch target >= 44px. Không phụ thuộc hover.
 /promotions
 /committees
 /committees/[committeeId]
-/equipment
 /reports
+/reports/export
+/reports/snapshots
+/reports/snapshots/[snapshotId]/export
+/imports
+/imports/template
+/imports/[batchId]
 /admin
-/admin/accounts
-/admin/academic-years
-/admin/settings
-/admin/import
 ```
+
+`/staff/[staffId]` đã được hiện thực trong Giai đoạn 2B · M04; `/reports/snapshots`
+là trang lịch sử dẫn tới từng bản chụp và tệp xuất của bản đó.
+Kho thiết bị nằm trong `/committees/[committeeId]` (không có `/equipment` riêng).
+Bốn màn hình quản trị gộp vào một trang `/admin`; nhập Excel là `/imports`.
 
 ### Guardian
 
 ```text
-/parent
+/parent/children
 /parent/children/[studentId]
 /parent/absence-requests
 ```
 
+`/parent` không phải một trang — nó là **tiền tố luật quyền** trong `ROUTE_RULES`.
+Trang danh sách con là `/parent/children` (Giai đoạn 2B · M14 đợt C).
+
 ### Student
 
 ```text
-/student
-/student/schedule
-/student/results
 /student/attendance
-/student/profile
 ```
+
+Thiếu nhi dùng chung `/results` và `/teaching-plan` với nhân sự; RLS lọc dữ liệu, nên **không**
+dựng bản sao `/student/results`, `/student/schedule`, `/student/profile`. Hai bản sao của cùng một
+màn hình là hai chỗ để lệch nhau. `/student` là tiền tố luật quyền, không phải trang.
 
 ### Sa mạc Phase 8
 
@@ -310,6 +380,26 @@ Quick filter:
 - Cảnh báo.
 - Search.
 
+> **M05-C ghi chú thực thi (2026-08-03) — mục này nay CÓ THẬT, và khác đặc tả ở ba chỗ.**
+>
+> 1. **Hàng em mặc định GẤP LẠI, chạm để mở** (**D-143**, chủ dự án chốt 2026-08-03). Đặc tả viết
+>    "một card/em" với hai segmented control luôn hiện; đo thật thì thẻ ấy cao ~180px, nên lớp 50 em
+>    dài **~9.000px** và việc *"soát lại mình đã đánh vắng ai"* trước khi chốt là cuộn hết cả trang.
+>    Gấp lại còn ~1.800px. Hàng gấp lại **vẫn nói đủ** trạng thái cả hai cột bằng hai chip — gấp mà
+>    giấu luôn kết quả thì tệ hơn hẳn bản cũ. Chi phí đã chấp nhận: sửa một em mất thêm một cú chạm.
+> 2. **Segmented control có BA nút, không phải năm** (**D-142**): Có mặt · Vắng có phép · Vắng không
+>    phép, cộng nút "…" mở Đi trễ · Về sớm. Phương án hai nút *"Có mặt · Vắng"* của
+>    `M05/06_UI_UX_RECOMMENDATIONS` U-10 đã bị bỏ vì nó buộc phải chọn hộ người dùng một trong hai
+>    loại vắng, mà dù chọn loại nào cũng sai với một nửa số ca — và con số ấy chảy thẳng vào điểm
+>    chuyên cần (M07). Nhãn trên nút rút gọn ("Có phép") cho vừa bề ngang 360px; trình đọc màn hình
+>    vẫn nghe câu đầy đủ ("Vắng có phép").
+> 3. **"Quick actions"/"Đánh dấu vắng cả hai" chưa làm** (U-14, P3). Thứ có thật là nút *"Áp dụng gợi
+>    ý: Vắng có phép"* ở em có đơn xin nghỉ (M05-B), và nó chỉ đổi bản nháp phía máy người dùng.
+>
+> Bộ lọc và ô tìm chạy **thuần trên máy người dùng**, không gọi máy chủ, và đọc **bản nháp đang gõ**
+> chứ không đọc dữ liệu đã lưu: em vừa được đánh vắng phải rơi vào nhóm "Đang vắng" ngay lập tức.
+> Con số trên nhãn nút lọc là con số của **cả buổi**, không phải của trang đang xem.
+
 Actions:
 
 - `Bắt đầu điểm danh`.
@@ -329,6 +419,13 @@ Vắng không phép: 1
 Đi trễ: 3
 Về sớm: 0
 ```
+
+> **M05-C ghi chú thực thi (2026-08-03) — TB-03, nay có thật và rộng hơn khối trên.** Bảng phân bố
+> tách **hai cột Thánh lễ / Giáo lý** chứ không một cột, vì hai trạng thái là độc lập (D-30) và một
+> con số gộp giấu mất đúng thứ người ta cần soát. Hàng nào cả hai cột đều bằng 0 thì **không in ra**.
+> Kèm dòng "Giáo lý viên có mặt: x/y", và — điều đặc tả không đòi — **tên riêng** những em có đơn xin
+> nghỉ mà vẫn đang để "Có mặt" cả hai cột (một con số đếm không cho biết phải mở em nào ra xem lại).
+> Bấm Huỷ ⇒ **không request nào** đi tới máy chủ.
 
 ## 11. Teaching plan UX
 

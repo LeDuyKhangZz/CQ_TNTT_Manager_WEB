@@ -9,6 +9,15 @@
  *  2000 is a leap year so 29/02 survives the round-trip. */
 export const PATRON_FEAST_YEAR = 2000;
 
+/**
+ * `normalizeText` và `normalizeForMatch` nay nằm ở `src/lib/text` — M03-B nâng
+ * chúng lên dùng chung để đường nhập tay và đường Excel có **cùng một định
+ * nghĩa "trùng"** (AC-F13-04). Xuất lại ở đây nên mọi chỗ gọi cũ giữ nguyên.
+ */
+import { normalizeForMatch, normalizeText } from "@/lib/text/normalize-for-match";
+
+export { normalizeForMatch, normalizeText };
+
 /** Values the parish uses to mean "nothing here" rather than a real value. */
 const EMPTY_MARKERS = new Set([
   "",
@@ -24,36 +33,6 @@ const EMPTY_MARKERS = new Set([
   "-",
   "--",
 ]);
-
-/** Unicode NFC + trim + collapse inner whitespace (including newlines). */
-export function normalizeText(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  let raw: string;
-  if (value instanceof Date) {
-    // Real workbooks contain cells that parse to an invalid Date; toISOString()
-    // would throw RangeError and abort the whole import.
-    if (Number.isNaN(value.getTime())) return "";
-    raw = value.toISOString();
-  } else {
-    raw = String(value);
-  }
-  return raw.normalize("NFC").replace(/\s+/gu, " ").trim();
-}
-
-/** Strip Vietnamese diacritics and case for duplicate matching only.
- *  The original text is always kept for display (docs/09 §4). */
-export function normalizeForMatch(value: unknown): string {
-  return normalizeText(value)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/gu, "")
-    .replace(/đ/gu, "d")
-    // Punctuation becomes a separator, not nothing: "cha/mẹ" must
-    // tokenize as "cha","me", otherwise it merges into "chame".
-    .replace(/[^a-z0-9 ]/gu, " ")
-    .replace(/\s+/gu, " ")
-    .trim();
-}
 
 /** True when a cell holds one of the parish's "empty" markers. */
 export function isEmptyMarker(value: unknown): boolean {

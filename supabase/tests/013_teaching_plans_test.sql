@@ -2,7 +2,7 @@ begin;
 
 -- P4-T1: kế hoạch giảng dạy cả năm, phân công đúng đội ngũ lớp và RLS.
 -- Mọi nhánh quyền đều chạy dưới JWT thật, không dùng service role.
-select plan(27);
+select plan(28);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at) values
   ('a1000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'rep-plan@test.local', crypt('x', gen_salt('bf')), now(), now(), now()),
@@ -154,18 +154,30 @@ select is((select count(*)::integer from public.teaching_plan_items), 0, 'phụ 
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000006', true);
 select is((select count(*)::integer from public.teaching_plan_items), 0, 'thiếu nhi không đọc bảng giáo án gốc');
 
--- Nhóm ghi toàn cục có thể quản trị mọi lớp; đại diện vẫn sửa/xóa lớp mình.
+-- 🔴 **D-144 (2026-08-04) ĐẢO NGƯỢC hai bài dưới đây.** Trước M06-B, Thư ký —
+-- một trong bốn vai trò `app.can_global_write()` — tạo và sửa được giáo án của
+-- **mọi** lớp, đúng bảng `docs/05`. Chủ dự án chốt theo `docs/03` WF-07: trách
+-- nhiệm giáo án thuộc về đúng một người mỗi lớp, nên ba vai trò cấp xứ đoàn chỉ
+-- còn XEM. Đây là **đổi kỳ vọng theo một quyết định đã duyệt**, không phải nới
+-- test cho qua — và hai bài vẫn khẳng định quyền ĐỌC không nhúc nhích.
+--
+-- ⚠️ Hai lượt ghi bị chặn theo **hai cách khác nhau**, và bài test phải theo
+-- đúng cách ấy: INSERT vi phạm `with check` nên **ném 42501**, còn UPDATE thì
+-- mệnh đề `using` **lọc dòng trong im lặng** — 0 dòng, không lỗi. Viết
+-- `throws_ok` cho lượt UPDATE là một bài xanh giả.
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000007', true);
-select lives_ok(
+select is((select count(*)::integer from public.teaching_plans), 1, 'thư ký vẫn ĐỌC được giáo án (D-144 chỉ siết quyền ghi)');
+select throws_ok(
   $$insert into public.teaching_plans (id, class_id, academic_year_id, title)
     values ('ab000000-0000-4000-8000-000000000002', 'a6000000-0000-4000-8000-000000000002',
             'a0000000-0000-4000-8000-000000000001', 'Giáo án Thiếu 1A')$$,
-  'thư ký ghi toàn cục tạo giáo án lớp khác'
+  '42501', null, 'D-144: thư ký KHÔNG tạo được giáo án'
 );
-select lives_ok(
-  $$update public.teaching_plan_items set title = 'Bài mở đầu đã sửa'
-    where id = 'ac000000-0000-4000-8000-000000000001'$$,
-  'nhóm ghi toàn cục sửa được mục giáo án'
+update public.teaching_plan_items set title = 'Thư ký sửa'
+where id = 'ac000000-0000-4000-8000-000000000001';
+select is(
+  (select title from public.teaching_plan_items where id = 'ac000000-0000-4000-8000-000000000001'),
+  'Bài mở đầu', 'D-144: thư ký KHÔNG sửa được mục giáo án'
 );
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000001', true);
 select lives_ok(

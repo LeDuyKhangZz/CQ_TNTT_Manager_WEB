@@ -4,22 +4,27 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AuthContext } from "@/lib/auth/types";
 import type { AppRole } from "@/lib/permissions/roles";
 import type { Database } from "@/types/database";
+import { canLockGradebook, canModerateComment, hasGlobalResultWrite } from "../gradebook-permissions";
 
 const GLOBAL_READ_ROLES: readonly AppRole[] = [
   "super_admin", "parish_priest", "chaplain", "group_leader",
   "deputy_group_leader", "secretary",
-];
-const GLOBAL_WRITE_ROLES: readonly AppRole[] = [
-  "super_admin", "group_leader", "deputy_group_leader", "secretary",
 ];
 
 export function hasGlobalResultRead(role: AppRole | null): boolean {
   return role !== null && GLOBAL_READ_ROLES.includes(role);
 }
 
-export function hasGlobalResultWrite(role: AppRole | null): boolean {
-  return role !== null && GLOBAL_WRITE_ROLES.includes(role);
-}
+/**
+ * M07-B — ba luật **thuần** chuyển sang `../gradebook-permissions.ts` để unit
+ * test nạp được: file này mang `import "server-only"` nên vitest không vào nổi.
+ * Re-export để mọi chỗ gọi cũ không phải đổi đường dẫn.
+ *
+ * 🔴 Phải `import` rồi mới `export`, không dùng `export … from` một dòng:
+ * `export … from` **không tạo ràng buộc cục bộ**, nên `canGradeClass` ngay bên
+ * dưới sẽ không gọi được `hasGlobalResultWrite`.
+ */
+export { canLockGradebook, canModerateComment, hasGlobalResultWrite };
 
 export async function getVisibleResultClassIds(
   context: AuthContext,

@@ -1,11 +1,11 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { AttendanceHistory } from "@/features/portal/components/attendance-history";
+import { PortalEmptyState } from "@/features/portal/components/portal-empty-state";
 import { getStudentSelfAttendancePageData } from "@/features/portal/server/queries";
 
 export default async function StudentAttendancePage() {
-  const { student, summary, rows } = await getStudentSelfAttendancePageData();
+  const { context, student, status, yearCode, summary, rows } = await getStudentSelfAttendancePageData();
 
   return (
     <PageContainer>
@@ -14,15 +14,15 @@ export default async function StudentAttendancePage() {
         description="Chỉ hiện những buổi giáo lý viên đã chốt."
       />
       {student === null ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
-              Tài khoản của em chưa gắn với hồ sơ thiếu nhi. Nhờ giáo lý viên kiểm tra giúp.
-            </p>
-          </CardContent>
-        </Card>
+        <PortalEmptyState reason="not_linked" audience="student" />
       ) : (
-        <AttendanceHistory summary={summary} rows={rows} />
+        <AttendanceHistory
+          summary={summary}
+          rows={rows}
+          status={status}
+          audience={context.audience}
+          yearCode={yearCode}
+        />
       )}
     </PageContainer>
   );

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormMessage } from "@/components/ui/form-message";
 import { formatDateVi } from "@/lib/dates";
 import type { WeekAheadTeachingData } from "../server/queries";
 
@@ -11,7 +12,17 @@ export function WeekAheadSchedule({ data }: { data: WeekAheadTeachingData }) {
         <CardDescription>{formatDateVi(data.startDate)} – {formatDateVi(data.endDate)}</CardDescription>
       </CardHeader>
       <CardContent>
-        {data.items.length === 0 ? (
+        {/*
+          Hạng mục #11 — **"không tải được" khác hẳn "không có bài nào"**, và
+          trước đợt này hai thứ ấy dùng chung đúng một câu. Xem `failed` ở
+          `server/queries.ts`.
+        */}
+        {data.failed ? (
+          <FormMessage tone="danger">
+            Không tải được lịch 7 ngày tới. Đây là lỗi của hệ thống, không phải lớp chưa có bài — hãy
+            tải lại trang, nếu vẫn vậy thì báo cho Ban điều hành xứ đoàn.
+          </FormMessage>
+        ) : data.items.length === 0 ? (
           <p className="text-sm text-muted-foreground">Chưa có bài học hoặc bài kiểm tra trong khoảng này.</p>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

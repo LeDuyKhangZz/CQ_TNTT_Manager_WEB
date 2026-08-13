@@ -13,8 +13,12 @@ export interface CommitteeSummary {
   description: string | null;
   managesEquipment: boolean;
   isActive: boolean;
+  sortOrder: number;
   memberCount: number;
   myPosition: CommitteePosition | null;
+  /** TB-M09-06: tên Trưởng/Phó ban trên thẻ Ban. Rỗng khi RLS không cho đọc tên. */
+  leaderNames: string[];
+  deputyNames: string[];
 }
 
 export interface CommitteeMember {
@@ -48,6 +52,10 @@ export interface CommitteeWeeklyPlan {
   weekStart: string;
   content: string | null;
   checklist: string[];
+  /** TB-M09-01: khoá so sánh-và-đổi mà form gửi lại khi bấm Lưu. */
+  updatedAt: string;
+  /** `null` khi RLS không cho người đang xem đọc hồ sơ của người lưu. */
+  savedByName: string | null;
 }
 
 export interface StaffOption {
@@ -94,23 +102,33 @@ export async function getCommitteesPageData(): Promise<{
     supabase.from("committees").select("*").order("sort_order").order("name"),
     supabase
       .from("committee_memberships")
-      .select("id, committee_id, staff_profile_id, position")
+      // D-100 cho thành viên đọc tên nhau, nên thẻ Ban hiện được tên Trưởng/Phó.
+      .select("id, committee_id, staff_profile_id, position, staff_profiles(saint_name, full_name)")
       .eq("is_active", true),
   ]);
 
   const memberships = membershipData ?? [];
-  const committees = (committeeData ?? []).map((committee): CommitteeSummary => ({
-    id: committee.id,
-    code: committee.code,
-    name: committee.name,
-    description: committee.description,
-    managesEquipment: committee.manages_equipment,
-    isActive: committee.is_active,
-    memberCount: memberships.filter((item) => item.committee_id === committee.id).length,
-    myPosition: (memberships.find(
-      (item) => item.committee_id === committee.id && item.staff_profile_id === myStaffId,
-    )?.position ?? null) as CommitteePosition | null,
-  }));
+  const committees = (committeeData ?? []).map((committee): CommitteeSummary => {
+    const own = memberships.filter((item) => item.committee_id === committee.id);
+    const namesByPosition = (position: CommitteePosition) =>
+      own
+        .filter((item) => item.position === position)
+        .map((item) => staffDisplayName(item.staff_profiles))
+        .filter((name) => name !== "—");
+    return {
+      id: committee.id,
+      code: committee.code,
+      name: committee.name,
+      description: committee.description,
+      managesEquipment: committee.manages_equipment,
+      isActive: committee.is_active,
+      sortOrder: committee.sort_order,
+      memberCount: own.length,
+      myPosition: (own.find((item) => item.staff_profile_id === myStaffId)?.position ?? null) as CommitteePosition | null,
+      leaderNames: namesByPosition("leader"),
+      deputyNames: namesByPosition("deputy"),
+    };
+  });
 
   return { committees, canManageCommittees: canManageCommittees(context) };
 }
@@ -149,11 +167,31 @@ export async function getCommitteeDetail(committeeId: string): Promise<Committee
         .limit(20),
       supabase
         .from("committee_weekly_plans")
-        .select("id, week_start, content, checklist_json")
+        .select("id, week_start, content, checklist_json, updated_at, updated_by, created_by")
         .eq("committee_id", committeeId)
         .order("week_start", { ascending: false })
         .limit(8),
     ]);
+
+  // Tên người lưu bản tuần tra qua `staff_profiles`, KHÔNG qua `profiles`:
+  // `profiles_select_self_or_global` chỉ cho chính chủ hoặc quyền toàn cục đọc,
+  // nên một Trưởng ban thường sẽ luôn nhận null nếu đi đường đó. Không đọc được
+  // thì bỏ tên đi, không hiện "—" — một dấu gạch ở chỗ chờ tên người là câu nói
+  // sai về việc "không ai lưu bản này".
+  const planRows = planData ?? [];
+  const savedByIds = Array.from(
+    new Set(planRows.map((row) => row.updated_by ?? row.created_by).filter((id): id is string => Boolean(id))),
+  );
+  const savedByName = new Map<string, string>();
+  if (savedByIds.length > 0) {
+    const { data: savers } = await supabase
+      .from("staff_profiles")
+      .select("profile_id, saint_name, full_name")
+      .in("profile_id", savedByIds);
+    for (const saver of savers ?? []) {
+      if (saver.profile_id) savedByName.set(saver.profile_id, staffDisplayName(saver));
+    }
+  }
 
   const members = (memberData ?? []).map((item): CommitteeMember => ({
     id: item.id,
@@ -194,8 +232,11 @@ export async function getCommitteeDetail(committeeId: string): Promise<Committee
       description: committee.description,
       managesEquipment: committee.manages_equipment,
       isActive: committee.is_active,
+      sortOrder: committee.sort_order,
       memberCount: members.length,
       myPosition,
+      leaderNames: members.filter((m) => m.position === "leader").map((m) => m.displayName),
+      deputyNames: members.filter((m) => m.position === "deputy").map((m) => m.displayName),
     },
     members,
     announcements: (announcementData ?? []).map((item): CommitteeAnnouncement => ({
@@ -213,13 +254,15 @@ export async function getCommitteeDetail(committeeId: string): Promise<Committee
       location: item.location,
       note: item.note,
     })),
-    weeklyPlans: (planData ?? []).map((item): CommitteeWeeklyPlan => ({
+    weeklyPlans: planRows.map((item): CommitteeWeeklyPlan => ({
       id: item.id,
       weekStart: item.week_start,
       content: item.content,
       checklist: Array.isArray(item.checklist_json)
         ? (item.checklist_json as unknown[]).map((entry) => String(entry))
         : [],
+      updatedAt: item.updated_at,
+      savedByName: savedByName.get(item.updated_by ?? item.created_by) ?? null,
     })),
     staffOptions,
     canManageMembers: manageMembers,

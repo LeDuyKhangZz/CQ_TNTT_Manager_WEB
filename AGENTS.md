@@ -4,6 +4,11 @@
 
 ## 1. Đọc trước khi làm
 
+> 🔴 **DỰ ÁN ĐANG Ở GIAI ĐOẠN 2B — TÁI THIẾT KẾ GIAO DIỆN.**
+> Phase 1–8 trong `docs/08-phase-plan.md` là kế hoạch **XÂY DỰNG BAN ĐẦU**, đã xong tới Phase 7.
+> Việc đang làm bây giờ nằm ở `docs/system-workflow-redesign/ui-redesign/`, **không phải** ở
+> `docs/08-phase-plan.md`. Xem §1b.
+
 Theo đúng thứ tự:
 
 1. `WORKLOG.md`
@@ -16,6 +21,27 @@ Theo đúng thứ tự:
 8. Tài liệu module liên quan.
 
 Không được bắt đầu code dựa trên prompt hiện tại mà bỏ qua trạng thái repo và quyết định đã chốt.
+
+## 1b. Giai đoạn 2B — nguồn sự thật đang hiệu lực
+
+Đọc **bốn file này** trước khi làm bất cứ việc gì của 2B:
+
+| Thứ tự | File | Vai trò |
+|---|---|---|
+| 1 | `docs/system-workflow-redesign/ui-redesign/16_PHASE_2B_IMPLEMENTATION_LOG.md` | ⭐ **ĐÃ LÀM / CHƯA LÀM.** Bắt đầu từ đây |
+| 2 | `docs/system-workflow-redesign/ui-redesign/11_APPROVED_MODULE_PLAN.md` | Thứ tự, phạm vi, quy trình 9 bước, nghiệm thu chung 15 mục |
+| 3 | `docs/system-workflow-redesign/ui-redesign/09_APPROVED_DESIGN_SYSTEM.md` | Design system. **Ghi đè `docs/06-ui-ux-spec.md` §2 và §3** |
+| 4 | `docs/system-workflow-redesign/ui-redesign/10_APPROVED_THEME_RULES.md` | Quy tắc theme động |
+
+Ba tài liệu `09`/`10`/`11` **đã được chủ dự án phê duyệt ngày 2026-07-23**, không tự đổi.
+
+**Trước khi code một module:** đọc thêm `03_AUDIT_RESULTS.md` và `04_TO_BE_FLOWS.md` của module đó
+trong `docs/system-workflow-redesign/modules/<Mxx>/`.
+
+**Sau khi xong:** cập nhật `16_PHASE_2B_IMPLEMENTATION_LOG.md` + `00_SYSTEM_AUDIT_BOARD.md` +
+`WORKLOG.md` bằng **số kiểm thử thật**.
+
+**Nợ đang mở:** grep `NỢ 2B` trong `src/` ra hết các chỗ phải trả đúng module.
 
 ## 2. Claim task
 
@@ -86,7 +112,9 @@ Nếu mâu thuẫn:
 - View dùng `security_invoker`.
 - `security definer` đặt `search_path` cố định và kiểm actor.
 - Không hard delete enrollment/attendance/score/report final.
-- Không tạo full audit log; chỉ metadata cập nhật theo quyết định user.
+- **CÓ full audit log** (D-65, chốt 2026-07-23 — đảo ngược D-34). Bảng audit chỉ append,
+  không ai sửa/xóa kể cả Super Admin; chỉ Super Admin đọc. Không ghi password/token/nội dung
+  hồ sơ sức khỏe vào log. Phạm vi thao tác phải ghi: `docs/system-workflow-redesign/06_DECISION_LOG.md` D-65.
 - Sa mạc tables chưa migrate trước Phase 8.
 
 Sau migration:
@@ -195,6 +223,14 @@ Sau task hoặc trước khi hết phiên:
 - Parent: một guardian/student; guardian nhiều con.
 - Attendance Thu/Sun, mass/catechism.
 - Lock 3 ngày, lease 15 phút.
-- Không full audit.
+- ~~Không full audit.~~ → **CÓ full audit log** (D-65, 2026-07-23).
 - PWA, Vercel Hobby.
 - Sa mạc cuối cùng.
+
+## 13. Quyết định sau audit Giai đoạn 1 (2026-07-23)
+
+19 quyết định D-61…D-79 nằm ở **`docs/system-workflow-redesign/06_DECISION_LOG.md`**.
+Đọc file đó **trước khi** đụng vào permission, gradebook lock, portal, equipment, notification
+hoặc academic year — nó ghi đè mô tả cũ trong `docs/03`, `docs/05`, `docs/06` và `WORKLOG.md`.
+
+Sáu thay đổi permission bắt buộc có RLS negative test bằng JWT thật: D-63, D-66, D-67, D-70, D-74, D-75.

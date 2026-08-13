@@ -2,7 +2,7 @@ begin;
 
 -- P5-T5: representative proposal, sector approval, valid next-year targets and
 -- an atomic enrollment transition. Warning snapshots are advisory only.
-select plan(32);
+select plan(36);
 
 select has_table('public', 'promotion_reviews', 'promotion review table exists');
 select has_function('public', 'propose_promotion', array['uuid', 'promotion_status', 'uuid', 'boolean', 'text'], 'proposal RPC exists');
@@ -110,6 +110,44 @@ select lives_ok($$select public.propose_promotion('e4000000-0000-4000-8000-00000
 select lives_ok($$select public.approve_promotion_review((select id from public.promotion_reviews where source_enrollment_id = 'e4000000-0000-4000-8000-000000000006'), 'approve', null, null)$$, 'quyền toàn cục duyệt Dự trưởng');
 select is((select class_id from public.enrollments where previous_enrollment_id = 'e4000000-0000-4000-8000-000000000006'), 'e6000000-0000-4000-8000-000000000007'::uuid, 'Dự trưởng được tự tìm ở năm sau');
 select is((select count(*)::integer from public.profiles where id = 'e3000000-0000-4000-8000-000000000006'), 0, 'chuyển Dự trưởng không tự tạo tài khoản/role');
+
+-- ===========================================================================
+-- M08-A · KIỂM CHÉO BÀN GIAO TỪ M07-B.
+--
+-- `07_IMPLEMENTATION_IMPACT` của M07 §8 gọi đây là **cảnh báo, không phải tùy
+-- chọn**: từ M07-B một cột điểm **ẩn được**, và ẩn một cột là **đổi con số
+-- trung bình có trọng số**. Ba module tiêu thụ số ấy (M08 · M11 · M13) phải
+-- được kiểm chéo; M08 là module đầu tiên tới lượt.
+--
+-- Đọc code cho thấy khung nhìn `v_student_weighted_average` đã có
+-- `and assessment.is_active` ngay trong mệnh đề `join` từ Phase 5. Nhưng **một
+-- điều đúng khi đọc không phải một điều đã được đo** — và đây đúng loại bất
+-- biến âm thầm hỏng: nếu mai kia ai đó viết lại khung nhìn mà quên vế ấy, thì
+-- bảng điểm hiện một con số còn đề xuất chuyển lớp chụp một con số khác, không
+-- màn hình nào báo sai, và người duyệt quyết định dựa trên số cũ.
+--
+-- Hai cột cùng hệ số 1, điểm 10 và 4 ⇒ trung bình 7. Ẩn cột 4 điểm ⇒ 10.
+-- ===========================================================================
+reset role;
+insert into public.assessments (id, class_id, academic_year_id, kind, title, weight, max_score, created_by) values
+  ('e8000000-0000-4000-8000-000000000001', 'e6000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'quiz_15m', 'Cột giữ lại', 1, 10, 'e1000000-0000-4000-8000-000000000001'),
+  ('e8000000-0000-4000-8000-000000000002', 'e6000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'quiz_15m', 'Cột sẽ bị ẩn', 1, 10, 'e1000000-0000-4000-8000-000000000001');
+insert into public.assessment_scores (assessment_id, enrollment_id, class_id, academic_year_id, student_id, score) values
+  ('e8000000-0000-4000-8000-000000000001', 'e4000000-0000-4000-8000-000000000005', 'e6000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'e3000000-0000-4000-8000-000000000005', 10),
+  ('e8000000-0000-4000-8000-000000000002', 'e4000000-0000-4000-8000-000000000005', 'e6000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'e3000000-0000-4000-8000-000000000005', 4);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e1000000-0000-4000-8000-000000000001', true);
+select lives_ok($$select public.propose_promotion('e4000000-0000-4000-8000-000000000005', 'recommended_promote', 'e6000000-0000-4000-8000-000000000002', false, null)$$, 'đề xuất lại khi lớp đã có hai cột điểm');
+select is((select (warning_snapshot ->> 'weightedAverage')::numeric from public.promotion_reviews where source_enrollment_id = 'e4000000-0000-4000-8000-000000000005'), 7.00::numeric, 'trung bình chụp lại tính trên CẢ HAI cột đang hiện');
+
+reset role;
+update public.assessments set is_active = false where id = 'e8000000-0000-4000-8000-000000000002';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e1000000-0000-4000-8000-000000000001', true);
+select lives_ok($$select public.propose_promotion('e4000000-0000-4000-8000-000000000005', 'recommended_promote', 'e6000000-0000-4000-8000-000000000002', false, null)$$, 'đề xuất lại sau khi ẩn một cột');
+select is((select (warning_snapshot ->> 'weightedAverage')::numeric from public.promotion_reviews where source_enrollment_id = 'e4000000-0000-4000-8000-000000000005'), 10.00::numeric, 'ẩn cột (M07-B/BR-M07-28) loại luôn cột ấy khỏi trung bình mà chuyển lớp đọc');
 
 select * from finish();
 rollback;

@@ -2,42 +2,173 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design tokens — docs/06-ui-ux-spec.md §2. Không hardcode màu rải rác. */
+/* ==========================================================================
+   BỘ TOKEN — Giai đoạn 2B, Đợt 0-UI mục 0.2
+   Nguồn sự thật: docs/system-workflow-redesign/ui-redesign/09_APPROVED_DESIGN_SYSTEM.md
+   Tài liệu 09 GHI ĐÈ docs/06-ui-ux-spec.md §2 (token) và §3 (typography).
+
+   Kiến trúc ba tầng (docs/05 §1):
+     Tầng 1 PRIMITIVE  — giá trị thô, KHÔNG dùng thẳng trong component
+     Tầng 2 SEMANTIC   — dùng trong component
+     Tầng 3 COMPONENT  — chỉ khi component cần điều đặc thù
+
+   Mọi con số tương phản đã đo bằng docs/.../ui-redesign/scripts/*.mjs.
+   KHÔNG sửa tay hex nào mà không chạy lại `node approved.mjs`.
+   ========================================================================== */
+
 :root {
-  --background: #fff9f4;
-  --foreground: #3f342f;
-  --card: #ffffff;
-  --card-foreground: #3f342f;
-  --surface: #ffffff;
-  --surface-muted: #fff2e8;
-  --primary: #f28c5b;
-  --primary-hover: #e97945;
-  --primary-foreground: #ffffff;
-  --secondary: #f7c8a6;
-  --secondary-foreground: #3f342f;
-  --accent: #f6d7c3;
-  --muted: #fff2e8;
-  --muted-foreground: #756861;
-  --text: #3f342f;
-  --text-muted: #756861;
-  --border: #eedfd5;
-  --ring: #f28c5b;
-  --success: #4f9d76;
-  --success-surface: #edf8f2;
-  --warning: #d99a2b;
-  --warning-surface: #fff7e3;
-  --danger: #d95c5c;
-  --danger-surface: #fff0f0;
+  /* ---------- Tầng 2: nền · chữ · viền — KHÔNG đổi theo ngành (09 §3) ------ */
+  --bg-page: #fffbf7;
+  --bg-surface: #ffffff;
+  --bg-surface-muted: #fbf5ef;
+  --bg-overlay: rgb(46 42 39 / 0.45);
 
-  /* Metadata UI cho 5 ngành; không dùng các màu này để quyết định nghiệp vụ. */
-  --sector-chien-con: #e8b86d;
-  --sector-au-nhi: #f0a179;
-  --sector-thieu-nhi: #74b7a5;
-  --sector-nghia-si: #789ed1;
-  --sector-hiep-si: #a78ac6;
+  --text: #2e2a27; /* 13,81:1 trên nền trang */
+  --text-muted: #5c534d; /*  7,28:1 */
+  --text-on-dark: #ffffff;
 
-  --font-sans: "Be Vietnam Pro", "Inter", system-ui, -apple-system,
-    "Segoe UI", Roboto, Arial, sans-serif;
+  --border: #ede4dc; /* đường phân cách trang trí */
+  --border-strong: #8c7f76; /* viền ô nhập — 3,77:1, bắt buộc WCAG 1.4.11 */
+
+  /* ---------- Tầng 2: trạng thái — KHÔNG BAO GIỜ lấy từ token ngành ------- */
+  --success: #1e7a50;
+  --success-subtle: #e8f6ef;
+  --warning: #8a5a00;
+  --warning-subtle: #fff4dc;
+  --danger: #b3261e;
+  --danger-subtle: #fdecea;
+  --info: #1f5e9e;
+  --info-subtle: #e8f1fa;
+
+  /* ---------- Tầng 2: token ngành — ThemeScope BƠM ĐÈ inline (09 §4) ------
+     Giá trị dưới đây là mặc định HUYNH_TRUONG, dùng khi chưa có ThemeScope
+     (trang đăng nhập, skeleton, lỗi). Xem src/lib/theme/sector-palette.ts. */
+  --theme-primary: #ce4846;
+  --theme-primary-hover: #be3939;
+  --theme-primary-active: #b02b2e;
+  --theme-on-primary: #ffffff; /* 🔴 NGHĨA SĨ dùng #2E2A27 — 09 §4.1 */
+  --theme-accent-text: #c5403e; /* trên nền trắng hoặc --theme-tint */
+  --theme-accent-strong: #b02a2d; /* khi cần chữ MÀU trên --theme-pastel */
+  --theme-border: #bc847f;
+  --theme-ring: #ef6661;
+  --theme-chart: var(--theme-primary); /* 09 §4.1: chart = primary */
+
+  /* 🍬 Bốn bậc nền pastel (09 §4.2). Chữ đậm trên pastel: 8,51–10,33:1 */
+  --theme-tint: #ffefee; /* 0.965 — hàng được chọn, chip nhạt */
+  --theme-soft: #ffddda; /* 0.925 — nền thẻ lớp */
+  --theme-pastel: #ffcac5; /* 0.885 — chip cute, avatar, minh hoạ */
+  --theme-pastel-deep: #ffb7b1; /* 0.845 — viền thẻ, nét minh hoạ */
+  --theme-selected-bg: var(--theme-tint);
+
+  /* ---------- Typography (09 §2) ---------------------------------------- */
+  --font-sans: var(--font-be-vietnam-pro), system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+
+  --text-2xs: 12px; /* SÀN CỨNG — không có gì nhỏ hơn */
+  --text-xs: 13px; /* sàn cho chữ đọc thành câu */
+  --text-sm: 14px;
+  --text-base: 16px; /* body */
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600; /* KHÔNG dùng 700 ở hướng A */
+
+  /* Chiều cao vùng chạm. `comfortable` (M13) đẩy lên 48px — xem §M13 dưới. */
+  --control-height: 44px;
+  --control-font-size: var(--text-base);
+  --label-font-size: var(--text-sm);
+
+  /* ---------- Spacing · Radius · Shadow (09 §5) -------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --radius-sm: 8px; /* chip, badge */
+  --radius-md: 12px; /* nút, ô nhập */
+  --radius-lg: 16px; /* thẻ */
+  --radius-xl: 20px; /* dialog */
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px rgb(46 42 39 / 0.05); /* thẻ nghỉ */
+  --shadow-md: 0 8px 24px rgb(46 42 39 / 0.12); /* dialog, dropdown, drawer */
+  /* KHÔNG có mức thứ ba. */
+
+  /* ---------- Z-index (09 §5) — thay 4 giá trị hardcode -------------------
+     Trước đây sidebar z-30 và bottom-nav z-30 TRÙNG NHAU (docs/05 §2.4). */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-header: 20;
+  --z-sidebar: 30;
+  --z-bottom-nav: 30;
+  --z-overlay: 40;
+  --z-drawer: 50;
+  --z-dialog: 60;
+  --z-dropdown: 70;
+  --z-toast: 80;
+
+  /* ---------- Motion (09 §5) — chỉ 3 loại chuyển động ------------------- */
+  --duration-fast: 100ms; /* nhấn nút */
+  --duration-base: 150ms; /* hiện/ẩn */
+  --duration-slow: 200ms; /* trượt drawer, chuyển theme */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ======================================================================
+     BÍ DANH TƯƠNG THÍCH — tên token cũ của docs/06 §2.
+     Giữ để 172 file hiện có nhận bảng màu mới mà không phải đổi tên hàng
+     loạt (CLAUDE.md §3). Sẽ gỡ dần khi từng module được redesign ở 2B.
+     KHÔNG dùng các tên này trong code mới.
+     ====================================================================== */
+  --background: var(--bg-page);
+  --foreground: var(--text);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text);
+  --surface: var(--bg-surface);
+  --surface-muted: var(--bg-surface-muted);
+  --primary: var(--theme-primary);
+  --primary-hover: var(--theme-primary-hover);
+  --primary-foreground: var(--theme-on-primary);
+  --secondary: var(--theme-soft);
+  --secondary-foreground: var(--text);
+  --accent: var(--theme-tint);
+  --muted: var(--bg-surface-muted);
+  --muted-foreground: var(--text-muted);
+  --ring: var(--theme-ring);
+  --success-surface: var(--success-subtle);
+  --warning-surface: var(--warning-subtle);
+  --danger-surface: var(--danger-subtle);
+}
+
+/* Thang chữ lớn hơn một bậc cho cổng phụ huynh & thiếu nhi — Q-08, 09 §2.
+   Áp bằng data-density ở layout của /parent/* và /student/*.
+   KHÔNG tạo component riêng cho M13. */
+[data-density="comfortable"] {
+  --text-base: 17px;
+  --text-xs: 14px;
+  --text-sm: 14px;
+  --control-height: 48px;
+  --control-font-size: 17px;
+  --label-font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
 }
 
 @layer base {
@@ -49,25 +180,42 @@
   body {
     min-width: 360px;
     min-height: 100vh;
-    background-color: var(--background);
-    color: var(--foreground);
+    background-color: var(--bg-page);
+    color: var(--text);
     font-family: var(--font-sans);
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
   }
 
   * {
     border-color: var(--border);
   }
 
+  /* Focus ring theo màu NGỮ CẢNH ngành, không phải màu cố định (docs/05 §2.6). */
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--theme-ring);
     outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  /* Số liệu luôn thẳng cột (09 §2). */
+  table,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer utilities {
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Chuyển mềm khi đổi ngữ cảnh ngành (10 §6). Chỉ đặt trên phần tử accent,
+     không đặt toàn cục — sẽ làm chậm cảm giác của cả trang. */
+  .theme-transition {
+    transition:
+      background-color var(--duration-slow) var(--ease-out),
+      border-color var(--duration-slow) var(--ease-out),
+      color var(--duration-slow) var(--ease-out);
   }
 }

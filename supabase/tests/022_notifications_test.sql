@@ -7,7 +7,8 @@ select plan(31);
 
 select has_table('public', 'notifications', 'bảng thông báo tồn tại');
 select has_table('public', 'notification_recipients', 'bảng người nhận tồn tại');
-select has_function('public', 'publish_notification', array['text', 'text', 'notification_target_type', 'uuid', 'text'], 'RPC publish tồn tại');
+-- M10-B: chữ ký thêm `p_request_id` (D-165, chống gửi đúp).
+select has_function('public', 'publish_notification', array['text', 'text', 'notification_target_type', 'uuid', 'text', 'uuid'], 'RPC publish tồn tại');
 select has_function('public', 'mark_notification_read', array['uuid'], 'RPC đánh dấu đã đọc tồn tại');
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at) values

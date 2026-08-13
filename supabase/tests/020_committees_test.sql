@@ -3,7 +3,7 @@ begin;
 -- P6-T1/P6-T2: 6 Ban seed, tối đa hai Ban đang hoạt động cho mỗi nhân sự
 -- (D-47), chỉ Trưởng/Phó Ban đăng nội dung (D-48) và thành viên chỉ thấy Ban
 -- mình. Toàn bộ kiểm bằng JWT thật, không dùng service role.
-select plan(35);
+select plan(47);
 
 select has_table('public', 'committees', 'bảng Ban tồn tại');
 select has_table('public', 'committee_memberships', 'bảng thành viên Ban tồn tại');
@@ -119,6 +119,34 @@ select throws_ok(
     values ('30000000-0000-0000-0000-000000000006', 'Đăng nhờ Ban khác', 'Không được phép', 'f1000000-0000-4000-8000-000000000002')$$,
   '42501', null, 'Trưởng Ban này không đăng sang Ban khác');
 
+-- AC-M09-14 (M09-A): bản trắng chính là dấu vết của lỗi F11 — form mở ra trống,
+-- một cú bấm "Lưu" ghi đè nội dung cũ bằng rỗng. Chặn ngay ở DB.
+select throws_ok(
+  $$insert into public.committee_weekly_plans (committee_id, week_start, content, checklist_json, created_by)
+    values ('30000000-0000-0000-0000-000000000001', '2090-09-11', null, '[]'::jsonb, 'f1000000-0000-4000-8000-000000000002')$$,
+  '23514', null, 'không tạo được bản công việc tuần trắng');
+select throws_ok(
+  $$insert into public.committee_weekly_plans (committee_id, week_start, content, checklist_json, created_by)
+    values ('30000000-0000-0000-0000-000000000001', '2090-09-11', '   ', '[]'::jsonb, 'f1000000-0000-4000-8000-000000000002')$$,
+  '23514', null, 'nội dung toàn khoảng trắng cũng là bản trắng');
+
+-- TB-M09-01: người khác sửa bản tuần thì `created_by` vẫn là tác giả gốc. Đây là
+-- bất biến mà đường ghi mới của action dựa vào (không còn upsert kèm created_by).
+select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$update public.committee_weekly_plans
+    set content = 'Thư ký sửa lại nội dung tuần', updated_by = 'f1000000-0000-4000-8000-000000000001'
+    where committee_id = '30000000-0000-0000-0000-000000000001' and week_start = '2090-09-04'$$,
+  'người khác cập nhật được bản tuần đã có');
+select is(
+  (select created_by from public.committee_weekly_plans where week_start = '2090-09-04'),
+  'f1000000-0000-4000-8000-000000000002'::uuid,
+  'cập nhật không ghi đè tác giả gốc');
+select is(
+  (select content from public.committee_weekly_plans where week_start = '2090-09-04'),
+  'Thư ký sửa lại nội dung tuần',
+  'nội dung mới đã được ghi');
+
 -- Thành viên chỉ thấy Ban mình (docs/05 §Committee).
 select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000003', true);
 select is((select count(*)::integer from public.committees), 1, 'thành viên chỉ thấy Ban mình');
@@ -147,6 +175,46 @@ select ok(app.is_committee_leader_or_deputy('30000000-0000-0000-0000-00000000000
 select ok(not app.is_committee_leader_or_deputy('30000000-0000-0000-0000-000000000006'), 'không phải Trưởng ban của Ban khác');
 select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000003', true);
 select ok(not app.is_committee_leader_or_deputy('30000000-0000-0000-0000-000000000001'), 'thành viên thường không phải Trưởng/Phó ban');
+
+-- ── D-78 (M09-A): mỗi Ban chỉ MỘT Trưởng ban ───────────────────────────────
+-- Đặt cuối file vì khối này đổi chức vụ của chính những người mà các bài trên
+-- dùng làm Trưởng ban / thành viên thường.
+select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000001', true);
+select throws_ok(
+  $$insert into public.committee_memberships (committee_id, staff_profile_id, position, updated_by)
+    values ('30000000-0000-0000-0000-000000000001', 'f7000000-0000-4000-8000-000000000001', 'leader', 'f1000000-0000-4000-8000-000000000001')$$,
+  '23505', null, 'D-78: Ban đã có Trưởng ban thì không nhận Trưởng ban thứ hai');
+select lives_ok(
+  $$insert into public.committee_memberships (committee_id, staff_profile_id, position, updated_by)
+    values ('30000000-0000-0000-0000-000000000001', 'f7000000-0000-4000-8000-000000000001', 'deputy', 'f1000000-0000-4000-8000-000000000001')$$,
+  'vẫn thêm được Phó ban');
+select lives_ok(
+  $$update public.committee_memberships set position = 'deputy', updated_by = 'f1000000-0000-4000-8000-000000000001'
+    where committee_id = '30000000-0000-0000-0000-000000000001'
+      and staff_profile_id = 'f7000000-0000-4000-8000-000000000003'$$,
+  'D-78 không giới hạn số Phó ban');
+select is(
+  (select count(*)::integer from public.committee_memberships
+   where committee_id = '30000000-0000-0000-0000-000000000001' and is_active and position = 'deputy'),
+  2,
+  'hai Phó ban cùng lúc là hợp lệ');
+-- Bàn giao đúng cách: kết thúc nhiệm kỳ Trưởng ban cũ rồi mới bổ nhiệm người mới.
+select lives_ok(
+  $$update public.committee_memberships
+    set is_active = false, ends_on = current_date, updated_by = 'f1000000-0000-4000-8000-000000000001'
+    where committee_id = '30000000-0000-0000-0000-000000000001'
+      and staff_profile_id = 'f7000000-0000-4000-8000-000000000002'$$,
+  'kết thúc nhiệm kỳ Trưởng ban cũ');
+select lives_ok(
+  $$update public.committee_memberships set position = 'leader', updated_by = 'f1000000-0000-4000-8000-000000000001'
+    where committee_id = '30000000-0000-0000-0000-000000000001'
+      and staff_profile_id = 'f7000000-0000-4000-8000-000000000001' and is_active$$,
+  'bổ nhiệm được Trưởng ban mới sau khi chỗ đã trống');
+select is(
+  (select count(*)::integer from public.committee_memberships
+   where committee_id = '30000000-0000-0000-0000-000000000001' and is_active and position = 'leader'),
+  1,
+  'sau bàn giao vẫn đúng một Trưởng ban');
 
 select * from finish();
 rollback;

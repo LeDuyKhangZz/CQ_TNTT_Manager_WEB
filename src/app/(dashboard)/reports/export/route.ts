@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { parseReportFilter, REPORT_TYPE_LABELS } from "@/features/reports/filters";
 import { buildReportExportData, type ReportExportData } from "@/features/reports/report-data";
-import { buildReport } from "@/features/reports/server/queries";
+import { buildReport, reportsRouteContext } from "@/features/reports/server/queries";
 import { asciiFilename, excelResponse, pdfResponse } from "@/lib/exports/http";
 
 export const runtime = "nodejs";
@@ -15,8 +15,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Định dạng xuất không hợp lệ." }, { status: 400 });
   }
 
-  const filter = parseReportFilter(Object.fromEntries(url.searchParams.entries()));
-  const report = await buildReport(filter);
+  // Cùng một guard, cùng một `parseReportFilter`, cùng một `buildReport` với
+  // trang đang xem — nếu hai bên đọc tham số theo hai luật khác nhau thì file
+  // tải về mang một phạm vi khác thứ người dùng nhìn thấy, đúng điều D-52 cấm.
+  const context = await reportsRouteContext();
+  const { filter } = parseReportFilter(Object.fromEntries(url.searchParams.entries()), context);
+  const report = await buildReport(filter, context);
   const data: ReportExportData = buildReportExportData(report);
   const label = REPORT_TYPE_LABELS[filter.reportType];
   const subtitle = `${report.academicYear ? `Năm học ${report.academicYear.code} · ` : ""}${report.from} – ${report.to}`;

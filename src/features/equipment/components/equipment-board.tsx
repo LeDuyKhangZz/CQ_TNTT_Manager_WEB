@@ -1,25 +1,195 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { formatDateTimeVi } from "@/lib/dates";
 import {
   EQUIPMENT_CONDITIONS,
   EQUIPMENT_CONDITION_LABELS,
+  EQUIPMENT_LOAN_EVENT_LABELS,
   EQUIPMENT_LOAN_STATUS_LABELS,
+  EQUIPMENT_STOCK_ADJUSTMENT_REASON_LABELS,
+  EQUIPMENT_STOCK_DECREASE_REASONS,
+  EQUIPMENT_STOCK_INCREASE_REASONS,
   type EquipmentCondition,
+  type EquipmentStockAdjustmentReason,
 } from "../constants";
-import { borrowEquipment, createEquipmentItem, returnEquipment, updateEquipmentItem } from "../server/actions";
-import type { EquipmentBoardData, EquipmentItemRow } from "../server/queries";
+import { describeLoanBalance } from "../loan-balance";
+import {
+  adjustEquipmentStock,
+  borrowEquipment,
+  createEquipmentItem,
+  receiveEquipment,
+  updateEquipmentItem,
+  writeOffEquipment,
+} from "../server/actions";
+import type {
+  EquipmentBoardData,
+  EquipmentItemRow,
+  EquipmentLoanRow,
+} from "../server/queries";
 
-const selectClassName = "h-11 min-h-11 w-full rounded-md border border-border bg-card px-3 text-sm";
 type Message = { tone: "success" | "danger"; text: string } | null;
+type ActionTask = () => Promise<{ ok: boolean; message?: string }>;
+
+/** Chạy một thao tác ghi, kèm câu báo kết quả và việc dọn form sau khi xong. */
+type RunAction = (
+  task: ActionTask,
+  successText: string,
+  options?: { form?: HTMLFormElement; onSuccess?: () => void },
+) => void;
+
+/**
+ * Yêu cầu xác nhận cho thao tác KHÔNG HOÀN TÁC ĐƯỢC.
+ * `11` §5 bắt buộc nêu hậu quả **bằng tên riêng và con số thật**, không phải
+ * "Bạn có chắc không?".
+ */
+type ConfirmRequest = {
+  title: string;
+  consequence: ReactNode;
+  confirmLabel: string;
+  task: ActionTask;
+  successText: string;
+  form?: HTMLFormElement;
+  onSuccess?: () => void;
+} | null;
+
+type AskConfirm = (request: NonNullable<ConfirmRequest>) => void;
+
+function conditionBadgeVariant(condition: EquipmentCondition) {
+  if (condition === "good") return "success" as const;
+  if (condition === "needs_maintenance") return "warning" as const;
+  return "danger" as const;
+}
+
+/**
+ * M09-B · TB-M09-04 — nhập thêm hoặc giảm tồn kho.
+ *
+ * Hai chiều là hai nút riêng chứ không phải một ô số có dấu âm: người trực kho
+ * gõ "-2" nhầm thành "2" là mất hai cái thiết bị khỏi sổ mà không ai biết. Nhãn
+ * nút, danh sách lý do và câu xác nhận đều nói rõ chiều nào.
+ */
+function StockAdjustForm({
+  item,
+  direction,
+  pending,
+  run,
+  askConfirm,
+  onDone,
+}: {
+  item: EquipmentItemRow;
+  direction: "increase" | "decrease";
+  pending: boolean;
+  run: RunAction;
+  askConfirm: AskConfirm;
+  onDone: () => void;
+}) {
+  const increasing = direction === "increase";
+  const reasons = increasing
+    ? EQUIPMENT_STOCK_INCREASE_REASONS
+    : EQUIPMENT_STOCK_DECREASE_REASONS;
+  const idPrefix = `${direction}-${item.id}`;
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const amount = Number(data.get("amount") ?? 0);
+    const reason = String(data.get("reason") ?? "") as EquipmentStockAdjustmentReason;
+    const note = String(data.get("note") ?? "").trim();
+    const delta = increasing ? amount : -amount;
+    const totalAfter = item.totalQuantity + delta;
+    const task: ActionTask = () =>
+      adjustEquipmentStock({
+        equipmentItemId: item.id,
+        delta,
+        reason,
+        note: note || null,
+      });
+
+    if (increasing) {
+      run(task, `Đã nhập thêm ${amount} cái ${item.name}. Tổng kho nay là ${totalAfter}.`, {
+        form,
+        onSuccess: onDone,
+      });
+      return;
+    }
+    askConfirm({
+      title: "Giảm tồn kho?",
+      consequence: (
+        <>
+          Tổng kho của <strong>{item.name}</strong> giảm từ <strong>{item.totalQuantity}</strong>{" "}
+          xuống <strong>{totalAfter}</strong>. Lý do:{" "}
+          {EQUIPMENT_STOCK_ADJUSTMENT_REASON_LABELS[reason]}. Thao tác này không hoàn tác được.
+        </>
+      ),
+      confirmLabel: `Giảm ${amount} cái`,
+      task,
+      successText: `Đã giảm ${amount} cái ${item.name}. Tổng kho nay là ${totalAfter}.`,
+      form,
+      onSuccess: onDone,
+    });
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-3">
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-amount`}>
+          {increasing ? "Số cái nhập thêm" : "Số cái giảm bớt"}
+        </Label>
+        <Input
+          id={`${idPrefix}-amount`}
+          name="amount"
+          type="number"
+          min={1}
+          max={increasing ? undefined : item.availableQuantity}
+          defaultValue={1}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-reason`}>Lý do</Label>
+        <Select id={`${idPrefix}-reason`} name="reason" defaultValue={reasons[0]} required>
+          {reasons.map((reason) => (
+            <option key={reason} value={reason}>
+              {EQUIPMENT_STOCK_ADJUSTMENT_REASON_LABELS[reason]}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-note`}>
+          {increasing ? "Ghi chú" : "Ghi chú (bắt buộc)"}
+        </Label>
+        <Input
+          id={`${idPrefix}-note`}
+          name="note"
+          maxLength={1000}
+          required={!increasing}
+        />
+      </div>
+      <div className="md:col-span-3">
+        <Button type="submit" variant={increasing ? "primary" : "danger"} disabled={pending}>
+          {increasing ? "Ghi nhận nhập thêm" : "Ghi nhận giảm tồn kho"}
+        </Button>
+      </div>
+      {!increasing ? (
+        <p className="text-xs text-muted-foreground md:col-span-3">
+          Chỉ giảm được tối đa {item.availableQuantity} cái đang có trong kho. Phần đang có người
+          mượn phải chờ nhận lại hoặc báo hỏng/mất trên phiếu mượn.
+        </p>
+      ) : null}
+    </form>
+  );
+}
 
 function ItemRow({
   item,
@@ -28,34 +198,39 @@ function ItemRow({
   canOperate,
   pending,
   run,
+  askConfirm,
 }: {
   item: EquipmentItemRow;
   board: EquipmentBoardData;
   canManageCatalog: boolean;
   canOperate: boolean;
   pending: boolean;
-  run: (task: () => Promise<{ ok: boolean; message?: string }>, successText: string, form?: HTMLFormElement) => void;
+  run: RunAction;
+  askConfirm: AskConfirm;
 }) {
-  const [showBorrow, setShowBorrow] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
+  const [panel, setPanel] = useState<"borrow" | "edit" | "increase" | "decrease" | null>(null);
+
+  function toggle(next: NonNullable<typeof panel>) {
+    setPanel((current) => (current === next ? null : next));
+  }
 
   function submitBorrow(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
     const expected = String(data.get("expectedReturnAt") ?? "");
+    const quantity = Number(data.get("quantity") ?? 1);
     run(
       () => borrowEquipment({
         equipmentItemId: item.id,
-        quantity: Number(data.get("quantity") ?? 1),
+        quantity,
         borrowerStaffId: String(data.get("borrowerStaffId") ?? ""),
         expectedReturnAt: expected ? new Date(expected).toISOString() : null,
         note: String(data.get("note") ?? "") || null,
       }),
-      "Đã ghi nhận lượt mượn.",
-      form,
+      `Đã ghi nhận lượt mượn ${quantity} cái ${item.name}.`,
+      { form, onSuccess: () => setPanel(null) },
     );
-    setShowBorrow(false);
   }
 
   function submitEdit(event: FormEvent<HTMLFormElement>) {
@@ -73,8 +248,8 @@ function ItemRow({
         isActive: data.get("isActive") === "on",
       }),
       "Đã cập nhật thiết bị.",
+      { onSuccess: () => setPanel(null) },
     );
-    setShowEdit(false);
   }
 
   return (
@@ -89,30 +264,45 @@ function ItemRow({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={item.condition === "good" ? "success" : item.condition === "needs_maintenance" ? "warning" : "danger"}>
+          <Badge variant={conditionBadgeVariant(item.condition)}>
             {EQUIPMENT_CONDITION_LABELS[item.condition]}
           </Badge>
           {!item.isActive ? <Badge variant="outline">Ngưng sử dụng</Badge> : null}
           {canOperate && item.isActive && item.availableQuantity > 0 ? (
-            <Button size="sm" variant="outline" onClick={() => setShowBorrow((value) => !value)}>Cho mượn</Button>
+            <Button size="sm" variant="outline" onClick={() => toggle("borrow")}>Cho mượn</Button>
           ) : null}
           {canManageCatalog ? (
-            <Button size="sm" variant="ghost" onClick={() => setShowEdit((value) => !value)}>Sửa</Button>
+            <>
+              {/* TB-M09-04: sau khi M09-A khoá `total_quantity`, đây là đường
+                  hợp lệ DUY NHẤT để tổng kho đổi ngoài phiếu mượn. */}
+              <Button size="sm" variant="outline" onClick={() => toggle("increase")}>Nhập thêm</Button>
+              <Button size="sm" variant="outline" onClick={() => toggle("decrease")}>Giảm tồn kho</Button>
+              <Button size="sm" variant="ghost" onClick={() => toggle("edit")}>Sửa</Button>
+            </>
           ) : null}
         </div>
       </div>
 
-      {showBorrow ? (
+      {panel === "borrow" ? (
         <form onSubmit={submitBorrow} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-2">
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Người mượn</span>
-            <select name="borrowerStaffId" required className={selectClassName}>
-              <option value="">Chọn người mượn</option>
+          <div className="space-y-2">
+            <Label htmlFor={`borrower-${item.id}`}>Người mượn</Label>
+            {/* D-94 · AC-M09-30: mọi nhân sự xứ đoàn, không chỉ thành viên Ban
+                Kỹ thuật. Mã GLV đi kèm vì hai người trùng tên là chuyện thường. */}
+            <Select
+              id={`borrower-${item.id}`}
+              name="borrowerStaffId"
+              required
+              defaultValue=""
+              placeholder="Chọn người mượn"
+            >
               {board.borrowerOptions.map((option) => (
-                <option key={option.id} value={option.id}>{option.displayName}</option>
+                <option key={option.id} value={option.id}>
+                  {option.displayName} ({option.staffCode})
+                </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor={`quantity-${item.id}`}>Số lượng</Label>
             <Input id={`quantity-${item.id}`} name="quantity" type="number" min={1} max={item.availableQuantity} defaultValue={1} required />
@@ -129,7 +319,18 @@ function ItemRow({
         </form>
       ) : null}
 
-      {showEdit ? (
+      {panel === "increase" || panel === "decrease" ? (
+        <StockAdjustForm
+          item={item}
+          direction={panel}
+          pending={pending}
+          run={run}
+          askConfirm={askConfirm}
+          onDone={() => setPanel(null)}
+        />
+      ) : null}
+
+      {panel === "edit" ? (
         <form onSubmit={submitEdit} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`name-${item.id}`}>Tên thiết bị</Label>
@@ -139,14 +340,14 @@ function ItemRow({
             <Label htmlFor={`category-${item.id}`}>Nhóm</Label>
             <Input id={`category-${item.id}`} name="category" defaultValue={item.category ?? ""} maxLength={100} />
           </div>
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Tình trạng</span>
-            <select name="condition" defaultValue={item.condition} className={selectClassName}>
+          <div className="space-y-2">
+            <Label htmlFor={`condition-${item.id}`}>Tình trạng</Label>
+            <Select id={`condition-${item.id}`} name="condition" defaultValue={item.condition}>
               {EQUIPMENT_CONDITIONS.map((condition) => (
                 <option key={condition} value={condition}>{EQUIPMENT_CONDITION_LABELS[condition]}</option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor={`location-${item.id}`}>Vị trí</Label>
             <Input id={`location-${item.id}`} name="storageLocation" defaultValue={item.storageLocation ?? ""} maxLength={200} />
@@ -165,6 +366,197 @@ function ItemRow({
   );
 }
 
+/**
+ * 🔴 TB-M09-02 PA A / AC-M09-25, AC-M09-26 — vì sao phải là HAI nút.
+ *
+ * Bản cũ có đúng một ô "Số lượng trả được". Điền 3 trên phiếu mượn 5 nghĩa là
+ * *"3 cái về kho, 2 cái mất vĩnh viễn"* — phiếu đóng ngay và tổng kho tụt 2 mà
+ * không hỏi ai một câu nào. Nhưng điều người trực kho thường muốn nói là *"hôm
+ * nay mới mang về 3, còn 2 cái mai trả nốt"*. Một con số không phân biệt được
+ * hai câu đó, nên mỗi lần trả dần là một lần tài sản bốc hơi khỏi sổ sách.
+ *
+ * Nay: "Nhận lại hàng" KHÔNG BAO GIỜ đụng tổng kho và để phiếu mở tới khi hết
+ * nợ; "Báo hỏng/mất" là đường riêng, có hộp xác nhận đỏ nêu đúng con số (D-93 —
+ * quyền vẫn là mọi thành viên Ban Kỹ thuật, nên hàng rào nằm ở chỗ này).
+ */
+function OpenLoanCard({
+  loan,
+  item,
+  pending,
+  run,
+  askConfirm,
+}: {
+  loan: EquipmentLoanRow;
+  item: EquipmentItemRow | undefined;
+  pending: boolean;
+  run: RunAction;
+  askConfirm: AskConfirm;
+}) {
+  const [panel, setPanel] = useState<"receive" | "write_off" | null>(null);
+  const totalQuantity = item?.totalQuantity ?? 0;
+
+  function submitReceive(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const quantity = Number(data.get("quantity") ?? 0);
+    const condition = String(data.get("condition") ?? "");
+    const remaining = loan.outstandingQuantity - quantity;
+    run(
+      () => receiveEquipment({
+        loanId: loan.id,
+        quantity,
+        condition: condition ? (condition as EquipmentCondition) : null,
+        note: String(data.get("note") ?? "") || null,
+      }),
+      remaining > 0
+        ? `Đã nhận lại ${quantity} cái ${loan.itemName}. Phiếu còn nợ ${remaining} cái.`
+        : `Đã nhận lại ${quantity} cái ${loan.itemName}. Phiếu đã trả xong.`,
+      { form, onSuccess: () => setPanel(null) },
+    );
+  }
+
+  function submitWriteOff(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const quantity = Number(data.get("quantity") ?? 0);
+    const condition = String(data.get("condition") ?? "damaged") as EquipmentCondition;
+    const note = String(data.get("note") ?? "").trim();
+    const totalAfter = totalQuantity - quantity;
+    askConfirm({
+      title: "Báo hỏng/mất thiết bị?",
+      consequence: (
+        <>
+          Ghi nhận <strong>{quantity}</strong> cái <strong>{loan.itemName}</strong> là{" "}
+          {EQUIPMENT_CONDITION_LABELS[condition].toLowerCase()}. Tổng kho giảm từ{" "}
+          <strong>{totalQuantity}</strong> xuống <strong>{totalAfter}</strong>. Thao tác này không
+          hoàn tác được.
+        </>
+      ),
+      confirmLabel: `Báo hỏng/mất ${quantity} cái`,
+      task: () => writeOffEquipment({ loanId: loan.id, quantity, condition, note }),
+      successText: `Đã báo hỏng/mất ${quantity} cái ${loan.itemName}. Tổng kho nay là ${totalAfter}.`,
+      form,
+      onSuccess: () => setPanel(null),
+    });
+  }
+
+  return (
+    <div className="rounded-md border border-border p-3">
+      <p className="text-sm font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
+      <p className="text-xs text-muted-foreground">
+        {loan.borrowerName ? `${loan.borrowerName} mượn lúc ` : "Mượn lúc "}
+        {formatDateTimeVi(loan.borrowedAt)}
+        {loan.expectedReturnAt ? ` · hẹn trả ${formatDateTimeVi(loan.expectedReturnAt)}` : ""}
+      </p>
+      {loan.borrowNote ? <p className="mt-1 text-sm">{loan.borrowNote}</p> : null}
+      {loan.events.length > 0 ? (
+        <ul className="mt-2 space-y-1 text-2xs text-muted-foreground">
+          {loan.events.map((event) => (
+            <li key={event.id}>
+              {EQUIPMENT_LOAN_EVENT_LABELS[event.kind]} {event.quantity} cái lúc{" "}
+              {formatDateTimeVi(event.createdAt)}
+              {event.note ? ` — ${event.note}` : ""}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setPanel((current) => (current === "receive" ? null : "receive"))}
+        >
+          Nhận lại hàng
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setPanel((current) => (current === "write_off" ? null : "write_off"))}
+        >
+          Báo hỏng/mất
+        </Button>
+      </div>
+
+      {panel === "receive" ? (
+        <form onSubmit={submitReceive} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor={`receive-qty-${loan.id}`}>Số cái nhận lại</Label>
+            <Input
+              id={`receive-qty-${loan.id}`}
+              name="quantity"
+              type="number"
+              min={1}
+              max={loan.outstandingQuantity}
+              defaultValue={loan.outstandingQuantity}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`receive-condition-${loan.id}`}>Tình trạng khi nhận</Label>
+            <Select id={`receive-condition-${loan.id}`} name="condition" defaultValue="">
+              <option value="">Không đổi</option>
+              {EQUIPMENT_CONDITIONS.map((condition) => (
+                <option key={condition} value={condition}>{EQUIPMENT_CONDITION_LABELS[condition]}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`receive-note-${loan.id}`}>Ghi chú</Label>
+            <Input id={`receive-note-${loan.id}`} name="note" maxLength={1000} />
+          </div>
+          <div className="md:col-span-3">
+            <Button type="submit" disabled={pending}>Ghi nhận nhận lại</Button>
+          </div>
+          <p className="text-xs text-muted-foreground md:col-span-3">
+            Tổng kho không đổi. Phiếu chỉ đóng khi nhận đủ {loan.outstandingQuantity} cái còn nợ.
+          </p>
+        </form>
+      ) : null}
+
+      {panel === "write_off" ? (
+        <form onSubmit={submitWriteOff} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor={`writeoff-qty-${loan.id}`}>Số cái hỏng/mất</Label>
+            <Input
+              id={`writeoff-qty-${loan.id}`}
+              name="quantity"
+              type="number"
+              min={1}
+              max={loan.outstandingQuantity}
+              defaultValue={loan.outstandingQuantity}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`writeoff-condition-${loan.id}`}>Tình trạng</Label>
+            <Select id={`writeoff-condition-${loan.id}`} name="condition" defaultValue="damaged" required>
+              {EQUIPMENT_CONDITIONS.map((condition) => (
+                <option key={condition} value={condition}>{EQUIPMENT_CONDITION_LABELS[condition]}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`writeoff-note-${loan.id}`}>Ghi chú (bắt buộc)</Label>
+            <Input id={`writeoff-note-${loan.id}`} name="note" maxLength={1000} required />
+          </div>
+          <div className="md:col-span-3">
+            {/* Nhãn khác nút mở panel: hai nút cùng tên trên một màn hình là
+                người dùng trình đọc màn hình nghe hai lần "Báo hỏng/mất" mà
+                không biết cái nào mở form, cái nào ghi thật. */}
+            <Button type="submit" variant="danger" disabled={pending}>Ghi nhận hỏng/mất</Button>
+          </div>
+          <p className="text-xs text-muted-foreground md:col-span-3">
+            Tổng kho sẽ giảm và không hoàn tác được. Hệ thống hỏi lại một lần trước khi ghi.
+          </p>
+        </form>
+      ) : null}
+    </div>
+  );
+}
+
 export function EquipmentBoard({
   committeeId,
   board,
@@ -179,24 +571,24 @@ export function EquipmentBoard({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<Message>(null);
+  const [confirm, setConfirm] = useState<ConfirmRequest>(null);
 
-  function run(
-    task: () => Promise<{ ok: boolean; message?: string }>,
-    successText: string,
-    form?: HTMLFormElement,
-  ) {
+  const run: RunAction = (task, successText, options) => {
     setMessage(null);
     startTransition(async () => {
       const result = await task();
       if (result.ok) {
         setMessage({ tone: "success", text: successText });
-        form?.reset();
+        options?.form?.reset();
+        options?.onSuccess?.();
         router.refresh();
       } else {
         setMessage({ tone: "danger", text: result.message ?? "Không thể xử lý thao tác." });
       }
     });
-  }
+  };
+
+  const askConfirm: AskConfirm = (request) => setConfirm(request);
 
   function submitItem(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -213,27 +605,11 @@ export function EquipmentBoard({
         note: String(data.get("note") ?? "") || null,
       }),
       "Đã thêm thiết bị vào kho.",
-      form,
+      { form },
     );
   }
 
-  function submitReturn(event: FormEvent<HTMLFormElement>, loanId: string) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const condition = String(data.get("condition") ?? "");
-    run(
-      () => returnEquipment({
-        loanId,
-        restoredQuantity: Number(data.get("restoredQuantity") ?? 0),
-        condition: condition ? (condition as EquipmentCondition) : null,
-        note: String(data.get("note") ?? "") || null,
-      }),
-      "Đã ghi nhận lượt trả.",
-      form,
-    );
-  }
-
+  const itemById = new Map(board.items.map((item) => [item.id, item]));
   const openLoans = board.loans.filter((loan) => loan.status === "borrowed");
   const closedLoans = board.loans.filter((loan) => loan.status === "returned");
 
@@ -244,7 +620,10 @@ export function EquipmentBoard({
       <Card>
         <CardHeader>
           <CardTitle>Kho thiết bị</CardTitle>
-          <CardDescription>Số lượng khả dụng chỉ thay đổi qua thao tác mượn/trả.</CardDescription>
+          <CardDescription>
+            Số lượng khả dụng chỉ thay đổi qua mượn/trả. Tổng kho chỉ thay đổi qua &ldquo;Nhập
+            thêm&rdquo;, &ldquo;Giảm tồn kho&rdquo; hoặc &ldquo;Báo hỏng/mất&rdquo;.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {canManageCatalog ? (
@@ -292,6 +671,7 @@ export function EquipmentBoard({
                   canOperate={canOperate}
                   pending={pending}
                   run={run}
+                  askConfirm={askConfirm}
                 />
               ))}
             </ul>
@@ -302,44 +682,34 @@ export function EquipmentBoard({
       <Card>
         <CardHeader>
           <CardTitle>Đang mượn</CardTitle>
-          <CardDescription>Ghi rõ ai mượn, lúc nào, ai bàn giao và ai nhận lại.</CardDescription>
+          <CardDescription>
+            Nhận lại hàng nhiều lần được; phiếu chỉ đóng khi hết nợ.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {openLoans.length === 0 ? (
             <p className="text-sm text-muted-foreground">Không có thiết bị nào đang được mượn.</p>
           ) : (
-            openLoans.map((loan) => (
-              <div key={loan.id} className="rounded-md border border-border p-3">
-                <p className="text-sm font-medium">{loan.itemName} · {loan.quantity} cái</p>
-                <p className="text-xs text-muted-foreground">
-                  {loan.borrowerName} mượn lúc {formatDateTimeVi(loan.borrowedAt)}
-                  {loan.expectedReturnAt ? ` · hẹn trả ${formatDateTimeVi(loan.expectedReturnAt)}` : ""}
-                </p>
-                {loan.borrowNote ? <p className="mt-1 text-sm">{loan.borrowNote}</p> : null}
-                {canOperate ? (
-                  <form onSubmit={(event) => submitReturn(event, loan.id)} className="mt-3 grid gap-3 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label htmlFor={`restored-${loan.id}`}>Số lượng trả được</Label>
-                      <Input id={`restored-${loan.id}`} name="restoredQuantity" type="number" min={0} max={loan.quantity} defaultValue={loan.quantity} required />
-                    </div>
-                    <label className="space-y-2">
-                      <span className="text-sm font-medium">Tình trạng khi trả</span>
-                      <select name="condition" defaultValue="" className={selectClassName}>
-                        <option value="">Không đổi</option>
-                        {EQUIPMENT_CONDITIONS.map((condition) => (
-                          <option key={condition} value={condition}>{EQUIPMENT_CONDITION_LABELS[condition]}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="space-y-2">
-                      <Label htmlFor={`returnnote-${loan.id}`}>Ghi chú</Label>
-                      <Input id={`returnnote-${loan.id}`} name="note" maxLength={1000} />
-                    </div>
-                    <div className="md:col-span-3"><Button type="submit" disabled={pending}>Ghi nhận trả</Button></div>
-                  </form>
-                ) : null}
-              </div>
-            ))
+            openLoans.map((loan) =>
+              canOperate ? (
+                <OpenLoanCard
+                  key={loan.id}
+                  loan={loan}
+                  item={itemById.get(loan.equipmentItemId)}
+                  pending={pending}
+                  run={run}
+                  askConfirm={askConfirm}
+                />
+              ) : (
+                <div key={loan.id} className="rounded-md border border-border p-3">
+                  <p className="text-sm font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {loan.borrowerName ? `${loan.borrowerName} mượn lúc ` : "Mượn lúc "}
+                    {formatDateTimeVi(loan.borrowedAt)}
+                  </p>
+                </div>
+              ),
+            )
           )}
         </CardContent>
       </Card>
@@ -351,13 +721,11 @@ export function EquipmentBoard({
             <ul className="divide-y divide-border text-sm">
               {closedLoans.map((loan) => (
                 <li key={loan.id} className="py-3">
-                  <p className="font-medium">{loan.itemName} · {loan.quantity} cái</p>
+                  <p className="font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
                   <p className="text-xs text-muted-foreground">
-                    {loan.borrowerName} · {EQUIPMENT_LOAN_STATUS_LABELS[loan.status]} lúc{" "}
+                    {loan.borrowerName ? `${loan.borrowerName} · ` : ""}
+                    {EQUIPMENT_LOAN_STATUS_LABELS[loan.status]} lúc{" "}
                     {loan.returnedAt ? formatDateTimeVi(loan.returnedAt) : "—"}
-                    {loan.restoredQuantity !== null && loan.restoredQuantity < loan.quantity
-                      ? ` · thiếu ${loan.quantity - loan.restoredQuantity}`
-                      : ""}
                     {loan.conditionOnReturn ? ` · ${EQUIPMENT_CONDITION_LABELS[loan.conditionOnReturn]}` : ""}
                   </p>
                   {loan.returnNote ? <p className="mt-1">{loan.returnNote}</p> : null}
@@ -367,6 +735,51 @@ export function EquipmentBoard({
           </CardContent>
         </Card>
       ) : null}
+
+      {board.adjustments.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nhật ký tổng kho</CardTitle>
+            <CardDescription>Mọi lần nhập thêm hoặc giảm tồn kho ngoài phiếu mượn.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border text-sm">
+              {board.adjustments.map((adjustment) => (
+                <li key={adjustment.id} className="py-3">
+                  {/* Dấu +/- kèm chữ "tăng"/"giảm": không dùng màu làm tín hiệu duy nhất. */}
+                  <p className="font-medium">
+                    {adjustment.itemName} · {adjustment.delta > 0 ? "tăng" : "giảm"}{" "}
+                    {Math.abs(adjustment.delta)} cái → tổng kho {adjustment.totalAfter}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {EQUIPMENT_STOCK_ADJUSTMENT_REASON_LABELS[adjustment.reason]} ·{" "}
+                    {formatDateTimeVi(adjustment.createdAt)}
+                    {adjustment.note ? ` — ${adjustment.note}` : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <ConfirmDialog
+        open={confirm !== null}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          if (!confirm) return;
+          const request = confirm;
+          setConfirm(null);
+          run(request.task, request.successText, {
+            form: request.form,
+            onSuccess: request.onSuccess,
+          });
+        }}
+        title={confirm?.title ?? ""}
+        consequence={confirm?.consequence ?? ""}
+        confirmLabel={confirm?.confirmLabel ?? "Xác nhận"}
+        pending={pending}
+      />
     </div>
   );
 }

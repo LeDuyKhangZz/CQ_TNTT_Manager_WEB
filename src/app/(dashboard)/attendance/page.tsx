@@ -5,30 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
+import { AbsenceReviewPanel } from "@/features/absence-requests/components/absence-review-panel";
 import {
   MEETING_TYPE_LABELS,
-  SESSION_STATUS_LABELS,
+  SESSION_STATE_LABELS,
   meetingTypeForDate,
+  mostRecentMeetingDate,
 } from "@/features/attendance/constants";
 import { openAttendanceSessionFromForm } from "@/features/attendance/server/actions";
 import { getAttendanceHubData } from "@/features/attendance/server/queries";
-import { formatDateVi } from "@/lib/dates";
-
-const selectClassName = "h-11 w-full rounded-md border border-border bg-card px-3 text-sm";
-
-/** Thứ Năm hoặc Chúa nhật gần nhất tính tới hôm nay (D-29). */
-function mostRecentMeetingDate(): string {
-  const today = new Date();
-  for (let back = 0; back < 7; back += 1) {
-    const candidate = new Date(today);
-    candidate.setDate(today.getDate() - back);
-    const day = candidate.getDay();
-    if (day === 4 || day === 0) return candidate.toISOString().slice(0, 10);
-  }
-  return today.toISOString().slice(0, 10);
-}
+import { formatDateVi, todayVi } from "@/lib/dates";
+import { ATTENDANCE_VIEW_ONLY_ROLES } from "@/lib/permissions/route-map";
 
 export default async function AttendancePage({
   searchParams,
@@ -36,7 +26,11 @@ export default async function AttendancePage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const { year, editableClasses, sessions } = await getAttendanceHubData();
+  const { context, year, editableClasses, sessions, pendingAbsences } = await getAttendanceHubData();
+  // D-139: Cha sở và Cha phó vào được trang này nhưng không điểm danh. Câu
+  // "Bạn chưa được phân công lớp nào" đúng với Giáo lý viên, nhưng với hai vị
+  // thì nó mô tả sai lý do — họ không thiếu phân công, họ chỉ có quyền xem.
+  const viewOnly = context.role !== null && ATTENDANCE_VIEW_ONLY_ROLES.includes(context.role);
 
   if (!year) {
     return (
@@ -53,7 +47,10 @@ export default async function AttendancePage({
     );
   }
 
-  const defaultDate = mostRecentMeetingDate();
+  // TB-01: `todayVi()` chứ không phải `new Date()` — máy chủ chạy giờ UTC nên
+  // 06:00 sáng Chúa nhật giờ Việt Nam vẫn là thứ Bảy với Node, và form đổ sẵn
+  // buổi thứ Năm TUẦN TRƯỚC đúng lúc người ta tới nhà thờ điểm danh sớm.
+  const defaultDate = mostRecentMeetingDate(todayVi());
   const defaultMeeting = meetingTypeForDate(defaultDate) ?? "sunday";
 
   return (
@@ -74,18 +71,23 @@ export default async function AttendancePage({
           <CardContent>
             {editableClasses.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Bạn chưa được phân công lớp nào nên không mở được buổi điểm danh. Trưởng ngành chỉ
-                điểm danh trực tiếp ở lớp mình đứng.
+                {viewOnly
+                  ? "Bạn xem điểm danh ở chế độ chỉ đọc. Việc mở buổi và ghi điểm danh thuộc về Giáo lý viên của lớp."
+                  : "Bạn chưa được phân công lớp nào nên không mở được buổi điểm danh. Trưởng ngành chỉ điểm danh trực tiếp ở lớp mình đứng."}
               </p>
             ) : (
               <form action={openAttendanceSessionFromForm} className="space-y-3">
+                {/* M05-C: hai ô chọn trần CUỐI của module sang `Select` (D-80),
+                    đúng khuôn M12-A và M02-B đã làm cho module của họ. `Select`
+                    bọc một `<select>` native nên biểu mẫu vẫn gửi được khi
+                    JavaScript chưa tải — ràng buộc `09` §11 cho mạng phòng học. */}
                 <div className="space-y-2">
                   <Label htmlFor="attendance-class">Lớp</Label>
-                  <select id="attendance-class" name="classId" required className={selectClassName}>
+                  <Select id="attendance-class" name="classId" required>
                     {editableClasses.map((option) => (
                       <option key={option.id} value={option.id}>{option.displayName}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="attendance-date">Ngày</Label>
@@ -93,10 +95,10 @@ export default async function AttendancePage({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="attendance-meeting">Buổi</Label>
-                  <select id="attendance-meeting" name="meetingType" required className={selectClassName} defaultValue={defaultMeeting}>
+                  <Select id="attendance-meeting" name="meetingType" required defaultValue={defaultMeeting}>
                     <option value="thursday">{MEETING_TYPE_LABELS.thursday}</option>
                     <option value="sunday">{MEETING_TYPE_LABELS.sunday}</option>
-                  </select>
+                  </Select>
                 </div>
                 <Button type="submit" className="w-full">Mở buổi</Button>
               </form>
@@ -128,10 +130,15 @@ export default async function AttendancePage({
                   </div>
                   <div className="flex items-center gap-2">
                     {session.absentCount > 0 ? (
-                      <Badge variant="warning">{session.absentCount} vắng</Badge>
+                      <Badge variant="warning" aria-label={`${session.absentCount} em vắng`}>
+                        {session.absentCount} vắng
+                      </Badge>
                     ) : null}
-                    <Badge variant={session.status === "completed" ? "success" : "secondary"}>
-                      {SESSION_STATUS_LABELS[session.status]}
+                    {/* TB-02: in trạng thái ĐÃ SUY RA, không in thẳng cột `status`
+                        của cơ sở dữ liệu — cột ấy không bao giờ mang giá trị
+                        `locked`, nên buổi đã khóa từng hiện "Đã chốt" ở đây. */}
+                    <Badge variant={session.state === "completed" ? "success" : "secondary"}>
+                      {SESSION_STATE_LABELS[session.state]}
                     </Badge>
                   </div>
                 </Link>
@@ -139,6 +146,13 @@ export default async function AttendancePage({
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* TB-06 / AC-F13-1 — đơn phải thấy được **mà không cần mở buổi**. Đặt
+          dưới hai thẻ trên vì việc đầu tiên của người vào trang này vẫn là mở
+          buổi, nhưng nằm trên cùng một màn hình nên không ai phải đi tìm. */}
+      <div className="mt-5">
+        <AbsenceReviewPanel requests={pendingAbsences} canReview={!viewOnly} />
       </div>
     </PageContainer>
   );

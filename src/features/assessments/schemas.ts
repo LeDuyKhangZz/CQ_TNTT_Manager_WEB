@@ -66,6 +66,19 @@ export const studentCommentInputSchema = z.object({
 
 export const studentCommentIdSchema = z.string().uuid();
 
+/**
+ * M07-B · **TB-M07-05 bước 2** — sửa nhận xét thay vì xóa-viết-lại.
+ *
+ * `enrollmentId` **cố ý không có mặt**: trigger `sync_student_comment_keys` ném
+ * `COMMENT_ENROLLMENT_IMMUTABLE` nếu ai đó đổi nó, nên nhận một trường mà cơ sở
+ * dữ liệu chắc chắn từ chối là mời người dùng vào một cái cửa khóa.
+ */
+export const updateStudentCommentSchema = z.object({
+  commentId: studentCommentIdSchema,
+  visibility: z.enum(COMMENT_VISIBILITIES),
+  content: z.string().trim().min(1, "Vui lòng nhập nội dung nhận xét.").max(2000),
+});
+
 export const leaderboardIdSchema = z.string().uuid();
 export const leaderboardInputSchema = z.object({
   classId: gradebookClassIdSchema,
@@ -96,5 +109,6 @@ export type SaveAssessmentScoresInput = z.infer<typeof saveAssessmentScoresSchem
 export type PublishAssessmentInput = z.infer<typeof publishAssessmentSchema>;
 export type ResetAttendanceOverrideInput = z.infer<typeof resetAttendanceOverrideSchema>;
 export type StudentCommentInput = z.infer<typeof studentCommentInputSchema>;
+export type UpdateStudentCommentInput = z.infer<typeof updateStudentCommentSchema>;
 export type LeaderboardInput = z.infer<typeof leaderboardInputSchema>;
 export type LeaderboardOperationInput = z.infer<typeof leaderboardOperationSchema>;

@@ -21,6 +21,23 @@ Upload → Parse → Normalize → Validate → Duplicate warnings
 → Dry-run preview → User confirms → Commit batch → Download result
 ```
 
+> 🔴 **Cập nhật M12-C (2026-08-03) — hai cái trần của bước Upload.**
+> Chủ dự án chốt **D-137** (dung lượng **4 MB**) và **D-138** (**1.000 dòng** một file).
+> Cả hai nằm ở `src/features/imports/limits.ts` và được **nói ra ngay trên biểu mẫu**,
+> không phải chỉ báo sau khi tải xong.
+>
+> - **4 MB, không phải 5 MB.** Nền tảng triển khai (Vercel, `docs/12` §1) chặn thân
+>   request nặng hơn ~4,5 MB **ở tầng hạ tầng**, tức trước khi mã ứng dụng chạy. Trần cũ
+>   5 MB nằm **trên** con số ấy nên câu tiếng Việt `"File vượt quá 5MB."` chưa từng có cơ
+>   hội chạy cho đúng khoảng nó sinh ra để canh. `next.config.mjs` hạ `bodySizeLimit` từ
+>   `6mb` xuống `4.5mb` theo. Căn cứ: 21 file thật của giáo xứ, **nặng nhất 860 KB**.
+> - **1.000 dòng — trước đây không có giới hạn nào** (SEC-12). Giới hạn dung lượng không
+>   thay được nó: sheet toàn chữ nén rất tốt. Sổ lớp đông nhất của giáo xứ là **75 dòng**;
+>   gộp cả 19 lớp cũng chỉ ~900. Kiểm **ngay sau `parseWorkbook`**, trước mọi truy vấn.
+> - `maxDuration = 60` (trần gói Hobby) đặt ở cả hai trang của module. Ghi 1.000 dòng là
+>   10 lượt gọi RPC nối đuôi; nếu không kịp thì **bấm "Ghi" lần nữa chạy tiếp từ chỗ dừng**
+>   và không tạo hồ sơ trùng (`commitBatch` chỉ lấy dòng còn `valid`/`warning`).
+
 ## 2b. Định dạng thực tế của xứ đoàn (khảo sát 2026-07-21)
 
 Bộ file mẫu thật (`Excel mẫu/`) là **sổ lớp của GLV**, mỗi lớp một workbook 14–16 sheet
@@ -39,7 +56,7 @@ Khác biệt so với schema và cách xử lý đã chốt với user:
 
 | Vấn đề | Quyết định |
 |---|---|
-| SYLL không có cột giới tính (ảnh hưởng 83% dòng) | `gender` thiếu là **cảnh báo**, người duyệt chọn Nam/Nữ trên màn hình review; commit từ chối nếu còn dòng chưa chọn. Không đổi schema, không đặt mặc định. |
+| SYLL không có cột giới tính (ảnh hưởng 83% dòng) | `gender` thiếu là **cảnh báo**, người duyệt chọn Nam/Nữ trên màn hình review; commit từ chối nếu còn dòng chưa chọn. Không đổi schema, không đặt mặc định.<br>**Cập nhật M12-B (2026-07-29):** màn hình review nay chọn được **hàng loạt** — đánh dấu nhiều dòng rồi "Áp dụng Nam/Nữ", và cả trang lưu trong **một** lượt gửi (TO-BE 4 / AC-21). Vẫn **không đoán** theo tên đệm: mọi giá trị đều là lựa chọn tường minh của người duyệt (BR-M12-36). |
 | SYLL có cha + mẹ + giám hộ nhưng DB chỉ 1 guardian | Ưu tiên **giám hộ > cha > mẹ**, trong đó ứng viên có SĐT hợp lệ thắng. Người còn lại ghi vào `general_notes` để không mất liên lạc. |
 | Sổ Chiên Con không có cột lớp | Người dùng **chọn lớp đích khi upload**; dòng nào có cột lớp thì giá trị trong file vẫn thắng. |
 | Thư viện parse | **exceljs**. Không dùng SheetJS: bản `xlsx` trên npm (0.18.5) dính 1 CVE HIGH (prototype pollution + ReDoS) không có bản vá trên npm, mà đây đúng là đường xử lý file người dùng upload. |
@@ -128,6 +145,21 @@ User chọn:
 - Ghép với hồ sơ có sẵn.
 - Bỏ qua.
 
+> 🔴 **Cập nhật 2B · M12-A (2026-07-29) — D-133.** "User chọn" ở trên vẫn đúng, nhưng
+> **mặc định** trước khi user chọn thì đổi:
+>
+> - Mức `high` và `medium` mặc định là **Ghép**, không phải Tạo mới. Bản cài đặt cũ
+>   lặp lại giá trị mặc định của cột trong DB (`action = 'create'`) cho **mọi** dòng,
+>   nên bấm thẳng "Ghi" là sinh hồ sơ trùng.
+> - Mức `high` **chặn ghi** cho tới khi người duyệt tự lưu quyết định của dòng đó
+>   (BR-M12-32). Dòng nào mặc định là Ghép mà hồ sơ đối chiếu **không còn sinh hoạt**
+>   cũng bị chặn, vì trigger `enrollments_need_active_student` (M03-C) sẽ từ chối.
+> - Phép dò trùng xét **mọi** hồ sơ, không chỉ hồ sơ `active` (BR-M12-33): em nghỉ rồi
+>   quay lại phải được ghép, không tạo hồ sơ thứ hai.
+>
+> Luật "thế nào là trùng" từ M03-B nằm ở `src/lib/students/duplicate.ts`, dùng chung
+> với đường nhập tay; luật "mặc định và chặn" nằm ở `src/features/imports/row-decision.ts`.
+
 ## 6. Batch tables
 
 ### `import_batches`
@@ -142,6 +174,8 @@ User chọn:
 - warning_rows.
 - error_rows.
 - created_at/committed_at.
+- cancelled_at/cancelled_by (2B · M12-A, D-131).
+- raw_purged_at/raw_purged_by (2B · M12-A, D-132).
 
 ### `import_rows`
 
@@ -157,6 +191,19 @@ User chọn:
 
 Có thể xóa raw import sau thời hạn ngắn; không cần giữ 5 năm.
 
+> 🔴 **Cập nhật 2B · M12-A (2026-07-29) — D-131 / D-132.** Câu trên nói về **`raw_json`**,
+> **không** nói về cả lần nhập. Bản cài đặt cũ đọc nó thành "xóa tất" nên nút "Xoá lần
+> nhập này" xoá được cả lần nhập **đã ghi dữ liệu**, cuốn theo mapping `row → student`
+> mà §7 đòi giữ. Từ M12-A:
+>
+> - Lần nhập **đã ghi** (`committed_rows > 0`): **không xoá được**, kể cả gọi thẳng Data
+>   API — policy `import_batches_delete_dry_run` chặn ở DB (pgTAP `039`, JWT thật).
+> - Lần nhập **chưa ghi**: huỷ = đặt `status = 'cancelled'` + `cancelled_at/by`, **giữ
+>   nguyên hàng** để tra cứu về sau (D-131).
+> - "Xoá dữ liệu thô" là thao tác **riêng**, chỉ dọn `raw_json`, giữ
+>   `created_student_id`/`created_guardian_id`; mở cho **cả bốn vai trò nhập được**
+>   (D-132), có ghi `raw_purged_at/by`. Chưa có tác vụ nền tự dọn theo thời hạn.
+
 ## 7. Commit
 
 - Transaction theo chunk.
@@ -166,6 +213,23 @@ Có thể xóa raw import sau thời hạn ngắn; không cần giữ 5 năm.
 - Không tạo account hàng loạt tự động trừ khi user chọn.
 - Kết quả có mapping row → student_code.
 - Failure một row không được làm mơ hồ; chọn all-or-nothing hoặc chunk có báo cáo. Đề xuất chunk 100 row, mỗi chunk transaction.
+
+> 🔴 **Cập nhật M12-C (2026-08-03) — ghi danh không tạo được PHẢI được nói ra** (TO-BE 6,
+> BR-M12-39, AC-24; migration `20260803000100`).
+> `enrollments` có unique index *một ghi danh đang mở / một em / một năm học* (D-11), nên
+> `insert … on conflict do nothing` **im lặng không làm gì** khi em đã có lớp. Trước đợt này
+> dòng vẫn báo `committed` và người nhập tin rằng em đã được xếp vào lớp ghi trong file —
+> trong khi Giáo lý viên lớp mới không bao giờ thấy em. Đây là **đường đi thường gặp nhất**
+> của module (nhập lại sổ đầu năm sau khi sửa vài dòng).
+>
+> Nay `commit_import_rows` trả thêm cột **`out_enrollment_created boolean`**:
+> - dòng **vẫn** `committed` — hồ sơ em đã thật sự được tạo hoặc ghép, nói là lỗi thì sai;
+> - một cảnh báo `field = enrollment` được ghi lên chính dòng đó, **nêu đúng tên lớp em
+>   đang học** (câu khác cho ca em đã ở đúng lớp trong file);
+> - kết quả ghi đếm con số này **riêng**, không gộp vào `committed` cũng không gộp vào lỗi.
+>
+> ⚠️ Đổi kiểu trả về bắt buộc `drop function` + `create`, nên phải **cấp lại `grant execute`**
+> — quên là gãy toàn bộ import cho người dùng thường. pgTAP `040` có bài canh đúng chỗ đó.
 
 ## 8. Seed reference
 
@@ -196,3 +260,19 @@ Có thể xóa raw import sau thời hạn ngắn; không cần giữ 5 năm.
 - Dry-run không write business tables.
 - User download được errors.
 - RLS không cho non-authorized import.
+
+> 🔴 **Cập nhật M12-C (2026-08-03) — "User download được errors" nay ĐÃ CÓ THẬT**
+> (TO-BE 5, AC-22/AC-23, BR-M12-37/38): `GET /imports/[batchId]/errors` trả `.xlsx`
+> hai sheet — **`LOI`** (`Dòng · Họ và tên · Lớp · Lỗi · Cảnh báo`, chỉ dòng có việc
+> phải làm) và **`KET_QUA`** (`Dòng · Họ và tên · Mã thiếu nhi · Trạng thái`, đủ mọi dòng).
+>
+> - **Đây là cầu nối duy nhất tới Giáo lý viên lớp.** Họ biết dữ liệu còn thiếu nhưng
+>   `route-map.ts` không cho họ vào `/imports` (SEC-01), và điều đó đúng. Route handler gọi
+>   `requireImportAccess()` **trước mọi truy vấn** (SEC-04b) và trả **403 kèm câu tiếng
+>   Việt**, không phải 500 — Thư ký tải file rồi gửi cho GLV.
+> - **Mọi ô chuỗi đi qua `safeSpreadsheetText`** (BR-M12-37). Bộ chặn được mở rộng thêm
+>   `TAB` và `CR` đúng chữ của TO-BE 5 bước 3. Lỗi ghi hỏng được **dịch qua
+>   `commitErrorText` trước khi vào file** — nếu không thì SEC-16 mở lại ở cửa thứ hai, và
+>   cửa này tệ hơn màn hình vì tệp đi ra ngoài hệ thống.
+> - File báo cáo **không nhập ngược lại được**: cả hai sheet đều thiếu cột ngày sinh nên
+>   `parseWorkbook` từ chối bằng đúng câu *"Sheet chỉ có danh sách tên…"*.

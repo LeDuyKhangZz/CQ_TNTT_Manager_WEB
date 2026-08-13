@@ -5,19 +5,32 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { getResultsPageData } from "@/features/assessments/server/queries";
 import { PublishedResultsPortal } from "@/features/assessments/components/published-results-portal";
+import { PortalEmptyState } from "@/features/portal/components/portal-empty-state";
 
 export default async function ResultsPage() {
   const data = await getResultsPageData();
   return (
-    <PageContainer>
+    <PageContainer
+      data-density={data.audience === "guardian" || data.audience === "student" ? "comfortable" : undefined}
+    >
       <PageHeader title="Kết quả học tập" description={data.year ? `Bảng điểm năm học ${data.year.code}` : "Bảng điểm và đánh giá theo lớp"} />
       {!data.year ? (
-        <Card><CardContent className="pt-6 text-sm text-muted-foreground">Chưa có năm học hiện hành.</CardContent></Card>
+        <PortalEmptyState
+          reason="no_data"
+          audience={data.audience}
+          title="Chưa có năm học hiện hành"
+          description="Xứ đoàn chưa thiết lập năm học hiện hành nên chưa thể hiển thị kết quả học tập."
+        />
       ) : data.audience === "guardian" || data.audience === "student" ? (
-        <PublishedResultsPortal results={data.portal} />
+        <PublishedResultsPortal
+          results={data.portal}
+          status={data.portalStatus}
+          audience={data.audience}
+          yearCode={data.year.code}
+        />
       ) : (
         <div className="space-y-6">
-          {data.portal.length > 0 ? <section className="space-y-3"><h2 className="text-lg font-semibold">Kết quả của con</h2><PublishedResultsPortal results={data.portal} /></section> : null}
+          {data.portal.length > 0 ? <section className="space-y-3"><h2 className="text-lg font-semibold">Kết quả của con</h2><PublishedResultsPortal results={data.portal} status={data.portalStatus} audience={data.audience} yearCode={data.year.code} /></section> : null}
           <section className="space-y-3">
             <h2 className="text-lg font-semibold">Bảng điểm phụ trách</h2>
             {data.classes.length === 0 ? <Card><CardContent className="pt-6 text-sm text-muted-foreground">Bạn chưa có lớp nào trong phạm vi kết quả.</CardContent></Card> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{data.classes.map((item) => (

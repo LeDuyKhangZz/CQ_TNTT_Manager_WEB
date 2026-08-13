@@ -24,7 +24,7 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return null;
 
-  const [profileResult, assignmentResult] = await Promise.all([
+  const [profileResult, assignmentResult, guardianResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, username, display_name, account_status, must_change_password")
@@ -35,6 +35,14 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
       .select("role, academic_year_id, sector_id, class_id")
       .eq("profile_id", user.id)
       .eq("is_active", true)
+      .maybeSingle(),
+    // D-25 / M13-A: một GLV vẫn giữ vai trò nhân sự khi đồng thời là phụ
+    // huynh. Chỉ lấy một cờ tồn tại; không đưa id người giám hộ hoặc id con vào
+    // AuthContext/vỏ ứng dụng.
+    supabase
+      .from("guardians")
+      .select("id")
+      .eq("profile_id", user.id)
       .maybeSingle(),
   ]);
   const profile = profileResult.data as ProfileIdentity | null;
@@ -56,5 +64,6 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
     academicYearId: assignment?.academic_year_id ?? null,
     sectorId: assignment?.sector_id ?? null,
     classId: assignment?.class_id ?? null,
+    hasGuardianProfile: guardianResult.data !== null,
   };
 });

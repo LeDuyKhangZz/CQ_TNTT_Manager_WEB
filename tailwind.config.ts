@@ -1,6 +1,12 @@
 import type { Config } from "tailwindcss";
 
-// Design tokens are defined as CSS variables in src/app/globals.css (docs/06).
+// Design token là CSS variable ở src/app/globals.css.
+// Nguồn sự thật: docs/system-workflow-redesign/ui-redesign/09_APPROVED_DESIGN_SYSTEM.md.
+//
+// Quy ước đặt tên:
+//   theme-*   → token ngành, ThemeScope bơm động. CHỈ dùng ở 12 nơi (09 §4.4).
+//   ink/line/page + trạng thái → trung tính, không đổi theo ngành.
+//   Nhóm "BÍ DANH CŨ" giữ cho code có sẵn; không dùng trong code mới.
 const config: Config = {
   content: [
     "./src/app/**/*.{ts,tsx}",
@@ -10,57 +16,147 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        // ---- Token ngành (bơm động bởi ThemeScope) --------------------
+        theme: {
+          DEFAULT: "var(--theme-primary)",
+          primary: "var(--theme-primary)",
+          hover: "var(--theme-primary-hover)",
+          active: "var(--theme-primary-active)",
+          "on-primary": "var(--theme-on-primary)",
+          "accent-text": "var(--theme-accent-text)",
+          "accent-strong": "var(--theme-accent-strong)",
+          border: "var(--theme-border)",
+          ring: "var(--theme-ring)",
+          chart: "var(--theme-chart)",
+          tint: "var(--theme-tint)",
+          soft: "var(--theme-soft)",
+          pastel: "var(--theme-pastel)",
+          "pastel-deep": "var(--theme-pastel-deep)",
+        },
+
+        // ---- Nền · chữ · viền trung tính ------------------------------
+        page: "var(--bg-page)",
+        overlay: "var(--bg-overlay)",
+        ink: {
+          DEFAULT: "var(--text)",
+          muted: "var(--text-muted)",
+          "on-dark": "var(--text-on-dark)",
+        },
+        line: {
+          DEFAULT: "var(--border)",
+          strong: "var(--border-strong)",
+        },
+
+        // ---- Trạng thái — KHÔNG BAO GIỜ lấy từ token ngành -------------
+        success: {
+          DEFAULT: "var(--success)",
+          subtle: "var(--success-subtle)",
+          surface: "var(--success-subtle)",
+        },
+        warning: {
+          DEFAULT: "var(--warning)",
+          subtle: "var(--warning-subtle)",
+          surface: "var(--warning-subtle)",
+        },
+        danger: {
+          DEFAULT: "var(--danger)",
+          subtle: "var(--danger-subtle)",
+          surface: "var(--danger-subtle)",
+        },
+        info: {
+          DEFAULT: "var(--info)",
+          subtle: "var(--info-subtle)",
+        },
+
+        // ---- BÍ DANH CŨ (docs/06 §2) — không dùng trong code mới -------
+        background: "var(--bg-page)",
+        foreground: "var(--text)",
         card: {
-          DEFAULT: "var(--card)",
-          foreground: "var(--card-foreground)",
+          DEFAULT: "var(--bg-surface)",
+          foreground: "var(--text)",
         },
         surface: {
-          DEFAULT: "var(--surface)",
-          muted: "var(--surface-muted)",
+          DEFAULT: "var(--bg-surface)",
+          muted: "var(--bg-surface-muted)",
         },
         primary: {
-          DEFAULT: "var(--primary)",
-          hover: "var(--primary-hover)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: "var(--theme-primary)",
+          hover: "var(--theme-primary-hover)",
+          foreground: "var(--theme-on-primary)",
         },
         secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
+          DEFAULT: "var(--theme-soft)",
+          foreground: "var(--text)",
         },
-        accent: "var(--accent)",
+        accent: "var(--theme-tint)",
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
+          DEFAULT: "var(--bg-surface-muted)",
+          foreground: "var(--text-muted)",
         },
         text: {
           DEFAULT: "var(--text)",
           muted: "var(--text-muted)",
         },
         border: "var(--border)",
-        ring: "var(--ring)",
-        success: {
-          DEFAULT: "var(--success)",
-          surface: "var(--success-surface)",
-        },
-        warning: {
-          DEFAULT: "var(--warning)",
-          surface: "var(--warning-surface)",
-        },
-        danger: {
-          DEFAULT: "var(--danger)",
-          surface: "var(--danger-surface)",
-        },
+        ring: "var(--theme-ring)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
       },
-      borderRadius: {
-        lg: "0.75rem",
-        md: "0.5rem",
-        sm: "0.375rem",
+      // 09 §2. Sàn cứng 12px — không có bậc nào nhỏ hơn `2xs`.
+      fontSize: {
+        "2xs": ["var(--text-2xs)", { lineHeight: "var(--leading-normal)" }],
+        xs: ["var(--text-xs)", { lineHeight: "var(--leading-normal)" }],
+        sm: ["var(--text-sm)", { lineHeight: "var(--leading-normal)" }],
+        base: ["var(--text-base)", { lineHeight: "var(--leading-normal)" }],
+        lg: ["var(--text-lg)", { lineHeight: "var(--leading-normal)" }],
+        xl: ["var(--text-xl)", { lineHeight: "var(--leading-tight)" }],
+        "2xl": ["var(--text-2xl)", { lineHeight: "var(--leading-tight)" }],
+        "3xl": ["var(--text-3xl)", { lineHeight: "var(--leading-tight)" }],
       },
+      fontWeight: {
+        normal: "var(--weight-normal)",
+        medium: "var(--weight-medium)",
+        semibold: "var(--weight-semibold)",
+      },
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        full: "var(--radius-full)",
+      },
+      // Chỉ hai mức bóng (09 §5). lg/xl cố tình trỏ về md — không có mức ba.
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        DEFAULT: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-md)",
+        xl: "var(--shadow-md)",
+      },
+      zIndex: {
+        base: "var(--z-base)",
+        sticky: "var(--z-sticky)",
+        header: "var(--z-header)",
+        sidebar: "var(--z-sidebar)",
+        "bottom-nav": "var(--z-bottom-nav)",
+        overlay: "var(--z-overlay)",
+        drawer: "var(--z-drawer)",
+        dialog: "var(--z-dialog)",
+        dropdown: "var(--z-dropdown)",
+        toast: "var(--z-toast)",
+      },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        out: "var(--ease-out)",
+      },
+      // Vùng chạm: 44px chung, 48px ở data-density="comfortable" (M13).
+      height: { control: "var(--control-height)" },
+      minHeight: { control: "var(--control-height)" },
     },
   },
   // eslint-disable-next-line @typescript-eslint/no-require-imports

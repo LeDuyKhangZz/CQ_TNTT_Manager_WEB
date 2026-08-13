@@ -11,7 +11,13 @@
  *      trong repo được phép trỏ vào Supabase thật.
  *
  * Cách chạy (env nạp từ file môi trường production, KHÔNG commit file đó):
- *   node --env-file=.env.production.local scripts/seed-production.mjs \
+ *   node --env-file=.env.production.deploy scripts/seed-production.mjs \
+ *
+ * 🔴 Tên file cố ý KHÔNG phải `.env.production.local`: Next tự nạp tên đó ở
+ * NODE_ENV=production và nạp TRƯỚC `.env.local`, nên chỉ cần nó nằm trong thư
+ * mục gốc là mọi lượt `npm run build && npm run start` ở máy local đều nối
+ * thẳng vào dự án thật. `--env-file=` chỉ đường tường minh nên không cần đúng
+ * tên Next.
  *     --confirm=<hostname-cua-project> [--year=2026-2027] \
  *     [--start=2026-09-01] [--end=2027-05-31]
  */

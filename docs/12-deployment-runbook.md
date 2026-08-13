@@ -87,6 +87,14 @@ npx supabase link --project-ref <ref>      # <ref> là phần trước .supabase
 # 2. Đẩy toàn bộ migration lên (chưa có dữ liệu nào)
 npx supabase db push
 
+# 2b. ⚠️ BẮT BUỘC — `db push` KHÔNG chạy supabase/seed.sql.
+#     Local không lộ ra vì `db reset` có chạy seed. Bỏ bước này thì
+#     sectors/grade_levels/class_templates/committees đều rỗng, và
+#     `generate_default_classes` sẽ tạo 0 lớp mà KHÔNG báo lỗi.
+#     Cách làm: Dashboard -> SQL Editor -> New query -> dán toàn bộ
+#     supabase/seed.sql -> Run. File idempotent (on conflict do nothing),
+#     chạy lại nhiều lần vô hại.
+
 # 3. KHÔNG cần tạo bucket bằng tay: migration 20260722000300 đã insert bucket
 #    "teaching-materials" (private, 5 MB, allowlist MIME) cùng policy của nó.
 #    Chỉ vào Storage kiểm lại: bucket có mặt và cột Public là "false".
@@ -108,10 +116,19 @@ Chỉ dùng `scripts/seed-production.mjs`. **Không bao giờ chạy `seed:dev` 
 project thật** — nó đặt mật khẩu dùng chung `123456` và dựng dữ liệu giả.
 
 ```bash
-# .env.production.local chứa URL + anon key + service role của project thật.
+# .env.production.deploy chứa URL + anon key + service role của project thật.
 # File này KHÔNG được commit (đã nằm trong .gitignore theo mẫu `.env.*`).
 npm run seed:prod -- --confirm=<hostname-project> --year=2026-2027
 ```
+
+🔴 **Tên file là `.env.production.deploy`, KHÔNG phải `.env.production.local`.**
+Next chỉ tự nạp đúng bốn tên — `.env`, `.env.local`, `.env.<NODE_ENV>`,
+`.env.<NODE_ENV>.local` — và ở `NODE_ENV=production` nó nạp
+`.env.production.local` **trước** `.env.local`. Chỉ cần một file tên đó nằm
+trong thư mục gốc là mọi lượt `npm run build && npm run start` chạy tay ở máy
+lập trình đều nối thẳng vào **dự án thật**; E2E local đã dính đúng bẫy này một
+lần (xem `16_PHASE_2B_IMPLEMENTATION_LOG.md` mục 0.8). `seed:prod` gọi file qua
+`node --env-file=` nên không cần đúng tên Next. **Đừng đổi lại tên cũ.**
 
 Script tạo đúng ba thứ và không hơn:
 
@@ -122,6 +139,12 @@ Script tạo đúng ba thứ và không hơn:
 
 Hai lớp bảo vệ: phải gõ đúng hostname của project mới chạy, và script từ chối
 nếu `profiles` đã có dòng nào.
+
+⚠️ **Phải chạy §4a bước 2b (seed.sql) TRƯỚC.** `seed-production.mjs` gọi
+`generate_default_classes`, hàm này đọc `class_templates`. Bảng rỗng thì hàm trả
+về thành công với 0 lớp và script in "Đã tạo năm học ... và 0 lớp" — rất dễ đọc
+lướt qua. Nếu lỡ chạy sai thứ tự: chạy seed.sql rồi vào `/admin` bấm
+"Sinh lớp mặc định", không cần seed lại tài khoản.
 
 Mật khẩu tạm chỉ in ra màn hình **một lần**. Giao tận tay từng người, không gửi
 qua tin nhắn nhóm, không lưu vào file. Sau đó mọi tài khoản khác được tạo trong
@@ -157,6 +180,21 @@ alias email của mọi tài khoản dựng từ nó. Chốt một lần trướ
 
 Node: Settings → General → Node.js Version ≥ **20** (`package.json` yêu cầu).
 Build/Install command để mặc định — repo không có bước dựng riêng.
+
+### 5b. Hai giới hạn của nền tảng mà mã nguồn đang dựa vào (M12-C, 2026-08-03)
+
+| Giới hạn | Giá trị đang dùng | Đặt ở đâu |
+|---|---|---|
+| Thân request | ~**4,5 MB** (trần nền tảng) | `next.config.mjs` → `serverActions.bodySizeLimit: "4.5mb"`; trần nghiệp vụ **4 MB** ở `src/features/imports/limits.ts` (**D-137**) |
+| Thời gian chạy hàm | **60 giây** (trần gói Hobby) | `export const maxDuration = 60` ở `/imports`, `/imports/[batchId]` và `/imports/[batchId]/errors` |
+
+🔴 **Trần nghiệp vụ phải luôn nằm DƯỚI trần nền tảng.** Nếu không, file nằm giữa hai
+con số sẽ bị chặn ở tầng hạ tầng bằng một **trang lỗi tiếng Anh**, trước khi câu tiếng
+Việt của ứng dụng kịp chạy — đúng lỗi M12-C vừa sửa (trần cũ 5 MB / `bodySizeLimit: "6mb"`,
+cả hai đều **trên** 4,5 MB).
+
+⚠️ **Đổi gói Vercel thì phải xem lại cả hai dòng trên.** Đặt `maxDuration` cao hơn mức gói
+cho phép là **hỏng ở bước triển khai**, không phải ở chạy thử local.
 
 Sau khi có domain Vercel, quay lại Supabase → Auth → URL Configuration điền đúng
 domain đó, nếu không thì phiên đăng nhập không giữ được.
@@ -225,26 +263,53 @@ sẽ hỏng, rất dễ tưởng nhầm là lỗi code.
 - Test restore ở môi trường riêng.
 - Ghi nơi giữ backup và người có quyền vào WORKLOG/ops private doc, không commit credential.
 
-### Ai chịu trách nhiệm backup (P7-T5)
+### Ai chịu trách nhiệm backup (P7-T5, cập nhật sau khi kiểm thật 2026-07-22)
+
+🔴 **Đã kiểm trên project thật: Supabase Free plan KHÔNG có backup — không phải
+ít ngày hơn, mà là không có gì cả.** Màn hình Database → Backups ghi rõ
+"Free Plan does not include project backups". Point-in-time recovery cũng không.
+
+Nghĩa là ở trạng thái hiện tại, **dump thủ công là lớp bảo vệ DUY NHẤT**. Không
+có lưới đỡ nào khác. Một `delete` nhầm, một migration hỏng, hay project bị xóa là
+mất toàn bộ hồ sơ gần 900 thiếu nhi, không dựng lại được từ đâu.
+
+Hai lựa chọn, phải chọn một **trước khi nhập dữ liệu thật**:
+
+| | Nâng lên Pro | Ở lại Free |
+|---|---|---|
+| Backup tự động | 7 ngày, Supabase lo | không có |
+| Việc phải làm tay | vẫn nên dump trước migration lớn | dump định kỳ, **kỷ luật, không được quên** |
+| Rủi ro nếu quên | mất tối đa 1 ngày | mất từ lần dump gần nhất |
+
+Khuyến nghị: nhập 900 hồ sơ thật vào một database không có backup là rủi ro
+không tương xứng với số tiền Pro. Nếu vẫn ở Free thì bảng dưới **không phải gợi
+ý mà là bắt buộc**.
+
+> **Quyết định của user 2026-07-22:** ở lại Free và **chưa nhập dữ liệu thật**.
+> Production dùng để chạy thử tính năng với dữ liệu mẫu. Ghi thành **BLK-8**
+> trong WORKLOG. Trước khi import sổ lớp thật phải quay lại chọn một trong hai
+> cột trên — không được lặng lẽ bỏ qua bước này.
 
 | Việc | Người giữ | Nhịp |
 |---|---|---|
-| Bật/kiểm tra backup tự động của Supabase | Super Admin #1 (Khang Nhỏ) | kiểm lại mỗi đầu năm học |
-| Dump thủ công trước mỗi migration phá schema | Người chạy migration | mỗi lần deploy có migration |
-| Giữ bản dump ngoài Supabase | Super Admin #2 (Mr. Đạt) | mỗi tháng |
+| Dump đầy đủ (schema + data) | Super Admin #1 (Khang Nhỏ) | **mỗi tuần**, và sau mỗi đợt nhập liệu lớn |
+| Giữ bản dump ở nơi khác Supabase (Drive/ổ cứng riêng) | Super Admin #2 (Mr. Đạt) | mỗi tháng giữ lại 1 bản |
+| Dump trước khi chạy `db push` có migration | Người chạy migration | mỗi lần, không ngoại lệ |
 | Thử restore vào project nháp | Hai Super Admin cùng làm | mỗi học kỳ |
 
-⚠️ Bảng này là **đề xuất theo D-16**, user phải xác nhận trước khi coi là đã
-chốt. Hobby plan của Supabase chỉ giữ backup tự động trong thời gian ngắn, nên
-bản dump thủ công giữ ngoài mới là thứ cứu được dữ liệu — dữ liệu ở đây là hồ sơ
-gần 900 thiếu nhi, mất là không dựng lại được.
+⚠️ Bảng này chờ user xác nhận. Bản dump chứa hồ sơ trẻ em — cất như tài liệu mật,
+**không** đưa vào repo, không để trong thư mục đồng bộ công khai.
 
-Lệnh dump thủ công (chạy từ máy có Supabase CLI, không lưu output vào repo):
+Lệnh dump (chạy trong `CQ_TNTT_Manager_Project_Spec`, đã `supabase link`):
 
 ```bash
-supabase db dump --db-url "<connection-string>" -f cq-tntt-<yyyymmdd>.sql
-supabase db dump --db-url "<connection-string>" --data-only -f cq-tntt-data-<yyyymmdd>.sql
+npx supabase db dump --linked -f cq-tntt-schema-$(date +%Y%m%d).sql
+npx supabase db dump --linked --data-only -f cq-tntt-data-$(date +%Y%m%d).sql
 ```
+
+Cần **cả hai file** mới restore được. Chỉ có data mà không có schema thì vô dụng.
+Cả hai đều khớp mẫu `*.sql` ngoài `supabase/migrations/` nên đừng để lẫn vào thư
+mục migration — `db push` sẽ tưởng là migration mới.
 
 ## 9. Rollback
 

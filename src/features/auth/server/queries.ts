@@ -3,7 +3,9 @@ import "server-only";
 import { AppError } from "@/lib/errors";
 import { requireAuthContext } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
+import type { AuthContext } from "@/lib/auth/types";
 import type { AppRole } from "@/lib/permissions/roles";
+import { adminProvisionableRoles } from "../account-directory";
 
 export interface AccountSummary {
   id: string;
@@ -11,14 +13,17 @@ export interface AccountSummary {
   displayName: string;
   status: "active" | "locked" | "disabled";
   role: AppRole | null;
+  /** TB-06 (F09): cờ "chưa đổi mật khẩu lần đầu" để danh sách nhìn ra ngay. */
+  mustChangePassword: boolean;
 }
 
 export interface AccountAdminOptions {
   accounts: AccountSummary[];
-  academicYears: Array<{ id: string; name: string }>;
-  sectors: Array<{ id: string; name: string }>;
-  classes: Array<{ id: string; academicYearId: string; displayName: string }>;
-  staffProfiles: Array<{ id: string; username: string; displayName: string; saintName: string | null; phone: string | null; email: string | null; label: string }>;
+  /**
+   * Vai trò biểu mẫu `/admin` còn cấp được (D-111) — do MÁY CHỦ quyết theo vai
+   * trò người thao tác, không phải danh sách cứng ở giao diện.
+   */
+  provisionableRoles: AppRole[];
   guardians: Array<{ id: string; username: string; displayName: string; label: string }>;
   students: Array<{ id: string; username: string; displayName: string; saintName: string; label: string }>;
 }
@@ -27,12 +32,11 @@ export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
   const context = await requireAuthContext("/admin");
   if (context.role !== "super_admin") throw new AppError("FORBIDDEN");
   const supabase = await createClient();
-  const [profilesResult, yearsResult, sectorsResult, classesResult, staffResult, guardiansResult, studentsResult] = await Promise.all([
-    supabase.from("profiles").select("id, username, display_name, account_status, role_assignments(role, is_active)").order("username"),
-    supabase.from("academic_years").select("id, name").order("start_date", { ascending: false }),
-    supabase.from("sectors").select("id, name").order("sort_order"),
-    supabase.from("classes").select("id, academic_year_id, display_name").order("display_name"),
-    supabase.from("staff_profiles").select("id, staff_code, full_name, saint_name, phone, email").is("profile_id", null).order("full_name"),
+  // M04-C: bốn truy vấn (năm học · ngành · lớp · hồ sơ nhân sự) đã bỏ — biểu mẫu
+  // `/admin` không còn cấp tài khoản cho vai trò gắn hồ sơ nhân sự nên không cần
+  // phạm vi năm/ngành/lớp nữa (D-111).
+  const [profilesResult, guardiansResult, studentsResult] = await Promise.all([
+    supabase.from("profiles").select("id, username, display_name, account_status, must_change_password, role_assignments(role, is_active)").order("username"),
     supabase.from("guardians").select("id, full_name, phone").is("profile_id", null).eq("status", "active").order("full_name"),
     supabase.from("students").select("id, student_code, saint_name, full_name").is("profile_id", null).eq("status", "active").order("full_name"),
   ]);
@@ -42,6 +46,7 @@ export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
     username: string;
     display_name: string;
     account_status: AccountSummary["status"];
+    must_change_password: boolean;
     role_assignments: Array<{ role: AppRole; is_active: boolean }>;
   }>;
 
@@ -52,23 +57,9 @@ export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
       displayName: profile.display_name,
       status: profile.account_status,
       role: profile.role_assignments.find((assignment) => assignment.is_active)?.role ?? null,
+      mustChangePassword: profile.must_change_password,
     })),
-    academicYears: (yearsResult.data ?? []).map((year) => ({ id: year.id, name: year.name })),
-    sectors: (sectorsResult.data ?? []).map((sector) => ({ id: sector.id, name: sector.name })),
-    classes: (classesResult.data ?? []).map((item) => ({
-      id: item.id,
-      academicYearId: item.academic_year_id,
-      displayName: item.display_name,
-    })),
-    staffProfiles: (staffResult.data ?? []).map((staff) => ({
-      id: staff.id,
-      username: staff.staff_code,
-      displayName: staff.full_name,
-      saintName: staff.saint_name,
-      phone: staff.phone,
-      email: staff.email,
-      label: `${staff.staff_code} · ${staff.full_name}`,
-    })),
+    provisionableRoles: adminProvisionableRoles(context.role),
     guardians: (guardiansResult.data ?? []).map((guardian) => ({
       id: guardian.id,
       username: guardian.phone,
@@ -83,4 +74,34 @@ export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
       label: `${student.student_code} · ${student.saint_name} ${student.full_name}`,
     })),
   };
+}
+
+/**
+ * Nhãn phạm vi (lớp/ngành) cho trang `/account` — TB-03, AC-M01-06.
+ *
+ * Vai trò toàn cục/ownership không có phạm vi lớp/ngành nên trả `null` và trang
+ * bỏ hẳn dòng đó thay vì hiện một ô trống. Đọc qua client người dùng (chịu RLS):
+ * `classes`/`sectors` là dữ liệu tra cứu mọi nhân sự đọc được; phụ huynh/thiếu
+ * nhi không có `classId`/`sectorId` nên không chạm tới truy vấn nào.
+ */
+export async function getAccountScopeLabel(context: AuthContext): Promise<string | null> {
+  if (context.classId) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("classes")
+      .select("display_name")
+      .eq("id", context.classId)
+      .maybeSingle();
+    return data ? `Lớp ${data.display_name}` : null;
+  }
+  if (context.sectorId) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("sectors")
+      .select("name")
+      .eq("id", context.sectorId)
+      .maybeSingle();
+    return data ? `Ngành ${data.name}` : null;
+  }
+  return null;
 }

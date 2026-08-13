@@ -37,6 +37,9 @@ const DEV_PASSWORD = "123456";
 type Client = SupabaseClient<any, any, any>;
 
 describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () => {
+  // JWT/RLS queries over the 930-row stress dataset are deliberately heavier
+  // than unit tests; keep a realistic local-DB budget per permission case.
+  const gateTimeout = 20_000;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const domain = process.env.INTERNAL_AUTH_DOMAIN || "choquan.internal";
@@ -82,7 +85,17 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
     auLeader = await sessionFor("GLV905"); // Trưởng ngành Ấu
     au1aTeacher = await sessionFor("GLV910"); // GLV lớp Ấu 1A
     guardian = await sessionFor("84912000001"); // Phụ huynh Nguyễn Văn Ba
-    student = await sessionFor("CQ0001"); // Thiếu nhi Nguyễn Minh An
+    // Mã CQ lấy từ sequence và có thể đổi khi seed nền thêm fixture. Tra hồ sơ
+    // có tài khoản thay vì hard-code CQ0001 để gate vẫn đo đúng JWT học viên.
+    const { data: seededStudent, error: seededStudentError } = await global
+      .from("students")
+      .select("student_code")
+      .eq("full_name", "Nguyễn Minh An")
+      .not("profile_id", "is", null)
+      .limit(1)
+      .single();
+    expect(seededStudentError, "phải tìm thấy tài khoản thiếu nhi seed").toBeNull();
+    student = await sessionFor(seededStudent!.student_code);
 
     totals = {
       students: await countVisible(global, "students"),
@@ -125,7 +138,7 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
     for (const id of seen) expect(auStudentIds.has(id)).toBe(true);
     // Và phải thực sự nhỏ hơn toàn xứ đoàn, nếu không phép kiểm vô nghĩa.
     expect(seen.size).toBeLessThan(totals.students);
-  });
+  }, gateTimeout);
 
   it("GLV lớp Ấu 1A chỉ thấy roster lớp mình (cộng con mình theo D-25)", async () => {
     const { data } = await au1aTeacher.from("students").select("id");
@@ -133,7 +146,7 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
     expect(seen.size).toBe(au1aTeacherVisibleIds.size);
     for (const id of seen) expect(au1aTeacherVisibleIds.has(id)).toBe(true);
     expect(seen.size).toBeLessThan(totals.students);
-  });
+  }, gateTimeout);
 
   it("GLV lớp không đọc được hồ sơ sức khỏe của lớp khác", async () => {
     const outsider = [...auStudentIds].find((id) => !au1aStudentIds.has(id))!;
@@ -149,7 +162,7 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
     for (const row of visibleHealth ?? []) {
       expect(au1aStudentIds.has((row as any).student_id)).toBe(true);
     }
-  });
+  }, gateTimeout);
 
   it("GLV lớp không ghi được vào lớp khác", async () => {
     const outsider = [...auStudentIds].find((id) => !au1aStudentIds.has(id))!;
@@ -166,7 +179,7 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
       .single();
     expect((after as any).general_notes).not.toBe("không được phép");
     void error;
-  });
+  }, gateTimeout);
 
   it("phụ huynh chỉ thấy con mình và không đọc được sức khỏe", async () => {
     const { data: mine } = await guardian.from("students").select("id, guardian_id");
@@ -176,13 +189,13 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
     expect(guardianIds.size).toBe(1);
 
     expect(await countVisible(guardian, "student_health_profiles", "student_id")).toBe(0);
-  });
+  }, gateTimeout);
 
   it("thiếu nhi chỉ thấy chính mình và không đọc được sức khỏe của mình", async () => {
     const { data: self } = await student.from("students").select("id");
     expect((self ?? []).length).toBe(1);
     expect(await countVisible(student, "student_health_profiles", "student_id")).toBe(0);
-  });
+  }, gateTimeout);
 
   it("phụ huynh không tạo được hồ sơ thiếu nhi", async () => {
     const { data: own } = await guardian.from("students").select("guardian_id").limit(1).single();
@@ -194,7 +207,7 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
       guardian_id: (own as any).guardian_id,
     });
     expect(error).not.toBeNull();
-  });
+  }, gateTimeout);
 
   it("phạm vi ghi danh cũng bị giới hạn đúng như phạm vi thiếu nhi", async () => {
     const { data } = await au1aTeacher.from("enrollments").select("student_id, class_id");
@@ -203,5 +216,5 @@ describeGate("Gate Phase 2 — phạm vi đọc trên dữ liệu thật", () =>
       expect(au1aTeacherVisibleIds.has((row as any).student_id)).toBe(true);
     }
     expect((data ?? []).length).toBeLessThan(totals.enrollments);
-  });
+  }, gateTimeout);
 });

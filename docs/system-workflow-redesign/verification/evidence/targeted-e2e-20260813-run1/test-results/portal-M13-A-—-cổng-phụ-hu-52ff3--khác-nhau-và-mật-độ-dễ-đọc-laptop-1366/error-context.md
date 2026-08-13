@@ -1,0 +1,106 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: portal.spec.ts >> M13-A — cổng phụ huynh và thiếu nhi >> TB-M13-03/04: bốn nguyên nhân rỗng khác nhau và mật độ dễ đọc
+- Location: tests\e2e\portal.spec.ts:332:7
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - link "Bỏ qua điều hướng" [ref=e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - complementary "Thanh bên ứng dụng" [ref=e5]:
+      - generic [ref=e7]:
+        - paragraph [ref=e8]: Giáo xứ Chợ Quán
+        - paragraph [ref=e9]: Thiếu Nhi Thánh Thể
+      - paragraph [ref=e11]:
+        - text: "Đang xem: Huynh Trưởng ·"
+        - generic [ref=e12]: Năm học 2026-2027
+      - navigation "Điều hướng chính" [ref=e13]:
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: Chung
+          - list [ref=e16]:
+            - listitem [ref=e17]:
+              - link "Tổng quan" [ref=e18] [cursor=pointer]:
+                - /url: /dashboard
+                - img [ref=e19]
+                - generic [ref=e24]: Tổng quan
+            - listitem [ref=e25]:
+              - link "Thông báo" [ref=e26] [cursor=pointer]:
+                - /url: /notifications
+                - img [ref=e27]
+                - generic [ref=e30]: Thông báo
+            - listitem [ref=e31]:
+              - link "Tài khoản" [ref=e32] [cursor=pointer]:
+                - /url: /account
+                - img [ref=e33]
+                - generic [ref=e37]: Tài khoản
+        - generic [ref=e38]:
+          - paragraph [ref=e39]: Mục vụ
+          - list [ref=e40]:
+            - listitem [ref=e41]:
+              - link "Con của tôi" [ref=e42] [cursor=pointer]:
+                - /url: /parent/children
+                - img [ref=e43]
+                - generic [ref=e46]: Con của tôi
+            - listitem [ref=e47]:
+              - link "Đơn xin nghỉ" [ref=e48] [cursor=pointer]:
+                - /url: /parent/absence-requests
+                - img [ref=e49]
+                - generic [ref=e53]: Đơn xin nghỉ
+            - listitem [ref=e54]:
+              - link "Giáo án" [ref=e55] [cursor=pointer]:
+                - /url: /teaching-plan
+                - img [ref=e56]
+                - generic [ref=e59]: Giáo án
+            - listitem [ref=e60]:
+              - link "Kết quả học tập" [ref=e61] [cursor=pointer]:
+                - /url: /results
+                - img [ref=e62]
+                - generic [ref=e65]: Kết quả học tập
+      - button "Đăng xuất" [ref=e68] [cursor=pointer]:
+        - img [ref=e69]
+        - generic [ref=e72]: Đăng xuất
+    - generic [ref=e73]:
+      - banner [ref=e74]:
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - navigation "Đường dẫn trang" [ref=e77]:
+              - list [ref=e78]:
+                - listitem [ref=e79]:
+                  - link "Trang chủ" [ref=e80] [cursor=pointer]:
+                    - /url: /dashboard
+                    - generic [ref=e81]: Trang chủ
+                - listitem [ref=e82]:
+                  - img [ref=e83]
+                  - generic [ref=e85]: Kết quả học tập
+            - paragraph [ref=e86]: Kết quả học tập
+          - paragraph [ref=e87]:
+            - img [ref=e88]
+            - generic [ref=e90]: Năm học 2026-2027
+          - link "Mở thông báo" [ref=e91] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e92]
+          - group [ref=e95]:
+            - generic "Menu tài khoản của Portal chưa ghi danh 3" [ref=e96] [cursor=pointer]:
+              - img [ref=e98]
+              - generic [ref=e101]: Portal chưa ghi danh 3
+              - img [ref=e102]
+      - main [ref=e105]:
+        - generic [ref=e106]:
+          - generic [ref=e108]:
+            - heading "Kết quả học tập" [level=1] [ref=e109]
+            - paragraph [ref=e110]: Bảng điểm năm học 2026-2027
+          - generic [ref=e111]:
+            - img [ref=e112]
+            - heading "Chưa có ghi danh trong năm học hiện hành" [level=3] [ref=e116]
+            - paragraph [ref=e117]: Thiếu nhi này chưa được ghi danh trong năm học 2026-2027. Vì vậy chưa có kết quả hoặc điểm danh để hiển thị.
+  - alert [ref=e118]
+```

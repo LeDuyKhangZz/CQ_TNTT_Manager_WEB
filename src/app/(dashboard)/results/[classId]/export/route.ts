@@ -2,26 +2,53 @@ import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { buildGradebookExportData } from "@/features/assessments/export-data";
 import { getGradebookDetail } from "@/features/assessments/server/queries";
+import { asciiFilename, excelResponse, pdfResponse } from "@/lib/exports/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function asciiFilename(value: string): string {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase() || "bang-diem";
-}
+/**
+ * M07-A · **TB-M07-08 bước 3** — route dùng `src/lib/exports/http.ts` thay cho
+ * ba bản sao cục bộ của `asciiFilename` / `excelResponse` / `pdfResponse`.
+ *
+ * Biên bản audit F18 xếp đây vào phần trừ điểm C10: hai bản `asciiFilename` đã
+ * **lệch nhau sẵn** (bản cục bộ dùng dải `[̀-ͯ]`, bản chung dùng
+ * `\p{Diacritic}`), và bản chung còn có một lưới an toàn mà bản cục bộ không có:
+ * bảng PDF **không dòng nào** (lớp chưa có thiếu nhi) được chèn một dòng `—`
+ * thay vì đẩy pdfmake vào bảng rỗng.
+ *
+ * Bề rộng cột và cỡ chữ của bảng điểm được giữ **y nguyên** qua tham số
+ * `PdfTableLayout` mới — xem chú thích ở `lib/exports/http.ts`.
+ */
+export async function GET(request: Request, { params }: { params: Promise<{ classId: string }> }) {
+  const { classId } = await params;
+  const format = new URL(request.url).searchParams.get("format");
+  if (format !== "xlsx" && format !== "pdf") {
+    return NextResponse.json({ error: "Định dạng xuất không hợp lệ." }, { status: 400 });
+  }
 
-async function excelResponse(classId: string) {
   const detail = await getGradebookDetail(classId);
   if (!detail) return NextResponse.json({ error: "Không tìm thấy bảng điểm." }, { status: 404 });
+
   const data = buildGradebookExportData(detail);
+  const filename = `bang-diem-${asciiFilename(detail.className)}-${detail.academicYearCode}`;
+  const exportedAt = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
+  if (format === "pdf") {
+    return pdfResponse(data.title, data.subtitle, data, `${filename}.pdf`, {
+      widths: [70, 110, ...detail.assessments.map(() => "*"), 42],
+      fontSize: 7,
+    });
+  }
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "CQ TNTT Manager";
   workbook.created = new Date();
   const sheet = workbook.addWorksheet("Bảng điểm", { views: [{ state: "frozen", xSplit: 2, ySplit: 3 }] });
-  sheet.addRow([`BẢNG ĐIỂM ${detail.className.toUpperCase()}`]);
+  sheet.addRow([data.title]);
   sheet.mergeCells(1, 1, 1, Math.max(data.headers.length, 1));
   sheet.getCell(1, 1).font = { bold: true, size: 16, color: { argb: "FFF28C5B" } };
-  sheet.addRow([`Năm học ${detail.academicYearCode} · Xuất lúc ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`]);
+  sheet.addRow([`${data.subtitle} · Xuất lúc ${exportedAt}`]);
   sheet.mergeCells(2, 1, 2, Math.max(data.headers.length, 1));
   sheet.addRow(data.headers);
   for (const row of data.rows) sheet.addRow(row);
@@ -34,57 +61,5 @@ async function excelResponse(classId: string) {
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber >= 3) row.eachCell((cell) => { cell.border = { bottom: { style: "thin", color: { argb: "FFEEDFD5" } } }; });
   });
-  const buffer = await workbook.xlsx.writeBuffer();
-  const filename = `bang-diem-${asciiFilename(detail.className)}-${detail.academicYearCode}.xlsx`;
-  return new NextResponse(Buffer.from(buffer), {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "private, no-store",
-    },
-  });
-}
-
-async function pdfResponse(classId: string) {
-  const detail = await getGradebookDetail(classId);
-  if (!detail) return NextResponse.json({ error: "Không tìm thấy bảng điểm." }, { status: 404 });
-  const [{ default: pdfMake }, { default: vfsFonts }] = await Promise.all([
-    import("pdfmake/build/pdfmake"),
-    import("pdfmake/build/vfs_fonts"),
-  ]);
-  pdfMake.vfs = vfsFonts;
-  const data = buildGradebookExportData(detail);
-  const body = [
-    data.headers.map((text) => ({ text, bold: true, color: "#ffffff", fillColor: "#F28C5B" })),
-    ...data.rows.map((row) => row.map((value) => ({ text: value === null ? "—" : String(value), noWrap: false }))),
-  ];
-  const definition = {
-    pageSize: "A4",
-    pageOrientation: "landscape",
-    pageMargins: [24, 36, 24, 30],
-    defaultStyle: { font: "Roboto", fontSize: 7 },
-    content: [
-      { text: `BẢNG ĐIỂM ${detail.className.toUpperCase()}`, bold: true, fontSize: 16, color: "#F28C5B", alignment: "center" },
-      { text: `Năm học ${detail.academicYearCode}`, alignment: "center", margin: [0, 2, 0, 14] },
-      { table: { headerRows: 1, widths: [70, 110, ...detail.assessments.map(() => "*"), 42], body }, layout: "lightHorizontalLines" },
-      { text: `Xuất lúc ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`, margin: [0, 12, 0, 0], fontSize: 7, color: "#756861" },
-    ],
-  };
-  const buffer = await new Promise<Buffer>((resolve) => pdfMake.createPdf(definition).getBuffer(resolve));
-  const filename = `bang-diem-${asciiFilename(detail.className)}-${detail.academicYearCode}.pdf`;
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "private, no-store",
-    },
-  });
-}
-
-export async function GET(request: Request, { params }: { params: Promise<{ classId: string }> }) {
-  const { classId } = await params;
-  const format = new URL(request.url).searchParams.get("format");
-  if (format === "xlsx") return excelResponse(classId);
-  if (format === "pdf") return pdfResponse(classId);
-  return NextResponse.json({ error: "Định dạng xuất không hợp lệ." }, { status: 400 });
+  return excelResponse(await workbook.xlsx.writeBuffer(), `${filename}.xlsx`);
 }

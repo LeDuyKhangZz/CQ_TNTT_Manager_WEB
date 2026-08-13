@@ -4,8 +4,14 @@ const nextConfig = {
   poweredByHeader: false,
   experimental: {
     serverActions: {
-      // File nghiệp vụ tối đa 5 MB; chừa phần multipart nhưng vẫn chặn ở action và DB.
-      bodySizeLimit: "6mb",
+      // M12-C / TO-BE 8 / NC-01 / D-137. Trần nghiệp vụ là 4 MB (`features/
+      // imports/limits.ts`); con số ở đây chừa phần bao multipart.
+      //
+      // 🔴 Giá trị cũ "6mb" cao hơn cả trần ~4,5 MB mà Vercel áp cho thân
+      // request, nên nó không có hiệu lực nào ngoài việc làm người đọc mã tưởng
+      // hệ thống nhận được 6 MB: file 4,5–5 MB bị chặn ở tầng hạ tầng bằng một
+      // trang lỗi tiếng Anh, trước khi câu tiếng Việt của action kịp chạy.
+      bodySizeLimit: "4.5mb",
     },
   },
   async headers() {

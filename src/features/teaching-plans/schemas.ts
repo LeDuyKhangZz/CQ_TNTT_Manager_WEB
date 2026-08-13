@@ -43,8 +43,26 @@ export const teachingPlanItemInputSchema = z
     }
   });
 
+/**
+ * Phiên bản mà trình duyệt đang giữ — **D-146 / TB-M06-01 / BR-M06-13**.
+ *
+ * 🔴 **Giữ NGUYÊN VĂN chuỗi máy chủ trả về, không đi qua `Date`.** `updated_at`
+ * là `timestamptz` với độ chính xác **micro giây**, còn `Date` của JavaScript
+ * chỉ tới **mili giây** — một vòng `new Date(value).toISOString()` là mất ba
+ * chữ số cuối, và phép so ở cơ sở dữ liệu sẽ **không bao giờ khớp**. Hậu quả
+ * không phải mất dữ liệu mà là mọi lượt lưu đều báo xung đột: hàng rào chống
+ * ghi đè biến thành hàng rào chặn chính người đang sửa.
+ *
+ * `offset: true` là bắt buộc: PostgREST trả `…+00:00`, còn `z.string().datetime()`
+ * mặc định chỉ nhận hậu tố `Z`.
+ */
+export const expectedUpdatedAtSchema = z.string().datetime({ offset: true });
+
 export const updateTeachingPlanItemSchema = teachingPlanItemInputSchema.and(
-  z.object({ itemId: teachingPlanItemIdSchema }),
+  z.object({
+    itemId: teachingPlanItemIdSchema,
+    expectedUpdatedAt: expectedUpdatedAtSchema,
+  }),
 );
 
 export type EnsureTeachingPlanInput = z.input<typeof ensureTeachingPlanSchema>;

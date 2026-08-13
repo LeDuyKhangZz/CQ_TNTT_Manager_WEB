@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -22,6 +21,8 @@ export default async function CommitteeDetailPage({
   if (!detail) notFound();
 
   // Ban Kỹ thuật: thành viên Ban mượn/trả được, Trưởng/Phó ban sửa danh mục.
+  // TB-M09-06: bảng kho đi vào tab "Thiết bị" của vỏ nội dung, dựng sẵn ở máy chủ
+  // rồi truyền xuống như một `ReactNode` (cùng khuôn với vỏ ứng dụng ở M14-C).
   const equipment = detail.committee.managesEquipment ? await getEquipmentBoard(committeeId) : null;
   const canOperateEquipment = detail.committee.myPosition !== null || detail.canManageMembers;
 
@@ -30,23 +31,22 @@ export default async function CommitteeDetailPage({
       <PageHeader
         title={detail.committee.name}
         description={detail.committee.description ?? undefined}
-        action={
-          <Link href="/committees" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Danh sách Ban
-          </Link>
+        backHref="/committees"
+        backLabel="Danh sách Ban"
+      />
+      <CommitteeWorkspace
+        detail={detail}
+        equipmentSlot={
+          equipment ? (
+            <EquipmentBoard
+              committeeId={committeeId}
+              board={equipment}
+              canManageCatalog={detail.canWriteContent}
+              canOperate={canOperateEquipment}
+            />
+          ) : null
         }
       />
-      <div className="space-y-6">
-        <CommitteeWorkspace detail={detail} />
-        {equipment ? (
-          <EquipmentBoard
-            committeeId={committeeId}
-            board={equipment}
-            canManageCatalog={detail.canWriteContent}
-            canOperate={canOperateEquipment}
-          />
-        ) : null}
-      </div>
     </PageContainer>
   );
 }

@@ -9,5 +9,22 @@
     "supabase/",
     "next-env.d.ts",
     "src/types/database.ts"
-  ]
+  ],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/text-\\[(?:[0-9]|10|11)px\\]/]",
+        "message": "Cỡ chữ < 12px bị cấm — docs/system-workflow-redesign/ui-redesign/09_APPROVED_DESIGN_SYSTEM.md §2 và §10 điều 6. Dùng text-2xs (12px) trở lên."
+      },
+      {
+        "selector": "TemplateElement[value.raw=/text-\\[(?:[0-9]|10|11)px\\]/]",
+        "message": "Cỡ chữ < 12px bị cấm — docs/system-workflow-redesign/ui-redesign/09_APPROVED_DESIGN_SYSTEM.md §2 và §10 điều 6. Dùng text-2xs (12px) trở lên."
+      },
+      {
+        "selector": "CallExpression[callee.object.name='window'][callee.property.name=/^(confirm|alert)$/]",
+        "message": "window.confirm/alert bị cấm (09 §10 điều 8). Dùng <ConfirmDialog> nêu hậu quả bằng tên riêng, hoặc <Alert>."
+      }
+    ]
+  }
 }

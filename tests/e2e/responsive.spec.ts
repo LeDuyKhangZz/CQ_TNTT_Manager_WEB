@@ -12,6 +12,16 @@ const DEV_PASSWORD = "123456";
 const MIN_TAP_TARGET = 44;
 
 async function login(page: Page, username: string) {
+  // 🔴 Xoá cookie TRƯỚC khi mở /login — M14 NC-3.
+  // Từ nay `/login` chuyển thẳng vào `/dashboard` khi đã có phiên hợp lệ, nên
+  // "đăng nhập lại bằng người khác trên cùng một trang" không còn thấy biểu mẫu
+  // (đo được: 6 test rớt vì chờ mãi ô "Tên đăng nhập"). Trong ứng dụng thật,
+  // đổi tài khoản là **Đăng xuất rồi đăng nhập** — chức năng đăng xuất vừa được
+  // thêm ở A-01, trước đó chưa hề tồn tại nên các spec mới phải làm vòng này.
+  // Xoá cookie là cách diễn đạt đúng ý "bắt đầu như một người mới trên máy
+  // sạch"; mỗi context là độc lập nên không đụng tới phiên của context khác
+  // (bài tranh chấp/tiếp quản ở attendance dùng hai context riêng).
+  await page.context().clearCookies();
   await page.goto("/login");
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await page.getByLabel("Tên đăng nhập").fill(username);
@@ -126,6 +136,32 @@ test.describe("Responsive QA toàn hệ thống", () => {
     await page.goto("/admin");
     await expectNoHorizontalOverflow(page, "/admin");
     await expectTapTargets(page, "/admin");
+  });
+
+  /**
+   * M02-B / I6 — `07_IMPLEMENTATION_IMPACT.md` §7 đòi bổ sung màn hình cài đặt lớp
+   * vào bài responsive khi làm I6. Trang chi tiết lớp là trang **đông ô nhập nhất**
+   * của M02 (ô chọn trạng thái, ô phòng sinh hoạt, ô ghi chú, cộng một biểu mẫu
+   * "Kết thúc" cho từng em trong danh sách) nên nó là chỗ dễ tràn ngang nhất ở 360px.
+   */
+  test("trang chi tiết lớp kèm màn hình cài đặt lớp vừa khung và bấm được", async ({ page }) => {
+    await login(page, "GLV901");
+    await page.goto("/classes");
+    const card = page.getByRole("link", { name: /^Ấu 1A\b/ }).first();
+    await expect(card).toBeVisible({ timeout: 20_000 });
+    // `clickUntil` vì nợ #15 — xem ghi chú ở `class-settings.spec.ts`.
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await card.click({ timeout: 10_000 }).catch(() => undefined);
+      try {
+        await page.waitForURL(/\/classes\/[0-9a-f-]{36}$/, { timeout: 15_000 });
+        break;
+      } catch {
+        /* bấm lại */
+      }
+    }
+    await expect(page.locator("#class-status")).toBeVisible({ timeout: 20_000 });
+    await expectNoHorizontalOverflow(page, "/classes/[classId]");
+    await expectTapTargets(page, "/classes/[classId]");
   });
 
   test("portal phụ huynh vừa khung và bấm được", async ({ page }) => {

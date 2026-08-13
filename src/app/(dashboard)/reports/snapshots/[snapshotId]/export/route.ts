@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
-import { getReportSnapshot } from "@/features/reports/server/queries";
+import { getReportSnapshot, reportsRouteContext } from "@/features/reports/server/queries";
 import { asciiFilename, excelResponse, pdfResponse } from "@/lib/exports/http";
 
 export const runtime = "nodejs";
@@ -16,6 +16,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ snapshotId: string }> },
 ) {
+  // `getReportSnapshot` không còn tự gọi guard (nó bị gọi từ nhiều cửa vào), nên
+  // cửa vào này phải tự khai — đúng mẫu D-96.
+  await reportsRouteContext();
   const { snapshotId } = await params;
   if (!UUID_PATTERN.test(snapshotId)) {
     return NextResponse.json({ error: "Không tìm thấy báo cáo." }, { status: 404 });
@@ -27,6 +30,17 @@ export async function GET(
 
   const snapshot = await getReportSnapshot(snapshotId);
   if (!snapshot) return NextResponse.json({ error: "Không tìm thấy báo cáo." }, { status: 404 });
+
+  // F09 (`04_TO_BE_FLOWS` §6). `payload_json` là `jsonb` tự do: một bản chốt có
+  // hình dạng lạ (bản rất cũ, hoặc bản ghi bằng lệnh tay) cho `headers` rỗng, và
+  // pdfmake ném lỗi khi bảng không có cột nào ⇒ trang **500**. 422 nói được thật
+  // sự chuyện gì xảy ra, và không giấu sự tồn tại của bản chốt như 404.
+  if (snapshot.headers.length === 0) {
+    return NextResponse.json(
+      { error: "Bản chốt này không có dữ liệu bảng nên không xuất được." },
+      { status: 422 },
+    );
+  }
 
   const subtitle = `${snapshot.periodStart} – ${snapshot.periodEnd} · mã kiểm tra ${snapshot.checksum.slice(0, 16)}`;
   const filename = `bao-cao-chot-${asciiFilename(snapshot.title)}`;

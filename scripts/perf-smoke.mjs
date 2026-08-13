@@ -279,9 +279,20 @@ async function main() {
     const studentRows = must(
       await classTeacher
         .from("student_attendance_records")
-        .select("enrollment_id, mass_status, catechism_status, note")
+        // D-75: `note` is deliberately unavailable through the table grant.
+        // The application reads it through the narrow staff-only RPC below.
+        .select("id, enrollment_id, mass_status, catechism_status")
         .eq("attendance_session_id", measuredSessionId),
       "Đọc roster cho phép đo bulk save",
+    );
+    const studentNotes = must(
+      await classTeacher.rpc("attendance_session_notes", {
+        p_session_id: measuredSessionId,
+      }),
+      "Đọc ghi chú nội bộ cho phép đo bulk save",
+    );
+    const noteByRecord = new Map(
+      studentNotes.map((row) => [row.record_id, row.note]),
     );
     const staffRows = must(
       await classTeacher
@@ -294,7 +305,7 @@ async function main() {
       enrollment_id: row.enrollment_id,
       mass_status: row.mass_status,
       catechism_status: row.catechism_status,
-      note: row.note,
+      note: noteByRecord.get(row.id) ?? null,
     }));
     measuredStaffPayload = staffRows.map((row) => ({
       class_staff_assignment_id: row.class_staff_assignment_id,
@@ -321,12 +332,66 @@ async function main() {
   const results = [];
 
   await measure(
-    "/students — danh sách toàn xứ đoàn (global write)",
+    "/students — danh sách toàn xứ đoàn (global write) · cách CŨ, tải hết",
     () =>
       globalWrite
         .from("students")
         .select("id, student_code, saint_name, full_name, status, hardship_flag, guardians(full_name, phone)")
         .order("full_name"),
+    results,
+  );
+
+  // ── M03-B / TB-F03 ────────────────────────────────────────────────────────
+  // `04_TO_BE_FLOWS.md` đòi đo lại sau khi thêm join `enrollments`+`classes`:
+  // *"nút thắt là cách đánh giá RLS chứ không phải index"* (bài học
+  // `20260721000200`). Bốn phép đo dưới đây là **đúng bốn truy vấn** mà trang
+  // `/students` và ô chọn em của `/classes/[id]` thật sự chạy sau M03-B.
+  const STUDENT_PAGE_SIZE = 20;
+
+  await measure(
+    "/students — đếm tổng để phân trang (student_directory, count exact)",
+    () =>
+      globalWrite
+        .from("student_directory")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active"),
+    results,
+  );
+
+  await measure(
+    `/students — MỘT trang ${STUDENT_PAGE_SIZE} em kèm lớp và ngành (student_directory)`,
+    () =>
+      globalWrite
+        .from("student_directory")
+        .select(
+          "id, student_code, saint_name, full_name, status, hardship_flag, guardian_name, guardian_phone, class_name, sector_code, sector_name",
+        )
+        .eq("status", "active")
+        .order("full_name", { ascending: true })
+        .range(0, STUDENT_PAGE_SIZE - 1),
+    results,
+  );
+
+  await measure(
+    "/students — tìm KHÔNG DẤU trên search_name (D-126)",
+    () =>
+      globalWrite
+        .from("student_directory")
+        .select("id, student_code, full_name, class_name")
+        .or("search_name.ilike.*nguyen*,student_code.ilike.*nguyen*")
+        .order("full_name", { ascending: true })
+        .range(0, STUDENT_PAGE_SIZE - 1),
+    results,
+  );
+
+  await measure(
+    "TB-F13 — dò trùng theo tên đã bỏ dấu (chỉ mục students_search_name_idx)",
+    () =>
+      globalWrite
+        .from("student_directory")
+        .select("id, student_code, full_name, date_of_birth, guardian_phone, class_name")
+        .eq("search_name", "nguyen thi an")
+        .limit(25),
     results,
   );
 
@@ -357,13 +422,25 @@ async function main() {
   );
 
   await measure(
-    "/classes/[id] — danh sách em chưa ghi danh (dropdown thêm vào lớp)",
+    "/classes/[id] — danh sách em chưa ghi danh · cách CŨ, kéo cả bảng",
     () =>
       globalWrite
         .from("students")
         .select("id, student_code, saint_name, full_name")
         .eq("status", "active")
         .order("full_name"),
+    results,
+  );
+
+  await measure(
+    "/classes/[id] — danh sách em chưa ghi danh · cách MỚI (BR-M03-N20, cắt 50)",
+    () =>
+      globalWrite
+        .from("student_directory")
+        .select("id, student_code, saint_name, full_name")
+        .eq("status", "active")
+        .order("full_name")
+        .limit(50),
     results,
   );
 
@@ -417,8 +494,17 @@ async function main() {
     () =>
       classTeacher
         .from("student_attendance_records")
-        .select("id, enrollment_id, student_id, mass_status, catechism_status, note, students(saint_name, full_name)")
+        .select("id, enrollment_id, student_id, mass_status, catechism_status, students(saint_name, full_name)")
         .eq("attendance_session_id", measuredSessionId),
+    results,
+  );
+
+  await measure(
+    `Attendance — tải ghi chú nội bộ buổi ${measuredStudentPayload.length} em`,
+    () =>
+      classTeacher.rpc("attendance_session_notes", {
+        p_session_id: measuredSessionId,
+      }),
     results,
   );
 

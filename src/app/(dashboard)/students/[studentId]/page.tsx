@@ -1,49 +1,25 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatDateVi } from "@/lib/dates";
 import {
-  createSacramentFromForm,
-  saveHealthProfileFromForm,
-  updateStudentFromForm,
-} from "@/features/students/server/actions";
+  enrollmentStatusBadgeVariant,
+  enrollmentStatusLabel,
+} from "@/features/enrollments/enrollment-status";
+import { HealthProfileForm } from "@/features/students/components/health-profile-form";
+import { SacramentPanel } from "@/features/students/components/sacrament-panel";
+import { GuardianPanel } from "@/features/students/components/guardian-panel";
+import { StudentStatusPanel } from "@/features/students/components/student-status-panel";
+import { EnrollStudentForm } from "@/features/students/components/enroll-student-form";
+import { UpdateStudentForm } from "@/features/students/components/update-student-form";
+import { todayVi } from "@/lib/dates";
+import { genderLabel, studentStatusLabel } from "@/features/students/student-status";
 import { getStudentDetail } from "@/features/students/server/queries";
 
-const selectClassName = "h-11 w-full rounded-md border border-border bg-card px-3 text-sm";
-const textareaClassName = "min-h-[80px] w-full rounded-md border border-border bg-card px-3 py-2 text-sm";
-
-const statusLabels: Record<string, string> = {
-  active: "Đang sinh hoạt",
-  temporarily_inactive: "Tạm nghỉ",
-  withdrawn: "Đã rút",
-  archived: "Lưu trữ",
-};
-const genderLabels: Record<string, string> = { male: "Nam", female: "Nữ", other: "Khác" };
-const sacramentLabels: Record<string, string> = {
-  baptism: "Rửa tội",
-  first_confession: "Xưng tội lần đầu",
-  first_communion: "Rước lễ lần đầu",
-  confirmation: "Thêm sức",
-  profession: "Tuyên hứa",
-  other: "Khác",
-};
-
 type TabKey = "overview" | "history" | "sacraments" | "health";
-
-const enrollmentStatusLabels: Record<string, string> = {
-  active: "Đang học",
-  paused: "Tạm nghỉ",
-  completed: "Hoàn thành",
-  repeating: "Học lại",
-  transferred: "Chuyển lớp",
-  withdrawn: "Đã rút",
-};
 
 function tabHref(studentId: string, tab: TabKey): string {
   return tab === "overview" ? `/students/${studentId}` : `/students/${studentId}?tab=${tab}`;
@@ -54,13 +30,25 @@ export default async function StudentDetailPage({
   searchParams,
 }: {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string }>;
 }) {
   const { studentId } = await params;
-  const { tab } = await searchParams;
-  const { student, canWrite, canViewSensitive } = await getStudentDetail(studentId);
+  const { tab, edit } = await searchParams;
+  const {
+    student,
+    canWrite,
+    canWriteSensitive,
+    canViewSensitive,
+    canDeleteSacrament,
+    canArchive,
+    enrollableClasses,
+    openEnrollmentClassName,
+    guardianOptions,
+  } = await getStudentDetail(studentId);
 
   if (!student) notFound();
+
+  const studentName = `${student.saintName} ${student.fullName}`.trim();
 
   const activeTab: TabKey =
     tab === "sacraments" || tab === "health" || tab === "history" ? (tab as TabKey) : "overview";
@@ -78,7 +66,17 @@ export default async function StudentDetailPage({
         title={`${student.saintName} ${student.fullName}`}
         description={`Mã thiếu nhi ${student.studentCode}`}
         action={
-          <Link href="/students" className="text-sm text-muted-foreground hover:text-foreground">
+          /*
+            `min-h-11` + `inline-flex items-center` — vùng chạm 44px (`11` §5).
+            Lỗi này CÓ TỪ TRƯỚC M03-C và chưa ai từng đo: `responsive.spec.ts`
+            quét 13 địa chỉ cấp một nhưng **không có** `/students/[studentId]`,
+            nên một link cao **18px** đứng đây suốt từ Phase 2. Bài đo mới của
+            đợt này (`student-lifecycle.spec.ts`) bắt được ngay lượt đầu.
+          */
+          <Link
+            href="/students"
+            className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+          >
             ← Danh sách thiếu nhi
           </Link>
         }
@@ -94,8 +92,18 @@ export default async function StudentDetailPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {student.hardshipFlag ? <Badge variant="warning">Hoàn cảnh khó khăn</Badge> : null}
+            {/*
+              TB-F06 — lớp hiện tại hiện ngay trên thẻ đầu trang. `docs/06` §230-235
+              đòi nó từ đầu (điểm trừ C12 của luồng F04), và từ đợt này nó còn là
+              **thông tin quyết định**: đổi trạng thái hồ sơ sẽ đụng đúng lớp này.
+            */}
+            {openEnrollmentClassName ? (
+              <Badge variant="secondary">Lớp {openEnrollmentClassName}</Badge>
+            ) : (
+              <Badge variant="secondary">Chưa xếp lớp</Badge>
+            )}
             <Badge variant={student.status === "active" ? "success" : "secondary"}>
-              {statusLabels[student.status] ?? student.status}
+              {studentStatusLabel(student.status)}
             </Badge>
           </div>
         </CardContent>
@@ -128,7 +136,7 @@ export default async function StudentDetailPage({
             <CardContent className="space-y-2 text-sm">
               <p><span className="text-muted-foreground">Tên thánh: </span>{student.saintName}</p>
               <p><span className="text-muted-foreground">Họ tên: </span>{student.fullName}</p>
-              <p><span className="text-muted-foreground">Giới tính: </span>{genderLabels[student.gender] ?? student.gender}</p>
+              <p><span className="text-muted-foreground">Giới tính: </span>{genderLabel(student.gender)}</p>
               <p><span className="text-muted-foreground">Ngày sinh: </span>{formatDateVi(student.dateOfBirth)}</p>
               <p>
                 <span className="text-muted-foreground">Bổn mạng: </span>
@@ -147,68 +155,81 @@ export default async function StudentDetailPage({
                 <CardDescription>Chỉnh sửa thông tin cơ bản của thiếu nhi.</CardDescription>
               </CardHeader>
               <CardContent>
-                <form action={updateStudentFromForm} className="space-y-3">
-                  <input type="hidden" name="id" value={student.id} />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-saint">Tên thánh</Label>
-                      <Input id="edit-saint" name="saintName" defaultValue={student.saintName} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-gender">Giới tính</Label>
-                      <select id="edit-gender" name="gender" defaultValue={student.gender} className={selectClassName}>
-                        <option value="male">Nam</option>
-                        <option value="female">Nữ</option>
-                        <option value="other">Khác</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-name">Họ tên</Label>
-                    <Input id="edit-name" name="fullName" defaultValue={student.fullName} required />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-dob">Ngày sinh</Label>
-                      <Input id="edit-dob" name="dateOfBirth" type="date" defaultValue={student.dateOfBirth} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-feast">Bổn mạng</Label>
-                      <Input id="edit-feast" name="patronFeastDate" type="date" defaultValue={student.patronFeastDate ?? ""} />
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-phone">Điện thoại</Label>
-                      <Input id="edit-phone" name="phone" defaultValue={student.phone ?? ""} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-status">Trạng thái</Label>
-                      <select id="edit-status" name="status" defaultValue={student.status} className={selectClassName}>
-                        {Object.entries(statusLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-address">Địa chỉ</Label>
-                    <Input id="edit-address" name="address" defaultValue={student.address ?? ""} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-notes">Ghi chú</Label>
-                    <textarea id="edit-notes" name="generalNotes" defaultValue={student.generalNotes ?? ""} className={textareaClassName} />
-                  </div>
-                  <label className="flex min-h-11 items-center gap-2 text-sm" htmlFor="edit-hardship">
-                    <input id="edit-hardship" name="hardshipFlag" type="checkbox" defaultChecked={student.hardshipFlag} className="h-4 w-4" />
-                    Hoàn cảnh khó khăn
-                  </label>
-                  <Button type="submit" className="w-full">Lưu thay đổi</Button>
-                </form>
+                <UpdateStudentForm student={student} />
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/*
+            TB-F12 — khối người giám hộ. Phương án B của `04_TO_BE_FLOWS`: nhúng
+            vào trang chi tiết em thay vì dựng route `/guardians` riêng (phương
+            án A, để dành cho M13 Cổng phụ huynh — nơi mới thật sự cần "gia đình
+            này có mấy em").
+          */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Người giám hộ</CardTitle>
+              <CardDescription>
+                Số điện thoại ở đây là số gọi khi em cần giúp đỡ giữa buổi học.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GuardianPanel
+                studentId={student.id}
+                studentName={studentName}
+                guardian={student.guardian}
+                options={guardianOptions}
+                canWrite={canWrite}
+              />
+            </CardContent>
+          </Card>
+
+          {/*
+            TB-F06 — khối trạng thái hồ sơ, TÁCH khỏi biểu mẫu "Cập nhật hồ sơ"
+            ngay bên cạnh. Trước M03-C nó là một ô `<select>` chung nút "Lưu
+            thay đổi" với số điện thoại (C5 = 2 trong biên bản audit).
+          */}
+          {canWrite ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Trạng thái hồ sơ</CardTitle>
+                <CardDescription>
+                  Đổi trạng thái hồ sơ cũng đổi chỗ của em trong lớp — hệ thống nói rõ hệ quả
+                  trước khi ghi.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StudentStatusPanel
+                  studentId={student.id}
+                  studentName={studentName}
+                  currentStatus={student.status}
+                  openClassName={openEnrollmentClassName}
+                  canArchive={canArchive}
+                  today={todayVi()}
+                />
               </CardContent>
             </Card>
           ) : null}
         </div>
+      ) : null}
+
+      {/*
+        BR-M03-N19 / TB-F09 — mời ghi danh ngay khi em chưa có lớp trong năm hiện
+        hành. `enrollableClasses` rỗng nghĩa là em đã có lớp, hoặc người xem không
+        ghi được, hoặc chưa có năm học hiện hành — cả ba đều không có gì để mời.
+      */}
+      {activeTab === "history" && enrollableClasses.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ghi danh vào lớp</CardTitle>
+            <CardDescription>
+              Em chưa được xếp lớp trong năm học hiện hành.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EnrollStudentForm studentId={student.id} classes={enrollableClasses} />
+          </CardContent>
+        </Card>
       ) : null}
 
       {activeTab === "history" ? (
@@ -230,8 +251,8 @@ export default async function StudentDetailPage({
                       {item.endedOn ? ` đến ${formatDateVi(item.endedOn)}` : ""}
                     </p>
                   </div>
-                  <Badge variant={item.status === "active" ? "success" : "secondary"}>
-                    {enrollmentStatusLabels[item.status] ?? item.status}
+                  <Badge variant={enrollmentStatusBadgeVariant(item.status)}>
+                    {enrollmentStatusLabel(item.status)}
                   </Badge>
                 </div>
               ))
@@ -240,76 +261,24 @@ export default async function StudentDetailPage({
         </Card>
       ) : null}
 
-      {activeTab === "sacraments" && canViewSensitive ? (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bí tích đã lãnh</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {student.sacraments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Chưa có thông tin bí tích.</p>
-              ) : (
-                student.sacraments.map((item) => (
-                  <div key={item.id} className="rounded-md border border-border p-3 text-sm">
-                    <p className="font-medium">
-                      {item.sacramentType === "other" ? item.sacramentName : sacramentLabels[item.sacramentType]}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {item.sacramentDate ? formatDateVi(item.sacramentDate) : "Chưa rõ ngày"}
-                      {item.place ? ` · ${item.place}` : ""}
-                    </p>
-                    {item.godparentName ? <p className="text-muted-foreground">Người đỡ đầu: {item.godparentName}</p> : null}
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+      {/*
+        TB-F08 — danh sách và biểu mẫu nằm trong MỘT component để dùng chung một
+        `useActionState`: hai state riêng sẽ để câu "Đã lưu bí tích Rửa tội" đứng
+        nguyên sau khi người dùng vừa xoá đúng bản ghi ấy (bài học M03-A).
 
-          {canWrite ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Thêm bí tích</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form action={createSacramentFromForm} className="space-y-3">
-                  <input type="hidden" name="studentId" value={student.id} />
-                  <div className="space-y-2">
-                    <Label htmlFor="sac-type">Loại bí tích</Label>
-                    <select id="sac-type" name="sacramentType" className={selectClassName}>
-                      {Object.entries(sacramentLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sac-name">Tên (nếu chọn Khác)</Label>
-                    <Input id="sac-name" name="sacramentName" />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="sac-date">Ngày lãnh</Label>
-                      <Input id="sac-date" name="sacramentDate" type="date" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="sac-place">Nơi lãnh</Label>
-                      <Input id="sac-place" name="place" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sac-godparent">Người đỡ đầu</Label>
-                    <Input id="sac-godparent" name="godparentName" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sac-registry">Số sổ</Label>
-                    <Input id="sac-registry" name="registryNumber" />
-                  </div>
-                  <Button type="submit" className="w-full">Lưu bí tích</Button>
-                </form>
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
+        Bản ghi đang sửa chọn bằng `?edit=<id>` chứ không bằng state React, nên
+        nút "Sửa" vẫn chạy khi chưa có JavaScript (`09` §11).
+      */}
+      {activeTab === "sacraments" && canViewSensitive ? (
+        <SacramentPanel
+          studentId={student.id}
+          studentName={studentName}
+          sacraments={student.sacraments}
+          editing={student.sacraments.find((item) => item.id === edit) ?? null}
+          canWrite={canWriteSensitive}
+          canDelete={canDeleteSacrament}
+          backHref={`/students/${studentId}?tab=sacraments`}
+        />
       ) : null}
 
       {activeTab === "health" && canViewSensitive ? (
@@ -319,27 +288,8 @@ export default async function StudentDetailPage({
             <CardDescription>Thông tin nhạy cảm, chỉ nhân sự có quyền xem.</CardDescription>
           </CardHeader>
           <CardContent>
-            {canWrite ? (
-              <form action={saveHealthProfileFromForm} className="space-y-3">
-                <input type="hidden" name="studentId" value={student.id} />
-                <div className="space-y-2">
-                  <Label htmlFor="health-allergies">Dị ứng</Label>
-                  <textarea id="health-allergies" name="allergies" defaultValue={student.health?.allergies ?? ""} className={textareaClassName} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="health-conditions">Bệnh lý</Label>
-                  <textarea id="health-conditions" name="medicalConditions" defaultValue={student.health?.medicalConditions ?? ""} className={textareaClassName} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="health-medications">Thuốc đang dùng</Label>
-                  <textarea id="health-medications" name="medications" defaultValue={student.health?.medications ?? ""} className={textareaClassName} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="health-emergency">Ghi chú khẩn cấp</Label>
-                  <textarea id="health-emergency" name="emergencyNotes" defaultValue={student.health?.emergencyNotes ?? ""} className={textareaClassName} />
-                </div>
-                <Button type="submit" className="w-full">Lưu thông tin sức khỏe</Button>
-              </form>
+            {canWriteSensitive ? (
+              <HealthProfileForm studentId={student.id} health={student.health ?? null} />
             ) : (
               <div className="space-y-2 text-sm">
                 <p><span className="text-muted-foreground">Dị ứng: </span>{student.health?.allergies ?? "—"}</p>

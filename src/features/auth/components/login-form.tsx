@@ -11,7 +11,8 @@ import { loginSchema, type LoginValues } from "../schemas";
 import { loginWithUsername } from "../server/actions";
 import { PasswordField } from "./password-field";
 
-export function LoginForm() {
+/** `nextPath` đã đi qua `sanitizeNextPath` ở trang; action vẫn kiểm lại lần nữa. */
+export function LoginForm({ nextPath }: { nextPath?: string }) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -20,7 +21,7 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginValues) {
     setSubmissionError(null);
-    const result = await loginWithUsername(values);
+    const result = await loginWithUsername(values, nextPath);
     if (!result.ok) {
       setSubmissionError(result.message);
       return;
@@ -33,12 +34,12 @@ export function LoginForm() {
       <div className="space-y-2">
         <Label htmlFor="username">Tên đăng nhập</Label>
         <Input id="username" autoComplete="username" placeholder="Ví dụ: GLV023" aria-invalid={!!errors.username} aria-describedby={errors.username ? "username-error" : undefined} {...register("username")} />
-        <FormMessage><span id="username-error">{errors.username?.message}</span></FormMessage>
+        <FormMessage id="username-error">{errors.username?.message}</FormMessage>
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Mật khẩu</Label>
         <PasswordField id="password" autoComplete="current-password" placeholder="Nhập mật khẩu" aria-invalid={!!errors.password} aria-describedby={errors.password ? "password-error" : undefined} {...register("password")} />
-        <FormMessage><span id="password-error">{errors.password?.message}</span></FormMessage>
+        <FormMessage id="password-error">{errors.password?.message}</FormMessage>
       </div>
       <FormMessage>{submissionError}</FormMessage>
       <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>

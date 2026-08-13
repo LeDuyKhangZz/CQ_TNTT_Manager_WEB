@@ -48,6 +48,12 @@ export interface TeachingPlanItem {
   materialName: string | null;
   materialMimeType: string | null;
   materialSize: number | null;
+  /**
+   * Phiên bản mục — **D-146 / TB-M06-01**. Biểu mẫu gửi lại nguyên văn để máy
+   * chủ từ chối lượt lưu dựa trên một bản đã cũ. Xem `expectedUpdatedAtSchema`
+   * về việc **không** được đưa chuỗi này qua `Date`.
+   */
+  updatedAt: string;
 }
 
 export interface TeachingPlanDetail {
@@ -78,6 +84,17 @@ export interface WeekAheadTeachingData {
   startDate: string;
   endDate: string;
   items: WeekAheadTeachingItem[];
+  /**
+   * RPC lỗi — M06-A, hạng mục **#11** (`06_UI_UX_RECOMMENDATIONS` §5).
+   *
+   * 🔴 Trước đợt này `catch` của RPC trả về **đúng cùng một hình dạng** với
+   * "tuần này không có bài nào": `items: []`. Nên khi hàm hỏng thật, màn hình
+   * nói *"Chưa có bài học hoặc bài kiểm tra trong khoảng này."* — một câu bình
+   * thản, đúng ngữ pháp, và **sai**. Phụ huynh đọc câu ấy rồi cho con nghỉ, còn
+   * Giáo lý viên không có lý do nào để báo hỏng. Một lỗi im lặng luôn tệ hơn
+   * một lỗi ồn ào.
+   */
+  failed: boolean;
 }
 
 function isoDate(value: Date): string {
@@ -95,16 +112,19 @@ export async function getWeekAheadTeachingData(): Promise<WeekAheadTeachingData>
     .maybeSingle();
   const startDate = year && today < year.start_date ? year.start_date : today;
   const endDate = isoDate(addDays(new Date(`${startDate}T00:00:00Z`), 6));
-  if (year && startDate > year.end_date) return { startDate, endDate, items: [] };
+  // Sau ngày bế giảng thì **cố ý** không gọi RPC (AC-14) — đây là "rỗng thật",
+  // không phải hỏng.
+  if (year && startDate > year.end_date) return { startDate, endDate, items: [], failed: false };
 
   const { data, error } = await supabase.rpc("get_week_ahead_teaching_items", {
     p_from: startDate,
     p_days: 7,
   });
-  if (error) return { startDate, endDate, items: [] };
+  if (error) return { startDate, endDate, items: [], failed: true };
   return {
     startDate,
     endDate,
+    failed: false,
     items: (data ?? []).map((item) => ({
       itemId: item.item_id,
       classId: item.class_id,
@@ -185,6 +205,24 @@ export async function getTeachingPlanPageData(): Promise<{
 
 export async function getTeachingPlanDetail(classId: string): Promise<TeachingPlanDetail | null> {
   const context = await requireRouteAccess(`/teaching-plan/${classId}`);
+
+  /**
+   * TB-M06-05 / **TB-07** — phụ huynh và thiếu nhi nhận **404**, không nhận một
+   * khung trang rỗng.
+   *
+   * `route-map.ts` khai báo `/teaching-plan` không giới hạn vai trò (đúng, vì
+   * cổng cũng dùng địa chỉ ấy cho lịch 7 ngày), nên gõ thẳng
+   * `/teaching-plan/{classId}` vẫn dựng ra trang quản trị: tiêu đề *"Giáo án
+   * lớp Ấu 1A"*, hai nút đổi kiểu hiển thị, và dòng *"Giáo án chưa có bài dạy
+   * hoặc bài kiểm tra."* — RLS đã lọc sạch dữ liệu nên **không rò rỉ gì**,
+   * nhưng câu cuối là một lời nói dối: giáo án có đầy bài, chỉ là họ không được
+   * xem. Bảng `classes` đọc được rộng nên tên lớp thì vẫn hiện.
+   *
+   * Chặn ở đây chứ không ở `route-map`: cùng một địa chỉ gốc phục vụ hai
+   * audience, đúng ca mà M05-A gặp ở `/attendance` (TB-10).
+   */
+  if (context.audience !== "staff") return null;
+
   const supabase = await createClient();
   const { data: classRow } = await supabase
     .from("classes")
@@ -225,12 +263,13 @@ export async function getTeachingPlanDetail(classId: string): Promise<TeachingPl
     material_name: string | null;
     material_mime_type: string | null;
     material_size: number | null;
+    updated_at: string;
     staff_profiles: { full_name: string; saint_name: string | null } | null;
   }> = [];
   if (plan) {
     const { data } = await supabase
       .from("teaching_plan_items")
-      .select("id, planned_date, title, objectives, catechism_content, scripture_content, game, song, homework, preparation, teacher_staff_id, item_type, note, material_name, material_mime_type, material_size, staff_profiles(full_name, saint_name)")
+      .select("id, planned_date, title, objectives, catechism_content, scripture_content, game, song, homework, preparation, teacher_staff_id, item_type, note, material_name, material_mime_type, material_size, updated_at, staff_profiles(full_name, saint_name)")
       .eq("teaching_plan_id", plan.id)
       .order("planned_date");
     itemRows = (data ?? []) as unknown as typeof itemRows;
@@ -275,6 +314,7 @@ export async function getTeachingPlanDetail(classId: string): Promise<TeachingPl
       materialName: item.material_name,
       materialMimeType: item.material_mime_type,
       materialSize: item.material_size,
+      updatedAt: item.updated_at,
     })),
   };
 }

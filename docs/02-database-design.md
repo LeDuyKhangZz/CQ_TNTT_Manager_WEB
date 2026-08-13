@@ -204,6 +204,7 @@ Nếu triển khai bảng mapping, bảng đó chỉ server/service-role đọc;
 | name | text |
 | start_date | date |
 | end_date | date |
+| semester_1_end_date | date **nullable** (D-71) — mốc kết thúc học kỳ 1. CHECK: phải nằm hẳn giữa `start_date` và `end_date`. `null` = chưa khai báo (D-116) |
 | status | text: draft/current/closed/archived |
 | top5_enabled | boolean |
 | attendance_lock_days | smallint default 3 |
@@ -211,10 +212,34 @@ Nếu triển khai bảng mapping, bảng đó chỉ server/service-role đọc;
 | attendance_warning_consecutive_absences | smallint default 3 (D-58) |
 | attendance_warning_consecutive_sundays | smallint default 3 (D-58) |
 | attendance_warning_rate_threshold | numeric(4,3) default 0.800 (D-58) |
-| retention_until | date |
+| retention_until | date — `end_date + 5 năm`. **D-120**: chặn `archived` trước hạn |
+| closed_at | timestamptz **nullable** (I7/D-73) — thời điểm chốt sổ. `null` với năm chưa đóng, **và với năm bị đóng trước migration `20260726000100`** (khi đó việc đóng chỉ là tác dụng phụ của `set_current_academic_year`) |
+| closed_by | uuid **nullable** → `profiles(id)` `on delete set null` (D-101) |
+| close_reason | text **nullable** — **bắt buộc khi đóng cưỡng bức** lúc còn việc tồn đọng (BR-M02-N05) |
 | created_at/updated_at/updated_by | metadata |
 
 Partial unique: tối đa một `current`.
+
+> **D-115** — qua `semester_1_end_date`, lớp Dự trưởng (`term_scope = 'semester_1'`) chỉ **hiện cảnh
+> báo**; hệ thống **không** tự đổi trạng thái lớp. Không có trigger và không có tác vụ nền nào đọc
+> cột này — việc đóng lớp là quyết định của người phụ trách, làm ở màn hình "Cài đặt lớp".
+
+> **I7 / D-73 / D-119 / D-120 (M02-C, 2026-07-26)** — vòng đời `draft → current → closed → archived`
+> đi **một chiều** và nay có đường đi thật:
+> - `public.close_academic_year(year, confirm_code, force, reason)` — Super Admin, chỉ từ `current`,
+>   bắt gõ lại `code`, đối chiếu bảng kiểm `app.academic_year_open_work()`; còn việc tồn đọng mà
+>   `force = false` thì ném `YEAR_HAS_OPEN_WORK` **kèm chính bảng kiểm đó**.
+> - `public.archive_academic_year(year)` — Super Admin, chỉ từ `closed`, và **chỉ khi
+>   `current_date > retention_until`** (D-120). So bằng ngày của máy chủ, không nhận tham số ngày.
+> - **D-119**: đóng năm **không** đụng `classes.status`. Trạng thái năm học là chốt chặn duy nhất.
+>
+> **Hàng rào ghi (BR-M02-N06 / D-117 / D-118).** `app.writable_academic_year_ids()` trả về các năm
+> `draft`/`current`, **và tất cả các năm nếu người gọi là Super Admin**. Policy INSERT/UPDATE của
+> `enrollments` và `classes` có thêm mệnh đề
+> `academic_year_id = any ((select app.writable_academic_year_ids())::uuid[])`.
+> Dạng **mảng không tham số** là cố ý — helper nhận tham số cột không inline được nên bị gọi lại
+> từng dòng (bài học `20260721000200`). ⚠️ **Phạm vi hẹp theo D-118**: các bảng có `academic_year_id`
+> của M05/M06/M07/M08/M10/M11 **chưa** có hàng rào này.
 
 ### 4.2 `sectors`
 
@@ -458,10 +483,19 @@ Rules:
 | enrollment_id | FK |
 | mass_status | attendance_status |
 | catechism_status | attendance_status |
-| note | nullable |
+| note | nullable · 🔴 **`authenticated` KHÔNG có quyền `select` trên cột này** (D-75) |
 | created_at/updated_at/updated_by | |
 
 Unique `(attendance_session_id, enrollment_id)`.
+
+> **D-75 · quyền cột (migration `20260803000300`, đợt M05-B).** Ghi chú điểm danh là ghi chú **nội
+> bộ**. RLS lọc theo dòng nên không diễn đạt được luật này, và cắt nhánh phụ huynh khỏi policy thì
+> mất luôn thẻ chuyên cần của cổng phụ huynh (view `security_invoker`). Vì vậy `authenticated` bị
+> `revoke select` **mức bảng** rồi `grant select` lại **từng cột trừ `note`**.
+> 🔴 Hệ quả cho mọi migration sau: **thêm cột mới vào bảng này phải `grant select` riêng cho cột
+> đó**, nếu không nó vô hình với cả ứng dụng và triệu chứng `42501` trông hệt lỗi RLS. pgTAP `042`
+> đối chiếu danh sách cột đã cấp với danh sách cột của bảng và đỏ kèm tên cột bị bỏ quên.
+> Đường đọc hợp lệ duy nhất: `public.attendance_session_notes(p_session_id)`.
 
 Thêm ba cột **phi chuẩn hóa cho RLS**: `class_id`, `student_id`, `session_finalized_at`. Chúng suy
 ra hoàn toàn từ session và enrollment, do trigger `app.sync_student_attendance_keys` điền — client
@@ -512,7 +546,7 @@ bảng này nên thiếu dòng là mất sạch số liệu của năm đó.
 | meeting_type | thursday/sunday |
 | reason | bắt buộc, <= 500 ký tự |
 | status | pending/acknowledged/cancelled |
-| staff_note, reviewed_by, reviewed_at | phần của giáo lý viên |
+| staff_note, reviewed_by, reviewed_at | phần của giáo lý viên · `staff_note` là **lời nhắn cho phụ huynh**, phụ huynh đọc được (khác `student_attendance_records.note`) |
 | created_by | FK profiles |
 
 Partial unique `(student_id, absence_date, meeting_type)` khi `status <> 'cancelled'`.
@@ -524,6 +558,9 @@ Rules (WF-10):
 - Giáo lý viên ghi nhận và ghi chú, nhưng **không hủy đơn của phụ huynh**.
 - Đơn **không bao giờ** tự ghi vào `student_attendance_records`; nó chỉ hiện lên trang điểm danh
   như gợi ý, người điểm danh vẫn tự chọn.
+- **TB-11 · D-141 (M05-B):** không nhận đơn cho **buổi đã chốt** — trigger ném
+  `ABSENCE_SESSION_ALREADY_FINALIZED`, chỉ áp cho INSERT nên đơn cũ không bị hỏng. Chặn theo
+  **trạng thái buổi**, không theo ngày: buổi còn mở thì đơn báo muộn vẫn có tác dụng.
 
 ### 7.6 View chuyên cần
 
@@ -617,6 +654,54 @@ Seed: quiz 1, midterm 2, final 3, attendance 1.
 
 Không đặt unique theo `(class_id, kind)` và không đặt quota số assessment: một lớp có thể không dùng một loại nào hoặc tạo nhiều assessment cùng loại. Hệ thống không seed assessment bắt buộc cho từng lớp; chỉ seed cấu hình loại và hệ số mặc định.
 
+🔴 **M07-B — `assessments.is_active` từ "cột chết" thành cột nghiệp vụ** (BR-M07-26/27/28,
+`20260805000200`). Cột này có từ Phase 5 nhưng **không đường nào đặt nó thành `false`**, nên chưa
+ai phải hỏi *"ẩn rồi thì phụ huynh còn thấy không"*. Từ M07-B:
+
+- **Xóa cứng** chỉ dành cho cột **chưa có điểm thật** (`score is not null` = 0), qua RPC
+  `public.delete_assessment` — nó dọn luôn các dòng rỗng rồi mới xóa cột, và **đó là chỗ dữ liệu
+  rác do lỗi "ghi cả roster" biến mất**, không cần backfill riêng.
+- Cột đã có điểm chỉ **ẩn mềm** `is_active = false`, đi qua policy `assessments_update_grader`.
+- 🔴 **Ẩn phải ẩn ở tầng cơ sở dữ liệu, không chỉ ở truy vấn ứng dụng.** Mọi truy vấn của app đã
+  lọc `is_active` từ Phase 5 và `v_student_weighted_average` cũng vậy — nhưng **RLS thì không**,
+  nên phụ huynh gọi thẳng Data API vẫn đọc được cột đã ẩn. Hai chỗ sửa:
+  `assessments_select_scope` thêm `and is_active` **ở nhánh phụ huynh/thiếu nhi**, và trigger
+  `app.sync_assessment_publication` (nay chạy `after update of is_published, is_active`) hạ
+  `assessment_scores.assessment_published` về `false`. Cùng luật ấy nằm trong
+  `app.sync_assessment_score_keys` cho đường ghi từng dòng — thiếu nó thì lưu một ô vào cột đã ẩn
+  sẽ **bật lại** cờ công bố cho đúng dòng ấy.
+- Cột đang là **nguồn của một bảng Top 5** (`leaderboards.source_assessment_id`, khoá ngoại
+  `on delete restrict`) bị RPC chặn bằng mã riêng `ASSESSMENT_IS_LEADERBOARD_SOURCE`. Không chặn
+  ở đây thì Postgres ném `23503`, mà `23503` được dịch thành *"Không tìm thấy dữ liệu liên quan"*
+  — một câu sai hẳn nghĩa.
+- **M07-C**: cột ẩn có đường **hiện lại** (`is_active = true`) ngay trên màn hình bảng điểm, cùng
+  policy và cùng hàng rào khóa với đường ẩn (nợ #21). Trước M07-C đây là cửa một chiều.
+
+🔴 **M07-C — "khóa bảng điểm" có ĐÚNG MỘT ngoại lệ: cờ công bố** (BR-M07-29, **D-154**,
+`20260806000100`). Luật cũ *"khóa rồi thì không đổi được gì nữa"* buộc phải **mở khóa cả bảng
+điểm** — tức mở luôn quyền sửa điểm và hệ số của cả lớp — chỉ để công bố kết quả cho phụ huynh vào
+cuối năm. Chủ dự án chốt tách hai việc (2026-08-06), **cả hai chiều** bật và tắt.
+
+Ngoại lệ đặt ở **ba** chỗ, và thiếu chỗ thứ ba thì thao tác vẫn hỏng với đúng mã lỗi cũ:
+
+1. `public.set_assessment_published(uuid, boolean)` — RPC `security definer` mới, đường công bố
+   **duy nhất** của ứng dụng. Quyền giữ nguyên `app.can_grade_class`; hàng rào năm học (nợ #18) và
+   luật cột ẩn được **chép vào trong hàm**, vì definer bỏ qua RLS.
+2. `app.validate_assessment` — bỏ qua kiểm khóa khi lượt UPDATE **chỉ** đổi `is_published`. Phép
+   thử so **cả bản ghi** (`to_jsonb(new) = to_jsonb(old)` sau khi trừ `is_published`/`updated_at`/
+   `updated_by`), không liệt kê tay từng cột: liệt kê tay thì cột nào thêm về sau sẽ lọt qua ngoại
+   lệ **trong im lặng**, và ngoại lệ của một hàng rào bảo mật không được rộng ra một cách âm thầm.
+3. 🔴 `app.sync_assessment_score_keys` — trigger nằm trên **bảng khác**. Đổi `assessments.is_published`
+   làm `assessments_sync_publication` chạy một lệnh UPDATE lên `assessment_scores`, mà trigger dòng
+   của bảng ấy **cũng** ném `GRADEBOOK_LOCKED`. Nới an toàn được vì hàm tự suy lại
+   `assessment_published` từ chính cột điểm ⇒ một lượt UPDATE chỉ đổi mỗi cờ ấy không mang theo giá
+   trị nào của người dùng; và `authenticated` chỉ có `select` trên bảng này nên không có đường gọi
+   trực tiếp.
+
+**Policy `assessments_update_grader` giữ nguyên** — đó là điều phương án A của `04_TO_BE_FLOWS`
+đòi: lệnh gửi thẳng vào cơ sở dữ liệu khi đã khóa vẫn bị từ chối, **kể cả** lệnh chỉ đổi cờ công
+bố (AC-02-02). pgTAP `045` đo **cả hai chiều**: một khẳng định cho chiều nới, sáu cho chiều giữ.
+
 ### 9.3 `assessment_scores`
 
 | Cột | Ghi chú |
@@ -644,6 +729,27 @@ Không có bảng override tách rời. Cột `system_suggested_score`, `score` 
 `is_manual_override` trên `assessment_scores` giữ đề xuất, điểm cuối và trạng thái chỉnh tay.
 `refresh_attendance_assessment_scores` chỉ cập nhật đề xuất/dòng chưa override;
 `reset_attendance_score_override` đưa một dòng về lại đề xuất hệ thống.
+
+🔴 **M07-B — luật đóng dấu "chỉnh tay" đã SAI từ Phase 5** (BR-M07-31, `20260805000200`).
+`save_assessment_scores` đặt `is_manual_override = true` cho **mọi** phần tử nhận được khi cột là
+`attendance`, mà biểu mẫu thì gửi cả roster ⇒ **một cú bấm "Lưu điểm" biến cả 50 em thành "đang
+chỉnh tay"**, và cơ chế đề xuất tự động chết hẳn từ đó (F07 = 62/75). M07-A đã chặn phần lớn bằng
+cách chỉ gửi ô đã đổi, nhưng luật vẫn sai: gõ trả lại đúng con số máy đề xuất vẫn bị đóng dấu.
+
+Luật đúng: cờ bật khi **giá trị lưu khác đề xuất**, dùng `is distinct from` chứ không phải `<>` —
+`<>` với `null` ra `null`, tức "không đúng cũng không sai", và `case … then` rơi vào nhánh sai. Ô
+rỗng và ô có điểm là hai thứ khác nhau ở **cả hai** chiều. Cờ cũng **tự gỡ** khi giá trị trùng lại
+đề xuất: luật đọc **giá trị**, không đọc lịch sử thao tác.
+
+`refresh_attendance_assessment_scores` nay trả `(out_refreshed, out_skipped_manual)` thay cho một
+`integer` — bắt buộc `drop` + `create` và sinh lại `src/types/database.ts` (TB-M07-04).
+
+**D-153 (chủ dự án chốt 2026-08-05) — dọn dữ liệu cũ.** Sửa luật cho tương lai **không gỡ được**
+những dấu đã đặt sai: nút "Lấy đề xuất mới" sẽ vĩnh viễn bỏ qua chúng và con số `skipped_manual`
+vừa thêm sẽ hiện một số to giả ngay từ ngày đầu. Migration gỡ cờ ở **đúng** những ô mà
+`score is not distinct from system_suggested_score` — tức không có bàn tay người nào trong đó. Mọi
+ô có điểm khác đề xuất **giữ nguyên** dấu, kể cả khi nó bị đặt oan, vì ở đó không phân biệt được
+"người sửa thật" với "người trùng số".
 
 ### 9.5 `student_comments`
 
@@ -707,7 +813,50 @@ Dùng cho custom competition hoặc snapshot khi publish.
 | leaderboard_published | Cờ phi chuẩn hóa cho portal RLS |
 | created_at | |
 
-Unique rank và enrollment trong leaderboard.
+Unique rank và enrollment trong leaderboard. Bảng này luôn chứa **bản đang có** của mỗi Top 5 —
+mọi bản trước nằm ở `leaderboard_snapshots` (§9.9).
+
+### 9.9 `leaderboard_snapshots`
+
+🔴 **M07-C — vòng đời Top 5** (BR-M07-34/35, **D-155**, `20260806000100`). Trước đợt này, "Ẩn khỏi
+portal" rồi bấm công bố lại thì `publish_leaderboard` **xóa sạch** entries cũ và tính lại theo điểm
+mới nhất: em đứng hạng 5 hôm trước biến khỏi bảng, **không ai được báo và bản cũ không còn ở đâu**
+(F16). `04_TO_BE_FLOWS` khuyến nghị phương án A (chốt một lần, cấm tính lại); **chủ dự án chọn
+phương án B (2026-08-06)** — giữ khả năng tính lại, nhưng mỗi lần thay phải lưu lại bản đang có.
+
+| Cột | Ghi chú |
+|---|---|
+| id | uuid PK |
+| leaderboard_id | FK `on delete restrict` |
+| class_id/academic_year_id | Scope keys cho RLS |
+| snapshot_no | smallint ≥ 1, unique theo `leaderboard_id` |
+| entry_count | smallint 1..5 |
+| entries_json | jsonb — `[{rank, enrollmentId, score, saintName, fullName}]`, xếp theo `rank` |
+| published_at/published_by | Mốc công bố của **bản bị thay** |
+| superseded_at/superseded_by | Ai thay, lúc nào |
+
+**Ba quyết định cài đặt cần nhớ:**
+
+1. 🔴 **Bảng riêng, không thêm cột `snapshot_no` vào `leaderboard_entries`.**
+   `07_IMPLEMENTATION_IMPACT` §4 cấm tuyệt đối mọi thay đổi làm nới quyền đọc của cổng phụ huynh, mà
+   `leaderboard_entries` **là đúng cái bảng cổng phụ huynh đọc**: chứa nhiều bản trong đó thì hai
+   `unique` của nó phải nới ra và policy phải học cách chọn bản nào. Tách ra thì
+   `leaderboard_entries` **không đổi một chữ** — cổng luôn chỉ thấy bản đang có.
+2. **Append-only tuyệt đối**, cùng khuôn `account_audit_events` (D-65): trigger chặn UPDATE/DELETE
+   cho **mọi** vai trò kể cả chủ bảng và `service_role`. Một bản lịch sử sửa được thì nó không còn
+   là lịch sử.
+3. **Chỉ nhân sự phạm vi lớp đọc.** Không có nhánh phụ huynh/thiếu nhi — WF-09 nói cổng hiển thị
+   Top 5 **đang** công bố; cho cổng đọc bảng này là để lộ đúng thứ vừa được gỡ xuống. Ghi là việc
+   của `publish_leaderboard` (`security definer`), không phải của phiên người dùng.
+
+`entries_json` theo tiền lệ `report_snapshots` (§13): dữ liệu **đông cứng**, không ai truy vấn quan
+hệ vào nó, chỉ đọc ra để đối chiếu.
+
+**Kèm một chỗ siết:** policy `leaderboards_delete_manager` đổi phép thử từ `not is_published` sang
+`not is_published and published_at is null` (BR-M07-35). Điều kiện cũ sai theo **đúng hình dạng F04**
+mà M07-B vừa chữa ở cột điểm: sau một lượt ẩn thì `is_published` về `false`, policy cho qua, rồi
+khoá ngoại `on delete restrict` **trả lời hộ** bằng `23503` — dịch ra thành *"Không tìm thấy dữ liệu
+liên quan"*. `published_at` không bao giờ bị xóa đi nên nó là phép thử đúng cho "đã từng công bố".
 
 ## 10. Chuyển lớp
 
@@ -740,6 +889,64 @@ Quy tắc:
 - Target class phải là next grade hoặc same grade khi repeat; A/B được đổi.
 - Hiệp 2 có target null và `propose_trainee = true` trong field bổ sung.
 - Approval tạo enrollment mới nguyên tử trong RPC.
+- **M08-B/D-161 — `warning_snapshot` có thêm ba khoá khi lớp nguồn là cấp cuối
+  ngành**: `sacramentReviewRequired` (luôn `true` khi có mặt) ·
+  `requiredSacraments` · `missingSacraments`. Ba khoá này **vắng hẳn** khi lớp
+  không phải cấp cuối ngành (AC-17) và ở mọi đề xuất tạo trước 2026-08-07 — tầng
+  ứng dụng phải chịu được khoá vắng, không được coi vắng là lỗi dữ liệu.
+- **M08-B/D-160 — hàng rào năm học đã đóng nằm TRONG hai RPC**, không nằm trong
+  policy: bảng chỉ có `grant select` nên mọi đường ghi đi qua `security definer`,
+  mà definer bỏ qua RLS. `propose_promotion` đòi **năm nguồn** còn ghi được;
+  `approve_promotion_review` đòi **cả năm nguồn lẫn năm đích**. Super Admin là
+  ngoại lệ duy nhất (D-117).
+- **M08-B/D-159 — `public.promote_enrollment_now(...)`**: gọi lại đúng hai RPC
+  trên trong **một giao dịch**, chỉ cho `app.can_global_write()`. 0 thay đổi
+  phân quyền — nó gộp hai bước mà bốn vai trò ấy vốn đã làm được.
+
+### 10.1 `promotion_review_events` (M08-B, D-157)
+
+Nhật ký quyết định chuyển lớp — **chỉ ghi thêm**.
+
+| Cột | Ghi chú |
+|---|---|
+| id | uuid PK |
+| review_id | FK `promotion_reviews` |
+| source_enrollment_id/source_class_id/source_academic_year_id | Scope keys, sao lại để báo cáo không phải join ngược |
+| event_no | smallint, unique theo `(review_id, event_no)` |
+| event_type | `proposed` · `approved` · `rejected` |
+| proposed_status / propose_trainee / target_class_id | Nội dung quyết định tại thời điểm đó |
+| note | Ghi chú đại diện hoặc ý kiến người duyệt |
+| actor_id | nullable FK `profiles` (`on delete set null`) |
+| occurred_at | timestamptz |
+
+Quy tắc:
+
+1. **Vì sao có bảng này:** `propose_promotion` upsert về `pending` khi gửi lại
+   (BR-M08-16) nên nó **xoá** `reviewed_by`/`reviewed_at`/`review_note` — tức
+   "ai từ chối, khi nào, vì sao" biến mất không dấu vết. `04_TO_BE_FLOWS` khuyến
+   nghị cột `history jsonb`; chủ dự án chốt **bảng riêng** (D-157), cùng khuôn
+   `leaderboard_snapshots` (§9.9) và `account_audit_events` (D-65).
+2. **Append-only tuyệt đối**: trigger `promotion_review_events_no_mutation` chặn
+   UPDATE/DELETE, nên luật đứng độc lập với mọi `grant`, kể cả `service_role`.
+3. `authenticated` chỉ có `select`, phạm vi **đúng bằng**
+   `promotion_reviews_select_scope` — không rộng hơn một ly. Ghi là việc của hai
+   RPC `security definer`.
+4. Sắp xếp để đọc theo `event_no`, **không** theo `occurred_at`: hai dòng của
+   đường một-bước (D-159) nằm trong cùng một giao dịch nên `now()` bằng nhau tới
+   micro giây.
+
+### 10.2 Hàng rào `enrollments` ↔ `promotion_reviews` (M08-B, D-158/D-162)
+
+Trigger `enrollments_pending_promotion_guard` (`before update of status`) từ chối
+đưa một ghi danh sang **bốn trạng thái đóng** (`completed` · `repeating` ·
+`transferred` · `withdrawn`) khi ghi danh ấy đang có review `pending` — bịt đường
+vòng `/classes/[classId]` để lại đề xuất mồ côi. **"Tạm nghỉ" không bị chặn**
+(D-162): `paused` là trạng thái mở.
+
+🔴 **Hệ quả về thứ tự lệnh:** `security definer` bỏ qua RLS nhưng **không** bỏ qua
+trigger, nên `approve_promotion_review` phải đánh dấu review `approved` **trước**
+khi cập nhật `enrollments`; làm ngược lại là tự chặn chính đường duyệt hợp lệ.
+Tính nguyên tử của BR-M08-13 không suy suyển vì cả hai nằm trong một giao dịch.
 
 ## 11. Ban và thiết bị
 
@@ -793,6 +1000,12 @@ Không giao assignee/deadline trong v1.
 `(committee_id, week_start)`: nếu không chốt mốc tuần thì hai người chọn hai
 ngày khác nhau cho cùng một tuần và unique mất tác dụng.
 
+2B · M09-A bổ sung CHECK `committee_weekly_plan_not_empty`
+(`btrim(coalesce(content,'')) <> ''`): bản tuần trắng là dấu hiệu của một lượt
+ghi đè hỏng, không phải một bản hợp lệ. Cùng đợt, index một phần
+`committee_memberships_one_active_leader_idx` giới hạn **mỗi Ban một Trưởng ban**
+(D-78); Phó ban không giới hạn.
+
 Ba bảng nội dung Ban (11.3–11.5) dùng chung trigger
 `app.set_committee_content_author`: `created_by`/`author_staff_id` lấy từ phiên
 đăng nhập, không nhận từ client. Ghi/xóa = `app.can_write_committee_content`
@@ -816,31 +1029,68 @@ Ba bảng nội dung Ban (11.3–11.5) dùng chung trigger
 - id.
 - equipment_item_id.
 - quantity.
+- **outstanding_quantity** — số cái người mượn còn giữ (2B · M09-B).
+- restored_quantity — **tổng** số cái đã nhận lại, cộng dồn (2B · M09-B).
 - borrower_staff_id.
 - handed_over_by.
 - borrowed_at.
 - expected_return_at nullable.
 - returned_at nullable.
-- received_by nullable.
+- received_by nullable — người nhận **lần gần nhất** (2B · M09-B).
 - borrow_note.
 - return_note.
 - condition_on_return.
 - status.
 
 Constraint số lượng > 0 và không vượt available; mượn/trả đi qua RPC có row lock.
+`restored_quantity + outstanding_quantity <= quantity`, và phiếu chỉ ở trạng thái
+`returned` khi `outstanding_quantity = 0`.
 
 Hiện thực P6-T3: `authenticated` **không** có INSERT/UPDATE trên
-`equipment_loans` — mọi thao tác qua `public.borrow_equipment` và
-`public.return_equipment` (SECURITY DEFINER, `select … for update` trên thiết bị
-rồi mới ghi). `available_quantity` cũng không sửa tay được: trigger
-`app.validate_equipment_item` chặn mọi thay đổi cột này ngoài RPC.
+`equipment_loans` — mọi thao tác qua RPC SECURITY DEFINER, `select … for update`
+trên thiết bị rồi mới ghi. `available_quantity` **và** `total_quantity` đều không
+sửa tay được: trigger `app.validate_equipment_item` chặn cả hai cột ngoài RPC, và
+nhánh INSERT bắt buộc `available = total` (2B · M09-A, `EQUIPMENT_TOTAL_READONLY`
+/ `EQUIPMENT_STOCK_MISMATCH`).
 
-`return_equipment` nhận `restored_quantity`: phần trả được cộng lại
-`available_quantity`, phần hỏng/mất trừ khỏi `total_quantity` (WF-13 bước 5).
-Trả lại lần hai là idempotent — không cộng kho thêm lần nữa.
+#### Vòng đời kho sau 2B · M09-B
 
-Mượn/trả = thành viên Ban Kỹ thuật hoặc global-write; tạo/sửa danh mục =
-Trưởng/Phó Ban hoặc global-write (docs/05).
+Trước M09-B chỉ có `return_equipment(p_restored_quantity)`, và **một** con số vừa
+nghĩa là "hôm nay mang về bấy nhiêu" vừa nghĩa là "phần còn lại mất vĩnh viễn":
+phiếu luôn đóng ngay lần trả đầu tiên và phần chênh lệch trừ thẳng `total_quantity`
+mà không hỏi ai. Nay tách làm hai RPC:
+
+| RPC | Tác dụng | Quyền |
+|---|---|---|
+| `receive_equipment(loan, n, condition, note)` | `available += n`, `outstanding -= n`. **Không bao giờ** đụng `total_quantity`. Phiếu chỉ đóng khi `outstanding` về 0 | `app.can_operate_equipment` |
+| `write_off_equipment(loan, n, condition, note)` | `total -= n`, `outstanding -= n`, `available` không đổi. **Ghi chú bắt buộc** (`EQUIPMENT_WRITE_OFF_NOTE_REQUIRED`) | `app.can_operate_equipment` (D-93) |
+| `return_equipment(...)` | Giữ nguyên chữ ký, nay là **vỏ bọc**: nhận lại phần trả được rồi báo hỏng/mất phần còn lại | như trên |
+| `adjust_equipment_stock(item, delta, reason, note)` | Đổi `total` **và** `available` cùng lúc, ngoài mọi phiếu mượn. `delta < 0` chỉ tới mức `available` còn lại và bắt buộc ghi chú | `app.can_write_committee_content` — **chặt hơn** mượn/trả |
+| `list_equipment_borrower_options(committee)` | Trả về **chỉ** `staff_profile_id · display_name · staff_code` của nhân sự đang hoạt động | `app.can_operate_equipment`, ném `42501` nếu không |
+
+Trả lại lần hai vẫn idempotent, và kiểm quyền chạy **trước** nhánh idempotent nên
+người ngoài Ban không suy ra được phiếu có tồn tại hay không.
+
+`list_equipment_borrower_options` là **cửa sổ hẹp** cho D-94/D-97: ô "Người mượn"
+mở sang mọi nhân sự xứ đoàn mà **không** nới `app.can_access_staff` — điện thoại,
+ngày sinh, địa chỉ trong `staff_profiles` vẫn theo phạm vi cũ.
+
+### 11.8 `equipment_loan_events` · `equipment_stock_adjustments` (2B · M09-B)
+
+Hai bảng nhật ký thuần append (D-65 ở mức module). `authenticated` chỉ có
+**SELECT** trong phạm vi `app.can_read_equipment(committee_id)`; ghi vào chúng là
+việc của RPC SECURITY DEFINER.
+
+- `equipment_loan_events`: `loan_id` (cascade theo phiếu) · `committee_id` ·
+  `kind ∈ {receive, write_off}` · `quantity` · `condition` · `note` ·
+  `actor_profile_id` · `created_at`.
+- `equipment_stock_adjustments`: `equipment_item_id` (**ON DELETE RESTRICT** — nhật
+  ký kho không được biến mất chỉ vì ai đó xoá thiết bị) · `committee_id` · `delta` ·
+  `reason ∈ {purchase, found, stocktake, damaged}` · `note` · `total_after` ·
+  `actor_profile_id` · `created_at`.
+
+Mượn/trả = thành viên Ban Kỹ thuật hoặc global-write; tạo/sửa danh mục và **đổi
+tổng kho** = Trưởng/Phó Ban hoặc global-write (docs/05).
 
 ## 12. Thông báo
 

@@ -37,7 +37,25 @@ function CommitteeCard({ committee }: { committee: CommitteeSummary }) {
       </CardHeader>
       <CardContent className="space-y-4">
         {committee.description ? (
-          <p className="text-sm text-muted-foreground">{committee.description}</p>
+          <p className="text-sm text-ink-muted">{committee.description}</p>
+        ) : null}
+        {/* TB-M09-06: tên Trưởng/Phó ban trên thẻ. Đọc được nhờ D-100; ẩn dòng
+            khi chưa có/không đọc được thay vì hiện nhãn trống. */}
+        {committee.leaderNames.length > 0 || committee.deputyNames.length > 0 ? (
+          <dl className="space-y-1 text-sm">
+            {committee.leaderNames.length > 0 ? (
+              <div className="flex gap-2">
+                <dt className="text-ink-muted">Trưởng ban:</dt>
+                <dd className="font-medium text-ink">{committee.leaderNames.join(", ")}</dd>
+              </div>
+            ) : null}
+            {committee.deputyNames.length > 0 ? (
+              <div className="flex gap-2">
+                <dt className="text-ink-muted">Phó ban:</dt>
+                <dd className="font-medium text-ink">{committee.deputyNames.join(", ")}</dd>
+              </div>
+            ) : null}
+          </dl>
         ) : null}
         <Link
           href={`/committees/${committee.id}`}
@@ -122,7 +140,7 @@ export function CommitteeList({
 
       {committees.length === 0 ? (
         <Card>
-          <CardContent className="pt-6 text-sm text-muted-foreground">
+          <CardContent className="pt-6 text-sm text-ink-muted">
             Bạn chưa thuộc Ban nào. Xin liên hệ Ban điều hành xứ đoàn để được thêm vào Ban.
           </CardContent>
         </Card>

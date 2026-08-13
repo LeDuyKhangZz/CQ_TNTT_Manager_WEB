@@ -505,9 +505,55 @@ Nợ đã thấy, chưa làm:
 - Đã chạy thật trên DB local sạch: 2 profiles (cả hai buộc đổi mật khẩu), 2 role
   super_admin, 19 lớp, 1 năm học current, 0 staff/student/guardian. Chạy lần hai bị chặn.
 
-## P7-T6 — Deploy Supabase/Vercel Hobby ☐
+## P7-T6 — Deploy Supabase/Vercel Hobby ☑
 
-## P7-T7 — Smoke production ☐
+- Supabase project `dnqzheyerrqnzilxrtdp` (Free, Seoul). `db push` áp **27/27** migration;
+  `migration list --linked` cho thấy Local khớp Remote từng dòng.
+- Vercel Hobby: `https://cq-tntt-manager-web.vercel.app`, build từ nhánh `main`.
+- Env trên Vercel đã xác nhận đúng **bằng hành vi**, không phải bằng lời: `/dashboard` và
+  `/admin` phát 307 về `/login?next=...` và không rơi vào error boundary — chỉ xảy ra được
+  khi Supabase client phía server dựng thành công.
+- Bẫy đã gặp: chạy `supabase link`/`db push` ở thư mục **cha** (`CQ_TNTT_Manager/`) thì CLI
+  tìm thấy 0 migration và báo "Remote database is up to date" — nghe như thành công trong khi
+  database vẫn trống. Luôn `cd` vào `CQ_TNTT_Manager_Project_Spec` trước.
+
+## P7-T7 — Smoke production ◐ (chờ một mục cuối)
+
+Đã kiểm thật trên URL production:
+
+- **RLS negative bằng anon key, gọi thẳng REST API** — 19 lớp/1 năm học/2 tài khoản/6 Ban đều
+  tồn tại nhưng anon nhận `[]` trên `classes`, `academic_years`, `profiles`, `committees`,
+  `sectors`, `grade_levels` và toàn bộ bảng nhạy cảm. INSERT `guardians` bị chặn 401/42501.
+- **Đăng ký công khai đã tắt**: `POST /auth/v1/signup` → 422 `signup_disabled`.
+- **Storage private**: URL public của `teaching-materials` → 400.
+- **Không có secret trong bundle** — mạnh hơn yêu cầu: gom đủ 14 script của `/login` (617 KB)
+  và **không có một chuỗi `supabase` nào**. Nguyên nhân: `src/lib/supabase/client.ts` không
+  được file nào import; toàn bộ app gọi Supabase phía server. Trình duyệt không nhận cả anon key.
+- **PWA cài được**: manifest `standalone`, theme `#f28c5b`, đủ PNG 192/512 cả `any` lẫn
+  `maskable`, 6 icon đều 200; `sw.js` trả `must-revalidate` + `Service-Worker-Allowed: /`.
+- Header bảo vệ có mặt trên production; không lộ `x-powered-by`.
+
+**Đăng nhập production ✓** — Super Admin đăng nhập được, bị ép đổi mật khẩu, vào `/dashboard`.
+
+**Lỗi bắt được lúc smoke (đã sửa quy trình, chưa sửa code):** `/classes` rỗng trên production.
+Nguyên nhân: `supabase db push` **không** chạy `supabase/seed.sql`, nên `sectors`/`grade_levels`/
+`class_templates`/`committees` đều rỗng và `generate_default_classes` tạo 0 lớp **mà không báo
+lỗi**. Local không bao giờ lộ vì `db reset` có chạy seed. Đã bổ sung bước 2b vào docs/12 §4a.
+Cân nhắc cho phase sau: cho `generate_default_classes` ném lỗi khi `class_templates` rỗng, thay
+vì im lặng trả về 0.
+
+**Đính chính bằng chứng RLS negative ở trên:** `classes`, `sectors`, `grade_levels`, `committees`
+trả `[]` cho anon **vì bảng rỗng**, không phải vì RLS lọc — không dùng làm bằng chứng được.
+Bằng chứng còn giá trị là `profiles` (2 dòng có thật) và `academic_years` (1 dòng có thật) đều
+trả `[]`, cộng với INSERT bị chặn 42501. Chạy lại bộ này sau khi seed xong.
+
+**Backup — đã kiểm, kết quả xấu:** Supabase Free **không có backup nào cả** (cả scheduled lẫn
+point-in-time). Dump thủ công là lớp bảo vệ duy nhất. User chọn ở lại Free và **chưa nhập dữ
+liệu thật** — ghi thành **BLK-8**. Production hiện là môi trường chạy thử.
+
+**Còn thiếu để đóng gate:** áp `seed.sql` + sinh 19 lớp, chạy lại RLS negative trên dữ liệu
+thật đó, và thử tạo tài khoản trong `/admin` (phép thử duy nhất cho `SUPABASE_SERVICE_ROLE_KEY`
+trên Vercel).
 
 ### Gate Phase 7
 

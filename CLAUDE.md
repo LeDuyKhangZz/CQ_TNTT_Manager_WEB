@@ -4,17 +4,32 @@ Bạn đang phối hợp với Codex trên dự án `CQ TNTT Manager`.
 
 ## 1. Bootstrap mỗi session
 
+> 🔴 **Việc đang làm là GIAI ĐOẠN 2B — tái thiết kế giao diện.**
+> `docs/08-phase-plan.md` là kế hoạch xây dựng ban đầu (Phase 1–8, đã xong tới Phase 7).
+> **Không lấy task từ đó nữa.** Task của 2B nằm ở `16_PHASE_2B_IMPLEMENTATION_LOG.md`.
+
 Bắt buộc chạy/đọc:
 
 ```text
 git status
-WORKLOG.md
-docs/08-phase-plan.md
-AGENTS.md
-entry mới nhất trong WORKLOG
+WORKLOG.md                                    ← entry mới nhất
+AGENTS.md                                     ← §1b: nguồn sự thật của 2B
+docs/system-workflow-redesign/ui-redesign/16_PHASE_2B_IMPLEMENTATION_LOG.md   ← ĐÃ LÀM/CHƯA LÀM
+docs/system-workflow-redesign/ui-redesign/11_APPROVED_MODULE_PLAN.md          ← thứ tự + nghiệm thu
 ```
 
-Sau đó đọc docs module. Không tải toàn bộ repo vào context nếu không cần; ưu tiên tìm file liên quan.
+Rồi đọc thêm theo việc sắp làm:
+
+| Sắp làm | Đọc thêm |
+|---|---|
+| Component / token / màu | `09_APPROVED_DESIGN_SYSTEM.md` |
+| Bất cứ gì đụng theme | `10_APPROVED_THEME_RULES.md` |
+| Một module cụ thể | `modules/<Mxx>/03_AUDIT_RESULTS.md` + `04_TO_BE_FLOWS.md` |
+
+Không tải toàn bộ repo vào context; ưu tiên tìm file liên quan.
+
+**Ba tài liệu `09`/`10`/`11` đã được chủ dự án duyệt 2026-07-23 — không tự đổi.**
+`09` **ghi đè** `docs/06-ui-ux-spec.md` §2 (token) và §3 (typography).
 
 ## 2. Vai trò của Claude
 
@@ -120,18 +135,41 @@ Blocker/rủi ro:
 Cần agent tiếp theo:
 ```
 
-## 10. Prompt ngắn cho session đầu
+## 10. Prompt mỗi session của Giai đoạn 2B ⭐
+
+**Dán nguyên khối này. Không cần nói gì thêm.**
 
 ```text
-Đọc AGENTS.md, CLAUDE.md, WORKLOG.md và docs/08-phase-plan.md.
-Claim đúng task tiếp theo trước khi code. Làm đúng phạm vi task và cập nhật
-WORKLOG ngay sau khi hoàn tất hoặc trước khi hết phiên. Không tự commit.
+Tiếp tục GIAI ĐOẠN 2B.
+
+Đọc theo thứ tự: git status · WORKLOG.md (entry mới nhất) · AGENTS.md §1b ·
+docs/system-workflow-redesign/ui-redesign/16_PHASE_2B_IMPLEMENTATION_LOG.md ·
+11_APPROVED_MODULE_PLAN.md.
+
+Từ file 16 xác định việc chưa làm tiếp theo, báo tôi biết bạn sắp làm gì, rồi làm.
+Theo quy trình 9 bước ở 11 §4 và nghiệm thu 15 mục ở 11 §5.
+Không tự đổi ba tài liệu đã duyệt 09/10/11.
+Xong thì chạy lint · typecheck · test · build thật, rồi cập nhật file 16 + WORKLOG
+bằng số kiểm thử thật. Không tự commit.
 ```
 
-## 11. Prompt cho session sau
+**Muốn chỉ định việc cụ thể** thì thêm một dòng, ví dụ:
 
 ```text
-Đọc trạng thái mới nhất trong WORKLOG.md và task phase đang active.
-Kiểm tra git status, tiếp tục đúng task đã claim hoặc claim task tiếp theo.
-Không làm lại phần đã hoàn tất; xác minh bằng test thật và cập nhật WORKLOG.
+Phiên này làm Mốc 0B mục 0.7 (a11y vỏ).
+Phiên này làm Mốc 0B mục 0.8 (13 component còn lại).
+Phiên này bắt đầu module 1 — M14 Vỏ & Điều hướng.
+Phiên này trả nợ window.confirm ở M07 (grep "NỢ 2B").
+```
+
+> Thứ tự đã chốt: **hết 0B rồi mới sang module.** Nếu bạn bảo tôi nhảy sang module
+> khi 0B chưa xong, tôi sẽ nói rõ cái gì còn thiếu trước khi làm.
+
+## 11. Prompt cho việc ngoài 2B
+
+Chỉ dùng khi quay lại Phase 8 (Sa mạc) hoặc vá lỗi production:
+
+```text
+Việc này KHÔNG thuộc Giai đoạn 2B. Đọc WORKLOG.md và docs/08-phase-plan.md.
+Claim task trước khi code, xác minh bằng test thật, cập nhật WORKLOG. Không tự commit.
 ```

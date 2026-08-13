@@ -181,6 +181,36 @@ async function main() {
     "Tạo năm học",
   );
 
+  // M02-C / I7 + D-120 — hai năm học ĐÃ ĐÓNG, cố ý khác nhau ở một điểm duy nhất:
+  // hạn giữ dữ liệu. Không có chúng thì nút "Lưu trữ" không có cách nào nghiệm thu
+  // bằng dữ liệu thật: chủ dự án chốt D-120 là chặn lưu trữ trước hạn, và hạn =
+  // ngày kết thúc năm học + 5 năm, nên một năm đóng hôm nay chỉ lưu trữ được sau
+  // 2032. Năm `2019-2020` cũng là dữ liệu đối chứng cho **D-70**: con của phụ huynh
+  // mẫu không hề học năm đó, nên phụ huynh không được đọc dòng này.
+  must(
+    await sa.from("academic_years").insert([
+      {
+        code: "2019-2020",
+        name: "Năm học 2019-2020",
+        start_date: "2019-09-01",
+        end_date: "2020-05-31",
+        status: "closed",
+        retention_until: "2025-05-31",
+        updated_by: saUserId,
+      },
+      {
+        code: "2024-2025",
+        name: "Năm học 2024-2025",
+        start_date: "2024-09-01",
+        end_date: "2025-05-31",
+        status: "closed",
+        retention_until: "2030-05-31",
+        updated_by: saUserId,
+      },
+    ]),
+    "Tạo hai năm học đã đóng (một quá hạn giữ dữ liệu, một chưa)",
+  );
+
   must(
     await sa.rpc("generate_default_classes", { target_academic_year_id: year.id }),
     "Sinh 19 lớp mặc định",
@@ -278,6 +308,46 @@ async function main() {
     record(staff.staffCode, `${spec.role} (${spec.className})`, spec.displayName);
   }
 
+  // ── Hồ sơ KHÔNG tài khoản, KHÔNG phân công (M04-B) ───────────────────────
+  // Bốn tình huống mà `/staff` phải xử lý đúng và trước M04-B không có dữ liệu
+  // mẫu nào chạm tới:
+  //   · D-108 — danh sách mặc định ẩn "Đã nghỉ" nhưng vẫn hiện "Tạm nghỉ"
+  //   · D-106 — hồ sơ chưa từng dùng, tức xóa được thật
+  //   · phân trang — 13 hồ sơ cũ + 4 hồ sơ này vượt ngưỡng 10/trang
+  const looseStaffSpec = [
+    { staffCode: "GLV914", displayName: "Mai Tạm Nghỉ", saintName: "Rosa", phone: "0901000014", title: "chi", serviceStatus: "paused" },
+    { staffCode: "GLV915", displayName: "Hồ Đã Nghỉ", saintName: "Antôn", phone: "0901000015", serviceStatus: "inactive" },
+    { staffCode: "GLV916", displayName: "Chu Chưa Dùng", saintName: "Vinh Sơn", phone: "0901000016", serviceStatus: "active" },
+    { staffCode: "GLV917", displayName: "Tạ Chưa Dùng", saintName: "Clara", phone: "0901000017", title: "chi", serviceStatus: "active" },
+  ];
+  for (const spec of looseStaffSpec) {
+    const staff = await createStaff({
+      fullName: spec.displayName,
+      staffCode: spec.staffCode,
+      saintName: spec.saintName,
+      phone: spec.phone,
+      title: spec.title,
+    });
+    must(
+      await admin
+        .from("staff_profiles")
+        .update({ service_status: spec.serviceStatus })
+        .eq("id", staff.id),
+      `Đặt trạng thái phục vụ cho ${spec.displayName}`,
+    );
+  }
+
+  // Tài khoản "zombie" (5W-06): đăng nhập được nhưng KHÔNG mang vai trò nào ⇒
+  // vào hệ thống rồi không thấy lớp nào. D-110 bắt `/staff` phải hiện cảnh báo
+  // "⚠ Chưa gán vai trò" cho đúng trạng thái này, nên fixture phải có nó.
+  const zombie = await createStaffAccount({
+    staffCode: "GLV918",
+    displayName: "Đoàn Chưa Vai Trò",
+    saintName: "Gioakim",
+    phone: "0901000018",
+  });
+  record(zombie.staffCode, "(chưa gán vai trò)", "Đoàn Chưa Vai Trò");
+
   // ── Ban và kho thiết bị (docs/07 §14, D-47/D-49) ─────────────────────────
   // GLV909 giữ hai Ban để fixture phản ánh đúng giới hạn tối đa hai Ban.
   const COMMITTEE = {
@@ -348,6 +418,16 @@ async function main() {
     );
     return guardian;
   }
+
+  // Fixture riêng cho các ca E2E tạo hồ sơ thiếu nhi. Hồ sơ này cố ý KHÔNG có
+  // profile/account và tên + số điện thoại là nhãn ổn định để test không phụ
+  // thuộc thứ tự trả về của `list_guardian_options`. Tuyệt đối không dùng GLV
+  // kiêm phụ huynh ở dưới: mỗi viewport sẽ tạo thêm một con và làm nhiễm D-25.
+  await createGuardianAccount({
+    fullName: "Phụ huynh E2E không tài khoản",
+    phone: "0912999999",
+    address: "Fixture E2E tạo hồ sơ thiếu nhi",
+  });
 
   const guardianA = await createGuardianAccount({
     fullName: "Nguyễn Văn Ba",
