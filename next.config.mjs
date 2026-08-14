@@ -2,6 +2,23 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // 🔴 P3-UI-001 — BẮT BUỘC cho màn hình chờ khi chạy trên Vercel.
+  //
+  // `src/lib/loading/assets.ts` đọc đĩa lúc chạy: `readdir("public/loading")` và
+  // `readFile("src/content/LoiChua.md")`. Trên máy nhà thì hai đường dẫn ấy có
+  // thật nên không ai thấy vấn đề gì. Trên Vercel thì khác hai chuyện:
+  //   · `public/` được đẩy lên tầng tĩnh/CDN, **không bảo đảm** có mặt trong hệ
+  //     tệp của serverless function;
+  //   · đường dẫn được ghép từ biến (`path.join(process.cwd(), LOI_CHUA_PATH)`)
+  //     nên bộ dò phụ thuộc của Next **không thấy** và không đóng gói tệp ấy.
+  //
+  // Hậu quả nếu thiếu khai báo dưới đây: cả hai lượt đọc ném lỗi, `assets.ts`
+  // bắt lại và trả mảng rỗng ⇒ cửa sổ chờ hiện **không ảnh, không câu Lời Chúa**,
+  // chỉ còn ba chấm nhún — hỏng đúng thứ chủ dự án muốn nhất, và **hỏng trong im
+  // lặng**: không log, không trang lỗi, build vẫn xanh.
+  outputFileTracingIncludes: {
+    "/**": ["./public/loading/**", "./src/content/LoiChua.md"],
+  },
   experimental: {
     serverActions: {
       // M12-C / TO-BE 8 / NC-01 / D-137. Trần nghiệp vụ là 4 MB (`features/
