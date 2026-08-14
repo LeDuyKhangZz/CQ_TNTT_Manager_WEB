@@ -1,6 +1,5 @@
-"use client";
-
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 import { LOADING_OVERLAY_TEST_ID } from "@/lib/loading/constants";
 import type { LoiChuaVerse } from "@/lib/loading/verses";
 
@@ -23,16 +22,32 @@ import type { LoiChuaVerse } from "@/lib/loading/verses";
  *    `new Image()`, mà nạp trước chỉ có tác dụng khi địa chỉ **trùng khớp** với
  *    địa chỉ lúc hiện. Qua bộ tối ưu của Next thì hai địa chỉ khác nhau và công
  *    nạp trước thành công cốc — ô ảnh sẽ trống đúng lúc cần nhất.
+ *
+ * 🔴 **KHÔNG có `"use client"`** — component này không dùng hook nào, và nó phải
+ * dựng được ở **cả hai phía**: client (do `LoadingProvider` gọi, cho thao tác ghi)
+ * và **server** (do `loading.tsx` gọi, cho lượt chuyển module). Đóng đinh nó vào
+ * phía client là mất đúng nửa sau — mà nửa sau mới là lúc chờ lâu nhất.
  */
 export function LoadingOverlay({
   image,
   verse,
   label = "Đang xử lý…",
+  delayed = false,
 }: {
   image: string | null;
   verse: LoiChuaVerse | null;
   /** Câu trạng thái đọc cho trình đọc màn hình và hiện dưới ba chấm. */
   label?: string;
+  /**
+   * Hoãn hiện bằng **CSS**, dùng cho `loading.tsx`.
+   *
+   * `loading.tsx` được Next dựng **ngay lập tức** khi route bắt đầu chuyển — nó
+   * không có chỗ nào để đặt một hẹn giờ 1 giây như phía client. Nếu hiện ngay
+   * thì mọi lượt chuyển trang nhanh đều chớp một cửa sổ rồi tắt, khó chịu hơn là
+   * không có gì. Hoãn bằng `animation-delay` thì phần tử vẫn mount ngay nhưng
+   * **vô hình trong giây đầu**: route xong sớm là nó biến mất trước khi kịp thấy.
+   */
+  delayed?: boolean;
 }) {
   return (
     <div
@@ -40,7 +55,10 @@ export function LoadingOverlay({
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="fixed inset-0 z-loading flex items-center justify-center bg-overlay p-4"
+      className={cn(
+        "fixed inset-0 z-loading flex items-center justify-center bg-overlay p-4",
+        delayed && "loading-delayed",
+      )}
     >
       <div className="w-full max-w-xs rounded-xl border border-line bg-surface p-6 text-center shadow-md">
         {image ? (
