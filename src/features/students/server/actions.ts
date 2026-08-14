@@ -382,7 +382,6 @@ export async function upsertSacrament(
         failed: "no_change",
       };
     }
-    revalidatePath(`/students/${parsed.studentId}`);
     return {
       ok: true,
       data: { label: sacramentLabel(parsed.sacramentType, parsed.sacramentName) },
@@ -422,7 +421,6 @@ export async function deleteSacrament(
     if (!data) {
       return { ok: false, code: "FORBIDDEN", message: "", failed: "no_change" };
     }
-    revalidatePath(`/students/${parsed.studentId}`);
     return {
       ok: true,
       data: { label: sacramentLabel(data.sacrament_type, data.sacrament_name) },

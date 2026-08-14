@@ -32,6 +32,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 vi.mock("@/features/assessments/server/actions", () => ({
+  refreshGradebookPage: vi.fn(async () => undefined),
   saveAssessmentScores: (input: unknown) => saveAssessmentScores(input),
   createAssessment: vi.fn(async () => ({ ok: true, data: { id: "a1" } })),
   updateAssessment: vi.fn(async () => ({ ok: true, data: undefined })),
@@ -462,6 +463,7 @@ describe("gradebook editor · M07-C · công bố tách khỏi khóa", () => {
 
     expect(setAssessmentPublished).toHaveBeenCalledWith({ assessmentId: "asm-1", published: true });
     expect(await screen.findByText(/Đã công bố kết quả cho phụ huynh/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ẩn khỏi cổng" })).toBeEnabled();
   });
 
   it("người khác vừa đổi trạng thái thì KHÔNG báo thành công giả", async () => {

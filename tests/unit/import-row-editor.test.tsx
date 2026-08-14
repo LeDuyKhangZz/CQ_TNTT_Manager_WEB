@@ -25,7 +25,12 @@ const editsAction = vi.fn(async (_formData: FormData): Promise<ImportFeedback> =
   text: "Đã lưu 2 dòng.",
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock("@/features/imports/server/actions", () => ({
+  refreshBatchPage: vi.fn(async () => undefined),
   rowEditsFormAction: (_previous: unknown, formData: FormData) => editsAction(formData),
 }));
 

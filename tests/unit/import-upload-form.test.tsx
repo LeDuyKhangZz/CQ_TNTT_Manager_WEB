@@ -15,6 +15,11 @@ const uploadAction = vi.fn(async (_formData: FormData): Promise<ImportFeedback> 
   tone: "danger",
   text: "Sheet chỉ có danh sách tên, thiếu ngày sinh nên không đủ để import. Vui lòng dùng sheet SYLL hoặc file mẫu chuẩn.",
 }));
+const routerPush = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: routerPush }),
+}));
 
 vi.mock("@/features/imports/server/actions", () => ({
   uploadFormAction: (_previous: unknown, formData: FormData) => uploadAction(formData),
@@ -33,6 +38,26 @@ function renderForm() {
 
 beforeEach(() => {
   uploadAction.mockClear();
+  routerPush.mockClear();
+});
+
+it("mở trang kết quả sau khi phản hồi tải file đã hoàn tất", async () => {
+  uploadAction.mockResolvedValueOnce({
+    tone: "success",
+    text: "Đã kiểm tra file.",
+    navigateTo: "/imports/batch-1",
+  });
+  const user = userEvent.setup();
+  renderForm();
+  await user.upload(
+    screen.getByLabelText(/File Excel/),
+    new File(["x"], "so_lop.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }),
+  );
+  submitUploadForm();
+  expect(await screen.findByText("Đã kiểm tra file.")).toBeInTheDocument();
+  expect(routerPush).toHaveBeenCalledWith("/imports/batch-1");
 });
 
 /**

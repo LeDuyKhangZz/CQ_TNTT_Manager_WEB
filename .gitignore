@@ -53,6 +53,13 @@ Thumbs.db
 *.njsproj
 *.sln
 
+# Đồ nghề của phiên làm việc AI — KHÔNG thuộc sản phẩm.
+# Đây là bộ skill/agent cài cho máy của chủ dự án; commit lên thì mỗi máy một bản
+# khác nhau và diff của dự án bị chôn dưới hàng nghìn dòng không ai đọc.
+/.agents/
+/BA-Kit/
+/skills-lock.json
+
 # Misc
 *.tsbuildinfo
 .vercel

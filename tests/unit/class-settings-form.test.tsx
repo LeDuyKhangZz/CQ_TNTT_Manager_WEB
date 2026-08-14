@@ -21,10 +21,17 @@ let nextFeedback: ClassFeedback = { tone: "success", text: "Đã lưu cài đặ
 const updateClassFormAction = vi.fn(
   async (_previous: ClassFeedback | null, _formData: FormData): Promise<ClassFeedback> => nextFeedback,
 );
+const refreshClassPage = vi.fn(async (_classId: string) => undefined);
+const routerRefresh = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: routerRefresh }),
+}));
 
 vi.mock("@/features/classes/server/actions", () => ({
   updateClassFormAction: (previous: unknown, formData: unknown) =>
     updateClassFormAction(previous as never, formData as never),
+  refreshClassPage: (classId: string) => refreshClassPage(classId),
 }));
 
 const { ClassSettingsForm } = await import("@/features/classes/components/class-settings-form");
@@ -45,6 +52,8 @@ function renderForm(overrides: Partial<Parameters<typeof ClassSettingsForm>[0]> 
 
 beforeEach(() => {
   updateClassFormAction.mockClear();
+  refreshClassPage.mockClear();
+  routerRefresh.mockClear();
   nextFeedback = { tone: "success", text: "Đã lưu cài đặt lớp. Trạng thái hiện tại: Đã đóng." };
 });
 

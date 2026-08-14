@@ -4135,3 +4135,133 @@ Không sửa `09`/`10`/`11`.
 7. Kiểm accessibility.
 8. Cập nhật file này + `00_SYSTEM_AUDIT_BOARD.md` + `WORKLOG.md` với **số kiểm thử thật**.
 9. Sang module tiếp theo.
+
+---
+
+## 6. `P3-UI-001` — Đánh bóng giao diện (kế hoạch `17_UI_POLISH_PLAN.md`)
+
+> Mở 2026-08-14 theo lệnh *"làm theo kế hoạch 17"* của chủ dự án. Lệnh ấy **duyệt luôn §2**
+> của kế hoạch ⇒ `09_APPROVED_DESIGN_SYSTEM.md` có thêm **§12 (A1–A5)**. Đây là việc **thuần
+> trình bày**: 0 business rule · 0 migration · 0 đổi RLS · 0 đổi quyền · 0 đổi dữ liệu.
+
+| Đợt | Nội dung | Trạng thái |
+|---|---|---|
+| **A** | Hệ thống `LoadingOverlay` toàn cục | ✅ **XONG 2026-08-14** |
+| B | `Select` v2 — listbox tự dựng, giữ nguyên 73 chỗ gọi | ☐ chưa làm |
+| C | `DateField` / `DateTimeField` — 33 chỗ | ☐ chưa làm |
+| D | `Checkbox` + vét control trần | ☐ chưa làm |
+| E | `FilterField` + đồng nhất 9 biến thể panel | ☐ chưa làm |
+| F | `Button pending` + tổng nghiệm thu | ☐ chưa làm |
+
+### 6.1 Đợt A — ✅ XONG
+
+**Chẩn đoán được xác nhận lại bằng mã nguồn:** `router.refresh()` ở **45 chỗ** dựng lại server
+component **tại chỗ**, nên `loading.tsx` của App Router **không bao giờ chạy**. Phản hồi duy nhất
+người dùng nhận được là một cái nút mờ đi — nhiều nút không đổi cả nhãn.
+
+**Tệp mới (9):**
+
+| Tệp | Việc |
+|---|---|
+| `src/lib/loading/constants.ts` | Ba ngưỡng thời gian + test id + đuôi ảnh nhận được |
+| `src/lib/loading/verses.ts` | Parser Lời Chúa **thuần** (không `server-only` ⇒ bộ kiểm bám đúng parser máy chủ dùng) |
+| `src/lib/loading/pick.ts` | `pickNextIndex` — ngẫu nhiên **không lặp liền kề** |
+| `src/lib/loading/assets.ts` | `server-only`; `readdir(public/loading)` + đọc `LoiChua.md`, cache tầng module |
+| `src/components/loading/loading-provider.tsx` | Bộ đếm việc · luật thời gian · bắt click điều hướng · `useGlobalPending` · `useGlobalLoading` |
+| `src/components/loading/loading-overlay.tsx` | Cửa sổ chờ: ảnh lắc lư · 3 chấm nhún · câu Lời Chúa |
+| `src/components/loading/form-pending-bridge.tsx` | Cầu nối `useFormStatus()` cho form không cần JS |
+| `tests/e2e/utils/wait-for-idle.ts` | `waitForIdle(page)` — helper chống nợ ổn định |
+| `public/loading/luce1–4.jpg` · `src/content/LoiChua.md` | Tài sản đã vào trong ứng dụng |
+
+**🔴 Định dạng `LoiChua.md` — parser nhận HAI kiểu, tệp chính theo kiểu §3.6.**
+Chủ dự án soạn kho câu bằng **bảng Markdown hai cột** (145 câu), còn §3.6 mô tả kiểu mỗi câu một
+dòng. Xử lý theo hai bước, cả hai đều cần:
+
+1. **Parser nhận cả hai kiểu** — dán một bảng vào giữa tệp sau này vẫn chạy. Hàng tiêu đề của
+   bảng được nhận diện bằng **dòng kẻ** chứ không bằng cách dò chữ *"Nội Dung Lời Chúa"*: chủ dự
+   án đổi nhãn cột thì bảng vẫn phải đọc được.
+2. **Tệp chính đã chuyển sang kiểu §3.6** (`<câu> — <nguồn>`, mỗi câu một dòng, 145/145 câu giữ
+   nguyên nguồn trích) — theo lệnh của chủ dự án 2026-08-14. Để tệp chính mang một định dạng khác
+   với định dạng tài liệu mô tả là dựng sẵn một chỗ cho người đọc sau hiểu nhầm.
+
+Bài kiểm `loading-verses.test.ts` canh cả hai vế: bảy bài dựng dữ liệu cho từng kiểu, và một bài
+đọc **chính tệp thật** (≥145 câu · không câu nào mất nguồn · tiêu đề/ghi chú không lọt vào).
+
+**Đã nối vào các luồng chậm — 45 chỗ trên 41 tệp:**
+
+| Loại | Số chỗ | Cách nối |
+|---|--:|---|
+| `useTransition` | 16 | `useGlobalPending(pending)` |
+| `useActionState` (phần tử thứ 3) | 18 | `useGlobalPending(pending)` |
+| `useState(false)` làm cờ chạy | 7 | `useGlobalPending(pending)` |
+| `useFormStatus()` trong `SubmitButton` tự có | 3 | `useGlobalPending(pending)` |
+| `isSubmitting` của react-hook-form (đăng nhập · đổi mật khẩu) | 2 | `useGlobalPending(isSubmitting)` |
+| `router.push`/`replace` do mã lệnh gọi | 3 | `beginNavigation()` |
+| Form **không cần JS**, không có cờ nào | 6 | `<FormPendingBridge />` |
+
+**Ba quyết định cài đặt đáng ghi:**
+
+1. **`useGlobalPending` KHÔNG ném lỗi khi thiếu provider** — khác hẳn `useToast`. Hook này nằm
+   trong 41 tệp nghiệp vụ mà bộ kiểm đơn vị render **trần**. Ném lỗi là đánh sập vài chục bài
+   đang xanh vì một thứ thuần trang trí, và biến component nghiệp vụ thành thứ chỉ sống được bên
+   trong màn hình chờ.
+2. **Điều hướng dùng CỜ, không dùng bộ đếm.** Một cú bấm có thể không dẫn tới lần đổi route nào;
+   là cờ thì lần đổi route kế tiếp xoá sạch, là bộ đếm thì nó rò một đơn vị **vĩnh viễn**.
+3. **`NavigationSettleWatcher` phải bọc `Suspense`.** `useSearchParams()` không có ranh giới
+   Suspense sẽ đẩy cả cây sang render phía client lúc `next build` — với trang tĩnh đó là **lỗi
+   build**, không phải cảnh báo. Đặt riêng thành component con để ranh giới chỉ bao một node rỗng.
+
+**Đợt A cũng trả luôn `09` §12 A5:** `(auth)/layout.tsx` từ `rounded-2xl shadow-xl` (cả hai ngoài
+thang) về `rounded-xl` + `shadow-md`. Hai đốm trang trí còn dùng bí danh token cũ — để Đợt E §7.3.
+
+**Số kiểm thử thật (2026-08-14):**
+
+- unit **1568 pass / 18 skip** (114 tệp pass / 5 skip) — trong đó **22 bài mới** trên 3 tệp của Đợt A
+- lint **0 warning 0 error** · typecheck ✓ · build ✓ **29/29 trang**
+- `loading-overlay.spec.ts` **3/3 xanh** trên 360/768/1366 (đăng nhập thật, độ chậm giả 2s)
+- E2E toàn hệ thống: xem `WORKLOG.md` entry cùng ngày
+
+⏸️ **Cố ý KHÔNG có bài E2E cho vế *"thao tác nhanh thì không chớp overlay"***: đó là phép đo
+đồng hồ treo tường, chỉ xanh khi DB local trả lời dưới một giây và sẽ đỏ trên máy đang tải nặng
+**dù mã hoàn toàn đúng**. Thêm một nguồn nhiễu vào bộ 585 bài đang đi trả nợ ổn định
+(`P3-UX-001`) là đi ngược việc đang làm. Vế ấy được canh bằng **đồng hồ giả**, tất định, ở
+`tests/unit/loading-provider.test.tsx`.
+
+⚠️ **Việc còn lại của chủ dự án:** `loading/luce1–4.jpg` và `LoiChua.md` ở thư mục gốc **chưa bị
+xoá**. Ghi chú hướng dẫn đã đặt ở `ĐỌC-TRƯỚC — loading và LoiChua.md` tại thư mục gốc.
+**Commit xong thì xoá hai bản gốc đi** — để hai bản song song lâu ngày thì sẽ có lúc sửa nhầm bản
+không ai đọc.
+
+---
+
+## 7. `P3-UX-001` — Ổn định trình duyệt (nhận bàn giao từ Codex 2026-08-14)
+
+> Kết luận GĐ3 xếp **14/585 E2E đỏ** vào nhóm `PRODUCT_UX_RELIABILITY`: *"UI còn pending/stale,
+> derived state chưa cập nhật hoặc navigation không hoàn tất"*. Codex mở task này 2026-08-13 và
+> để lại **20 tệp sửa chưa commit**; chủ dự án chuyển task sang Claude 2026-08-14.
+
+### 7.1 Chẩn đoán của Codex — đúng cơ chế, và đã trả 11/14 bài
+
+`revalidatePath()` gọi **bên trong** một Server Action làm Next nhét một lượt dựng lại cây vào
+**chính response của action ấy**. Với `useActionState`/`useTransition`, `pending` chỉ tắt khi lượt
+dựng đó xong — nên trên máy chậm nút đứng ở trạng thái "đang chạy" dù cơ sở dữ liệu đã ghi xong.
+
+Cách chữa: bỏ `revalidatePath` khỏi mutation, thêm một action `refresh*` **riêng** cho client gọi
+**sau khi** đã nhận phản hồi (`refreshClassPage` · `refreshBatchPage` ·
+`refreshSemesterMilestoneViews`), kèm lớp che lạc quan ở nơi cần (`optimisticResolvedIds`).
+
+**Kết quả đo được:** M02 (4 bài) · M03 (5 bài) · M07 (2 bài) đều xanh trở lại.
+
+### 7.2 Ba bài Codex chưa đóng — ba nguyên nhân KHÁC NHAU
+
+| # | Bài | Nguyên nhân thật | Cách chữa |
+|---|---|---|---|
+| 1 | M12-A `D-133: dòng trùng chắc chắn` (laptop) | Dòng chữ còn sót nằm ở **dải cảnh báo cấp trang** (`imports/[batchId]/page.tsx:102`, đếm trong CSDL), **ngoài** `BatchRowEditor` nên lớp che lạc quan không với tới. Codex còn hẹn giờ **250ms** trước khi bắt đầu, mà sau đó còn **hai** lượt đi–về máy chủ — vượt cửa sổ chờ 5s mặc định của bài kiểm | Bỏ hẳn 250ms. Hiệu ứng vốn đã chạy **sau** lượt dựng mang phản hồi — đó chính là điều nó sinh ra để bảo đảm — nên độ trễ ấy không mua thêm gì |
+| 2 | M10-C `D-166 thu hồi` (mobile + laptop) | Mục *"Tôi đã gửi"* không có dòng vừa gửi. 🔴 **Đã LOẠI TRỪ bằng phép đo:** trả lại `revalidatePath("/notifications")` vào `publishNotification` **không đổi được gì**, bài vẫn đỏ y nguyên ở cả hai viewport ⇒ đường `revalidatePath` + `router.refresh()` không phải thứ đang hỏng | `NotificationCenter` chèn ngay dòng vừa gửi bằng chính `id` **thật** máy chủ trả về; khi dữ liệu máy chủ về thì **bản của máy chủ thắng** khi trùng `id` |
+| 3 | M10-C `D-166` (mobile) | Bài này **không có trong baseline GĐ3** — nó đỏ thêm ở lượt chạy sau khi Codex sửa. Cùng nguyên nhân với #2, chỉ khác viewport | Cùng #2 |
+
+🔴 **NỢ CHƯA TRẢ, ghi đúng như nó là:** **vì sao** `router.refresh()` không mang dòng vừa gửi
+xuống thì **chưa tìm ra**. Truy vấn `getSentNotifications` sắp xếp `published_at` giảm dần, giới
+hạn 20, mà danh sách chỉ có 8 dòng — **không phải bị cắt trang**. Lớp chèn tay làm màn hình nói
+đúng ngay lập tức và tải lại trang cũng ra đúng thứ ấy, nhưng nó **không phải** lời giải thích.
+Đây là cùng họ với **nợ #10** và với blocker *"browser feedback/navigation kẹt dưới tải"* của GĐ3.

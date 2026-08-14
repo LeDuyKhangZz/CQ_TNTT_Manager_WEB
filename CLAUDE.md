@@ -121,7 +121,8 @@ Trước khi dừng:
 3. Cập nhật WORKLOG chính xác.
 4. Ghi phần đang dở và file đang sửa.
 5. Không nói “sẽ làm tiếp nền/background”.
-6. Không tự commit.
+6. **Commit + push được phép** (chủ dự án cấp quyền thường trực 2026-08-14) — nhưng
+   **chỉ sau khi đã chạy kiểm thử thật**, và tách commit theo task ID.
 
 ## 9. Format báo cáo cuối session
 
@@ -150,7 +151,7 @@ Từ file 16 xác định việc chưa làm tiếp theo, báo tôi biết bạn 
 Theo quy trình 9 bước ở 11 §4 và nghiệm thu 15 mục ở 11 §5.
 Không tự đổi ba tài liệu đã duyệt 09/10/11.
 Xong thì chạy lint · typecheck · test · build thật, rồi cập nhật file 16 + WORKLOG
-bằng số kiểm thử thật. Không tự commit.
+bằng số kiểm thử thật, rồi commit + push (một commit cho một task ID).
 ```
 
 **Muốn chỉ định việc cụ thể** thì thêm một dòng, ví dụ:
@@ -171,5 +172,5 @@ Chỉ dùng khi quay lại Phase 8 (Sa mạc) hoặc vá lỗi production:
 
 ```text
 Việc này KHÔNG thuộc Giai đoạn 2B. Đọc WORKLOG.md và docs/08-phase-plan.md.
-Claim task trước khi code, xác minh bằng test thật, cập nhật WORKLOG. Không tự commit.
+Claim task trước khi code, xác minh bằng test thật, cập nhật WORKLOG, rồi commit + push.
 ```

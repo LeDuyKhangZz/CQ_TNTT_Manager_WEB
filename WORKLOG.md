@@ -25,7 +25,12 @@
    npm run build
    ```
    Có DB/RLS → chạy thêm test DB. Có workflow UI → chạy E2E.
-6. **KHÔNG ĐƯỢC:** ghi pass/done/verified/deployed khi chưa chạy thật; sửa test để che bug; tự đổi quyết định; commit secret; tự chạy git commit/push.
+6. **KHÔNG ĐƯỢC:** ghi pass/done/verified/deployed khi chưa chạy thật; sửa test để che bug; tự đổi quyết định; commit secret.
+7. **Commit + push: ĐƯỢC PHÉP** — chủ dự án cấp quyền thường trực **2026-08-14** (thay điều
+   *"tự chạy git commit/push"* ở quy tắc 6 cũ và `AGENTS.md` §"User tự commit"). Ba ràng buộc
+   **giữ nguyên**: (a) chạy kiểm thử thật **trước** khi commit — quy tắc 6 là về tính trung thực,
+   không phải về git; (b) **một commit cho một task ID**, không gộp nhiều task; (c) cập nhật
+   `WORKLOG` + log triển khai bằng số thật trước khi commit.
 
 **Format entry:**
 
@@ -49,12 +54,14 @@
 > verification không xác nhận Giai đoạn 2 hoàn tất vì còn blocker quyết định/AC, bảo mật, toàn vẹn
 > và browser gate.
 
-- **`GĐ3-VERIFY — HOÀN TẤT KIỂM ĐỊNH / NO-GO — Codex — 2026-08-13`** — đã đối chiếu đủ 142
-  tài liệu bắt buộc; review business, permission/security, data integrity và UI/UX; chạy lại toàn
-  bộ gate trên baseline cuối. Lint/typecheck/build/unit/DB/integration/import/perf đều xanh;
-  Playwright full cuối **571/585 pass · 14 fail · 32,2 phút**, không có `ECONNREFUSED`. Trạng thái
-  module: **12 FAILED · 1 BLOCKED · 1 VERIFIED_WITH_MINOR_ISSUES có điều kiện · 0 VERIFIED tuyệt
-  đối**. Hồ sơ chính thức: `docs/system-workflow-redesign/verification/01..09`.
+- **`P3-UI-001 · Đợt A — XONG — Claude — 2026-08-14`** — màn hình chờ toàn cục (kế hoạch 17 Đợt A).
+  Chủ dự án ra lệnh *"làm theo kế hoạch 17"* ⇒ **duyệt §2**, `09` có thêm **§12 (A1–A5)**.
+  **0 business rule · 0 migration · 0 đổi RLS · 0 đổi quyền · 0 đổi dữ liệu.** Đợt B–F chưa làm.
+
+- **`P3-UX-001 — XONG phần 14 bài baseline — Claude — 2026-08-14`** (🔁 bàn giao từ Codex
+  2026-08-13). **14/14 bài đỏ của baseline GĐ3 nay xanh**: 11 bài do đợt sửa `revalidatePath` của
+  Codex, 3 bài còn lại do hai fix trong phiên này. Lượt full cuối còn **3 bài đỏ mang chữ ký nợ
+  ổn định** (nợ #10) — chạy lại targeted thì **51/51 xanh**, xem entry Phiên 67.
 
 - **`2B · M13-B + M13-C — XONG — Codex — 2026-08-12`** ⇒ **ĐÓNG module 14/14 và đóng phần
   triển khai Giai đoạn 2B.** Bốn nguyên nhân rỗng được tách đúng; hai portal dùng mật độ
@@ -1737,6 +1744,62 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-08-14] Phiên 67 — Claude — `P3-UI-001` (Đợt A) + `P3-UX-001` (nhận bàn giao)
+
+- **Claim:** hai task trong một phiên theo lệnh chủ dự án. `P3-UI-001` = kế hoạch 17 Đợt A;
+  `P3-UX-001` = nhận bàn giao từ Codex (20 tệp sửa chưa commit trong cây làm việc, **không
+  revert**, làm tiếp trên nền đó).
+- **Duyệt tài liệu:** lệnh *"làm theo kế hoạch 17"* duyệt §2 ⇒ thêm **`09` §12 (A1–A5)** ở cuối,
+  **không sửa đè** §1–§11. Bảng màu ngành, 12 điểm theme, 10 điều cấm, danh sách KHÔNG ĐƯỢC ĐỤNG
+  giữ nguyên tuyệt đối.
+- **Đợt A — màn hình chờ toàn cục.** Chẩn đoán gốc xác nhận lại bằng mã nguồn: `router.refresh()`
+  ở **45 chỗ** dựng lại server component **tại chỗ**, nên `loading.tsx` **không bao giờ chạy** —
+  phản hồi duy nhất là một cái nút mờ đi. 9 tệp mới; nối **45 chỗ luồng chậm trên 41 tệp**
+  (16 `useTransition` · 18 `useActionState` · 7 cờ `useState` · 3 `useFormStatus` · 2 react-hook-form
+  · 3 `router.push` · 6 form không-cần-JS). Ngưỡng 1000/600/30000ms nằm một chỗ, đổi được.
+- **🔴 Ba quyết định cài đặt đáng nhớ:** (1) `useGlobalPending` **không ném lỗi** khi thiếu
+  provider — nó nằm trong 41 tệp nghiệp vụ mà bộ kiểm render **trần**; ném lỗi là đánh sập vài
+  chục bài đang xanh vì một thứ thuần trang trí. (2) Điều hướng dùng **cờ**, không dùng bộ đếm —
+  một cú bấm có thể không dẫn tới lần đổi route nào, là bộ đếm thì nó rò một đơn vị vĩnh viễn.
+  (3) `useSearchParams()` **phải** bọc `Suspense` riêng, nếu không `next build` đẩy cả cây sang
+  render phía client và với trang tĩnh đó là **lỗi build**.
+- **`LoiChua.md`:** chủ dự án soạn bằng **bảng Markdown**, `17` §3.6 mô tả kiểu mỗi câu một dòng.
+  Parser nhận **cả hai** (nhận diện hàng tiêu đề bằng **dòng kẻ**, không dò chữ), và tệp chính đã
+  chuyển sang kiểu §3.6 theo lệnh chủ dự án. **145/145 cặp (nguồn, nội dung) khớp tuyệt đối** —
+  đối chiếu bằng chính parser của ứng dụng, không phải bằng mắt.
+- **P3-UX-001 — 14/14 bài baseline nay xanh.** Chẩn đoán của Codex (`revalidatePath` gọi **trong**
+  action làm `pending` kẹt) đúng cơ chế và trả được 11 bài. Ba bài còn lại **ba nguyên nhân khác
+  nhau**, xem `16` §7.2: M12 do dải cảnh báo **cấp trang** nằm ngoài lớp che lạc quan + 250ms hẹn
+  giờ thừa; M10 (2 viewport) do mục *"Tôi đã gửi"* thiếu dòng vừa gửi.
+- **🔴 Một giả thuyết đã bị LOẠI TRỪ bằng phép đo, không phải bằng suy luận:** trả lại
+  `revalidatePath("/notifications")` vào `publishNotification` **không đổi được gì** — bài vẫn đỏ
+  y nguyên ở cả hai viewport. Nên đã gỡ ra lại: giữ "cho chắc" là nhét một lượt dựng lại cây vào
+  response của action, đúng thứ đợt sửa đang đi gỡ, mà không mua được gì.
+- **Migration/data impact:** **0 migration · 0 đổi RLS · 0 đổi dữ liệu · 0 đổi quyền** cho cả hai task.
+- **Đã test (số thật):** lint **0 warning 0 error** · typecheck ✓ · build ✓ **29/29 trang** ·
+  unit **1568 pass / 18 skip** (114 tệp pass / 5 skip; **22 bài mới** trên 3 tệp của Đợt A) ·
+  DB reset qua đủ migration + `seed:dev` trước lượt full.
+  **E2E toàn hệ thống: 588 bài** (585 cũ + 3 bài mới của Đợt A) ⇒ **585 pass · 3 fail · 22,0 phút**.
+  Đối chiếu baseline GĐ3 (**571 pass · 14 fail** trên 585).
+- **⚠️ Ba bài đỏ của lượt full — nói đúng bản chất, không làm tròn thành "hoà":** chúng **không
+  phải** 3 bài đỏ của lượt trước, và **cả ba đều xanh khi chạy lại targeted (51/51 trên 3
+  viewport)**. Cả ba cùng một chữ ký: sau một lượt ghi, dữ liệu Server Component chưa về kịp cửa
+  sổ **5 giây mặc định** (`committees:382` ×2 · `imports:332` ×1). Đây là **nợ #10**, không phải
+  hồi quy của phiên này — nhưng cũng **không được ghi là PASS**.
+- **🔴 Nợ mở, ghi đúng như nó là:** **vì sao** `router.refresh()` không mang dòng vừa gửi xuống
+  mục *"Tôi đã gửi"* thì **chưa tìm ra** — truy vấn sắp xếp `published_at` giảm dần, giới hạn 20,
+  danh sách chỉ có 8 dòng nên **không phải bị cắt trang**. Lớp chèn tay làm màn hình nói đúng
+  ngay, nhưng nó **không phải** lời giải thích.
+- **Quyết định mới:** chủ dự án cấp **quyền thường trực tự commit + push** (2026-08-14) ⇒ sửa
+  `CLAUDE.md` §8, `AGENTS.md` §10, quy tắc 6/7 của file này. Ba ràng buộc giữ nguyên: kiểm thử
+  thật trước khi commit · một commit một task ID · cập nhật WORKLOG bằng số thật trước khi commit.
+  Thêm `.gitignore` cho `.agents/` · `BA-Kit/` · `skills-lock.json` (đồ nghề phiên AI).
+- **Blocker/rủi ro:** kết luận **NO-GO của GĐ3 vẫn nguyên** — phiên này chỉ đóng nhánh browser
+  reliability của mục 5, chưa đụng D-65 audit log, M02 hai workflow chuyển năm, M07 AC-03-01,
+  M11/M06 live report + split-brain, production preflight.
+- **Next action:** Đợt B của kế hoạch 17 (`Select` v2 — listbox tự dựng, giữ nguyên 73 chỗ gọi).
+  Chủ dự án cần **xoá `loading/` và `LoiChua.md` ở thư mục gốc** — đã có ghi chú hướng dẫn ở đó.
+
 ### [2026-08-13] Phiên 66 — Codex — GĐ3-VERIFY — **HOÀN TẤT KIỂM ĐỊNH / NO-GO**
 
 - **Phạm vi:** đọc và đối chiếu đủ bộ tài liệu hệ thống, 14 × 8 tài liệu module và bộ UI redesign;
@@ -2042,128 +2105,3 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 - **Next action:** **M11-B** — ba việc đã chốt sẵn (D-170 · D-171 · D-172 + AC-B09), xem
   `VIỆC TIẾP THEO`. Không tự commit — cây làm việc đang có thay đổi chưa commit của cả 2B.
 
-### [2026-08-10] Phiên 61 — Claude — GĐ 2B · Module 12 · M10-A + M10-B + M10-C — **ĐÓNG MODULE 12 (M10)**
-
-- **Làm được:** **cả ba đợt của M10 Thông báo trong một phiên** theo yêu cầu của chủ dự án, mỗi đợt
-  vẫn chạy kiểm thử đầy đủ. Module 12/14 đóng. `03_AUDIT_RESULTS` chấm **61,6/75** — cao thứ nhì
-  trong 2B — mà vẫn mang **hai luồng CRITICAL**; khoảng cách ấy là chuyện đáng nhớ nhất của module.
-  - **Đợt A (0 migration):** hạng mục 1 của `07` §1 — thứ tài liệu gọi là *"chênh lệch chi phí/giá
-    trị lớn nhất trong cả dự án"*. Cả **hai** lỗi CRITICAL là **một** lỗi lặp hai chỗ: một dòng
-    `.eq("profile_id", …)` **vắng mặt**. Kèm AC-02-01/02 (số người nhận thật, cảnh báo khi gửi vào
-    hư không — **không cần migration**, cột `recipient_count` đã có từ Phase 6 mà chưa ai đọc) và
-    **nợ #14** (module mắc **cả hai** vế của D-96, ở cả ba thao tác).
-  - **Đợt B (1 migration):** **D-167** nhánh gửi đích danh — sửa ở **cấu trúc** truy vấn chứ không
-    phải một điều kiện thêm vào, vì phép nối bắt buộc nằm ở `from` nên nó loại người ta ra **trước
-    khi** `case` được chạy · **D-165** mã chống gửi đúp · `app.notification_audience` làm định
-    nghĩa **dùng chung** cho đếm-trước và chốt-người-nhận (**BR-M10-24**) · **AC-06-01** hộp xem
-    lại · **TB-M10-03** bộ chọn "Một người" — chức năng đã đủ ở cơ sở dữ liệu từ Phase 6 mà **chưa
-    từng có một nút bấm nào**.
-  - **Đợt C (1 migration):** **D-166** thu hồi mềm · **D-168** hoà giải hai tài liệu nói ngược nhau
-    bằng một **cờ nhân bản** xuống bảng người-nhận · mục "Tôi đã gửi" · lọc chưa đọc · phân trang
-    thay `limit 50` cứng (thông báo **thứ 51 trở đi trước đây biến mất hoàn toàn**).
-- **File thay đổi:** `src/features/notifications/` (`inbox.ts` · `publish-feedback.ts` ·
-  `publish-preview.ts` · `zod-messages.ts` mới; `schemas.ts` · `server/queries.ts` ·
-  `server/actions.ts` · `components/notification-center.tsx`) · `src/components/layout/
-  notification-bell.tsx` · 🔴 `src/features/dashboard/server/queries.ts` (**bàn giao cho M11**) ·
-  `src/app/(dashboard)/notifications/page.tsx` · 2 migration · `supabase/tests/022` (chữ ký hàm
-  đổi) + `048` + `049` · 5 file unit test mới · `tests/e2e/notifications.spec.ts` mới ·
-  `tests/integration/m10-inbox-scope.test.ts` mới · `tests/e2e/committees.spec.ts` (bộ test chưa
-  theo kịp mã).
-- **Migration/data impact:** **2 migration · 0 thay đổi phân quyền · 0 dòng dữ liệu bị đụng · 0
-  quyền ghi mới cho `authenticated`.** `20260809000100` — cột `request_id` **nullable** + unique
-  **một phần** (`where request_id is not null`) nên dữ liệu cũ không vướng, không backfill;
-  `publish_notification` drop+create vì chữ ký đổi, **có cấp lại `grant execute`**. `20260810000100`
-  — 3 cột nullable + cờ nhân bản giữ bằng **trigger**, và **1 policy bị sửa**: nhánh người-nhận của
-  `notifications_select_recipient` thêm `retracted_at is null`, **giữ nguyên** hai nhánh tác giả và
-  quyền-đọc-toàn-cục để mục "Tôi đã gửi" và nhật ký thu hồi còn đọc được.
-- **Đã test:** `npm run lint` **0 warning** · `npm run typecheck` ✓ · `npx vitest run` **1448 pass /
-  16 skip** (trước module này 1385/10) · `npm run test:db` **1286/1286** (trước 1233, **+53**) ·
-  `npm run build` ✓ **28/28 trang** · `npm run test:e2e` **494/507** (27,3 phút, DB vừa `db:reset` +
-  `seed:dev`) · `M10_DB=1 npx vitest run tests/integration/m10-inbox-scope.test.ts` **6/6 bằng JWT
-  thật** của Thư ký và Giáo lý viên lớp. `notifications.spec.ts` **21/21 xanh cả ba cỡ màn, 0 skip**.
-- **Quyết định mới:** **D-165** (Q-1, mã chống gửi đúp) · **D-166** (Q-2, thu hồi mềm — người gửi +
-  cấp xứ đoàn, **không giới hạn thời gian**, **lý do bắt buộc**) · **D-167** (Q-3, gửi đích danh
-  phải tới được người chưa gán vai trò) · **D-168** (sau thu hồi người nhận **vẫn thấy dòng ấy kèm
-  nhãn**). Cả bốn do chủ dự án chốt.
-- **Blocker/rủi ro:**
-  - ⚠️ **13 bài E2E đỏ = 2,56 %, TĂNG so với 1,85 % của M08-C** (mẫu số đổi 486 → 507). **0/13 liên
-    quan tới thông báo.** 4 bài ⇒ **nợ #15**, 9 bài ⇒ hình dạng **nợ #10**. Đã kiểm bằng lượt chạy
-    cô lập: vẫn đỏ nhưng **ở viewport khác**, tức nhiễu chứ không phải thay đổi hành vi.
-  - ⚠️ **Giới hạn của lần phân loại này, ghi ra chứ không giấu:** M08-C phân loại **bằng ảnh chụp
-    lỗi**; ở đây 9 bài chỉ phân loại **bằng hình dạng câu lỗi**, vì chính lượt chạy cô lập để kiểm
-    chứng đã **ghi đè mất** `test-results/` của lượt đầy đủ. Hai ảnh còn đọc được đều mang đúng chữ
-    ký nợ #10.
-  - 🔴 **Cần báo trước cho Ban điều hành trước khi phát hành** (`08_ACCEPTANCE_CRITERIA` §7): sau
-    đợt A, **chuông của 6 vai trò cấp xứ đoàn sẽ tụt mạnh** — ví dụ từ *"99+"* xuống *"2"*. Đây là
-    hành vi **đúng**, nhưng với người dùng nó trông giống **mất dữ liệu**.
-  - 🔴 **Bàn giao cho M11, không phải nợ:** ô *"Thông báo mới nhất"* của `/dashboard` đã được sửa ở
-    đợt A (hai chỗ). Đừng sửa lại, nhưng hãy đọc lý do trước khi đụng vào trang ấy.
-- **Next action:** **M11 Báo cáo & Dashboard** — module 13/14, `NEEDS_IMPROVEMENT`, **Redesign**,
-  cỡ **L**, chưa chia đợt. Xem `VIỆC TIẾP THEO` cho **sáu** việc đã xác định sẵn, trong đó
-  `report_snapshots` là **bảng cuối cùng** của nợ #18 và **D-66** là thay đổi phân quyền **siết** duy
-  nhất còn lại.
-
-### [2026-08-08] Phiên 60 — Claude — GĐ 2B · Module 11 · Đợt M08-C — **ĐÓNG MODULE 11 (M08)**
-
-- **Làm được:** ba nợ cuối của module chuyển lớp, và **cả ba đều đã được hai đợt trước ghi ra rồi
-  cố ý hoãn**. **(1) AC-14 — nút "Duyệt" lần đầu hỏi lại.** Lý do hoãn vẫn đúng khi nhìn lại (D-159
-  ở đợt B đổi hẳn nội dung câu hỏi cho bốn vai trò cấp xứ đoàn), nhưng cái giá là thật: suốt hai
-  đợt, một cú bấm nhầm là một ghi danh bị đóng **không có đường lùi**. Hộp này **không phải bản
-  sao** của hộp "Chuyển lớp" (D-159): ở đường một bước người bấm xác nhận quyết định **của chính
-  mình**, ở đây họ thi hành quyết định **của người khác** — nên câu hậu quả in **lớp đang sắp ghi
-  vào** chứ không in lại lớp trong đề xuất, và **nói ra khi hai thứ đó khác nhau** (*"đại diện lớp
-  đề nghị Ấu 2B, bạn đang chọn Ấu 2A"*); ô ấy là một `<Select>` sửa được và một cú lăn chuột đủ để
-  đổi giá trị mà không ai bấm gì. **(2) AC-15 — từ chối bắt buộc nêu lý do**, chặn ở **cả** màn hình
-  lẫn Zod máy chủ; luật đặt trong `promotionReviewSchema` vì nó chỉ nhìn vào chính đầu vào, khác
-  luật bí tích của M08-B vốn phải đọc `warning_snapshot` nên buộc ở lại tầng action. Nút "Từ chối"
-  **cố ý KHÔNG** có hộp xác nhận — nó lùi được (BR-M08-16) và chồng hai lớp hỏi lại lên nhau là dạy
-  người dùng bấm "Xác nhận" theo phản xạ. **(3) AC-20 — đề xuất hàng loạt**, 30 em × 3 thao tác
-  còn **4 lượt**. **(4) Hạng mục 8 — hiện ai đề xuất, ai duyệt**, qua một **cửa sổ hẹp**.
-- **File thay đổi:** migration `20260808000100_promotion_actor_names.sql` (mới) · pgTAP
-  `supabase/tests/047_promotion_actor_names_test.sql` (mới) · `src/features/promotions/`
-  `batch-proposal.ts` + `review-consequence.ts` (mới), `schemas.ts`, `constants.ts`,
-  `review-journal.ts`, `server/queries.ts`, `server/actions.ts`, `components/promotion-board.tsx` ·
-  `src/app/(dashboard)/promotions/page.tsx` · `src/types/database.ts` (sinh lại) ·
-  `tests/unit/promotion-batch.test.ts` + `promotion-review-consequence.test.ts` (mới),
-  `promotion-schemas.test.ts`, `promotion-board.test.tsx`, `promotion-review-journal.test.ts` ·
-  `tests/e2e/promotions.spec.ts`, `tests/e2e/results.spec.ts` · tài liệu `16`, `00_SYSTEM_AUDIT_BOARD`.
-- **Migration/data impact:** **1 migration, và nó là một CỬA SỔ HẸP chứ không phải một lần nới
-  quyền.** `07` §2.4 để lại một điều kiện chưa ai đo cho hạng mục 8; đo rồi và câu trả lời là
-  **KHÔNG** — `profiles_select_self_or_global` chỉ mở cho chính mình hoặc sáu vai trò cấp xứ đoàn,
-  mà **hai người dùng chính của trang này** (Trưởng ngành duyệt · GLV đại diện đề xuất) **không nằm
-  trong sáu**, nên nhúng `profiles(display_name)` sẽ cho họ một cột `null` **trong im lặng**.
-  **D-163**: `public.list_promotion_actor_names` chép **nguyên vị từ** của
-  `promotion_reviews_select_scope` (definer bỏ qua RLS nên phải chép lại — bài học D-160) và chỉ trả
-  **id → tên hiển thị** của người **đã ra quyết định**; nó **không phải danh bạ**. **0 policy bị
-  sửa · 0 `alter table` · 0 backfill · 0 dòng dữ liệu bị đụng · 0 thay đổi phân quyền.**
-- **Đã test:** `npm run db:reset` → `npm run test:db` **1233/1233** (trước 1215, **+18**; file mới
-  `047` **18 bài JWT thật của 8 vai trò**, trong đó bài quan trọng nhất là bài **canh hiện trạng** —
-  sau migration, GLV đại diện đọc thẳng `public.profiles` **vẫn chỉ thấy đúng một hàng của chính
-  mình**) → `npm run db:types` → `npm run seed:dev`. `npm run lint` **0 warning** ·
-  `npm run typecheck` ✓ · `npm test` **1385 pass / 10 skip** (trước 1322, **+63**) ·
-  `npm run build` ✓ **28/28 trang** · `npm run test:e2e` **477/486** trên DB vừa reset + seed,
-  **22,7 phút**; `promotions.spec.ts` **60/60 xanh cả ba cỡ màn** (trước 57/57).
-- **Quyết định mới:** **D-163** (cửa sổ hẹp tên người, không nới `profiles`) và **D-164** ("Chọn
-  tất cả" lấy mọi em khớp bộ lọc **kể cả trang sau**, ngược phương án an toàn nhất — chủ dự án chốt
-  sau khi được nêu rõ cái giá). Cả hai chủ dự án chốt 2026-08-08.
-- **Blocker/rủi ro:** ⚠️ **9 đỏ = 1,85 %, TĂNG so với 1,68 % của M08-B** (mẫu số đổi 477 → 486 vì
-  đợt này thêm 9 bài, cả 9 đều xanh). Phân loại bằng **ảnh chụp lỗi**: 6 bài mang chữ ký **nợ #10**
-  (nút *"Đang …"* vô hiệu), 1 bài **nợ #15** (`waitForURL`, 0 nút vô hiệu), **2 bài `committees`
-  không mang chữ ký nào** — đúng hình dạng M05-C dặn là *có thể là lỗi thật*, nên đã kiểm chứ không
-  đoán: chạy cô lập trên DB vừa reset + seed, `committees` + `promotions` **75/75 xanh** ⇒ tải máy,
-  đúng kết luận M04-A. **Không bài nào rớt ở một khẳng định nghiệp vụ, không bài nào thuộc luồng
-  chuyển lớp.** 🔴 **Hai lỗi lọt qua bốn cửa kiểm, E2E bắt được cả hai:** `results.spec.ts` bấm
-  "Duyệt" rồi đọc thẳng cơ sở dữ liệu nên hộp xác nhận mới làm ghi danh vẫn `active`; và
-  `name: "Lọc"` khớp **hai** nút vì Playwright so tên theo **chứa chuỗi** (nút mới tên là *"Chọn
-  tất cả N em khớp bộ lọc"*) — sửa ở tầng **bộ test**, **không** đổi câu chữ giao diện để né bộ
-  định vị. Lỗi thứ hai: một chú thích JSX đặt sai chỗ làm `next build` hỏng cú pháp, lọt qua vì tôi
-  sửa **sau** lượt build đã chạy ⇒ **lượt kiểm cuối phải chạy trên đúng bản mã cuối**.
-  ⚠️ **`/promotions` nay chạm ĐÚNG TRẦN 6 lượt gọi của AC-13** (M08-A dùng 3–5): ai thêm thứ gì cần
-  đọc vào trang ấy phải **gộp vào một lượt đang có**. ⚠️ Một chỗ `bg-surface-muted/40` (bổ ngữ độ mờ
-  trên token màu — **nợ #5**) có sẵn trong `promotion-board.tsx` từ M08-A, **không sửa ở đợt này**
-  vì `09` là tài liệu đã duyệt và danh sách nợ #5 chưa liệt kê module này; ghi ra để không mất dấu.
-- **Next action:** **M10 Thông báo** (module 12/14, `CRITICAL` 2 luồng) — đọc
-  `modules/M10-NOTIFICATIONS/03_AUDIT_RESULTS.md` + `04_TO_BE_FLOWS.md` **trước khi chia đợt**.
-  Nợ đến hạn: **#14** (`notifications` là 1 trong 3 module còn lại) và **#18** cho bảng của M10.
-  🔴 Mang sang: mọi hạng mục cần *"hiện tên người"* phải **đo `profiles` trước khi viết code** —
-  M11 và M13 gần như chắc chắn gặp lại đúng câu hỏi này.

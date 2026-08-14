@@ -190,8 +190,11 @@ High-risk fix:
 
 ## 10. Quy tắc Git
 
-- User tự commit.
-- Agent không chạy `git commit`, `git commit --amend`, `git push` trừ khi user yêu cầu rõ trong lượt hiện tại.
+- 🔴 **ĐỔI 2026-08-14 — chủ dự án cấp quyền thường trực: agent ĐƯỢC tự `git commit` và
+  `git push`**, không cần xin phép từng lượt. Điều *"User tự commit"* ở bản cũ không còn hiệu lực.
+- Ba ràng buộc kèm theo: chạy **kiểm thử thật trước khi commit** · **một commit cho một task ID** ·
+  cập nhật `WORKLOG.md` bằng số thật trước khi commit.
+- Vẫn **không** `git commit --amend` lên commit của agent khác, và vẫn không commit secret (§8).
 - Không reset/checkout làm mất thay đổi của user/agent khác.
 - Trước khi sửa xem `git status`.
 - Báo file thay đổi.

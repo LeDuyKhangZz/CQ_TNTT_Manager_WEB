@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { AppError, type AppErrorCode } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +21,7 @@ import {
   purgeRawFeedback,
   rowEditsFeedback,
   uploadFailureFeedback,
+  uploadSuccessFeedback,
   type ImportFeedback,
   type RowEditsSummary,
 } from "../import-feedback";
@@ -220,7 +220,6 @@ export async function createDryRunBatch(
       .update({ valid_rows: validRows, warning_rows: warningRows, error_rows: errorRows })
       .eq("id", batch.id);
 
-    revalidatePath("/imports");
     return {
       ok: true,
       data: {
@@ -321,6 +320,7 @@ export async function saveRowEdits(
     }[] = [];
     const blocked: number[] = [];
     let saved = 0;
+    const savedRowIds: string[] = [];
     const failures: { rowNumber: number; message: string }[] = [];
 
     for (const row of current ?? []) {
@@ -407,6 +407,7 @@ export async function saveRowEdits(
         failures.push({ rowNumber: confirmation.rowNumber, message: IMPORT_NO_CHANGE_TEXT });
       } else {
         saved += 1;
+        savedRowIds.push(confirmation.rowId);
       }
     }
 
@@ -424,7 +425,10 @@ export async function saveRowEdits(
         }),
       );
       for (const result of results) {
-        if (result.ok) saved += 1;
+        if (result.ok) {
+          saved += 1;
+          savedRowIds.push(result.update.rowId);
+        }
         else failures.push({ rowNumber: result.update.rowNumber, message: IMPORT_NO_CHANGE_TEXT });
       }
     }
@@ -432,8 +436,7 @@ export async function saveRowEdits(
     // TO-BE 4 bước 4 — revalidate ĐÚNG trang lần nhập, không phải `/imports`.
     // Bản cũ revalidate `/imports` sau mỗi dòng, tức dựng lại một trang mà người
     // dùng còn không đứng ở đó.
-    revalidatePath(`/imports/${parsed.batchId}`);
-    return { ok: true, data: { saved, blocked, failures } };
+    return { ok: true, data: { saved, savedRowIds, blocked, failures } };
   } catch (error) {
     return fail(error);
   }
@@ -679,11 +682,12 @@ export async function uploadFormAction(
   formData: FormData,
 ): Promise<ImportFeedback> {
   const result = await createDryRunBatch(formData);
-  // AC-14 — vào thẳng trang của lần nhập vừa tạo. `redirect()` phải nằm NGOÀI
-  // `try` (nó báo hiệu bằng cách ném lỗi) và đích là **route khác**, nên không
-  // dính quả mìn nợ #16 (`redirect()` về chính route đang đứng làm trắng trang).
-  if (result.ok) redirect(`/imports/${result.data.batchId}`);
-  return uploadFailureFeedback(result.message);
+  // Let the action settle before navigation. A redirect emitted from the
+  // multipart Server Action intermittently kept mobile clients pending even
+  // though the batch had already been written successfully.
+  return result.ok
+    ? uploadSuccessFeedback(result.data.batchId)
+    : uploadFailureFeedback(result.message);
 }
 
 export async function commitFormAction(
@@ -729,4 +733,12 @@ export async function rowEditsFormAction(
     entries: readRowEdits(formData),
   } as RowEditsInput);
   return result.ok ? rowEditsFeedback(result.data) : importFailureFeedback(result.message);
+}
+
+/** Refresh batch data only after mutation feedback has reached the form. */
+export async function refreshBatchPage(batchId: string): Promise<void> {
+  const actor = await importRouteContext();
+  assertImportAccess(actor);
+  const parsed = batchRefSchema.parse({ batchId });
+  revalidatePath(`/imports/${parsed.batchId}`);
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -15,6 +16,7 @@ import { formatDateVi } from "@/lib/dates";
 import { SACRAMENT_LABELS, sacramentLabel } from "../student-status";
 import type { StudentFeedback } from "../student-feedback";
 import { sacramentFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 export interface SacramentItem {
   id: string;
@@ -64,10 +66,21 @@ export function SacramentPanel({
   /** Đường về chế độ "thêm mới" — giữ nguyên tab đang đứng. */
   backHref: string;
 }) {
+  const router = useRouter();
   const [feedback, formAction, pending] = useActionState<StudentFeedback | null, FormData>(
     sacramentFormAction,
     null,
   );
+  useGlobalPending(pending);
+
+  // Refresh only after the action result has settled. The previous synchronous
+  // revalidation could strand both save and delete buttons in `pending` while
+  // the database change had already completed.
+  useEffect(() => {
+    if (feedback?.tone !== "success") return;
+    const timer = window.setTimeout(() => router.refresh(), 0);
+    return () => window.clearTimeout(timer);
+  }, [feedback, router]);
 
   const deleteFormRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);

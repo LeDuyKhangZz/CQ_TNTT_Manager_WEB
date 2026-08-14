@@ -33,6 +33,10 @@ function lastPayload(): FormData {
   return calls[calls.length - 1][0];
 }
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock("@/features/students/server/actions", () => ({
   sacramentFormAction: (_previous: unknown, formData: FormData) => panelAction(formData),
 }));

@@ -139,7 +139,16 @@ export async function publishNotification(
       .eq("id", data)
       .maybeSingle();
 
-    revalidatePath("/notifications");
+    // 🔴 KHÔNG `revalidatePath` ở đây — và đã ĐO chứ không suy đoán.
+    //
+    // Trả nó lại (P3-UX-001, lượt thử thứ nhất) **không** làm mục "Tôi đã gửi"
+    // hiện dòng vừa gửi: bài E2E D-166 vẫn đỏ y nguyên ở cả hai viewport. Tức
+    // đường `revalidatePath` + `router.refresh()` không phải thứ đang hỏng, và
+    // giữ nó lại chỉ để "cho chắc" là nhét một lượt dựng lại cây vào response
+    // của action — đúng thứ đợt sửa này đang đi gỡ — mà không mua được gì.
+    //
+    // Chỗ hỏng nằm ở màn hình, và được chữa ở màn hình: `NotificationCenter`
+    // chèn ngay dòng vừa gửi vào danh sách bằng chính `id` mà action trả về.
     return { ok: true, data: { id: data, recipientCount: published?.recipient_count ?? -1 } };
   } catch (error) {
     return failure(error);

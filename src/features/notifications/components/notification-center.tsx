@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +34,7 @@ import {
   searchNotificationRecipients,
 } from "../server/actions";
 import type { NotificationsPageData, SentNotification } from "../server/queries";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * D-165 — mã chống gửi đúp, sinh **một lần cho mỗi lượt soạn**.
@@ -63,7 +64,10 @@ type Message = { tone: PublishFeedbackTone; text: string } | null;
 
 export function NotificationCenter({ data }: { data: NotificationsPageData }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
+  /** Dòng vừa gửi trong phiên này, chèn tay cho tới khi máy chủ trả về bản của nó. */
+  const [justSent, setJustSent] = useState<SentNotification[]>([]);
   const [message, setMessage] = useState<Message>(null);
   const [targetType, setTargetType] = useState<NotificationTargetType>("class");
 
@@ -106,6 +110,15 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
   const needsTargetId = NOTIFICATION_TARGETS_NEEDING_ID.includes(targetType);
   const targetLabel = targetOptions.find((option) => option.id === targetId)?.label ?? null;
   const confirmation = publishConfirmation({ targetType, targetLabel, audienceCount });
+
+  // Danh sách "Tôi đã gửi" = dòng chèn tay của phiên này + dòng từ máy chủ.
+  // 🔴 **Máy chủ THẮNG khi trùng `id`**: bản của máy chủ mang số người nhận đã
+  // chốt và nhãn thu hồi thật. Giữ bản chèn tay đè lên nó là dựng sẵn một màn
+  // hình nói dối vào ngày dữ liệu hai bên lệch nhau.
+  const sentList = useMemo(() => {
+    const serverIds = new Set(data.sent.map((item) => item.id));
+    return [...justSent.filter((item) => !serverIds.has(item.id)), ...data.sent];
+  }, [data.sent, justSent]);
 
   // TB-M10-04 — đếm người nhận ngay khi phạm vi + đối tượng đã đủ. Thụ động:
   // không thêm bước nào cho người dùng, và lỗi thì chỉ ẩn con số đi.
@@ -155,7 +168,9 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
 
   function confirmSend() {
     if (!draft) return;
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await publishNotification({
         title: draft.title,
         content: draft.content,
@@ -179,18 +194,46 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
           // lượt vừa rồi và trả lại thông báo cũ — im lặng nuốt mất bản mới.
           requestIdRef.current = newRequestId();
         }
+        // 🔴 Chèn ngay dòng vừa gửi vào "Tôi đã gửi" — P3-UX-001.
+        //
+        // Vì sao không chờ `router.refresh()`: **đã đo**. Bài E2E D-166 chờ đủ
+        // 15 giây mà mục ấy vẫn là danh sách cũ, và trả lại `revalidatePath`
+        // trong action cũng không đổi được gì. Đây không phải "giấu lỗi bằng
+        // giao diện": `id` dùng ở đây là id **thật** mà máy chủ vừa trả về, nên
+        // nút "Thu hồi" trên dòng này gọi đúng bản ghi đó. Khi dữ liệu máy chủ
+        // về, bản của máy chủ thắng — xem `sentList` bên dưới.
+        //
+        // Cái còn nợ: **vì sao** `router.refresh()` không mang dòng mới xuống
+        // thì chưa tìm ra. Ghi vào WORKLOG, không giả vờ là đã hiểu.
+        setJustSent((current) => [
+          {
+            id: result.data.id,
+            title: draft.title,
+            publishedAt: new Date().toISOString(),
+            targetType,
+            recipientCount: result.data.recipientCount,
+            retractedAt: null,
+            retractReason: null,
+          },
+          ...current.filter((item) => item.id !== result.data.id),
+        ]);
         router.refresh();
       } else {
         setMessage({ tone: "danger", text: result.message });
       }
-    });
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   function confirmRetract() {
     if (!retracting) return;
     const target = retracting;
     setRetractError(null);
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await retractNotification({
         notificationId: target.id,
         reason: retractReason,
@@ -203,29 +246,48 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
           // repo (`promotion-board` · `gradebook-editor` · `teaching-plan-editor`).
           text: `Đã thu hồi “${target.title}”. ${result.data.recipientCount} người sẽ thấy nhãn “Đã thu hồi”.`,
         });
+        // Dòng chèn tay cũng phải mang nhãn "Đã thu hồi", nếu không màn hình nói
+        // hai điều ngược nhau: câu phản hồi bảo đã thu hồi, dòng ngay dưới thì không.
+        setJustSent((current) =>
+          current.map((item) =>
+            item.id === target.id
+              ? { ...item, retractedAt: new Date().toISOString(), retractReason: retractReason }
+              : item,
+          ),
+        );
         router.refresh();
       } else {
         // Hộp thoại **ở lại mở**: đóng nó đi là bắt người dùng mở lại rồi gõ lại
         // từ đầu đúng thứ họ vừa gõ.
         setRetractError(result.message);
       }
-    });
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   function markRead(notificationId: string) {
     setMessage(null);
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await markNotificationRead({ notificationId });
       // Đánh dấu đã đọc mà thất bại thầm lặng thì badge cứ đứng yên và người
       // dùng không hiểu vì sao — luôn hiện lỗi.
       if (!result.ok) setMessage({ tone: "danger", text: result.message });
       router.refresh();
-    });
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   function markAll() {
     setMessage(null);
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await markAllNotificationsRead();
       // SW-04: RPC trả về số dòng đã đổi từ Phase 6 nhưng chỗ này vứt đi, nên
       // bấm xong không có gì nói rằng nó đã làm được việc gì.
@@ -236,7 +298,10 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
         setMessage({ tone: "danger", text: result.message });
       }
       router.refresh();
-    });
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   return (
@@ -497,7 +562,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
         </CardContent>
       </Card>
 
-      {data.sent.length > 0 ? (
+      {sentList.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle>Tôi đã gửi</CardTitle>
@@ -507,7 +572,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
           </CardHeader>
           <CardContent>
             <ul className="divide-y divide-border">
-              {data.sent.map((item) => (
+              {sentList.map((item) => (
                 <li key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                   <div className="min-w-0">
                     <p className={cn("font-medium", item.retractedAt && "text-ink-muted line-through")}>

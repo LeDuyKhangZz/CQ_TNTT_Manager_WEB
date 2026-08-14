@@ -65,8 +65,19 @@ function mapDatabaseError(error: { code?: string; message?: string; details?: st
 }
 
 function revalidateGradebook(classId: string) {
+  void classId;
   revalidatePath("/results");
-  revalidatePath(`/results/${classId}`);
+}
+
+/**
+ * Invalidate the detail page in a separate Server Action, after the mutation
+ * response has already settled in the client.
+ */
+export async function refreshGradebookPage(classId: string): Promise<void> {
+  const actor = await assessmentsRouteContext();
+  const parsed = gradebookLockInputSchema.parse({ classId });
+  await requireGradeClass(actor, parsed.classId);
+  revalidatePath(`/results/${parsed.classId}`);
 }
 
 /**
@@ -193,7 +204,6 @@ export async function createAssessment(
       .select("id")
       .single();
     if (error || !data) throw mapDatabaseError(error);
-    revalidateGradebook(parsed.classId);
     return { ok: true, data: { id: data.id } };
   } catch (error) {
     return failure(error);
@@ -598,7 +608,6 @@ export async function createLeaderboard(input: LeaderboardInput): Promise<Assess
       updated_by: context.profileId,
     }).select("id").single();
     if (error || !data) throw mapDatabaseError(error);
-    revalidateGradebook(parsed.classId);
     return { ok: true, data: { id: data.id } };
   } catch (error) {
     return failure(error);
@@ -643,13 +652,12 @@ export async function publishLeaderboard(input: LeaderboardOperationInput): Prom
   const context = await assessmentsRouteContext();
   try {
     const parsed = leaderboardOperationSchema.parse(input);
-    const { supabase, leaderboard } = await requireManageLeaderboard(context, parsed.leaderboardId);
+    const { supabase } = await requireManageLeaderboard(context, parsed.leaderboardId);
     const { data, error } = await supabase.rpc("publish_leaderboard", {
       p_leaderboard_id: parsed.leaderboardId,
       p_custom_scores: customScoresPayload(parsed),
     });
     if (error) throw mapDatabaseError(error);
-    revalidateGradebook(leaderboard.class_id);
     return { ok: true, data: { count: data } };
   } catch (error) {
     return failure(error);
@@ -660,14 +668,13 @@ export async function unpublishLeaderboard(leaderboardId: string): Promise<Asses
   const context = await assessmentsRouteContext();
   try {
     const parsed = leaderboardIdSchema.parse(leaderboardId);
-    const { supabase, leaderboard } = await requireManageLeaderboard(context, parsed);
+    const { supabase } = await requireManageLeaderboard(context, parsed);
     const { data: updated, error } = await supabase.from("leaderboards").update({
       is_published: false,
       updated_by: context.profileId,
     }).eq("id", parsed).select("id");
     if (error) throw mapDatabaseError(error);
     assertRowsAffected(updated);
-    revalidateGradebook(leaderboard.class_id);
     return { ok: true, data: undefined };
   } catch (error) {
     return failure(error);
@@ -692,14 +699,13 @@ export async function republishLeaderboard(leaderboardId: string): Promise<Asses
   const context = await assessmentsRouteContext();
   try {
     const parsed = leaderboardIdSchema.parse(leaderboardId);
-    const { supabase, leaderboard } = await requireManageLeaderboard(context, parsed);
+    const { supabase } = await requireManageLeaderboard(context, parsed);
     const { data: updated, error } = await supabase.from("leaderboards").update({
       is_published: true,
       updated_by: context.profileId,
     }).eq("id", parsed).select("id");
     if (error) throw mapDatabaseError(error);
     assertRowsAffected(updated);
-    revalidateGradebook(leaderboard.class_id);
     return { ok: true, data: undefined };
   } catch (error) {
     return failure(error);
@@ -725,7 +731,7 @@ export async function deleteLeaderboard(leaderboardId: string): Promise<Assessme
   const context = await assessmentsRouteContext();
   try {
     const parsed = leaderboardIdSchema.parse(leaderboardId);
-    const { supabase, leaderboard } = await requireManageLeaderboard(context, parsed);
+    const { supabase } = await requireManageLeaderboard(context, parsed);
     const { data: row } = await supabase
       .from("leaderboards")
       .select("published_at")
@@ -745,7 +751,6 @@ export async function deleteLeaderboard(leaderboardId: string): Promise<Assessme
       .select("id");
     if (error) throw mapDatabaseError(error);
     assertRowsAffected(removed);
-    revalidateGradebook(leaderboard.class_id);
     return { ok: true, data: undefined };
   } catch (error) {
     return failure(error);

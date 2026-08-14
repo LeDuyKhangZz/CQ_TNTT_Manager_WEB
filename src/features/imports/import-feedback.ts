@@ -26,6 +26,12 @@ export type ImportFeedbackTone = "success" | "danger" | "info";
 export interface ImportFeedback {
   tone: ImportFeedbackTone;
   text: string;
+  /** Route to open after the feedback has settled on the client. */
+  navigateTo?: string;
+  /** Batch data changed and should be fetched after this feedback is visible. */
+  refreshPage?: boolean;
+  /** Rows whose review state can be reflected immediately while RSC refreshes. */
+  updatedRowIds?: string[];
   /** Từng dòng ghi hỏng — AC-15 đòi liệt kê `#số dòng — lý do`, không chỉ đếm. */
   failures?: { rowNumber: number; message: string }[];
 }
@@ -39,6 +45,14 @@ export const IMPORT_NO_CHANGE_TEXT =
 
 export function uploadFailureFeedback(message: string): ImportFeedback {
   return { tone: "danger", text: message };
+}
+
+export function uploadSuccessFeedback(batchId: string): ImportFeedback {
+  return {
+    tone: "success",
+    text: "Đã kiểm tra file. Đang mở kết quả để bạn rà soát.",
+    navigateTo: `/imports/${batchId}`,
+  };
 }
 
 /**
@@ -118,6 +132,7 @@ export function rowSavedFeedback(text: string): ImportFeedback {
 
 export interface RowEditsSummary {
   saved: number;
+  savedRowIds?: string[];
   /** Số dòng nghi trùng chắc chắn bị bỏ qua vì D-133 đòi xác nhận **từng dòng**. */
   blocked: number[];
   failures: { rowNumber: number; message: string }[];
@@ -151,6 +166,8 @@ export function rowEditsFeedback(summary: RowEditsSummary): ImportFeedback {
       tone: "danger",
       text: `Đã lưu ${summary.saved} dòng · ${summary.failures.length} dòng không lưu được.${blockedText}`,
       failures: summary.failures,
+      refreshPage: summary.saved > 0,
+      updatedRowIds: summary.savedRowIds ?? [],
     };
   }
 
@@ -166,6 +183,8 @@ export function rowEditsFeedback(summary: RowEditsSummary): ImportFeedback {
   return {
     tone: summary.blocked.length > 0 ? "info" : "success",
     text: `Đã lưu ${summary.saved} dòng.${blockedText}`,
+    refreshPage: true,
+    updatedRowIds: summary.savedRowIds ?? [],
   };
 }
 

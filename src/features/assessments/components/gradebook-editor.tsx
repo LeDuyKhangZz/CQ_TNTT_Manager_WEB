@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useCallback, useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import {
   lockGradebook,
   previewLeaderboard,
   publishLeaderboard,
+  refreshGradebookPage,
   refreshAttendanceScores,
   republishLeaderboard,
   resetAttendanceScoreOverride,
@@ -54,6 +55,7 @@ import type {
   GradebookStudent,
 } from "../server/queries";
 import { changedScoreCells, readNoteInput, readScoreInput } from "../score-diff";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 const selectClassName = "h-11 min-h-11 w-full rounded-md border border-border bg-card px-3 text-sm";
 type Message = { tone: "success" | "error" | "info"; text: string } | null;
@@ -82,10 +84,28 @@ function defaultWeightOf(detail: GradebookDetail, kind: AssessmentKind): number 
   return detail.defaultWeights[kind] ?? FALLBACK_WEIGHTS[kind];
 }
 
-function NewAssessmentForm({ detail }: { detail: GradebookDetail }) {
+/**
+ * Schedule the RSC refresh after the Server Action transition has resolved.
+ * Keeping the refresh inside the transition can leave the UI pending even
+ * though the mutation already committed successfully.
+ */
+function useDeferredRefresh(classId: string) {
   const router = useRouter();
+  return useCallback(() => {
+    window.setTimeout(() => {
+      void refreshGradebookPage(classId).then(
+        () => router.refresh(),
+        () => router.refresh(),
+      );
+    }, 100);
+  }, [classId, router]);
+}
+
+function NewAssessmentForm({ detail }: { detail: GradebookDetail }) {
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
   const [kind, setKind] = useState<AssessmentKind>("quiz_15m");
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -111,7 +131,7 @@ function NewAssessmentForm({ detail }: { detail: GradebookDetail }) {
       setMessage({ tone: "success", text: "Đã thêm cột điểm." });
       form.reset();
       setKind("quiz_15m");
-      router.refresh();
+      refreshAfterAction();
     });
   }
 
@@ -181,11 +201,17 @@ function AssessmentSettings({
    */
   onRemoved: (text: string) => void;
 }) {
-  const router = useRouter();
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
+  const [publishPending, setPublishPending] = useState(false);
+  useGlobalPending(publishPending);
+  const [published, setPublished] = useState(assessment.isPublished);
   const [message, setMessage] = useState<Message>(null);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const canHardDelete = assessment.scoredCount === 0;
+
+  useEffect(() => setPublished(assessment.isPublished), [assessment.isPublished]);
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -201,7 +227,7 @@ function AssessmentSettings({
         attendanceComponent: assessment.attendanceComponent,
       });
       setMessage(result.ok ? { tone: "success", text: "Đã cập nhật cột điểm." } : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
+      if (result.ok) refreshAfterAction();
     });
   }
 
@@ -213,23 +239,28 @@ function AssessmentSettings({
    * — không phải lỗi, nhưng cũng không được báo "Đã công bố" cho một lượt không
    * đổi gì.
    */
-  function togglePublish() {
-    startTransition(async () => {
-      const result = await setAssessmentPublished({ assessmentId: assessment.id, published: !assessment.isPublished });
+  async function togglePublish() {
+    const nextPublished = !published;
+    setPublishPending(true);
+    try {
+      const result = await setAssessmentPublished({ assessmentId: assessment.id, published: nextPublished });
       if (!result.ok) {
         setMessage({ tone: "error", text: result.message });
         return;
       }
+      setPublished(nextPublished);
       setMessage(result.data.changed
         ? {
           tone: "success",
-          text: assessment.isPublished
+          text: published
             ? "Đã ẩn kết quả khỏi cổng phụ huynh."
             : "Đã công bố kết quả cho phụ huynh và thiếu nhi trong lớp.",
         }
         : { tone: "info", text: "Người khác vừa đổi trạng thái công bố của cột này. Màn hình đã được cập nhật." });
-      router.refresh();
-    });
+      refreshAfterAction();
+    } finally {
+      setPublishPending(false);
+    }
   }
 
   /**
@@ -256,7 +287,7 @@ function AssessmentSettings({
           ? `Đã xóa cột “${assessment.title}”.`
           : `Đã ẩn cột “${assessment.title}”. Điểm vẫn còn nguyên; hiện lại được ở mục “Cột đã ẩn”.`,
       );
-      router.refresh();
+      refreshAfterAction();
     });
   }
 
@@ -268,14 +299,14 @@ function AssessmentSettings({
           <div className="space-y-2"><Label htmlFor={`date-${assessment.id}`}>Ngày</Label><Input id={`date-${assessment.id}`} name="assessmentDate" type="date" min={detail.yearStart} max={detail.yearEnd} defaultValue={assessment.assessmentDate ?? ""} disabled={detail.isLocked} /></div>
           <div className="space-y-2"><Label htmlFor={`weight-${assessment.id}`}>Hệ số</Label><Input id={`weight-${assessment.id}`} name="weight" type="number" min="0.01" max="100" step="0.01" defaultValue={assessment.weight} required disabled={detail.isLocked} /></div>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" variant="outline" disabled={pending || detail.isLocked}>Lưu</Button>
+            <Button type="submit" size="sm" variant="outline" disabled={pending || publishPending || detail.isLocked}>Lưu</Button>
             {/*
               M07-C · TB-M07-02 / D-154 — **nút duy nhất của thẻ này còn sống
               sau khi khóa**, và nó đổi từ `ghost` sang `outline`: `06_UI_UX` §3
               ghi thẳng rằng thao tác *"có tác động ra ngoài tổ chức"* đang là
               thứ **nhẹ nhất về thị giác** trong hàng.
             */}
-            <Button size="sm" variant="outline" disabled={pending} onClick={togglePublish}>{assessment.isPublished ? "Ẩn khỏi cổng" : "Công bố"}</Button>
+            <Button size="sm" variant="outline" disabled={pending || publishPending} onClick={togglePublish}>{published ? "Ẩn khỏi cổng" : "Công bố"}</Button>
             {/*
               M07-B · TB-M07-01 bước 1 — **một nút, hai nhãn**, chọn theo dữ liệu
               thật. Hai nhãn khác nhau vì hai hậu quả khác nhau; để một chữ "Xóa"
@@ -284,7 +315,7 @@ function AssessmentSettings({
               nó là "Ẩn", cạnh một nút "Xóa" mà nay có thể đọc là "Ẩn cột" —
               hai chữ "ẩn" cạnh nhau, hai nghĩa khác hẳn.
             */}
-            <Button size="sm" variant="danger" disabled={pending || detail.isLocked} onClick={() => setConfirmingRemove(true)}>
+            <Button size="sm" variant="danger" disabled={pending || publishPending || detail.isLocked} onClick={() => setConfirmingRemove(true)}>
               {canHardDelete ? "Xóa cột" : "Ẩn cột"}
             </Button>
           </div>
@@ -292,7 +323,7 @@ function AssessmentSettings({
         <div className="mt-2 flex flex-wrap gap-2">
           <Badge variant="secondary">{ASSESSMENT_KIND_LABELS[assessment.kind]}</Badge>
           {assessment.attendanceComponent ? <Badge variant="outline">{ATTENDANCE_COMPONENT_LABELS[assessment.attendanceComponent]}</Badge> : null}
-          <Badge variant={assessment.isPublished ? "success" : "outline"}>{assessment.isPublished ? "Đã công bố" : "Nội bộ"}</Badge>
+          <Badge variant={published ? "success" : "outline"}>{published ? "Đã công bố" : "Nội bộ"}</Badge>
           {/*
             TB-M07-01 — nói ra con số quyết định nút nào hiện ra. Không có nó,
             hai người nhìn cùng một cột lại thấy hai nút khác nhau mà không ai
@@ -341,8 +372,9 @@ function AssessmentSettings({
  * quả ra ngoài tổ chức, và câu xác nhận nói thẳng điều đó.
  */
 function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
-  const router = useRouter();
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
   const [confirming, setConfirming] = useState<GradebookAssessment | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -356,7 +388,7 @@ function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
       setMessage(result.ok
         ? { tone: "success", text: `Đã hiện lại cột “${assessment.title}”.` }
         : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
+      if (result.ok) refreshAfterAction();
     });
   }
 
@@ -432,8 +464,9 @@ function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
 }
 
 function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; assessment: GradebookAssessment }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
+  const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
 
   /**
@@ -442,7 +475,7 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
    * rác khiến cột không xóa được nữa (F04), ghi đè điểm người khác trong im lặng
    * (F06), và đóng dấu "chỉnh tay" lên cả 50 em của cột chuyên cần (F07).
    */
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const drafts = detail.students.map((student) => ({
@@ -458,13 +491,16 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
       setMessage({ tone: "info", text: "Chưa có ô nào thay đổi nên không có gì để lưu." });
       return;
     }
-    startTransition(async () => {
+    setPending(true);
+    try {
       const result = await saveAssessmentScores({ assessmentId: assessment.id, scores: changed });
       setMessage(result.ok
         ? { tone: "success", text: `Đã lưu ${result.data.count} ô điểm.` }
         : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
-    });
+      if (result.ok) refreshAfterAction();
+    } finally {
+      setPending(false);
+    }
   }
 
   /**
@@ -476,9 +512,10 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
    * ra**. Câu mới kèm luôn đường đi tiếp: mỗi ô ấy có nút "dùng lại đề xuất"
    * ngay dưới ô điểm của nó.
    */
-  function refreshSuggestions() {
+  async function refreshSuggestions() {
     setMessage(null);
-    startTransition(async () => {
+    setPending(true);
+    try {
       const result = await refreshAttendanceScores(assessment.id);
       if (!result.ok) {
         setMessage({ tone: "error", text: result.message });
@@ -492,17 +529,22 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
           : `Đã cập nhật ${refreshed} đề xuất · ${skippedManual} ô đang chỉnh tay được giữ nguyên. `
             + "Muốn dùng lại đề xuất cho ô nào thì bấm “Đang chỉnh tay · dùng lại đề xuất” ngay dưới ô đó.",
       });
-      router.refresh();
-    });
+      refreshAfterAction();
+    } finally {
+      setPending(false);
+    }
   }
 
-  function resetOverride(enrollmentId: string) {
+  async function resetOverride(enrollmentId: string) {
     setMessage(null);
-    startTransition(async () => {
+    setPending(true);
+    try {
       const result = await resetAttendanceScoreOverride({ assessmentId: assessment.id, enrollmentId });
       setMessage(result.ok ? { tone: "success", text: "Đã dùng lại điểm hệ thống đề xuất." } : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
-    });
+      if (result.ok) refreshAfterAction();
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -634,7 +676,7 @@ function CommentItem({
   onFailed: (text: string) => void;
   startTransition: (action: () => void) => void;
 }) {
-  const router = useRouter();
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
   const [editing, setEditing] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [visibility, setVisibility] = useState<CommentVisibility>(comment.visibility);
@@ -655,7 +697,7 @@ function CommentItem({
       }
       setEditing(false);
       onSaved("Đã cập nhật nhận xét.");
-      router.refresh();
+      refreshAfterAction();
     });
   }
 
@@ -669,7 +711,7 @@ function CommentItem({
         return;
       }
       onRemoved("Đã xóa nhận xét.");
-      router.refresh();
+      refreshAfterAction();
     });
   }
 
@@ -743,19 +785,21 @@ function CommentItem({
 }
 
 function CommentComposer({
+  classId,
   enrollmentId,
   pending,
   onAdded,
   onFailed,
   startTransition,
 }: {
+  classId: string;
   enrollmentId: string;
   pending: boolean;
   onAdded: (text: string) => void;
   onFailed: (text: string) => void;
   startTransition: (action: () => void) => void;
 }) {
-  const router = useRouter();
+  const refreshAfterAction = useDeferredRefresh(classId);
   const [visibility, setVisibility] = useState<CommentVisibility>("staff_only");
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -775,7 +819,7 @@ function CommentComposer({
       form.reset();
       setVisibility("staff_only");
       onAdded("Đã thêm nhận xét.");
-      router.refresh();
+      refreshAfterAction();
     });
   }
 
@@ -798,6 +842,7 @@ function CommentComposer({
 
 function StudentCommentsPanel({ detail }: { detail: GradebookDetail }) {
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
 
   /**
@@ -845,6 +890,7 @@ function StudentCommentsPanel({ detail }: { detail: GradebookDetail }) {
               )}
               {detail.canComment && !detail.isLocked ? (
                 <CommentComposer
+                  classId={detail.classId}
                   enrollmentId={student.enrollmentId}
                   pending={pending}
                   startTransition={startTransition}
@@ -860,30 +906,57 @@ function StudentCommentsPanel({ detail }: { detail: GradebookDetail }) {
   );
 }
 
-function NewLeaderboardForm({ detail }: { detail: GradebookDetail }) {
-  const router = useRouter();
+function NewLeaderboardForm({
+  detail,
+  onCreated,
+}: {
+  detail: GradebookDetail;
+  onCreated: (leaderboard: GradebookLeaderboard) => void;
+}) {
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
   const [sourceType, setSourceType] = useState<LeaderboardSourceType>("assessment");
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
+      const title = String(data.get("title") ?? "");
+      const sourceAssessmentId = sourceType === "assessment"
+        ? String(data.get("sourceAssessmentId") ?? "") || null
+        : null;
       const result = await createLeaderboard({
         classId: detail.classId,
-        title: String(data.get("title") ?? ""),
+        title,
         sourceType,
-        sourceAssessmentId: sourceType === "assessment" ? String(data.get("sourceAssessmentId") ?? "") || null : null,
+        sourceAssessmentId,
       });
       setMessage(result.ok ? { tone: "success", text: "Đã tạo bảng Top 5. Hãy xem trước trước khi công bố." } : { tone: "error", text: result.message });
       if (result.ok) {
+        onCreated({
+          id: result.data.id,
+          title,
+          sourceType,
+          sourceAssessmentId,
+          isPublished: false,
+          publishedAt: null,
+          hasSnapshot: false,
+          supersededCount: 0,
+          entries: [],
+        });
         form.reset();
         setSourceType("assessment");
-        router.refresh();
+        refreshAfterAction();
       }
-    });
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   return (
@@ -921,9 +994,12 @@ function NewLeaderboardForm({ detail }: { detail: GradebookDetail }) {
  *   · *"Chốt lại danh sách"*   — tính lại, bản đang có xuống lịch sử.
  */
 function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; leaderboard: GradebookLeaderboard }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
+  const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
+  const [isPublished, setIsPublished] = useState(leaderboard.isPublished);
+  const [hasSnapshot, setHasSnapshot] = useState(leaderboard.hasSnapshot);
   const [confirming, setConfirming] = useState<"publish" | "delete" | null>(null);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
   // Bản đang giữ hiện ra ngay cả khi đã ẩn: đó chính là thứ người dùng phải
@@ -933,7 +1009,10 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
       ? leaderboard.entries.map((entry) => ({ enrollmentId: entry.enrollmentId, saintName: entry.saintName, fullName: entry.fullName, score: entry.score, rank: entry.rank }))
       : null,
   );
-  const isDraft = !leaderboard.hasSnapshot;
+  useEffect(() => setIsPublished(leaderboard.isPublished), [leaderboard.isPublished]);
+  useEffect(() => setHasSnapshot(leaderboard.hasSnapshot), [leaderboard.hasSnapshot]);
+
+  const isDraft = !hasSnapshot;
 
   function operationInput(data: FormData) {
     return {
@@ -947,11 +1026,16 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
   function previewList(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await previewLeaderboard(operationInput(data));
       setMessage(result.ok ? { tone: "success", text: "Đây là snapshot sẽ được công bố." } : { tone: "error", text: result.message });
       setPreview(result.ok ? result.data : null);
-    });
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   /** M07-C · nợ #1 — chỗ `window.confirm` thứ ba trong bốn. */
@@ -960,43 +1044,73 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
     setConfirming(null);
     setPendingForm(null);
     if (!data) return;
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await publishLeaderboard(operationInput(data));
       setMessage(result.ok ? { tone: "success", text: `Đã công bố ${result.data.count} vị trí.` } : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
-    });
+      if (result.ok) {
+        setIsPublished(true);
+        setHasSnapshot(true);
+        refreshAfterAction();
+      }
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   function unpublish() {
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await unpublishLeaderboard(leaderboard.id);
       setMessage(result.ok
         ? { tone: "success", text: "Đã ẩn Top 5 khỏi cổng phụ huynh. Danh sách vẫn được giữ nguyên." }
         : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
-    });
+      if (result.ok) {
+        setIsPublished(false);
+        refreshAfterAction();
+      }
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   function republish() {
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await republishLeaderboard(leaderboard.id);
       setMessage(result.ok
         ? { tone: "success", text: "Đã hiện lại đúng danh sách đang giữ, không tính lại." }
         : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
-    });
+      if (result.ok) {
+        setIsPublished(true);
+        refreshAfterAction();
+      }
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   function remove() {
     setConfirming(null);
-    startTransition(async () => {
+    setPending(true);
+    void (async () => {
+      try {
       const result = await deleteLeaderboard(leaderboard.id);
       if (!result.ok) {
         setMessage({ tone: "error", text: result.message });
         return;
       }
-      router.refresh();
-    });
+      refreshAfterAction();
+      } finally {
+        setPending(false);
+      }
+    })();
   }
 
   const sourceAssessment = detail.assessments.find((item) => item.id === leaderboard.sourceAssessmentId);
@@ -1015,8 +1129,8 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
               kia thì không, và một cái chưa có gì còn cái kia đang giữ danh
               sách đã công bố cho phụ huynh xem.
             */}
-            <Badge variant={leaderboard.isPublished ? "success" : "outline"}>
-              {leaderboard.isPublished ? "Đã công bố" : isDraft ? "Bản nháp" : "Đã chốt · đang ẩn"}
+            <Badge variant={isPublished ? "success" : "outline"}>
+              {isPublished ? "Đã công bố" : isDraft ? "Bản nháp" : "Đã chốt · đang ẩn"}
             </Badge>
             {leaderboard.supersededCount > 0 ? (
               <Badge variant="secondary">{leaderboard.supersededCount} bản trước trong lịch sử</Badge>
@@ -1025,7 +1139,7 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {leaderboard.isPublished ? (
+        {isPublished ? (
           <div className="flex justify-end">{detail.canManageTop5 ? <Button size="sm" variant="outline" disabled={pending} onClick={unpublish}>Ẩn khỏi cổng</Button> : null}</div>
         ) : detail.canManageTop5 ? (
           <form className="space-y-3" onSubmit={previewList}>
@@ -1113,6 +1227,14 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
 }
 
 function LeaderboardPanel({ detail }: { detail: GradebookDetail }) {
+  const [createdLeaderboards, setCreatedLeaderboards] = useState<GradebookLeaderboard[]>([]);
+  const leaderboards = [
+    ...detail.leaderboards,
+    ...createdLeaderboards.filter(
+      (created) => !detail.leaderboards.some((item) => item.id === created.id),
+    ),
+  ];
+
   return (
     <section className="space-y-4">
       <div>
@@ -1123,16 +1245,22 @@ function LeaderboardPanel({ detail }: { detail: GradebookDetail }) {
         </p>
       </div>
       {!detail.top5Enabled ? <Card><CardContent className="pt-6 text-sm text-muted-foreground">Super Admin chưa bật tính năng Top 5 cho năm học này.</CardContent></Card> : null}
-      {detail.top5Enabled && detail.canManageTop5 ? <NewLeaderboardForm detail={detail} /> : null}
-      {detail.leaderboards.map((leaderboard) => <LeaderboardCard key={leaderboard.id} detail={detail} leaderboard={leaderboard} />)}
-      {detail.top5Enabled && detail.leaderboards.length === 0 ? <Card><CardContent className="pt-6 text-sm text-muted-foreground">Chưa có bảng Top 5.</CardContent></Card> : null}
+      {detail.top5Enabled && detail.canManageTop5 ? (
+        <NewLeaderboardForm
+          detail={detail}
+          onCreated={(leaderboard) => setCreatedLeaderboards((current) => [...current, leaderboard])}
+        />
+      ) : null}
+      {leaderboards.map((leaderboard) => <LeaderboardCard key={leaderboard.id} detail={detail} leaderboard={leaderboard} />)}
+      {detail.top5Enabled && leaderboards.length === 0 ? <Card><CardContent className="pt-6 text-sm text-muted-foreground">Chưa có bảng Top 5.</CardContent></Card> : null}
     </section>
   );
 }
 
 export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
-  const router = useRouter();
+  const refreshAfterAction = useDeferredRefresh(detail.classId);
   const [lockPending, startLockTransition] = useTransition();
+  useGlobalPending(lockPending);
   const [lockMessage, setLockMessage] = useState<Message>(null);
   /**
    * M07-B · D-61 — câu trả lời cho **xóa/ẩn cột**, giữ ở đây chứ không ở thẻ
@@ -1145,11 +1273,6 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
    */
   const [columnMessage, setColumnMessage] = useState<Message>(null);
   const [confirmingLock, setConfirmingLock] = useState<boolean | null>(null);
-  const [mobileAssessmentId, setMobileAssessmentId] = useState(detail.assessments[0]?.id ?? "");
-  const visibleAssessments = mobileAssessmentId
-    ? detail.assessments.filter((item) => item.id === mobileAssessmentId)
-    : detail.assessments;
-
   /** M07-C · nợ #1 — chỗ `window.confirm` **cuối cùng của toàn hệ thống**. */
   function changeLock(nextLocked: boolean) {
     setConfirmingLock(null);
@@ -1158,7 +1281,7 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
       setLockMessage(result.ok
         ? { tone: "success", text: nextLocked ? "Đã khóa bảng điểm." : "Đã mở khóa bảng điểm." }
         : { tone: "error", text: result.message });
-      if (result.ok) router.refresh();
+      if (result.ok) refreshAfterAction();
     });
   }
 
@@ -1233,15 +1356,9 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
         <Card><CardContent className="pt-6 text-sm text-muted-foreground">Lớp chưa tạo cột điểm. Đây là trạng thái hợp lệ; không có cột bắt buộc.</CardContent></Card>
       ) : (
         <section className="space-y-4">
-          <div className="space-y-2 md:hidden">
-            <Label htmlFor="mobile-assessment">Chọn cột điểm để nhập</Label>
-            <select id="mobile-assessment" className={selectClassName} value={mobileAssessmentId} onChange={(event) => setMobileAssessmentId(event.target.value)}>
-              {detail.assessments.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-            </select>
-          </div>
           <h2 className="text-lg font-semibold">Nhập điểm</h2>
           <div className="hidden space-y-4 md:block">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
-          <div className="space-y-4 md:hidden">{visibleAssessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
+          <div className="space-y-4 md:hidden">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
         </section>
       )}
 

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState, type ChangeEvent, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
@@ -18,7 +19,8 @@ import { commitErrorText } from "../commit-errors";
 import type { ImportFeedback } from "../import-feedback";
 import { DUPLICATE_PENDING_FIELD, canMergeInto, type RowAction } from "../row-decision";
 import type { BatchRow } from "../server/queries";
-import { rowEditsFormAction } from "../server/actions";
+import { refreshBatchPage, rowEditsFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Bảng duyệt dòng của một lần nhập — M12-B, **TO-BE 4 + TO-BE 7 / AC-21 · AC-25**.
@@ -96,10 +98,47 @@ export function BatchRowEditor({
   /** Lần nhập đã huỷ thì mọi quyết định đều vô nghĩa — `commit` sẽ từ chối (D-131). */
   batchCancelled: boolean;
 }) {
+  const router = useRouter();
   const [feedback, formAction, pending] = useActionState<ImportFeedback | null, FormData>(
     rowEditsFormAction,
     null,
   );
+  useGlobalPending(pending);
+  const [optimisticResolvedIds, setOptimisticResolvedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  useEffect(() => {
+    if (!feedback?.updatedRowIds?.length) return;
+    setOptimisticResolvedIds((current) => {
+      const next = new Set(current);
+      for (const rowId of feedback.updatedRowIds ?? []) next.add(rowId);
+      return next;
+    });
+  }, [feedback]);
+
+  // Xin dữ liệu Server Component MỚI **sau khi** `useActionState` đã nhận và
+  // công bố kết quả. Revalidate ngay trong response của action thì lượt dựng lại
+  // bị nhét vào chính response ấy và giữ biểu mẫu ở trạng thái "đang chạy" vĩnh
+  // viễn dù cơ sở dữ liệu đã ghi xong.
+  //
+  // 🔴 KHÔNG hẹn giờ trước khi gọi. Bản đầu chờ 250ms rồi mới bắt đầu, mà từ đó
+  // còn **hai** lượt đi–về máy chủ nữa (`refreshBatchPage` rồi `router.refresh`).
+  // Hiệu ứng này vốn đã chạy SAU lượt dựng mang phản hồi — đó chính là điều nó
+  // được sinh ra để bảo đảm — nên 250ms kia không mua thêm gì, chỉ đẩy tổng thời
+  // gian vượt quá cửa sổ chờ mặc định của bài E2E. Đo được: dải cảnh báo cấp
+  // trang (`imports/[batchId]/page.tsx:102`, đếm trong CSDL) vẫn hiện số cũ.
+  useEffect(() => {
+    if (!feedback?.refreshPage) return;
+    let cancelled = false;
+    const refresh = () => {
+      if (!cancelled) router.refresh();
+    };
+    void refreshBatchPage(batchId).then(refresh, refresh);
+    return () => {
+      cancelled = true;
+    };
+  }, [batchId, feedback, router]);
 
   // 🔴 Bản nháp phải **theo kịp máy chủ**. Sau mỗi lượt lưu, `revalidatePath` đưa
   // dòng mới xuống nhưng component không bị dựng lại, nên state cũ sẽ tiếp tục
@@ -200,19 +239,22 @@ export function BatchRowEditor({
           </thead>
 
           {rows.map((row) => {
+            const rowWarnings = optimisticResolvedIds.has(row.id)
+              ? row.warnings.filter((issue) => issue.field !== DUPLICATE_PENDING_FIELD)
+              : row.warnings;
             const status = ROW_STATUS[row.status] ?? {
               label: row.status,
               variant: "outline" as const,
             };
             const editable = isEditable(row, batchCancelled);
-            const undecidedDuplicate = row.warnings.some(
+            const undecidedDuplicate = rowWarnings.some(
               (issue) => issue.field === DUPLICATE_PENDING_FIELD,
             );
             const commitMessage = commitErrorText(row.commitError);
             const matched = row.matchedStudent;
             const hasDetail =
               row.errors.length > 0 ||
-              row.warnings.length > 0 ||
+              rowWarnings.length > 0 ||
               matched !== null ||
               commitMessage !== null;
             const values = draft[row.id] ?? {
@@ -337,9 +379,9 @@ export function BatchRowEditor({
                             </ul>
                           ) : null}
 
-                          {row.warnings.length > 0 ? (
+                          {rowWarnings.length > 0 ? (
                             <ul className="list-disc space-y-1 pl-5 text-sm text-ink-muted">
-                              {row.warnings.map((issue, index) => (
+                              {rowWarnings.map((issue, index) => (
                                 <li key={`${issue.field}-${index}`}>{issue.message}</li>
                               ))}
                             </ul>

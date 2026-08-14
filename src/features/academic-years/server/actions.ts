@@ -135,7 +135,6 @@ export async function setCurrentAcademicYear(input: string): Promise<AcademicAct
       const classified = classifyAcademicYearDbError(error);
       throw new AppError(classified.appCode);
     }
-    revalidatePath("/classes");
     return { ok: true, data: undefined };
   } catch (error) {
     return failure(error, failedFromAppError(error));
@@ -415,6 +414,14 @@ export async function updateSemesterMilestoneFormAction(
   return doneFeedback(
     String(formData.get("semester1EndDate") ?? "") ? "milestone_saved" : "milestone_cleared",
   );
+}
+
+/** Refresh dependent class views only after the form has received feedback. */
+export async function refreshSemesterMilestoneViews(academicYearId: string): Promise<void> {
+  const actor = await academicYearRouteContext();
+  assertAcademicYearAdmin(actor);
+  academicYearIdSchema.parse(academicYearId);
+  revalidatePath("/classes");
 }
 
 /**

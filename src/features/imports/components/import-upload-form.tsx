@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { inputBaseClassName } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
 } from "../limits";
 import type { ClassOption } from "../server/queries";
 import { uploadFormAction } from "../server/actions";
+import { useGlobalLoading, useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Biểu mẫu tải file — M12-A, **TO-BE 1 / AC-13 · AC-14**, đóng lỗi CRITICAL 4.1.
@@ -47,12 +49,25 @@ export function ImportUploadForm({
   yearCode: string;
   classOptions: readonly ClassOption[];
 }) {
+  const router = useRouter();
   const [feedback, formAction, pending] = useActionState<ImportFeedback | null, FormData>(
     uploadFormAction,
     null,
   );
+  useGlobalPending(pending);
   /** Câu chặn của phía trình duyệt. Tách khỏi `feedback` vì lượt gửi không xảy ra. */
   const [localError, setLocalError] = useState<string | null>(null);
+
+  // File tốt thì đi thẳng vào trang của lần nhập vừa tạo. `pending` đã tắt lúc
+  // Server Action trả về, nên lượt tải trang mới là một khoảng chờ KHÔNG có chủ
+  // — phải tự khai báo (`17` §3.4).
+  const { beginNavigation } = useGlobalLoading();
+
+  useEffect(() => {
+    if (!feedback?.navigateTo) return;
+    beginNavigation();
+    router.push(feedback.navigateTo);
+  }, [feedback, router, beginNavigation]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     const field = event.currentTarget.elements.namedItem("file");

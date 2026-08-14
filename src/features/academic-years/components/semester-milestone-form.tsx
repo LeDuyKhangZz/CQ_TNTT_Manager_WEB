@@ -1,12 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateSemesterMilestoneFormAction } from "@/features/academic-years/server/actions";
+import {
+  refreshSemesterMilestoneViews,
+  updateSemesterMilestoneFormAction,
+} from "@/features/academic-years/server/actions";
 import type { AdminFeedback } from "@/features/academic-years/admin-feedback";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Mốc kết thúc học kỳ 1 của một năm học — **D-71**, **D-116**.
@@ -41,7 +45,16 @@ export function SemesterMilestoneForm({
     updateSemesterMilestoneFormAction,
     null,
   );
+  useGlobalPending(pending);
   const inputId = `semester-1-end-${academicYearId}`;
+
+  useEffect(() => {
+    if (!feedback || feedback.tone !== "success") return;
+    const timer = window.setTimeout(() => {
+      void refreshSemesterMilestoneViews(academicYearId);
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [academicYearId, feedback]);
 
   return (
     <form action={formAction} className="space-y-2">

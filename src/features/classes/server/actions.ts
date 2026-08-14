@@ -99,8 +99,11 @@ export async function updateClass(input: UpdateClassInput): Promise<ClassActionR
       };
     }
 
+    // Keep the mutation response small and deterministic. Revalidating the
+    // page that is currently streaming can keep `useActionState` pending on
+    // slower mobile clients. The client asks for the detail refresh only after
+    // it has received and rendered this success feedback.
     revalidatePath("/classes");
-    revalidatePath(`/classes/${parsed.id}`);
     return { ok: true, data: { status: parsed.status } };
   } catch (error) {
     return failure(error, failedFromAppError(error));
@@ -141,4 +144,12 @@ export async function updateClassFormAction(
     notes: String(formData.get("notes") ?? ""),
   } as unknown as UpdateClassInput);
   return result.ok ? classSavedFeedback(classStatusLabel(result.data.status)) : classFailureFeedback(result.failed);
+}
+
+/** Invalidate the class detail only after mutation feedback reached the form. */
+export async function refreshClassPage(classId: string): Promise<void> {
+  const actor = await classRouteContext();
+  assertClassWrite(actor);
+  const parsedId = updateClassSchema.shape.id.parse(classId);
+  revalidatePath(`/classes/${parsedId}`);
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
@@ -9,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CLASS_STATUS_LABELS, classStatusLabel } from "@/features/classes/class-status";
-import { updateClassFormAction } from "@/features/classes/server/actions";
+import { refreshClassPage, updateClassFormAction } from "@/features/classes/server/actions";
 import type { ClassFeedback } from "@/features/classes/class-feedback";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Màn hình "Cài đặt lớp" — TB-F08 / AC-M02-10, I6.
@@ -50,10 +52,12 @@ export function ClassSettingsForm({
   notes: string | null;
   openEnrollmentCount: number;
 }) {
+  const router = useRouter();
   const [feedback, formAction, pending] = useActionState<ClassFeedback | null, FormData>(
     updateClassFormAction,
     null,
   );
+  useGlobalPending(pending);
   const formRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);
   const [open, setOpen] = useState(false);
@@ -62,6 +66,17 @@ export function ClassSettingsForm({
   // trạng thái giao diện thuần, không phải nguồn dữ liệu — giá trị gửi đi vẫn là giá
   // trị của chính thẻ `<select>` trong `FormData`.
   const [selected, setSelected] = useState(status);
+
+  useEffect(() => {
+    if (!feedback || feedback.tone !== "success") return;
+    const timer = window.setTimeout(() => {
+      void refreshClassPage(classId).then(
+        () => router.refresh(),
+        () => router.refresh(),
+      );
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [classId, feedback, router]);
 
   const needsConfirm = selected !== "active" && openEnrollmentCount > 0;
 
