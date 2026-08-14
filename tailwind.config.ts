@@ -145,6 +145,8 @@ const config: Config = {
         dialog: "var(--z-dialog)",
         dropdown: "var(--z-dropdown)",
         toast: "var(--z-toast)",
+        // 09 §12 A3 — màn hình chờ nổi trên mọi thứ, kể cả dialog và toast.
+        loading: "var(--z-loading)",
       },
       transitionDuration: {
         fast: "var(--duration-fast)",

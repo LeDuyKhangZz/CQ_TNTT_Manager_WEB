@@ -17,6 +17,7 @@ import {
 } from "../student-lifecycle";
 import type { StudentFeedback } from "../student-feedback";
 import { setStudentStatusFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Khối "Trạng thái hồ sơ" — M03-C, **TB-F06 / BR-M03-N12·N14 / D-130**.
@@ -58,6 +59,7 @@ export function StudentStatusPanel({
     setStudentStatusFormAction,
     null,
   );
+  useGlobalPending(pending);
 
   const formRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);

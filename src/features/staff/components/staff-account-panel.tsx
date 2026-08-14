@@ -14,6 +14,7 @@ import { Select } from "@/components/ui/select";
 import { CLASS_ROLES, ROLE_LABELS, SECTOR_ROLES, type AppRole } from "@/lib/permissions/roles";
 import { provisionAccountForStaff, assignPrimaryRole } from "@/features/auth/server/actions";
 import { adminResetPassword, adminSetAccountStatus } from "@/features/auth/server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 type ActiveAssignment = {
   classId: string;
@@ -74,6 +75,7 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
   const [sectorId, setSectorId] = useState("");
   const [startsOn, setStartsOn] = useState(activeAssignment?.startsOn ?? todayIso());
   const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
   const [error, setError] = useState<string | null>(null);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);

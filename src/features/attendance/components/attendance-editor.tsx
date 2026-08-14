@@ -36,6 +36,7 @@ import {
 import type { AttendanceRosterEntry, AttendanceStaffEntry } from "../server/queries";
 import { FinalizeConfirmDialog } from "./finalize-confirm-dialog";
 import { RosterRow } from "./roster-row";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 interface AttendanceEditorProps {
   sessionId: string;
@@ -97,6 +98,7 @@ export function AttendanceEditor({
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [summary, setSummary] = useState<FinalizeSummary | null>(null);
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
 
   // U-11 / TB-09 — bộ lọc và ô tìm tên, thuần client.
   const [filter, setFilter] = useState<RosterFilter>("all");

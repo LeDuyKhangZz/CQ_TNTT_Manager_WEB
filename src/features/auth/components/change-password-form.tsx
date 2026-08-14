@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type Resolver } from "react-hook-form";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,7 @@ export function ChangePasswordForm({
       ? { currentPassword: "", password: "", confirmPassword: "" }
       : { password: "", confirmPassword: "" },
   });
+  useGlobalPending(isSubmitting);
 
   async function onSubmit(values: ChangeOwnPasswordInput) {
     setFoundationMessage(null);

@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { BranchChip } from "@/components/theme/branch-chip";
 import { cn } from "@/lib/utils";
 import type { AvailableThemeContext } from "@/lib/theme/types";
@@ -46,6 +47,7 @@ export function ChildSwitcher({
 
   return (
     <form action={action} className={className}>
+      <FormPendingBridge />
       <fieldset>
         <legend className="mb-2 text-xs font-semibold text-ink">{legend}</legend>
 

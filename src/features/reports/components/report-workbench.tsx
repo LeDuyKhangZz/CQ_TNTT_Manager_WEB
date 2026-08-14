@@ -28,6 +28,7 @@ import {
 } from "../filters";
 import { createReportSnapshot } from "../server/actions";
 import type { ReportRow, ReportsPageData } from "../server/queries";
+import { useGlobalLoading, useGlobalPending } from "@/components/loading/loading-provider";
 
 type Message = { tone: "success" | "danger"; text: string } | null;
 
@@ -47,6 +48,10 @@ export function ReportWorkbench({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
+  // Lọc báo cáo là một lần đổi route do MÃ LỆNH gây ra, không đi qua bộ bắt click
+  // của `LoadingProvider` — phải tự báo (`17` §3.4).
+  const { beginNavigation } = useGlobalLoading();
   const [message, setMessage] = useState<Message>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [reportType, setReportType] = useState<ReportType>(data.filter.reportType);
@@ -91,6 +96,7 @@ export function ReportWorkbench({
       scopeType,
       scopeId: scopeType === "global" ? null : String(formData.get("scopeId") ?? "") || null,
     });
+    beginNavigation();
     router.push(`/reports?${params.toString()}`);
   }
 

@@ -12,6 +12,7 @@ import { createStaffFormAction } from "@/features/staff/server/actions";
 import { CREATE_STAFF_INITIAL_STATE } from "@/features/staff/create-form-state";
 import { duplicateReasonLabel, duplicateWarningText } from "@/features/staff/staff-duplicates";
 import { FORMATION_LABELS, SERVICE_LABELS, TITLE_LABELS } from "@/features/staff/staff-directory";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 const TITLE_OPTIONS = Object.entries(TITLE_LABELS);
 const FORMATION_OPTIONS = Object.entries(FORMATION_LABELS);
@@ -22,6 +23,7 @@ const FORMATION_OPTIONS = Object.entries(FORMATION_LABELS);
  */
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
+  useGlobalPending(pending);
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending ? "Đang lưu…" : label}

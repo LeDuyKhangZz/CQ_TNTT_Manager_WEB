@@ -14,6 +14,7 @@ import {
   endClassStaffAssignment,
   transferClassStaff,
 } from "@/features/staff/server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 const CAPACITY_LABELS: Record<string, string> = {
   representative: "Giáo lý viên đại diện",
@@ -92,6 +93,7 @@ function defaultDateFrom(startsOn: string | undefined): string {
 export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 

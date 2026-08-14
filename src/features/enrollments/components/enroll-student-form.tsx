@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import type { EnrollmentFeedback } from "../enrollment-feedback";
 import { enrollStudentFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Biểu mẫu ghi danh — M03-A, TB-F14 / BR-M03-N10.
@@ -34,6 +35,7 @@ export function EnrollStudentForm({
     enrollStudentFormAction,
     null,
   );
+  useGlobalPending(pending);
 
   return (
     <form action={formAction} className="space-y-3">

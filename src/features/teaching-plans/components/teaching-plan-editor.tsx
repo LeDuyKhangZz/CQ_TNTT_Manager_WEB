@@ -46,6 +46,7 @@ import {
   uploadTeachingMaterial,
 } from "../server/actions";
 import type { TeachingPlanDetail, TeachingPlanItem, TeachingPlanStaffOption } from "../server/queries";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 type Message = { tone: "success" | "error"; text: string } | null;
 
@@ -422,6 +423,7 @@ function ItemForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
   /**
    * 🔴 Từ M06-A, ngày dự kiến và người dạy là **state có kiểm soát** (TB-M06-03
@@ -501,6 +503,7 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
   /** Hộp xác nhận nào đang mở. Hai thao tác phá huỷ, không bao giờ cùng lúc. */
   const [confirming, setConfirming] = useState<"item" | "material" | null>(null);
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
   const fileInputId = useId();
   /**
@@ -782,6 +785,7 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
 export function TeachingPlanEditor({ detail, view }: { detail: TeachingPlanDetail; view: "list" | "calendar" }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
   const [adding, setAdding] = useState(false);
   const groups = useMemo(() => {

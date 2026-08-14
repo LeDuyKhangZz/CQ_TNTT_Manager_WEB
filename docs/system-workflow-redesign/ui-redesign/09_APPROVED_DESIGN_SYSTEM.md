@@ -348,3 +348,74 @@ Luôn **nêu tên phạm vi cụ thể**, lấy từ `ThemeContext.branchName` v
 | Mặc định "Có mặt", chỉ sửa ngoại lệ ở điểm danh | Là lý do luồng này nhanh |
 | Không hiển thị mã thiếu nhi ở danh sách | `AGENTS.md` §8 |
 | 16 điểm mạnh ở `04_SYSTEM_WIDE_FINDINGS.md` | Toàn bộ |
+
+---
+
+## 12. Sửa đổi 2026-08 (kế hoạch 17) — **chủ dự án duyệt 2026-08-14**
+
+> **Đây là phần BỔ SUNG, không ghi đè §1–§11.** Mọi điều ở trên vẫn nguyên giá trị:
+> bảng màu ngành, 12 điểm theme, tầng pastel, mười điều cấm, danh sách KHÔNG ĐƯỢC ĐỤNG.
+> Nguồn: `17_UI_POLISH_PLAN.md` §2, duyệt bằng lệnh *"làm theo kế hoạch 17"* của chủ dự án.
+> Task triển khai: `P3-UI-001`.
+
+### A1 — `Select` nâng cấp thành listbox tự dựng, theo lối **tăng tiến**
+
+Điều *"Form dùng `<form action={serverAction}>` không cần JS"* ở §11 được **nới**, không bỏ:
+
+| Thời điểm | Cái gì được render | Form còn chạy không JS? |
+|---|---|---|
+| Trước hydration (và khi tắt JS) | `<select>` native đã styled — **y như hiện tại** | ✅ Có |
+| Sau hydration | Nút trigger + listbox tự vẽ + `<input type="hidden" name>` | ✅ Có (hidden input mang giá trị) |
+
+Điều cấm §10.9 (*không `<select>` native **mới***) **giữ nguyên**: mọi ô chọn mới vẫn phải đi
+qua `Select`. Ghi chú *"cần chủ dự án xác nhận"* ở đầu `src/components/ui/select.tsx` được trả
+lời bằng chính mục này.
+
+### A2 — Bốn component mới vào danh sách §8
+
+| Component | Nhóm | Ghi chú |
+|---|---|---|
+| `DateField` | 1 (chặn module) | Thay 30 ô `<input type="date">` native |
+| `DateTimeField` | 1 | Thay 3 ô `<input type="datetime-local">` |
+| `Checkbox` | 1 | Vẫn là `<input type="checkbox">` thật, chỉ style bằng CSS phủ |
+| `LoadingOverlay` | 2 | Kèm `LoadingProvider` + `FormPendingBridge` |
+
+`FilterField` **không** là component thứ năm — nó là phần con của `FilterBar` đã có ở §8 nhóm 2.
+
+### A3 — Z-index thêm **một** tầng
+
+```css
+--z-loading: 90;   /* trên --z-toast: 80 */
+```
+
+Lý do: overlay chờ phải nổi trên **mọi thứ**, kể cả dialog (60) đang mở và toast (80) đang hiện —
+nếu không, người dùng bấm được vào thứ nằm dưới trong lúc máy chủ chưa trả lời. Đây là **tầng
+cuối cùng** của thang; không mở thêm tầng thứ mười hai.
+
+### A4 — Motion: thêm loại chuyển động **thứ tư** — "loading"
+
+§6 hiện cho **3 loại** (hiện/ẩn 150ms · trượt drawer 200ms · nhấn nút 100ms). Thêm:
+
+| Chuyển động | Thông số |
+|---|---|
+| Ảnh trong overlay lắc lư nhẹ | vòng lặp **2,5s** `ease-in-out`, biên độ nhỏ (±3° / ±4px) |
+| Ba chấm nhún | lệch pha 160ms, cùng chu kỳ |
+| Overlay hiện/ẩn | **150ms** — dùng lại `--duration-base`, không phải giá trị mới |
+
+`prefers-reduced-motion: reduce` → **ảnh đứng yên**, ba chấm chỉ đổi `opacity`. Đây là loại
+chuyển động duy nhất chạy vòng lặp; nó chỉ tồn tại khi overlay đang hiện, và overlay **unmount
+hẳn** khi ẩn.
+
+### A5 — **Không** mở rộng thang radius/shadow
+
+`(auth)/layout.tsx` đang dùng `rounded-2xl` + `shadow-xl` — cả hai đều **ngoài thang** §5
+(4 mức bo: 8/12/16/20px · **2 mức bóng**). Sửa về `rounded-xl` (20px) + `shadow-md`.
+Nguyên tắc "2 mức bóng, 4 mức bo" **không đổi**.
+
+### Điều KHÔNG đổi trong lần bổ sung này
+
+Bảng màu ngành §4 (kể cả hai ngoại lệ Nghĩa Sĩ) · quy tắc chữ trên nền màu §4.3 · **12 nơi được
+dùng `--theme-*`** §4.4 · typography §2 · mười điều cấm §10 · danh sách KHÔNG ĐƯỢC ĐỤNG §11.
+Riêng LoadingOverlay: ba chấm nhún dùng `--theme-primary` — đó là **điểm #8 "chuỗi biểu đồ"**?
+**Không.** Nó là một tín hiệu tiến trình, và tiến trình đã có `Progress` ở §8 nhóm 2 dùng
+`--theme-primary` từ trước; overlay dùng lại đúng token của `Progress`, không mở điểm thứ mười ba.

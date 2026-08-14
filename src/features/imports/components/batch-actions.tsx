@@ -10,6 +10,7 @@ import {
   commitFormAction,
   purgeRawFormAction,
 } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Ba thao tác của một lần nhập — M12-A, **TO-BE 1 + TO-BE 3**, đóng lỗi
@@ -41,6 +42,7 @@ function useConfirmedForm(action: FormAction) {
     action,
     null,
   );
+  useGlobalPending(pending);
   const formRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);
   const [open, setOpen] = useState(false);

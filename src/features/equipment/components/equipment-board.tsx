@@ -36,6 +36,7 @@ import type {
   EquipmentItemRow,
   EquipmentLoanRow,
 } from "../server/queries";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 type Message = { tone: "success" | "danger"; text: string } | null;
 type ActionTask = () => Promise<{ ok: boolean; message?: string }>;
@@ -570,6 +571,7 @@ export function EquipmentBoard({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
   const [confirm, setConfirm] = useState<ConfirmRequest>(null);
 

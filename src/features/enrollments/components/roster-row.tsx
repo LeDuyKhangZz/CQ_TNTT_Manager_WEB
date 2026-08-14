@@ -16,6 +16,7 @@ import {
 } from "../enrollment-status";
 import type { EnrollmentFeedback } from "../enrollment-feedback";
 import { enrollmentRowFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Một dòng trong danh sách thiếu nhi của lớp — M03-A, TB-F10 / AC-F10-01…03.
@@ -82,6 +83,7 @@ export function RosterRow({
     enrollmentRowFormAction,
     null,
   );
+  useGlobalPending(pending);
 
   const closeFormRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);

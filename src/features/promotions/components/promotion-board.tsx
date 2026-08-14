@@ -53,6 +53,7 @@ import {
   transferEnrollmentNow,
 } from "../server/actions";
 import type { PromotionRosterItem, PromotionTargetOption } from "../server/queries";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 type Message = { tone: "success" | "error"; text: string } | null;
 
@@ -160,6 +161,7 @@ function PromotionDetailPanel({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [status, setStatus] = useState<PromotionProposalStatus>(item.review?.proposedStatus ?? "recommended_promote");
   const [trainee, setTrainee] = useState(item.review?.proposeTrainee ?? false);
   const [message, setMessage] = useState<Message>(null);
@@ -741,6 +743,7 @@ function PromotionBatchBar({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [status, setStatus] = useState<PromotionProposalStatus>("recommended_promote");
   const [targetClassId, setTargetClassId] = useState("");
   const [message, setMessage] = useState<Message>(null);

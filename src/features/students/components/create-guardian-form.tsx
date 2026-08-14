@@ -10,6 +10,7 @@ import {
   CREATE_GUARDIAN_INITIAL_STATE,
   type CreateGuardianFormState,
 } from "../create-student-form-state";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Biểu mẫu "Thêm người giám hộ" — M03-A (TB-F14) và M03-B (BR-M03-N09).
@@ -32,6 +33,7 @@ export function CreateGuardianForm() {
     createGuardianFormAction,
     CREATE_GUARDIAN_INITIAL_STATE,
   );
+  useGlobalPending(pending);
   const { values, feedback, duplicates } = state;
   const showingDuplicates = duplicates.length > 0;
 

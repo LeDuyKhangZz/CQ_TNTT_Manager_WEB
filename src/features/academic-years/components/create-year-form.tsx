@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createAcademicYearFormAction } from "@/features/academic-years/server/actions";
 import { CREATE_YEAR_INITIAL_STATE } from "@/features/academic-years/create-year-form-state";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  useGlobalPending(pending);
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending ? "Đang tạo…" : "Tạo năm học nháp"}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
 import type { AdminFeedback } from "@/features/academic-years/admin-feedback";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Một biểu mẫu-một-nút có hộp xác nhận và có nói kết quả, **vẫn chạy khi chưa có
@@ -55,6 +56,7 @@ export function ConfirmSubmitForm({
     action,
     null,
   );
+  useGlobalPending(pending);
   const formRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);
   const [open, setOpen] = useState(false);

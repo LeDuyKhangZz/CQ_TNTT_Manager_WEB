@@ -118,6 +118,10 @@
   --z-dialog: 60;
   --z-dropdown: 70;
   --z-toast: 80;
+  /* 09 §12 A3 (kế hoạch 17). Tầng CUỐI CÙNG của thang — màn hình chờ phải nổi
+     trên cả dialog đang mở lẫn toast đang hiện, nếu không người dùng bấm được
+     vào thứ nằm dưới trong lúc máy chủ chưa trả lời. Không mở tầng thứ mười hai. */
+  --z-loading: 90;
 
   /* ---------- Motion (09 §5) — chỉ 3 loại chuyển động ------------------- */
   --duration-fast: 100ms; /* nhấn nút */
@@ -217,5 +221,66 @@
       background-color var(--duration-slow) var(--ease-out),
       border-color var(--duration-slow) var(--ease-out),
       color var(--duration-slow) var(--ease-out);
+  }
+
+  /* ======================================================================
+     Chuyển động LOẠI THỨ TƯ — "loading" (09 §12 A4, kế hoạch 17 §3.2).
+     Đây là loại duy nhất chạy VÒNG LẶP, và nó chỉ tồn tại khi màn hình chờ
+     đang hiện; overlay ẩn thì unmount hẳn nên không có animation nào chạy
+     ngầm. Biên độ cố ý nhỏ: "cute" chứ không phải nhấp nháy gây mệt mắt.
+     ====================================================================== */
+  .loading-bob {
+    animation: loading-bob 2500ms ease-in-out infinite;
+  }
+
+  .loading-dot {
+    animation: loading-dot 1200ms ease-in-out infinite;
+  }
+}
+
+@keyframes loading-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(3deg);
+  }
+}
+
+@keyframes loading-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+/* `prefers-reduced-motion` (09 §12 A4): ảnh ĐỨNG YÊN hoàn toàn, ba chấm chỉ
+   đổi độ mờ. Không tắt sạch hiệu ứng của ba chấm — chúng là tín hiệu duy nhất
+   nói "máy vẫn đang chạy", mà tín hiệu đứng im thì không còn là tín hiệu. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-bob {
+    animation: none;
+  }
+
+  .loading-dot {
+    animation: loading-dot-fade 1600ms ease-in-out infinite;
+  }
+
+  @keyframes loading-dot-fade {
+    0%,
+    80%,
+    100% {
+      opacity: 0.4;
+    }
+    40% {
+      opacity: 1;
+    }
   }
 }

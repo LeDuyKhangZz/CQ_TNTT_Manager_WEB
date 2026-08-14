@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { guardianPanelFormAction } from "@/features/guardians/server/actions";
 import { guardianChangeConsequence, type StudentFeedback } from "../student-feedback";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 export interface GuardianOption {
   id: string;
@@ -54,6 +55,7 @@ export function GuardianPanel({
     guardianPanelFormAction,
     null,
   );
+  useGlobalPending(pending);
 
   const changeFormRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);

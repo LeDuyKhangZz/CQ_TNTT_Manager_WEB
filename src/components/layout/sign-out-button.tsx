@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 // KHÔNG nhập từ `@/components/ui/dropdown` — file đó là `"use client"`, và
 // `SignOutButton` nay còn được dựng ở phía máy chủ (trang `/account`).
 import { dropdownItemClassName } from "@/components/ui/dropdown-item";
+import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { signOutAction } from "@/features/auth/server/actions";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,8 @@ export function SignOutButton({
     // phải là `menuitem`, một `<form>` chen vào giữa sẽ cắt quan hệ đó. Bỏ vai
     // trò của form đi thì nút bên trong lại là con trực tiếp của menu.
     <form action={signOutAction} role={inMenu ? "none" : undefined}>
+      {/* Không render gì, nên không cắt quan hệ `menu` → `menuitem` ở trên. */}
+      <FormPendingBridge />
       <button
         type="submit"
         data-dropdown-item={inMenu ? "true" : undefined}

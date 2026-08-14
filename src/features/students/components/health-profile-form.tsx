@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { StudentFeedback } from "../student-feedback";
 import { saveHealthProfileFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Hồ sơ sức khỏe — M03-A, TB-F14.
@@ -36,6 +37,7 @@ export function HealthProfileForm({
     saveHealthProfileFormAction,
     null,
   );
+  useGlobalPending(pending);
 
   return (
     <form action={formAction} className="space-y-3">

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { COMMITTEE_POSITION_LABELS } from "../constants";
 import { createCommittee } from "../server/actions";
 import type { CommitteeSummary } from "../server/queries";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 type Message = { tone: "success" | "danger"; text: string } | null;
 
@@ -77,6 +78,7 @@ export function CommitteeList({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
   const [showForm, setShowForm] = useState(false);
 

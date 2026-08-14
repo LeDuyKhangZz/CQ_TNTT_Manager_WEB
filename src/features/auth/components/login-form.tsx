@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,9 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
     resolver: zodResolver(loginSchema),
     defaultValues: { username: "", password: "" },
   });
+  // Đăng nhập gọi Server Action rồi tải lại cả trang bằng `location.assign` —
+  // hai lượt chờ nối nhau và không lượt nào chạy `loading.tsx` (`17` §3.2).
+  useGlobalPending(isSubmitting);
 
   async function onSubmit(values: LoginValues) {
     setSubmissionError(null);

@@ -8,6 +8,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { deleteStaffProfile } from "@/features/staff/server/actions";
+import { useGlobalLoading, useGlobalPending } from "@/components/loading/loading-provider";
 
 export interface StaffDeletePanelProps {
   staffId: string;
@@ -39,6 +40,8 @@ export function StaffDeletePanel(props: StaffDeletePanelProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
+  const { beginNavigation } = useGlobalLoading();
   const [error, setError] = useState<string | null>(null);
   const [confirmName, setConfirmName] = useState("");
 
@@ -59,7 +62,10 @@ export function StaffDeletePanel(props: StaffDeletePanelProps) {
         return;
       }
       // Hồ sơ không còn nữa nên ở lại trang này là ở lại một trang 404. Về danh
-      // sách và mang theo câu thông báo nêu đúng ai vừa bị xoá.
+      // sách và mang theo câu thông báo nêu đúng ai vừa bị xoá. `pending` tắt
+      // ngay ở `finally` nên nếu không báo điều hướng, màn hình chờ sẽ biến mất
+      // đúng lúc lượt tải trang danh sách bắt đầu — tức là đúng lúc còn phải chờ.
+      beginNavigation();
       router.replace(
         `/staff?deleted=${encodeURIComponent(`${result.data.staffCode} · ${result.data.fullName}`)}`,
       );

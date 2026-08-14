@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
+import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { AttendanceEditor } from "@/features/attendance/components/attendance-editor";
@@ -64,6 +65,7 @@ export default async function AttendanceSessionPage({
           </div>
           {detail.canUnlock ? (
             <form action={unlockAttendanceSessionFromForm}>
+              <FormPendingBridge />
               <input type="hidden" name="sessionId" value={detail.id} />
               <Button type="submit" variant="outline" size="sm">Mở khóa</Button>
             </form>

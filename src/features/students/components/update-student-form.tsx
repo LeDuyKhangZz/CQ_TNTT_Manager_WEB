@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { GENDER_LABELS } from "../student-status";
 import type { StudentFeedback } from "../student-feedback";
 import { updateStudentFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Biểu mẫu "Cập nhật hồ sơ" — M03-A (TB-F14 / BR-M03-N11), **sửa lại ở M03-C**.
@@ -49,6 +50,7 @@ export function UpdateStudentForm({
     updateStudentFormAction,
     null,
   );
+  useGlobalPending(pending);
 
   return (
     <form action={formAction} className="space-y-3">

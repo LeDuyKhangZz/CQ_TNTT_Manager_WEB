@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateAttendanceSettingsFormAction } from "@/features/academic-years/server/actions";
 import type { AdminFeedback } from "@/features/academic-years/admin-feedback";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  useGlobalPending(pending);
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending ? "Đang lưu…" : "Lưu cấu hình"}

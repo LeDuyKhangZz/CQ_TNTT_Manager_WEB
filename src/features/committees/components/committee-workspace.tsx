@@ -34,6 +34,7 @@ import {
 } from "../server/actions";
 import type { CommitteeDetail, CommitteeMeeting, CommitteeMember } from "../server/queries";
 import { WeeklyPlanEditor, type WeeklyPlanDraft } from "./weekly-plan-editor";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 type ActionResult = { ok: boolean; message?: string };
 type RunOptions = { form?: HTMLFormElement; onError?: () => void; onSuccess?: () => void };
@@ -68,6 +69,7 @@ export function CommitteeWorkspace({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
   const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
 

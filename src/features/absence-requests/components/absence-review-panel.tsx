@@ -13,6 +13,7 @@ import { MEETING_TYPE_LABELS } from "@/features/attendance/constants";
 import type { PendingAbsenceRequest } from "@/features/attendance/server/queries";
 import { formatDateVi } from "@/lib/dates";
 import { acknowledgeAbsenceRequest } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * TB-06 / AC-F13-1 · AC-F13-2 — màn hình Giáo lý viên cho đơn xin nghỉ.
@@ -41,6 +42,7 @@ export function AbsenceReviewPanel({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
 
   const acknowledge = useCallback(
     (request: PendingAbsenceRequest) => {

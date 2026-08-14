@@ -26,6 +26,8 @@ import {
   adminSetPassword,
   adminUpdateUsername,
 } from "../server/actions";
+import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Q4 (D-103): giao diện chỉ đặt được active/disabled. Dữ liệu cũ còn 'locked' thì
@@ -59,6 +61,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
   const [deleteTarget, setDeleteTarget] = useState<AccountSummary | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deletePending, setDeletePending] = useState(false);
+  useGlobalPending(deletePending);
 
   const filtered = useMemo(
     () => filterAccounts(options.accounts, { search, role: roleFilter, status: statusFilter }),
@@ -182,6 +185,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
             phân công nên không phải gõ lại.
           </p>
           <form action={provision} className="space-y-4">
+            <FormPendingBridge />
             <div className="space-y-2">
               <Label htmlFor="account-role">Vai trò</Label>
               <Select

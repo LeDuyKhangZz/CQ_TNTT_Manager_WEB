@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import { LoadingProvider } from "@/components/loading/loading-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { NotificationButton } from "@/components/layout/notification-button";
@@ -10,6 +11,7 @@ import { getCurrentAcademicYear } from "@/features/academic-years/server/queries
 import { requireAuthContext } from "@/lib/auth/guards";
 import { DEFAULT_AFTER_LOGIN_PATH, REQUEST_PATH_HEADER } from "@/lib/auth/login-redirect";
 import { toShellViewer } from "@/lib/auth/types";
+import { getLoadingAssets } from "@/lib/loading/assets";
 import { resolveThemeContext } from "@/lib/theme/resolve-theme-context";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -35,27 +37,37 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // đúng là lỗi mà `10` §5 cấm.
   const theme = await resolveThemeContext({ scope: { kind: "PERSONAL" } });
 
+  // Màn hình chờ toàn cục — `17` §3.2, `09` §12 A3/A4. Đặt TRONG `ThemeScope` để
+  // ba chấm nhún ăn đúng màu ngành của người đang đăng nhập, và NGOÀI `AppShell`
+  // để lớp phủ là anh em của cả cái vỏ chứ không nằm lọt trong `<main>` — nằm
+  // trong `<main>` thì nó không che nổi sidebar và thanh dưới.
+  const loadingAssets = await getLoadingAssets();
+
   return (
     <ThemeScope theme={theme} className="min-h-screen">
-      <AppShell
-        viewer={toShellViewer(authContext)}
-        academicYear={academicYear}
-        // M14 A-16 — truy vấn đếm chưa đọc KHÔNG còn nằm trên đường tới hạn của
-        // mọi điều hướng. Nút chuông đi ra cùng phần vỏ, con số chảy về sau.
-        // `AppShell` là client component nhưng vẫn nhận được nút này vì nó được
-        // dựng ở đây (server) rồi truyền xuống dưới dạng prop `ReactNode`.
-        notificationBell={
-          <Suspense fallback={<NotificationButton />}>
-            <NotificationBell />
-          </Suspense>
-        }
-        // Hai node dưới đây cũng dựng ở máy chủ vì cả hai đọc `ThemeContext` —
-        // truyền nguyên đối tượng đó xuống client là đi ngược lại NC-5.
-        contextIndicator={<ContextIndicator theme={theme} />}
-        unassignedBanner={<UnassignedBanner theme={theme} className="mx-4 mt-4 sm:mx-6 lg:mx-8" />}
-      >
-        {children}
-      </AppShell>
+      <LoadingProvider images={loadingAssets.images} verses={loadingAssets.verses}>
+        <AppShell
+          viewer={toShellViewer(authContext)}
+          academicYear={academicYear}
+          // M14 A-16 — truy vấn đếm chưa đọc KHÔNG còn nằm trên đường tới hạn của
+          // mọi điều hướng. Nút chuông đi ra cùng phần vỏ, con số chảy về sau.
+          // `AppShell` là client component nhưng vẫn nhận được nút này vì nó được
+          // dựng ở đây (server) rồi truyền xuống dưới dạng prop `ReactNode`.
+          notificationBell={
+            <Suspense fallback={<NotificationButton />}>
+              <NotificationBell />
+            </Suspense>
+          }
+          // Hai node dưới đây cũng dựng ở máy chủ vì cả hai đọc `ThemeContext` —
+          // truyền nguyên đối tượng đó xuống client là đi ngược lại NC-5.
+          contextIndicator={<ContextIndicator theme={theme} />}
+          unassignedBanner={
+            <UnassignedBanner theme={theme} className="mx-4 mt-4 sm:mx-6 lg:mx-8" />
+          }
+        >
+          {children}
+        </AppShell>
+      </LoadingProvider>
     </ThemeScope>
   );
 }

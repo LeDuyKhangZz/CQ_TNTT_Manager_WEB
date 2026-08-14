@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
+import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { assignStaffFromForm } from "@/features/staff/server/actions";
@@ -230,7 +231,7 @@ export default async function StaffPage({
 
           <Card>
             <CardHeader><CardTitle>Phân công vào lớp</CardTitle><CardDescription>Muốn đổi lớp mà giữ tài khoản thì mở hồ sơ và dùng &ldquo;Chuyển lớp&rdquo;.</CardDescription></CardHeader>
-            <CardContent><form action={assignStaffFromForm} className="space-y-3">
+            <CardContent><form action={assignStaffFromForm} className="space-y-3"><FormPendingBridge />
               <div className="space-y-2">
                 <Label htmlFor="assign-staff">Nhân sự</Label>
                 {/* Liệt kê TOÀN BỘ danh sách, không phải trang đang xem — xem ghi

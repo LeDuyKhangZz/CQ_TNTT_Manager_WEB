@@ -6,6 +6,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { AbsenceReviewPanel } from "@/features/absence-requests/components/absence-review-panel";
@@ -77,6 +78,9 @@ export default async function AttendancePage({
               </p>
             ) : (
               <form action={openAttendanceSessionFromForm} className="space-y-3">
+                {/* Biểu mẫu không cần JS: `useActionState` không có ở đây nên
+                    chỉ cầu nối này biết được lượt gửi đang chạy (`17` §3.4). */}
+                <FormPendingBridge />
                 {/* M05-C: hai ô chọn trần CUỐI của module sang `Select` (D-80),
                     đúng khuôn M12-A và M02-B đã làm cho module của họ. `Select`
                     bọc một `<select>` native nên biểu mẫu vẫn gửi được khi

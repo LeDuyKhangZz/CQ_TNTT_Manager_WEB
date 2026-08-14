@@ -15,6 +15,7 @@ import {
   type CreateStudentFormState,
 } from "../create-student-form-state";
 import { createStudentFormAction } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Biểu mẫu "Thêm thiếu nhi" — M03-A (TB-F14) và M03-B (TB-F13, TB-F02/F09, D-123).
@@ -50,6 +51,7 @@ export function CreateStudentForm({
     createStudentFormAction,
     CREATE_STUDENT_INITIAL_STATE,
   );
+  useGlobalPending(pending);
   const { values, feedback, duplicates } = state;
   const showingDuplicates = duplicates.length > 0;
 

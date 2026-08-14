@@ -13,6 +13,7 @@ import {
   SERVICE_LABELS,
   TITLE_LABELS,
 } from "@/features/staff/staff-directory";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 // Cùng một bảng nhãn với danh sách và trang chi tiết (M04-B). Ba bản sao trước
 // đây đã lệch thật: ô này ghi "Chưa có" trong khi danh sách in `NONE`.
@@ -37,6 +38,7 @@ export type StaffProfileEditorProps = {
 export function StaffProfileEditor(props: StaffProfileEditorProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  useGlobalPending(pending);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 

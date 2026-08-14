@@ -17,6 +17,7 @@ import type { PortalAbsenceRequest, PortalChild } from "@/features/portal/server
 import type { PortalChildrenStatus } from "@/features/portal/status";
 import { ABSENCE_REQUEST_STATUS_LABELS } from "../schemas";
 import { cancelAbsenceRequest, createAbsenceRequest } from "../server/actions";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 /**
  * Gửi/hủy đơn chạy qua client component thay vì `<form action={serverAction}>`.
@@ -51,6 +52,7 @@ export function AbsenceRequestPanel({
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  useGlobalPending(pending);
 
   const submit = useCallback(() => {
     setError(null);

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { closeAcademicYearFormAction } from "@/features/academic-years/server/actions";
 import type { AdminFeedback } from "@/features/academic-years/admin-feedback";
 import { openWorkPhrases, type AcademicYearOpenWork } from "@/features/academic-years/year-lifecycle";
+import { useGlobalPending } from "@/components/loading/loading-provider";
 
 export interface CloseYearPanelProps {
   academicYearId: string;
@@ -50,6 +51,7 @@ export function CloseYearPanel({ academicYearId, code, name, openWork }: CloseYe
     closeAcademicYearFormAction,
     null,
   );
+  useGlobalPending(pending);
   const formRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);
   const [open, setOpen] = useState(false);
