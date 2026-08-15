@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx supabase:*)",
+      "Bash(npx supabase *)",
+      "PowerShell(npx supabase:*)",
+      "PowerShell(npx supabase *)",
+      "Bash(npm run db:reset*)",
+      "Bash(npm run seed:dev*)",
+      "Bash(npm run test:db*)",
+      "PowerShell(npm run db:reset*)",
+      "PowerShell(npm run seed:dev*)",
+      "PowerShell(npm run test:db*)"
+    ]
+  }
+}
