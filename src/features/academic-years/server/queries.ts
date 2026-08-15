@@ -1,7 +1,7 @@
 import "server-only";
 
-import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAcademicYearRow } from "@/lib/academic-year/current-year";
 import { requireAuthContext } from "@/lib/auth/guards";
 import type { Tables } from "@/types/database";
 import { parseOpenWork } from "../db-errors";
@@ -74,18 +74,13 @@ export type CurrentAcademicYear = Pick<Tables<"academic_years">, "id" | "code" |
  *
  * `cache()` để vỏ ứng dụng chỉ tốn 1 truy vấn/request, cùng khuôn mẫu với
  * `getAuthContext` và `resolveThemeContext` (10 §7).
+ *
+ * 🔴 P3-PERF-001 — thân hàm đã dời sang `lib/academic-year/current-year.ts`.
+ * Tầng theme hỏi **đúng câu hỏi này** bằng một hàm `cache()` khác, nên trước đây
+ * mỗi lần vào trang tốn 2–3 lượt gọi cho cùng một dòng. `cache()` chỉ gộp được
+ * các lượt gọi **cùng một hàm**; muốn gộp thì phải cùng một hàm thật.
  */
-export const getCurrentAcademicYear = cache(
-  async (): Promise<CurrentAcademicYear | null> => {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("academic_years")
-      .select("id, code, name")
-      .eq("status", "current")
-      .maybeSingle();
-    return data ?? null;
-  },
-);
+export const getCurrentAcademicYear = getCurrentAcademicYearRow;
 
 /**
  * Bảng kiểm tiền điều kiện trước khi chốt sổ — **I7 / WF-16 bước 1–3**.

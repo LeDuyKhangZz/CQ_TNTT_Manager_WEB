@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAcademicYearRow } from "@/lib/academic-year/current-year";
 import { getAuthContext } from "@/lib/auth/session";
 import { GLOBAL_ROLES, SECTOR_ROLES } from "@/lib/permissions/roles";
 import {
@@ -73,15 +74,6 @@ function toClassFact(row: ClassRow | null): ClassFact | null {
 }
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
-
-async function loadCurrentAcademicYear(supabase: Supabase) {
-  const { data } = await supabase
-    .from("academic_years")
-    .select("id, code")
-    .eq("status", "current")
-    .maybeSingle();
-  return data ?? null;
-}
 
 async function loadClass(
   supabase: Supabase,
@@ -203,28 +195,38 @@ async function loadStaffViewer(
 ): Promise<ViewerFacts> {
   const today = todayInVietnam();
 
-  const { data: roleRow } = await supabase
-    .from("role_assignments")
-    .select("role, sector_id, class_id, is_active, starts_on, ends_on")
-    .eq("profile_id", profileId)
-    .eq("is_active", true)
-    .is("ends_on", null)
-    .lte("starts_on", today)
-    .maybeSingle();
+  // 🔴 P3-PERF-001 — BA ĐỢT, không phải năm lượt nối đuôi.
+  //
+  // Bản cũ `await` liên tiếp năm truy vấn, mà chỉ **hai** ràng buộc thứ tự là
+  // có thật: `class_staff_assignments` cần `staff_profiles.id`, còn `classes`
+  // và `sectors` cần `role_assignments`. Ba lượt kia chờ nhau **không vì lý do
+  // gì**. Ở máy nhà mỗi lượt là 2ms nên không ai thấy; trên Vercel mỗi lượt là
+  // một vòng đi–về sang Supabase, và chuỗi ấy là phần lớn cái lag người dùng
+  // báo. Vị ngữ, thứ tự sắp xếp và mọi phép lọc dưới đây giữ **nguyên văn** —
+  // đây là phép xếp lại lịch chạy, không phải phép đổi truy vấn.
+  const [{ data: roleRow }, { data: staffProfile }] = await Promise.all([
+    supabase
+      .from("role_assignments")
+      .select("role, sector_id, class_id, is_active, starts_on, ends_on")
+      .eq("profile_id", profileId)
+      .eq("is_active", true)
+      .is("ends_on", null)
+      .lte("starts_on", today)
+      .maybeSingle(),
+    supabase
+      .from("staff_profiles")
+      .select("id, service_status")
+      .eq("profile_id", profileId)
+      .maybeSingle(),
+  ]);
 
   const role = roleRow && isEffectiveAssignment(roleRow) ? roleRow : null;
-
-  const { data: staffProfile } = await supabase
-    .from("staff_profiles")
-    .select("id, service_status")
-    .eq("profile_id", profileId)
-    .maybeSingle();
 
   // Điều kiện 5 của 10 §4. `staff_service_status` không có 'archived';
   // 'inactive' là trạng thái nghỉ hẳn. 'paused' vẫn giữ ngành — cùng lý lẽ với
   // ghi danh `paused`: người đó vẫn thuộc lớp, chỉ tạm nghỉ.
-  let classAssignment: ClassFact | null = null;
-  if (staffProfile && staffProfile.service_status !== "inactive") {
+  const loadClassAssignment = async (): Promise<ClassFact | null> => {
+    if (!staffProfile || staffProfile.service_status === "inactive") return null;
     const { data: assignments } = await supabase
       .from("class_staff_assignments")
       .select(`class_id, is_active, starts_on, ends_on, classes(${CLASS_SELECT})`)
@@ -240,22 +242,19 @@ async function loadStaffViewer(
     const row = (assignments ?? [])[0] as
       | { is_active: boolean; starts_on: string; ends_on: string | null; classes: ClassRow | ClassRow[] | null }
       | undefined;
-    if (row && isEffectiveAssignment(row)) {
-      const klass = toClassFact(firstOrNull(row.classes));
-      // Chỉ nhận lớp của năm hiện hành.
-      classAssignment =
-        klass && firstOrNull(row.classes)?.academic_year_id === academicYearId ? klass : null;
-    }
-  }
+    if (!row || !isEffectiveAssignment(row)) return null;
+    const klass = toClassFact(firstOrNull(row.classes));
+    // Chỉ nhận lớp của năm hiện hành.
+    return klass && firstOrNull(row.classes)?.academic_year_id === academicYearId ? klass : null;
+  };
 
-  const roleClass = role?.class_id
-    ? await loadClass(supabase, role.class_id, academicYearId)
-    : null;
-
-  const roleSectorBranch =
+  const [classAssignment, roleClass, roleSectorBranch] = await Promise.all([
+    loadClassAssignment(),
+    role?.class_id ? loadClass(supabase, role.class_id, academicYearId) : null,
     role?.sector_id && SECTOR_ROLES.includes(role.role)
-      ? await loadSector(supabase, role.sector_id)
-      : null;
+      ? loadSector(supabase, role.sector_id)
+      : null,
+  ]);
 
   const staff: StaffFacts = {
     kind: "STAFF",
@@ -360,7 +359,9 @@ export const resolveThemeContext = cache(
     }
 
     const supabase = await createClient();
-    const currentAcademicYear = await loadCurrentAcademicYear(supabase);
+    // 🔴 P3-PERF-001 — dùng chung hàm `cache()` với thanh đầu trang thay vì hỏi
+    // lại `academic_years` bằng một hàm riêng. Xem `lib/academic-year/current-year.ts`.
+    const currentAcademicYear = await getCurrentAcademicYearRow();
     if (!currentAcademicYear) return NEUTRAL_WHEN_NO_YEAR(input);
 
     return decideThemeContext({

@@ -57,8 +57,30 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Làm mới token; không đặt logic phân quyền tại đây.
-  await supabase.auth.getUser();
+  /**
+   * Làm mới token; không đặt logic phân quyền tại đây.
+   *
+   * 🔴 P3-PERF-001 — `getSession()`, KHÔNG phải `getUser()`, và lý do phải đọc
+   * kỹ trước khi ai đó "sửa lại cho đúng tài liệu Supabase":
+   *
+   * `getUser()` gọi thẳng `GET /auth/v1/user` **mọi lần**, kể cả khi token còn
+   * hạn — đo bằng log Kong thì đó là một trong 15–19 lượt đi–về Supabase của
+   * mỗi lần vào trang, và middleware chạy cho **cả** lượt tải trang lẫn lượt
+   * lấy payload RSC. `getSession()` giải mã token trong cookie tại chỗ và chỉ
+   * gọi mạng khi token **sắp hết hạn** (lúc đó nó gọi `/auth/v1/token` để xoay,
+   * rồi `setAll` ở trên ghi cookie mới) — tức đúng và chỉ đúng việc hàm này
+   * sinh ra để làm.
+   *
+   * Vì sao KHÔNG mất an toàn: kết quả ở đây **bị bỏ đi**, không một quyết định
+   * cho–hay–không–cho nào đọc nó (đúng như dòng ghi chú ngay trên và docs/04
+   * §3). Người gác cổng thật vẫn là `getUser()` trong `getAuthContext()` — chỗ
+   * đó hỏi thẳng máy chủ Auth và giữ nguyên. Token giả mạo hay đã thu hồi vẫn
+   * chết ở đó, y như trước.
+   *
+   * ⚠️ Không được đọc `data.session.user` từ đây: auth-js bọc thuộc tính ấy
+   * bằng một proxy cảnh báo, và cảnh báo ấy đúng — đó là dữ liệu chưa xác minh.
+   */
+  await supabase.auth.getSession();
 
   return supabaseResponse;
 }

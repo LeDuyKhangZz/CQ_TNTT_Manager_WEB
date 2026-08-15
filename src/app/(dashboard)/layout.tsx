@@ -22,9 +22,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Middleware đặt sẵn đường dẫn thật vào header (M14 A-04).
   const requestPath = (await headers()).get(REQUEST_PATH_HEADER) ?? DEFAULT_AFTER_LOGIN_PATH;
   const authContext = await requireAuthContext(requestPath);
-  // Năm học đọc ở máy chủ rồi truyền xuống: thanh đầu trang trước đây in một
-  // chuỗi viết cứng, tức là nó nói sai ngay khi xứ đoàn sang năm học khác.
-  const academicYear = await getCurrentAcademicYear();
 
   // 🔴 Vỏ ứng dụng luôn dùng scope `PERSONAL` — M14 đợt C, `10` §3 bước 6.
   //
@@ -35,7 +32,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // lọc một ngành — `10` §9) tự khai scope riêng khi module của chúng được
   // thiết kế lại; ở đây không đoán hộ chúng bằng cách giải mã `pathname`, đó
   // đúng là lỗi mà `10` §5 cấm.
-  const theme = await resolveThemeContext({ scope: { kind: "PERSONAL" } });
+  //
+  // 🔴 P3-PERF-001 — hai thứ này chạy SONG SONG. Năm học đọc ở máy chủ rồi
+  // truyền xuống (thanh đầu trang trước đây in một chuỗi viết cứng, tức là nó
+  // nói sai ngay khi xứ đoàn sang năm học khác); theme thì tự tra ngữ cảnh
+  // riêng. Không cái nào cần kết quả của cái kia, nên bản cũ `await` nối đuôi
+  // là biếu không một vòng đi–về Supabase cho **mọi** lần vào trang. Cả hai
+  // cùng hỏi `academic_years` qua `getCurrentAcademicYearRow()`, mà hàm đó
+  // `cache()` nên hai lượt gọi cùng lúc dùng chung **một** truy vấn.
+  const [academicYear, theme] = await Promise.all([
+    getCurrentAcademicYear(),
+    resolveThemeContext({ scope: { kind: "PERSONAL" } }),
+  ]);
 
   // Màn hình chờ toàn cục — `17` §3.2, `09` §12 A3/A4. Đặt TRONG `ThemeScope` để
   // ba chấm nhún ăn đúng màu ngành của người đang đăng nhập, và NGOÀI `AppShell`
