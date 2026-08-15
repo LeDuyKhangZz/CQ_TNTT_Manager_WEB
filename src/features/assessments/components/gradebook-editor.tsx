@@ -57,7 +57,6 @@ import type {
 import { changedScoreCells, readNoteInput, readScoreInput } from "../score-diff";
 import { useGlobalPending } from "@/components/loading/loading-provider";
 
-const selectClassName = "h-11 min-h-11 w-full rounded-md border border-border bg-card px-3 text-sm";
 type Message = { tone: "success" | "error" | "info"; text: string } | null;
 
 /**
@@ -145,9 +144,9 @@ function NewAssessmentForm({ detail }: { detail: GradebookDetail }) {
         <form onSubmit={submit} className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <label className="space-y-2">
             <span className="text-sm font-medium">Loại</span>
-            <select name="kind" value={kind} onChange={(event) => setKind(event.target.value as AssessmentKind)} className={selectClassName}>
+            <Select name="kind" value={kind} onChange={(event) => setKind(event.target.value as AssessmentKind)}>
               {ASSESSMENT_KINDS.map((value) => <option key={value} value={value}>{ASSESSMENT_KIND_LABELS[value]}</option>)}
-            </select>
+            </Select>
           </label>
           <div className="space-y-2 xl:col-span-2">
             <Label htmlFor="new-assessment-title">Tên cột điểm</Label>
@@ -164,10 +163,10 @@ function NewAssessmentForm({ detail }: { detail: GradebookDetail }) {
           {kind === "attendance" ? (
             <label className="space-y-2">
               <span className="text-sm font-medium">Thành phần</span>
-              <select name="attendanceComponent" className={selectClassName} defaultValue="mass">
+              <Select name="attendanceComponent" defaultValue="mass">
                 <option value="mass">Thánh lễ</option>
                 <option value="catechism">Giáo lý</option>
-              </select>
+              </Select>
             </label>
           ) : null}
           <div className="flex items-end xl:col-span-5">
@@ -965,8 +964,8 @@ function NewLeaderboardForm({
       <CardContent>
         <form onSubmit={submit} className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2"><Label htmlFor="leaderboard-title">Tiêu đề</Label><Input id="leaderboard-title" name="title" maxLength={120} required placeholder="Top 5 tháng 10" /></div>
-          <label className="space-y-2"><span className="text-sm font-medium">Nguồn</span><select name="sourceType" value={sourceType} onChange={(event) => setSourceType(event.target.value as LeaderboardSourceType)} className={selectClassName}>{LEADERBOARD_SOURCE_TYPES.map((value) => <option key={value} value={value}>{LEADERBOARD_SOURCE_LABELS[value]}</option>)}</select></label>
-          {sourceType === "assessment" ? <label className="space-y-2"><span className="text-sm font-medium">Cột điểm</span><select name="sourceAssessmentId" className={selectClassName} required defaultValue=""><option value="">Chọn cột điểm</option>{detail.assessments.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label> : <div />}
+          <label className="space-y-2"><span className="text-sm font-medium">Nguồn</span><Select name="sourceType" value={sourceType} onChange={(event) => setSourceType(event.target.value as LeaderboardSourceType)}>{LEADERBOARD_SOURCE_TYPES.map((value) => <option key={value} value={value}>{LEADERBOARD_SOURCE_LABELS[value]}</option>)}</Select></label>
+          {sourceType === "assessment" ? <label className="space-y-2"><span className="text-sm font-medium">Cột điểm</span><Select name="sourceAssessmentId" required defaultValue=""><option value="">Chọn cột điểm</option>{detail.assessments.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</Select></label> : <div />}
           <div className="md:col-span-3"><Button type="submit" disabled={pending}>{pending ? "Đang tạo…" : "Tạo bảng Top 5"}</Button></div>
           {message ? <FormMessage className="md:col-span-3" tone={MESSAGE_TONES[message.tone]}>{message.text}</FormMessage> : null}
         </form>

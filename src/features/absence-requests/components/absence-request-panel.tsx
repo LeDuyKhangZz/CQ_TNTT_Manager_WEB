@@ -6,13 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input, inputBaseClassName } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { MEETING_TYPE_LABELS } from "@/features/attendance/constants";
 import { PortalEmptyState } from "@/features/portal/components/portal-empty-state";
 import { formatDateVi } from "@/lib/dates";
 import type { AppAudience } from "@/lib/permissions/roles";
-import { cn } from "@/lib/utils";
 import type { PortalAbsenceRequest, PortalChild } from "@/features/portal/server/queries";
 import type { PortalChildrenStatus } from "@/features/portal/status";
 import { ABSENCE_REQUEST_STATUS_LABELS } from "../schemas";
@@ -27,8 +27,6 @@ import { useGlobalPending } from "@/components/loading/loading-provider";
  * `router.refresh()` sau khi action trả về là cách khắc phục đang dùng ở trang
  * điểm danh. Lỗi cũng hiện ngay tại chỗ thay vì nhét qua query string.
  */
-const selectClassName = cn(inputBaseClassName, "h-control");
-
 const statusVariants = {
   pending: "warning",
   acknowledged: "success",
@@ -101,17 +99,16 @@ export function AbsenceRequestPanel({
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="absence-student">Thiếu nhi</Label>
-                <select
+                <Select
                   id="absence-student"
                   name="studentId"
-                  className={selectClassName}
                   value={studentId}
                   onChange={(event) => setStudentId(event.target.value)}
                 >
                   {students.map((child) => (
                     <option key={child.id} value={child.id}>{child.label}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="absence-date">Ngày nghỉ</Label>
