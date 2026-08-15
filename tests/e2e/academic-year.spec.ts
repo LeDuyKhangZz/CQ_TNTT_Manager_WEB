@@ -98,7 +98,9 @@ test.describe("M02-A · quản trị năm học", () => {
     // D-61 (biểu mẫu dài): không bắt gõ lại bảy ô.
     const form = createYearForm(page);
     await expect(form.getByLabel("Tên hiển thị")).toHaveValue("Năm học gõ trùng");
-    await expect(form.getByLabel("Ngày kết thúc", { exact: true })).toHaveValue("2027-05-31");
+    // Đợt C: ô ngày hiện dd/MM/yyyy; giá trị gửi lên máy chủ vẫn là ISO ở ô ẩn.
+    await expect(form.getByLabel("Ngày kết thúc", { exact: true })).toHaveValue("31/05/2027");
+    await expect(form.locator('input[type="hidden"][name="endDate"]')).toHaveValue("2027-05-31");
   });
 
   test("sinh lớp mặc định: phân biệt 'đã có đủ từ trước' với 'vừa tạo'", async ({ page }) => {

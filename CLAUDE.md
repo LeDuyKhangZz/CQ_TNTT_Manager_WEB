@@ -82,9 +82,17 @@ Không dùng service role để làm test user flow; test bằng JWT role thật
 Chốt 2026-08-14. **Không hỏi xin mật khẩu** — nó ở khoá `SUPABASE_DB_PASSWORD` trong `.env.local`.
 Quyền chạy đã mở sẵn ở `.claude/settings.json`.
 
+> 🔴 **Dự án Supabase đã CHUYỂN VÙNG 2026-08-15 — Seoul ⇒ Singapore.**
+> Dự án cũ `dnqzheyerrqnzilxrtdp` (ap-northeast-2) **đã xoá**; dự án đang dùng là
+> `hvcfhlaubnukeoutxiuq` (**ap-southeast-1**). Lý do: đo từ máy chủ dự án — Seoul
+> **100ms**, Singapore **32ms** (nhanh hơn 3,1 lần). Nhãn `RECOMMENDED` của Supabase
+> chỉ đoán theo IP, **không đo**, và nó gợi ý sai. `vercel.json` đã đổi theo sang
+> `sin1` — **hai bên phải luôn cùng vùng**, để lệch thì mỗi lần vào trang phải vượt
+> biển ~14 lượt và chậm hơn cả trước khi tối ưu (xem `16` §8).
+
 | Việc | Cách làm |
 |---|---|
-| Chuỗi kết nối | **Session pooler**: `postgresql://postgres.<ref>:<pw>@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres`. 🔴 Direct `db.<ref>.supabase.co` **chỉ có bản ghi AAAA (IPv6)** mà máy không có IPv6 ⇒ `could not translate host name`. Đừng mất thời gian thử lại đường đó |
+| Chuỗi kết nối | **Session pooler**: `postgresql://postgres.<ref>:<pw>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`. 🔴 Tiền tố là **`aws-0`**, không phải `aws-1` — cả hai tên đều phân giải được nhưng chỉ `aws-0` nhận kết nối cho dự án này; `aws-1` trả `LegacyDbConnectError` khó đoán. Direct `db.<ref>.supabase.co` **chỉ có bản ghi AAAA (IPv6)** mà máy không có IPv6 ⇒ `could not translate host name`. Đừng mất thời gian thử lại đường đó |
 | `<ref>` | lấy từ `NEXT_PUBLIC_SUPABASE_URL` trong `.env.production.deploy` |
 | **Trước khi push** | `db dump` **cả schema lẫn data** ra `CQ_TNTT_Manager/backups/` (**ngoài repo** — file `*.sql` lọt vào `supabase/migrations/` là lần sau `db push` tưởng migration mới). Free plan **không có backup nào**; dump thủ công là lớp bảo vệ duy nhất |
 | Thứ tự | `db dump` → `migration list` (báo số migration sẽ áp) → `db push --include-all` → `migration list` lại để xác minh |

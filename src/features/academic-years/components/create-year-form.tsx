@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,11 +76,11 @@ export function CreateYearForm() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="academic-start">Ngày bắt đầu</Label>
-          <Input id="academic-start" name="startDate" type="date" required key={`start-${state.values.startDate}`} defaultValue={state.values.startDate} />
+          <DateField id="academic-start" name="startDate" required key={`start-${state.values.startDate}`} defaultValue={state.values.startDate} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="academic-end">Ngày kết thúc</Label>
-          <Input id="academic-end" name="endDate" type="date" required key={`end-${state.values.endDate}`} defaultValue={state.values.endDate} />
+          <DateField id="academic-end" name="endDate" required key={`end-${state.values.endDate}`} defaultValue={state.values.endDate} />
         </div>
       </div>
       {/* D-71 / D-116 — mốc kết thúc học kỳ 1, KHÔNG bắt buộc. Đặt cạnh hai ô ngày
@@ -89,10 +90,9 @@ export function CreateYearForm() {
         <Label htmlFor="academic-semester-1-end">
           Ngày kết thúc học kỳ 1 <span className="text-ink-muted">(không bắt buộc)</span>
         </Label>
-        <Input
+        <DateField
           id="academic-semester-1-end"
           name="semester1EndDate"
-          type="date"
           key={`semester1-${state.values.semester1EndDate}`}
           defaultValue={state.values.semester1EndDate}
         />

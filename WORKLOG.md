@@ -1744,6 +1744,184 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-08-15] Phiên 68 — Claude — `P3-UI-001` (Đợt B + Đợt C) + `P3-PERF-001`
+
+- **Claim:** ba việc trong một phiên theo lệnh chủ dự án — kế hoạch 17 **Đợt B** và **Đợt C** làm
+  trọn, cộng một task phát sinh giữa phiên: **`P3-PERF-001`** chữa lag 3–4 giây của bản Vercel.
+  Chủ dự án còn ra thêm một yêu cầu trong phiên: *"định dạng ngày tháng năm của TOÀN BỘ trang web
+  phải là DD/MM/YYYY"* — yêu cầu ấy **chính là** Đợt C, không phải việc thứ tư.
+
+- **🔴 `P3-PERF-001` — đo trước, sửa sau. Log của Kong, không sửa một dòng mã ứng dụng:**
+  mỗi lần vào **một** trang gọi Supabase **15–19 lượt** (`/students` 16 · `/staff` 15 ·
+  `/dashboard` 19 · `/attendance` 16), trong đó **6–8 lượt là bản trùng** và phần lớn **xếp hàng
+  nối đuôi nhau**. Nguyên nhân gốc nằm **ngoài mã nguồn**: không có `vercel.json` nên hàm chạy ở
+  vùng mặc định **`iad1` (Washington)** còn Supabase ở **`ap-northeast-2` (Seoul)** — mỗi lượt
+  đi–về **~200ms**, mười lượt nối đuôi là **hai giây** trước khi truy vấn của chính trang bắt đầu.
+  Bốn việc: ghim `vercel.json` về **`icn1` (Seoul)** · gộp hai hàm `cache()` cùng hỏi "năm học
+  hiện hành" (`cache()` chỉ gộp được các lượt gọi **cùng MỘT hàm**) · `loadStaffViewer` từ 5 truy
+  vấn nối đuôi xuống **3 đợt** · middleware `getUser()` → `getSession()` (gọi mạng **mọi lần** →
+  chỉ gọi khi token sắp hết hạn; **không mất an toàn** vì kết quả ở đó vốn bị bỏ đi, người gác
+  cổng thật vẫn là `getUser()` trong `getAuthContext()`). Đo lại: 16→**14** · 15→**13** ·
+  19→**18** · 16→**14**, và chuỗi nối đuôi của vỏ ứng dụng ngắn đi rõ rệt.
+  🔴 **Việc thứ tư ĐÃ TRẢ LẠI cuối phiên — xem gạch đầu dòng riêng bên dưới.**
+  ⚠️ **Chưa xác minh được từ máy này** vùng thật Vercel đang chạy — `vercel.json` là khai báo đúng
+  và không thể làm hỏng; nếu dự án vốn đã ở `icn1` thì nó không đổi gì.
+
+- **Đợt B — `Select` v2, và một lệch có chủ ý so với `17` §4.1.** Kế hoạch đề nghị thay `<select>`
+  bằng nút `role="combobox"` + `<input type="hidden">`. **Không làm theo.** `<select>` **thật** vẫn
+  là control duy nhất (giữ `name`/`id`/nhãn/`required`/`ref`/ngữ nghĩa trợ năng), nằm **đè lên**
+  mặt tiền ở `opacity-0` để nhận trọn cú bấm; `pointerdown` bị chặn để listbox hệ điều hành không
+  kịp bung. Lý do nặng nhất là **đo được**: `getByLabel(...).selectOption(...)` có **43 lần** trong
+  **13** tệp E2E và `selectOptions` trong **12** tệp unit — đổi hợp đồng là bắt cả bộ kiểm ấy viết
+  lại **trong cùng phiên** đang đổi hai component lớn, tức mất luôn khả năng phân biệt *"đỏ vì hồi
+  quy"* với *"đỏ vì bài kiểm chưa viết lại"*. **Kết quả: 74 chỗ gọi không sửa một dòng.**
+
+- **🔴 Ba cái bẫy của Đợt B, cả ba đều phải trả giá mới tìm ra:**
+  1. `peer-*` của Tailwind là bộ chọn anh–em **xuôi** (`~`) ⇒ `<select>` phải đứng **trước** mặt
+     tiền trong DOM. Đặt sau thì vòng focus bàn phím **im lặng biến mất** — không lỗi, không cảnh
+     báo, chỉ là không có.
+  2. Mặt tiền phải là `<button>` chứ không phải `<div>`. Vài chỗ bọc ô chọn trong `<label>` không
+     `htmlFor`; tên nhãn kiểu ấy tính bằng chữ của **cả cây con**, nên nhãn *"Đối tượng nhận"* hoá
+     thành *"Đối tượng nhậnChọn đối tượng"* ⇒ **8 bài `notification-center` đỏ**. Quy tắc tính tên
+     bỏ qua phần tử **nhận-nhãn-được**, nên `<button>` nằm ngoài phép tính.
+  3. Tấm listbox phải bắn sang `document.body` (portal): nằm trong cây thì vừa bị tổ tiên
+     `overflow-*` của bảng **xén cụt**, vừa chui vào tên nhãn như bẫy #2.
+
+- **🔴 Một lỗi Đợt B tôi tìm ra bằng cách ĐỌC LẠI mã, không phải bằng bộ kiểm** — và đã viết bài
+  canh nó: chống-xử-lý-hai-lần bằng một cái **cờ** thì `preventDefault()` ở `pointerdown` có thể
+  nuốt luôn `click` đi sau ⇒ cờ bật lên **không ai tắt** ⇒ cú bấm vào **chữ nhãn** lần kế tiếp bị
+  nuốt. Thử `Date.now()` cũng sai (hai cú bấm gần nhau bị gộp làm một) và thử `event.detail === 0`
+  cũng sai (**đo được**: click do nhãn chuyển tiếp vẫn mang `detail = 1`). Lời giải đúng là hỏi
+  *"cú bấm bắt đầu ở đâu"*, kèm một listener `pointerdown` cấp `document` để cờ không bao giờ kẹt.
+
+- **Đợt C — và vì sao nó KHÔNG còn là việc đánh bóng.** `<input type="date">` vẽ ngày theo
+  **locale của trình duyệt**: máy phòng học đặt tiếng Anh thì ngày sinh thiếu nhi hiện
+  `MM/DD/YYYY`, trong khi 103 chỗ còn lại in `dd/MM/yyyy` qua `formatDateVi`. **Không dòng CSS nào
+  đụng được vào phần đó** — nên `DateField` là lời giải kỹ thuật **duy nhất** cho yêu cầu của chủ
+  dự án. Migrate **27 `type="date"` + 3 `type="datetime-local"` trên 22 tệp** ⇒ còn **0** ô ngày
+  native. Trước hydration vẫn là ô native (form chạy không cần JS); sau hydration là ô chữ
+  `dd/MM/yyyy` + lịch tự vẽ + `<input type="hidden">` mang **ISO** ⇒ **0 server action phải sửa**.
+  Ô chữ nhận **cả** `dd/MM/yyyy` lẫn `yyyy-MM-dd` — gõ tay vẫn là đường chính (nhập ngày sinh cho
+  ~900 em bằng cách bấm lùi lịch về 2016 là việc không ai làm nổi).
+
+- **🔴 Bốn lỗi thật của Đợt C, do chính bộ kiểm của đợt bắt được:** `Escape` không đóng được lịch
+  (focus nằm trên **nút**, nên `onKeyDown` ở ô chữ không nghe thấy — phải bắt ở tầng `document`) ·
+  sửa giờ **làm mất ngày** (suy ngược ngày–giờ từ chuỗi đã ghép: xoá trắng ô giờ ⇒ chuỗi rỗng ⇒
+  lượt dựng sau tách ra ngày rỗng) · `defaultValue` đổi giữa chừng **không kéo ô đi theo**, tức
+  **nuốt mất dữ liệu đã gõ** ở màn cảnh báo trùng · nút lịch **36px**, vi phạm điều cấm số 7
+  (vùng chạm < 44px) — `responsive.spec.ts` bắt được `"button 36px"` ×2 ở trang hồ sơ thiếu nhi.
+  Thêm một hàng rào không có trong kế hoạch: chuỗi gõ dở không đọc được thì `setCustomValidity`
+  **chặn lượt gửi** — `required` chỉ biết ô rỗng hay không, nên `31/02/2016` qua được nó trong khi
+  ô ẩn mang giá trị cũ, và biểu mẫu sẽ gửi đi lặng lẽ một ngày khác ngày người dùng đang nhìn.
+
+- **🔴 LỖI NẶNG NHẤT CỦA PHIÊN, và bộ kiểm KHÔNG tìm ra — full E2E tìm ra, sau khi tôi suýt đổ
+  cho tải máy.** Lượt full đầu tiên có **25 bài đỏ**, 8 bài cùng chữ ký ở Điểm danh. Tôi đã định
+  ghi là nhiễu, nhưng chạy **cô lập trên DB vừa reset** vẫn đỏ y nguyên ⇒ hồi quy thật của Đợt C:
+  **trước hydration ô ngày còn là `<input type="date">` native; ai gõ vào khoảng giữa — trang đã
+  hiện nhưng JS chưa chạy xong — thì `DateField` dựng lại từ `defaultValue` của máy chủ và NUỐT
+  SẠCH thứ vừa gõ.** Ô hiện lại ngày mặc định, người dùng bấm Lưu, biểu mẫu gửi đi **một ngày khác
+  ngày họ vừa chọn**, không một lời cảnh báo. Đây **không** phải lỗi của riêng bộ kiểm — bộ kiểm
+  chỉ thao tác nhanh hơn người thật chứ không làm gì người thật không làm được, và nó là **cuộc
+  đua với hydration** nên đỏ ngẫu nhiên tuỳ máy nhanh chậm. Sửa: lúc hydration ô **nhận lấy giá
+  trị đang có trong DOM** trước khi thay. `attendance.spec.ts` trên DB sạch: **10/13 → 13/13**, và
+  cả spec từ 6,8 phút xuống 2,2 phút (không còn bấm lại 48 giây mỗi bài).
+
+- **🔴 MỘT BẢN TỐI ƯU CỦA CHÍNH TÔI ĐÃ BỊ TRẢ LẠI, vì đo ra nó làm hỏng thứ khác.** Đổi middleware
+  `getUser()` → `getSession()` (bớt một lượt gọi mạng mỗi request) nghe rất hợp lý và đúng là bớt
+  được thật. Nhưng lượt full E2E để lại `attendance.spec.ts:517` đỏ, mà **mã trước phiên thì
+  xanh**. Thay vì đoán, tôi thử thẳng giả thuyết — đây là thay đổi **duy nhất** của phiên có đường
+  nhân quả tới một nút chạy qua Server Action:
+
+  | Middleware | Kết quả 4 lượt | Thời lượng |
+  |---|--:|---|
+  | `getSession()` (bản tối ưu) | **2 xanh / 2 đỏ** | xanh 8,2s và 31s · đỏ chạm trần 3 phút |
+  | `getUser()` (trả lại) | **4 xanh / 0 đỏ** | 6,7 – 8,6 giây, cả bốn |
+
+  Nút "Tiếp quản" kẹt ở `disabled`, tức `pending` của Server Action không bao giờ hạ. **Cơ chế
+  chính xác chưa truy ra và tôi ghi đúng như vậy**; giả thuyết mạnh nhất là `getUser()` buộc phiên
+  được đọc–kiểm–ghi lại trọn vẹn ở middleware nên Server Action đi sau luôn nhận bộ cookie đã ổn
+  định. Cái giá của việc trả lại **nay rất nhỏ**: sau khi hàm và CSDL về cùng vùng Singapore, một
+  vòng đi–về chỉ còn vài mili giây thay vì ~200ms — đổi một lượt gọi rẻ tiền lấy rủi ro trên đường
+  xác thực là món hời ngược. Lý do đầy đủ ghi ngay trong `middleware.ts` để phiên sau đừng "tối
+  ưu" lại lần nữa.
+- **🔴 Hai lỗi màn hình chờ do CHỦ DỰ ÁN tìm ra trên bản thật, không phải bộ kiểm:** một lượt
+  chuyển module hiện overlay **hai lần** liên tiếp, và lần thứ hai **luôn ra đúng một ảnh và đúng
+  một câu** (`Gl 2:20`). Chẩn đoán: có **hai** component cùng vẽ overlay — `LoadingProvider`
+  (*"Đang xử lý…"*) và `RouteLoadingOverlay` trong `loading.tsx` (*"Đang mở trang…"*); hai ảnh chụp
+  của chủ dự án đọc đúng hai nhãn ấy. Vế thứ hai sâu hơn: `RouteLoadingOverlay` là **Server
+  Component nằm trong `loading.tsx`**, mà Next **dựng sẵn phần đó lúc build** rồi dùng lại mãi ⇒
+  `Math.random()` chạy **đúng một lần trong đời**, trên máy build. **Bốc ngẫu nhiên ở máy chủ cho
+  một thứ được dựng sẵn thì không bao giờ ngẫu nhiên** — bài học đáng ghi của Đợt A. Sửa:
+  `loading.tsx` nay chỉ **phát tín hiệu** (`RouteLoadingSignal`, client) chứ không vẽ; overlay do
+  provider vẽ, một chỗ duy nhất, bốc ở trình duyệt. Vòng đời của chính `loading.tsx` cũng là thước
+  đo **đúng** cho *"route mới dựng xong chưa"* — thứ mà `usePathname()` không đo được vì nó đổi
+  tức thì. Đo lại bằng `MutationObserver` trên bản dựng thật: **1 lần hiện/lượt** (trước là 2), ảnh
+  và câu đổi ở **cả bốn** lượt chuyển module.
+
+- **Soát định dạng ngày toàn `src/` theo lệnh chủ dự án:** 0 ô ngày native · 0 chuỗi định dạng
+  `MM/dd` · 103 chỗ hiển thị đi qua `formatDateVi`/`formatDateTimeVi`. Hai chỗ còn dùng
+  `toLocaleString("vi-VN")` cho dòng *"Xuất lúc…"* của tệp tải về đã đổi sang `formatDateTimeVi` —
+  vi-VN cho ra đúng dạng nhưng **phụ thuộc dữ liệu ICU của máy chạy**.
+  ⏸️ **Chưa làm, và nói ra:** `<input type="time">` của `DateTimeField` (3 chỗ) **vẫn là ô
+  native**, nên máy đặt tiếng Anh hiện kiểu 12 giờ `07:00 PM`. Yêu cầu chủ dự án nói về **ngày**;
+  ô giờ tự dựng là việc riêng.
+
+- **🔴 Hạ tầng đổi hẳn trong phiên: Supabase Seoul ⇒ Singapore.** Chủ dự án hỏi *"đổi sang
+  Singapore hay Tokyo có nhanh hơn không"*, nên đo thẳng vào **pooler thật của Supabase** (7/7 lượt
+  mỗi vùng): **Singapore 38ms · Mumbai 98ms · Seoul 100ms · Tokyo 108ms**. Nhãn `RECOMMENDED` của
+  Supabase gợi ý **Seoul** và **nó sai** — nhãn ấy suy từ địa chỉ IP qua bảng tra vị trí, *không đo
+  gì cả*; đây cũng đúng là lý do dự án cũ nằm ở Seoul. Xoá được dự án cũ vì đã **đếm trước**:
+  0 thiếu nhi · 0 phụ huynh · 0 ghi danh · 0 điểm danh · 0 điểm số (chỉ 2 Super Admin + 1 năm học +
+  19 lớp, mà `seed:prod` dựng lại đủ). Vẫn dump cả schema lẫn data ra `backups/` trước khi xoá.
+  Dự án mới đo được **32ms — nhanh hơn 3,1 lần**. `db push --include-all` → **64/64 migration**,
+  đối chiếu lại **0 chưa áp**; `seed:prod` → khớp y hệt bản cũ. Chủ dự án đã đổi vùng hàm Vercel
+  sang `sin1`, cập nhật 3 biến môi trường, deploy lại và **đăng nhập thành công**. Xác minh bằng
+  header thật: `x-vercel-id: hkg1::sin1::…`, `/login` trung vị **235ms**.
+  ⚠️ Ảnh chụp Vercel cho thấy vùng cũ là **`iad1` (Washington)** — **chứng minh đúng chẩn đoán §8**.
+  🔴 Hai bẫy mới ghi vào `CLAUDE.md` §4: pooler là **`aws-0`**-ap-southeast-1 (`aws-1` phân giải
+  được nhưng từ chối kết nối, báo `LegacyDbConnectError` không nói lý do) · khoá nay là kiểu mới
+  `sb_publishable_`/`sb_secret_`, chạy được vì **không chỗ nào trong mã bóc tách khoá** (đã rà).
+
+- **File thay đổi:** `vercel.json` (mới) · `src/lib/academic-year/current-year.ts` (mới) ·
+  `src/lib/{supabase/middleware,theme/resolve-theme-context}.ts` ·
+  `src/features/academic-years/server/queries.ts` · `src/app/(dashboard)/layout.tsx` ·
+  `src/components/ui/{select,select-options,date-field,date-field-utils}.{tsx,ts}` ·
+  **22 tệp migrate ô ngày** · `src/features/{absence-requests,assessments}/…` (dọn nợ `17` §4.3) ·
+  `src/lib/exports/http.ts` + `results/[classId]/export/route.ts` · **4 tệp unit mới** + 6 tệp
+  unit sửa khẳng định · 5 tệp E2E sửa locator · file `16` (§6.2, §6.3, §8 mới) · `WORKLOG.md`.
+
+- **Migration/data impact:** **0 migration · 0 đổi RLS · 0 đổi dữ liệu · 0 đổi quyền** cho cả ba task.
+
+- **Đã test (số thật):** lint **0 warning 0 error** · typecheck ✓ · build ✓ **29/29 trang** ·
+  unit **1642 pass / 18 skip** trên 118 tệp (trước phiên: 1568/18 — **+74 bài mới** trên 4 tệp
+  của Đợt B và Đợt C) · DB `db:reset` qua đủ migration + `seed:dev` **trước** lượt full E2E.
+  **E2E toàn hệ thống: 588 bài ⇒ 578 pass · 10 fail · 41,0 phút** (baseline GĐ3 571/14; phiên 67
+  585/3; lượt đầu của phiên này 563/25 — trước bản vá hydration).
+
+- **⚠️ 10 bài đỏ, phân loại BẰNG PHÉP ĐO chứ không bằng suy đoán.** Tôi lùi hẳn về commit trước
+  phiên (`58d9b40`) rồi chạy lại đúng những bài ấy: `committees:156` · `results:278` ·
+  `teaching-plan:92` **cũng đỏ y nguyên trên mã cũ** ⇒ nợ có sẵn (6 bài còn lại là chính ba tệp ấy
+  ở viewport khác, cùng chữ ký *dữ liệu Server Component chưa về kịp cửa sổ 5 giây* — **nợ #10**,
+  đúng họ với 3 bài đỏ của phiên 67). Bài thứ tư `attendance:517` mã cũ **xanh** ⇒ truy tiếp, và
+  đó là cách tìm ra bản tối ưu middleware phải trả lại. Sau khi trả lại: `attendance.spec.ts`
+  **13/13**, và `:517` **4/4** ở phép đo lặp.
+  🔴 **Nói rõ giới hạn:** con số 578/10 đo **trước** lượt trả lại middleware. Sau khi trả lại tôi
+  chạy lại `attendance.spec.ts` (13/13) chứ **chưa chạy lại trọn 588 bài**, vì bản trả lại đưa mã
+  về **gần mã cũ hơn**, không xa hơn. Con số trọn bộ của bản cuối cùng là việc của phiên sau.
+
+- **⚠️ Một sai sót trong CÁCH ĐO của chính tôi, ghi lại để phiên sau khỏi mắc:** lượt full E2E đầu
+  tiên bị bỏ đi vì tôi chạy `typecheck`/`lint`/`vitest` **song song** với nó — CPU bị giành, nhiều
+  bài chạm trần thời gian và hiện `button "Đang xử lý…"` treo 20 giây. Con số của một lượt E2E
+  chạy chung máy với việc khác **không dùng được**; phải chạy sạch rồi mới đọc.
+
+- **Blocker/rủi ro:** kết luận **NO-GO của GĐ3 vẫn nguyên** — phiên này thuần trình bày cộng một
+  bản vá hiệu năng, chưa đụng D-65 audit log, M02 hai workflow chuyển năm, M07 AC-03-01, M11/M06
+  live report + split-brain, production preflight.
+
+- **Next action:** **Đợt D** của kế hoạch 17 (`Checkbox` + vét control trần còn lại), rồi Đợt E/F.
+  Chủ dự án nên xem lại **Vercel → Project Settings → Functions** sau lần deploy tới để xác nhận
+  vùng đã về `icn1`.
+
 ### [2026-08-14] Phiên 67 — Claude — `P3-UI-001` (Đợt A) + `P3-UX-001` (nhận bàn giao)
 
 - **Claim:** hai task trong một phiên theo lệnh chủ dự án. `P3-UI-001` = kế hoạch 17 Đợt A;

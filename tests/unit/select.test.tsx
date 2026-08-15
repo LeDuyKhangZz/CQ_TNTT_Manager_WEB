@@ -190,6 +190,34 @@ describe("Select v2 — tấm listbox tự dựng", () => {
     expect(listbox()).toBeNull();
   });
 
+  it("bấm vào CHỮ NHÃN cũng mở tấm, không bung listbox hệ điều hành", async () => {
+    // Chữ nhãn to hơn cái ô nên đây là đường người dùng hay đi. Nó KHÔNG đi qua
+    // `pointerdown` của ô chọn — trình duyệt kích hoạt control bằng một `click`
+    // tổng hợp — nên phải có nhánh riêng đón.
+    const user = userEvent.setup();
+    render(<Field defaultValue="au" />);
+
+    await user.click(screen.getByText("Ngành"));
+
+    expect(listbox()).not.toBeNull();
+  });
+
+  it("🔴 mở rồi đóng bằng chuột, sau đó bấm nhãn VẪN mở lại được", async () => {
+    // Bẫy đã trả giá: bản đầu chống-xử-lý-hai-lần bằng một cái cờ, mà
+    // `preventDefault()` ở `pointerdown` nuốt luôn `click` đi sau ⇒ cờ bật lên
+    // không ai tắt ⇒ cú bấm nhãn KẾ TIẾP bị nuốt. Nay dùng mốc thời gian.
+    const user = userEvent.setup();
+    render(<Field defaultValue="au" />);
+    const field = screen.getByLabelText("Ngành");
+
+    await user.click(field);
+    await user.keyboard("{Escape}");
+    expect(listbox()).toBeNull();
+
+    await user.click(screen.getByText("Ngành"));
+    expect(listbox()).not.toBeNull();
+  });
+
   it("ô đang disabled thì không mở được", async () => {
     const user = userEvent.setup();
     render(<Field defaultValue="au" disabled />);

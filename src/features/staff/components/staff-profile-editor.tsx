@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -103,7 +104,7 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
         </div>
         <div className="space-y-1">
           <Label htmlFor="edit-birth">Ngày sinh</Label>
-          <Input id="edit-birth" name="dateOfBirth" type="date" defaultValue={props.dateOfBirth ?? ""} />
+          <DateField id="edit-birth" name="dateOfBirth" defaultValue={props.dateOfBirth ?? ""} />
         </div>
       </div>
       <div className="space-y-1">

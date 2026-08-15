@@ -83,7 +83,11 @@ describe("AC-F08-01 · sửa được bản ghi đã nhập", () => {
   it("khi đang sửa, biểu mẫu nạp sẵn giá trị cũ và mang theo `id`", async () => {
     const user = userEvent.setup();
     renderPanel({ editing: BAPTISM });
-    expect(screen.getByLabelText("Ngày lãnh")).toHaveValue("2015-06-01");
+    // Ô ngày hiện dd/MM/yyyy từ Đợt C; ô ẩn vẫn mang ISO cho máy chủ.
+    expect(screen.getByLabelText("Ngày lãnh")).toHaveValue("01/06/2015");
+    expect(
+      document.querySelector('input[type="hidden"][name="sacramentDate"]'),
+    ).toHaveValue("2015-06-01");
     expect(screen.getByLabelText("Nơi lãnh")).toHaveValue("Nhà thờ Chợ Quán");
 
     await user.click(screen.getByRole("button", { name: "Lưu thay đổi" }));

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -154,7 +155,7 @@ function NewAssessmentForm({ detail }: { detail: GradebookDetail }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="new-assessment-date">Ngày kiểm tra</Label>
-            <Input id="new-assessment-date" name="assessmentDate" type="date" min={detail.yearStart} max={detail.yearEnd} />
+            <DateField id="new-assessment-date" name="assessmentDate" min={detail.yearStart} max={detail.yearEnd} />
           </div>
           <div className="space-y-2">
             <Label htmlFor={`new-assessment-weight-${kind}`}>Hệ số</Label>
@@ -295,7 +296,7 @@ function AssessmentSettings({
       <CardContent className="pt-6">
         <form onSubmit={save} className="grid gap-3 md:grid-cols-[minmax(12rem,1fr)_10rem_7rem_auto] md:items-end">
           <div className="space-y-2"><Label htmlFor={`title-${assessment.id}`}>Tên cột</Label><Input id={`title-${assessment.id}`} name="title" defaultValue={assessment.title} maxLength={120} required disabled={detail.isLocked} /></div>
-          <div className="space-y-2"><Label htmlFor={`date-${assessment.id}`}>Ngày</Label><Input id={`date-${assessment.id}`} name="assessmentDate" type="date" min={detail.yearStart} max={detail.yearEnd} defaultValue={assessment.assessmentDate ?? ""} disabled={detail.isLocked} /></div>
+          <div className="space-y-2"><Label htmlFor={`date-${assessment.id}`}>Ngày</Label><DateField id={`date-${assessment.id}`} name="assessmentDate" min={detail.yearStart} max={detail.yearEnd} defaultValue={assessment.assessmentDate ?? ""} disabled={detail.isLocked} /></div>
           <div className="space-y-2"><Label htmlFor={`weight-${assessment.id}`}>Hệ số</Label><Input id={`weight-${assessment.id}`} name="weight" type="number" min="0.01" max="100" step="0.01" defaultValue={assessment.weight} required disabled={detail.isLocked} /></div>
           <div className="flex flex-wrap gap-2">
             <Button type="submit" size="sm" variant="outline" disabled={pending || publishPending || detail.isLocked}>Lưu</Button>

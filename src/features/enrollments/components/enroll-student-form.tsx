@@ -2,8 +2,8 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import type { EnrollmentFeedback } from "../enrollment-feedback";
@@ -52,7 +52,7 @@ export function EnrollStudentForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="enroll-date">Ngày ghi danh</Label>
-        <Input id="enroll-date" name="enrolledOn" type="date" defaultValue={today} required />
+        <DateField id="enroll-date" name="enrolledOn" defaultValue={today} required />
       </div>
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Đang ghi danh…" : "Ghi danh"}

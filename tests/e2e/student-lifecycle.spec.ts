@@ -249,7 +249,8 @@ test.describe("TB-F08 · sửa và xoá bản ghi bí tích", () => {
       await page.getByRole("link", { name: "Sửa bí tích Rửa tội" }).click();
       await page.waitForURL(/edit=/, { timeout: 20_000 });
       const editForm = page.getByRole("form", { name: "Sửa bản ghi bí tích" });
-      await expect(editForm.getByLabel("Ngày lãnh")).toHaveValue("2016-01-15");
+      // Đợt C: hiển thị dd/MM/yyyy, ô ẩn giữ ISO.
+      await expect(editForm.getByLabel("Ngày lãnh")).toHaveValue("15/01/2016");
       await editForm.getByLabel("Ngày lãnh").fill("2016-03-30");
       await editForm.getByRole("button", { name: "Lưu thay đổi" }).click();
       await expect(page.getByText("Đã lưu bí tích Rửa tội.")).toBeVisible({ timeout: 45_000 });

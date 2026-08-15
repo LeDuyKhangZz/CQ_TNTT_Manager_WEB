@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DateTimeField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -310,7 +311,7 @@ function ItemRow({
           </div>
           <div className="space-y-2">
             <Label htmlFor={`expected-${item.id}`}>Hẹn trả</Label>
-            <Input id={`expected-${item.id}`} name="expectedReturnAt" type="datetime-local" />
+            <DateTimeField id={`expected-${item.id}`} name="expectedReturnAt" />
           </div>
           <div className="space-y-2">
             <Label htmlFor={`note-${item.id}`}>Ghi chú</Label>

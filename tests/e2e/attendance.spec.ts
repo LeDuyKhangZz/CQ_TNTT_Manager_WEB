@@ -137,7 +137,7 @@ const SESSION_URL_PATTERN = /\/attendance\/[0-9a-f-]{36}(\?|$)/;
 
 async function openAttendanceSession(page: Page, meetingDate: string): Promise<string> {
   await page.goto("/attendance");
-  await page.locator('input[name="date"]').fill(meetingDate);
+  await page.getByLabel('Ngày', { exact: true }).fill(meetingDate);
   await page.locator('select[name="meetingType"]').selectOption("sunday");
   await clickUntil(
     "Mở buổi",
@@ -369,7 +369,7 @@ test.describe("Điểm danh Phase 3", () => {
     await expect(page.getByRole("heading", { name: "Mở buổi điểm danh" })).toBeVisible();
     await expectNoHorizontalOverflow(page, "/attendance");
 
-    await page.locator('input[name="date"]').fill(meetingDate);
+    await page.getByLabel('Ngày', { exact: true }).fill(meetingDate);
     await page.locator('select[name="meetingType"]').selectOption("sunday");
     await clickUntil(
       "Mở buổi",
@@ -564,7 +564,7 @@ test.describe("Điểm danh Phase 3", () => {
     await clickUntil(
       "Gửi đơn",
       async () => {
-        await page.locator('input[name="absenceDate"]').fill(absenceDate);
+        await page.getByLabel("Ngày nghỉ").fill(absenceDate);
         await page.locator('input[name="reason"]').fill(reason);
         await page.getByRole("button", { name: "Gửi đơn" }).click();
       },
@@ -752,7 +752,7 @@ test.describe("Điểm danh Phase 3", () => {
       await clickUntil(
         "Gửi đơn cho buổi đang mở",
         async () => {
-          await page.locator('input[name="absenceDate"]').fill(openDate);
+          await page.getByLabel("Ngày nghỉ").fill(openDate);
           await page.locator('input[name="reason"]').fill(reason);
           await page.getByRole("button", { name: "Gửi đơn" }).click();
         },
@@ -760,7 +760,7 @@ test.describe("Điểm danh Phase 3", () => {
       );
 
       // ── Phụ huynh: buổi đã chốt ⇒ bị từ chối, và câu chữ nói ĐÚNG lý do ──
-      await page.locator('input[name="absenceDate"]').fill(finalizedDate);
+      await page.getByLabel("Ngày nghỉ").fill(finalizedDate);
       await page.locator('input[name="reason"]').fill(`Cháu đi đám cưới ${finalizedDate}`);
       await page.getByRole("button", { name: "Gửi đơn" }).click();
       await expect(page.getByText(/Buổi này đã được chốt điểm danh nên không nhận đơn nữa/))
@@ -815,7 +815,7 @@ test.describe("Điểm danh Phase 3", () => {
       await clickUntil(
         "Gửi đơn xin nghỉ",
         async () => {
-          await page.locator('input[name="absenceDate"]').fill(meetingDate);
+          await page.getByLabel("Ngày nghỉ").fill(meetingDate);
           await page.locator('input[name="reason"]').fill(reason);
           await page.getByRole("button", { name: "Gửi đơn" }).click();
         },

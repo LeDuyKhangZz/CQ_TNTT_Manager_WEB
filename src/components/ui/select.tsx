@@ -118,8 +118,17 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const [activeIndex, setActiveIndex] = React.useState(-1);
     const [selectedValue, setSelectedValue] = React.useState("");
     const typeAhead = React.useRef({ query: "", at: 0 });
-    /** Cùng một cú bấm không được xử lý hai lần (pointerdown rồi lại click). */
-    const handledByPointer = React.useRef(false);
+    /**
+     * Cú bấm hiện tại có bắt đầu **trên chính ô chọn** không?
+     *
+     * Đây là dấu hiệu duy nhất tách được hai đường vào, vì cả hai đều kết thúc
+     * bằng một `click` giống hệt nhau trên ô chọn (cùng `detail`, cùng target):
+     *   · bấm thẳng vào ô  → có `pointerdown` ở đây ⇒ `pointerdown` lo việc,
+     *     `click` đi sau phải im để không mở lại đúng cái vừa đóng;
+     *   · bấm vào chữ nhãn → `pointerdown` rơi vào **nhãn**, trình duyệt tổng
+     *     hợp một `click` chuyển tiếp sang ô ⇒ `click` phải lo việc.
+     */
+    const gestureStartedHere = React.useRef(false);
 
     const items = React.useMemo<SelectOptionItem[]>(() => {
       const collected = collectSelectOptions(children);
@@ -216,19 +225,32 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       [items, close],
     );
 
-    // Bấm ra ngoài thì đóng. `pointerdown` chứ không phải `click`: người dùng
-    // kéo chuột từ trong tấm ra ngoài rồi mới nhả thì `click` không bao giờ nổ.
+    /**
+     * Mọi cú bấm **bắt đầu ở nơi khác** đều xoá cờ cử chỉ.
+     *
+     * Hàng rào thứ hai cho `gestureStartedHere`: một số trình duyệt nuốt luôn
+     * `click` sau khi `pointerdown` bị `preventDefault()`, và khi đó không ai
+     * xoá cờ ⇒ cú bấm vào **chữ nhãn** lần kế tiếp bị tưởng là bản lặp và rơi
+     * vào hư không. Listener này chạy cho **mọi** lượt bấm, kể cả khi tấm đang
+     * đóng, nên cờ không bao giờ sống quá một cử chỉ.
+     */
     React.useEffect(() => {
-      if (!open) return;
-      const onPointerDownOutside = (event: PointerEvent) => {
+      const onPointerDownAnywhere = (event: PointerEvent) => {
         const target = event.target as Node;
-        // Tấm nằm ở `body`, KHÔNG còn là con của wrapper — phải hỏi cả hai, nếu
-        // không thì mỗi cú bấm vào một mục lại tự đóng tấm trước khi chọn xong.
+        const insideSelect = selectRef.current === target;
+        if (!insideSelect) gestureStartedHere.current = false;
+
+        // Bấm ra ngoài thì đóng. `pointerdown` chứ không phải `click`: người
+        // dùng kéo chuột từ trong tấm ra ngoài rồi mới nhả thì `click` không
+        // bao giờ nổ. Tấm nằm ở `body`, KHÔNG còn là con của wrapper — phải hỏi
+        // cả hai, nếu không mỗi cú bấm vào một mục lại tự đóng tấm trước khi
+        // chọn xong.
+        if (!open) return;
         if (wrapperRef.current?.contains(target) || listRef.current?.contains(target)) return;
         close(false);
       };
-      document.addEventListener("pointerdown", onPointerDownOutside);
-      return () => document.removeEventListener("pointerdown", onPointerDownOutside);
+      document.addEventListener("pointerdown", onPointerDownAnywhere);
+      return () => document.removeEventListener("pointerdown", onPointerDownAnywhere);
     }, [open, close]);
 
     // Cuộn mục đang trỏ vào tầm nhìn — danh sách lớp có thể dài hơn 280px.
@@ -247,7 +269,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       // Chặn đúng ở đây là chặn listbox của hệ điều hành. Kèm theo đó trình
       // duyệt cũng thôi tự đưa focus, nên phải tự gọi `focus()`.
       event.preventDefault();
-      handledByPointer.current = true;
+      gestureStartedHere.current = true;
       selectRef.current?.focus();
       if (open) close(false);
       else openList();
@@ -261,8 +283,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
      */
     const handleClick = (event: React.MouseEvent<HTMLSelectElement>) => {
       onClick?.(event);
-      if (handledByPointer.current) {
-        handledByPointer.current = false;
+      if (gestureStartedHere.current) {
+        gestureStartedHere.current = false;
         return;
       }
       if (event.defaultPrevented || props.disabled || !hydrated) return;

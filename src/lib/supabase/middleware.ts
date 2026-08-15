@@ -60,27 +60,30 @@ export async function updateSession(request: NextRequest) {
   /**
    * Làm mới token; không đặt logic phân quyền tại đây.
    *
-   * 🔴 P3-PERF-001 — `getSession()`, KHÔNG phải `getUser()`, và lý do phải đọc
-   * kỹ trước khi ai đó "sửa lại cho đúng tài liệu Supabase":
+   * 🔴 P3-PERF-001 — ĐÃ THỬ `getSession()` VÀ ĐÃ TRẢ LẠI. Đừng "tối ưu" lại.
    *
-   * `getUser()` gọi thẳng `GET /auth/v1/user` **mọi lần**, kể cả khi token còn
-   * hạn — đo bằng log Kong thì đó là một trong 15–19 lượt đi–về Supabase của
-   * mỗi lần vào trang, và middleware chạy cho **cả** lượt tải trang lẫn lượt
-   * lấy payload RSC. `getSession()` giải mã token trong cookie tại chỗ và chỉ
-   * gọi mạng khi token **sắp hết hạn** (lúc đó nó gọi `/auth/v1/token` để xoay,
-   * rồi `setAll` ở trên ghi cookie mới) — tức đúng và chỉ đúng việc hàm này
-   * sinh ra để làm.
+   * Ý tưởng nghe rất hợp lý: `getUser()` gọi mạng **mọi lần**, kể cả khi token
+   * còn hạn, nên nó là một trong 15–19 lượt đi–về Supabase của mỗi lần vào
+   * trang; `getSession()` giải mã token tại chỗ và chỉ gọi mạng khi sắp hết
+   * hạn. Đo bằng log Kong: đúng là bớt được một lượt.
    *
-   * Vì sao KHÔNG mất an toàn: kết quả ở đây **bị bỏ đi**, không một quyết định
-   * cho–hay–không–cho nào đọc nó (đúng như dòng ghi chú ngay trên và docs/04
-   * §3). Người gác cổng thật vẫn là `getUser()` trong `getAuthContext()` — chỗ
-   * đó hỏi thẳng máy chủ Auth và giữ nguyên. Token giả mạo hay đã thu hồi vẫn
-   * chết ở đó, y như trước.
+   * **Nhưng nó làm hỏng thứ khác, và đo được:** `attendance.spec.ts:517` (nút
+   * "Tiếp quản" của buổi đã chốt) chuyển từ ổn định sang bấp bênh —
+   * `getSession()`: **2/4 xanh**, hai lượt đỏ chạm trần 3 phút, lượt xanh mất
+   * tới 31 giây; `getUser()`: **4/4 xanh**, cả bốn trong 6,7–8,6 giây. Nút kẹt
+   * ở `disabled`, tức `pending` của Server Action không bao giờ hạ.
    *
-   * ⚠️ Không được đọc `data.session.user` từ đây: auth-js bọc thuộc tính ấy
-   * bằng một proxy cảnh báo, và cảnh báo ấy đúng — đó là dữ liệu chưa xác minh.
+   * Cơ chế chính xác thì **chưa truy ra** và phải ghi đúng như vậy. Giả thuyết
+   * mạnh nhất: `getUser()` buộc phiên được đọc–kiểm–ghi lại trọn vẹn ở
+   * middleware, nên Server Action đi sau luôn nhận đúng bộ cookie đã ổn định;
+   * `getSession()` bỏ qua bước đó khi token còn hạn, và trong lượt xoay token
+   * có một khoảng đua.
+   *
+   * Cái giá của việc trả lại **nay rất nhỏ**: sau khi hàm và cơ sở dữ liệu về
+   * cùng vùng Singapore, một vòng đi–về chỉ còn vài mili giây thay vì ~200ms.
+   * Đổi một lượt gọi rẻ tiền lấy rủi ro trên đường xác thực là món hời ngược.
    */
-  await supabase.auth.getSession();
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }

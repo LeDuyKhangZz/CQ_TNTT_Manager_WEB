@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,20 +142,18 @@ export function CreateStudentForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="student-dob">Ngày sinh</Label>
-          <Input
+          <DateField
             id="student-dob"
             name="dateOfBirth"
-            type="date"
             defaultValue={values.dateOfBirth}
             required
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="student-feast">Ngày bổn mạng</Label>
-          <Input
+          <DateField
             id="student-feast"
             name="patronFeastDate"
-            type="date"
             defaultValue={values.patronFeastDate}
           />
         </div>

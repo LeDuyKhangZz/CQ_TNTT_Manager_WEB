@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateField } from "@/components/ui/date-field";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
@@ -258,7 +258,7 @@ export default async function StaffPage({
                   ))}
                 </Select>
               </div>
-              <div className="space-y-2"><Label htmlFor="assign-start">Ngày bắt đầu</Label><Input id="assign-start" name="startsOn" type="date" required /></div>
+              <div className="space-y-2"><Label htmlFor="assign-start">Ngày bắt đầu</Label><DateField id="assign-start" name="startsOn" required /></div>
               <Button type="submit" className="w-full">Lưu phân công</Button>
             </form></CardContent>
           </Card>

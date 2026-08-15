@@ -5,8 +5,8 @@ import { useActionState, useRef, useState, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
   CLOSE_ENROLLMENT_REASONS,
@@ -186,9 +186,8 @@ export function RosterRow({
                   </option>
                 ))}
               </Select>
-              <Input
+              <DateField
                 name="endedOn"
-                type="date"
                 defaultValue={today}
                 className="w-40"
                 aria-label={`Ngày kết thúc ghi danh của ${studentName}`}

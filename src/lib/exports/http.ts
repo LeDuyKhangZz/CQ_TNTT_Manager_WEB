@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatDateTimeVi } from "@/lib/dates";
 
 /** Tên file tải về chỉ dùng ASCII: bỏ dấu tiếng Việt thay vì thay bằng gạch nối. */
 export function asciiFilename(value: string): string {
@@ -81,7 +82,7 @@ export async function pdfResponse(
         layout: "lightHorizontalLines",
       },
       {
-        text: `Xuất lúc ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`,
+        text: `Xuất lúc ${formatDateTimeVi(new Date())}`,
         margin: [0, 12, 0, 0],
         fontSize: 7,
         color: "#756861",

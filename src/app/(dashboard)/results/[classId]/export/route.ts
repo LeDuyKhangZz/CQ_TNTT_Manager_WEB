@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { buildGradebookExportData } from "@/features/assessments/export-data";
 import { getGradebookDetail } from "@/features/assessments/server/queries";
 import { asciiFilename, excelResponse, pdfResponse } from "@/lib/exports/http";
+import { formatDateTimeVi } from "@/lib/dates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
 
   const data = buildGradebookExportData(detail);
   const filename = `bang-diem-${asciiFilename(detail.className)}-${detail.academicYearCode}`;
-  const exportedAt = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  const exportedAt = formatDateTimeVi(new Date());
 
   if (format === "pdf") {
     return pdfResponse(data.title, data.subtitle, data, `${filename}.pdf`, {

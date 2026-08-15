@@ -181,7 +181,8 @@ test.describe("M02-B · mốc kết thúc học kỳ 1 (D-71)", () => {
 
     await page.reload();
     const cardAgain = page.locator("div.rounded-md.border").filter({ hasText: SEEDED_YEAR_CODE }).first();
-    await expect(cardAgain.getByLabel("Ngày kết thúc học kỳ 1")).toHaveValue("2027-01-15");
+    // Đợt C: hiển thị dd/MM/yyyy, ô ẩn giữ ISO.
+    await expect(cardAgain.getByLabel("Ngày kết thúc học kỳ 1")).toHaveValue("15/01/2027");
 
     // D-116 — lưu ô trống là XOÁ mốc, không phải lỗi. Trả lại trạng thái ban đầu để
     // lượt chạy sau và hai viewport còn lại không thấy một mốc lạ.

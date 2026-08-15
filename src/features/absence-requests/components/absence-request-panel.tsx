@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,10 +113,9 @@ export function AbsenceRequestPanel({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="absence-date">Ngày nghỉ</Label>
-                <Input
+                <DateField
                   id="absence-date"
                   name="absenceDate"
-                  type="date"
                   required
                   value={absenceDate}
                   onChange={(event) => setAbsenceDate(event.target.value)}

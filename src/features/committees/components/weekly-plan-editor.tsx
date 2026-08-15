@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DateField } from "@/components/ui/date-field";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeVi, formatDateVi } from "@/lib/dates";
@@ -114,10 +114,9 @@ export function WeeklyPlanEditor({
         <form onSubmit={submit} className="grid gap-3">
           <div className="space-y-2">
             <Label htmlFor="plan-week">Tuần bắt đầu (thứ Hai)</Label>
-            <Input
+            <DateField
               id="plan-week"
               name="weekStart"
-              type="date"
               required
               ref={weekRef}
               value={weekStart}

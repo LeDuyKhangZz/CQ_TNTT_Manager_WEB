@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
@@ -95,7 +95,7 @@ export default async function AttendancePage({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="attendance-date">Ngày</Label>
-                  <Input id="attendance-date" name="date" type="date" defaultValue={defaultDate} required />
+                  <DateField id="attendance-date" name="date" defaultValue={defaultDate} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="attendance-meeting">Buổi</Label>

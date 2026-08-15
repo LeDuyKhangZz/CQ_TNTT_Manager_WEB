@@ -142,7 +142,11 @@ describe("WeeklyPlanEditor — chống ghi đè mù (F11)", () => {
     expect(row).not.toBeNull();
     await user.click(within(row!).getByRole("button", { name: "Sửa" }));
 
-    expect(screen.getByLabelText("Tuần bắt đầu (thứ Hai)")).toHaveValue("2026-10-05");
+    // Ô ngày hiện dd/MM/yyyy từ Đợt C; giá trị gửi lên máy chủ vẫn là ISO.
+    expect(screen.getByLabelText("Tuần bắt đầu (thứ Hai)")).toHaveValue("05/10/2026");
+    expect(
+      document.querySelector('input[type="hidden"][name="weekStart"]'),
+    ).toHaveValue("2026-10-05");
     expect(screen.getByLabelText("Nội dung công việc")).toHaveValue("Chuẩn bị Trung Thu");
     // Đưa focus tới ô nội dung: người dùng bàn phím không bị bỏ lại ở cuối trang.
     expect(screen.getByLabelText("Nội dung công việc")).toHaveFocus();

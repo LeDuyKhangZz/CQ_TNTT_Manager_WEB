@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DateField } from "@/components/ui/date-field";
 import { Dialog } from "@/components/ui/dialog";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
@@ -198,10 +198,9 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
         <div className="space-y-3">
           <div className="space-y-1">
             <Label htmlFor="end-date">Ngày kết thúc phân công</Label>
-            <Input
+            <DateField
               id="end-date"
               name="endsOn"
-              type="date"
               className="w-48"
               value={endsOn}
               min={active.startsOn}
@@ -256,7 +255,7 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
           </div>
           <div className="space-y-1">
             <Label htmlFor="assign-start">Ngày bắt đầu</Label>
-            <Input id="assign-start" name="startsOn" type="date" defaultValue={today()} required />
+            <DateField id="assign-start" name="startsOn" defaultValue={today()} required />
           </div>
           <Button type="submit" size="sm" disabled={pending}>
             {pending ? "Đang lưu…" : "Lưu phân công"}
@@ -339,9 +338,8 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
             </div>
             <div className="space-y-1">
               <Label htmlFor="transfer-date">Ngày hiệu lực</Label>
-              <Input
+              <DateField
                 id="transfer-date"
-                type="date"
                 value={effectiveOn}
                 min={active.startsOn}
                 onChange={(event) => setEffectiveOn(event.target.value)}

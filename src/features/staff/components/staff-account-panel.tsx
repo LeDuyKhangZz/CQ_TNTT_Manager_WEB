@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateField } from "@/components/ui/date-field";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { CLASS_ROLES, ROLE_LABELS, SECTOR_ROLES, type AppRole } from "@/lib/permissions/roles";
@@ -319,7 +319,7 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
           ) : null}
           <div className="space-y-1">
             <Label htmlFor="grant-start">Ngày bắt đầu</Label>
-            <Input id="grant-start" type="date" value={startsOn} onChange={(event) => setStartsOn(event.target.value)} required />
+            <DateField id="grant-start" value={startsOn} onChange={(event) => setStartsOn(event.target.value)} required />
           </div>
         </div>
       </Dialog>

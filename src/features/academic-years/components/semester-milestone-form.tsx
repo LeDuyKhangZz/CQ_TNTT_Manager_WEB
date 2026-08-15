@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   refreshSemesterMilestoneViews,
@@ -63,10 +63,9 @@ export function SemesterMilestoneForm({
       <input type="hidden" name="endDate" value={endDate} />
       <Label htmlFor={inputId}>Ngày kết thúc học kỳ 1</Label>
       <div className="flex flex-wrap items-end gap-2">
-        <Input
+        <DateField
           id={inputId}
           name="semester1EndDate"
-          type="date"
           className="w-44"
           min={startDate}
           max={endDate}

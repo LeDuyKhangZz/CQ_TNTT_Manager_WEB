@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DateField } from "@/components/ui/date-field";
 import { Dialog } from "@/components/ui/dialog";
 import { FileUpload } from "@/components/ui/file-upload";
 import { FormMessage } from "@/components/ui/form-message";
@@ -286,10 +287,9 @@ function ItemFields({
           </div>
           <div className="space-y-2">
             <Label htmlFor={`${fieldId}-date`}>Ngày dự kiến</Label>
-            <Input
+            <DateField
               id={`${fieldId}-date`}
               name="plannedDate"
-              type="date"
               min={yearStart}
               max={yearEnd}
               value={plannedDate}

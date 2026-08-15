@@ -114,7 +114,7 @@ describe("pha hai — cảnh báo trùng", () => {
     await screen.findByText("Đã có 1 hồ sơ trông giống người này.");
     expect(screen.getByLabelText("Họ tên")).toHaveValue("Ngô Thị Trùng");
     expect(screen.getByLabelText("Điện thoại")).toHaveValue("0901000009");
-    expect(screen.getByLabelText("Ngày sinh")).toHaveValue("1999-05-04");
+    expect(screen.getByLabelText("Ngày sinh")).toHaveValue("04/05/1999");
     expect(screen.getByLabelText("Địa chỉ")).toHaveValue("12 Trần Bình Trọng");
     expect(screen.getByLabelText("Tên thánh")).toHaveValue("Maria");
     expect(screen.getByLabelText("Danh xưng")).toHaveValue("chi");

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -144,7 +145,7 @@ export function StaffCreateForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="staff-birth">Ngày sinh</Label>
-        <Input id="staff-birth" name="dateOfBirth" type="date" defaultValue={state.values.dateOfBirth} />
+        <DateField id="staff-birth" name="dateOfBirth" defaultValue={state.values.dateOfBirth} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="staff-email">Email</Label>

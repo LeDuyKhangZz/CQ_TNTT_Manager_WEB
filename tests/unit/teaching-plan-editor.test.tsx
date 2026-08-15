@@ -220,7 +220,7 @@ describe("ô người dạy lọc theo ngày (M06-A · TB-M06-03 · TB-05)", () 
 
     expect(within(select).getByRole("option", { name: LAN.label })).toBeTruthy();
 
-    const date = form.querySelector('input[name="plannedDate"]') as HTMLInputElement;
+    const date = form.querySelector('[data-date-text]') as HTMLInputElement;
     await user.clear(date);
     await user.type(date, "2026-11-05");
 
@@ -242,7 +242,7 @@ describe("ô người dạy lọc theo ngày (M06-A · TB-M06-03 · TB-05)", () 
     const select = card.querySelector('select[name="teacherStaffId"]') as HTMLSelectElement;
     expect(select.value).toBe(LAN.id);
 
-    const date = card.querySelector('input[name="plannedDate"]') as HTMLInputElement;
+    const date = card.querySelector('[data-date-text]') as HTMLInputElement;
     await user.clear(date);
     await user.type(date, "2026-11-05");
 
@@ -255,7 +255,7 @@ describe("ô người dạy lọc theo ngày (M06-A · TB-M06-03 · TB-05)", () 
     renderEditor(makeDetail({ staff: [LAN], items: [] }));
     const form = await openAddForm(user);
 
-    const date = form.querySelector('input[name="plannedDate"]') as HTMLInputElement;
+    const date = form.querySelector('[data-date-text]') as HTMLInputElement;
     await user.clear(date);
     await user.type(date, "2026-11-05");
 

@@ -164,8 +164,14 @@ describe("D-105 — hộp thoại Chuyển lớp tự nó là lời xác nhận"
     renderPanel({ activeAssignment: { ...ACTIVE, startsOn: future } });
     await user.click(screen.getByRole("button", { name: "Chuyển lớp" }));
 
-    expect(screen.getByLabelText("Ngày hiệu lực")).toHaveValue(future);
-    expect(screen.getByLabelText("Ngày kết thúc phân công")).toHaveValue(future);
+    // Đợt C: người dùng thấy dd/MM/yyyy, máy chủ vẫn nhận ISO.
+    expect(screen.getByLabelText("Ngày hiệu lực")).toHaveValue("01/09/2099");
+    expect(screen.getByLabelText("Ngày kết thúc phân công")).toHaveValue("01/09/2099");
+    for (const hidden of document.querySelectorAll('input[type="hidden"]')) {
+      if ((hidden as HTMLInputElement).value !== "") {
+        expect(hidden).toHaveValue(future);
+      }
+    }
   });
 
   it("lớp đích trong danh sách KHÔNG chứa lớp đang phục vụ", async () => {

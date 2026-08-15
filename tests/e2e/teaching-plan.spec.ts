@@ -111,7 +111,7 @@ test.describe("Giáo án Phase 4", () => {
     const addDialog = page.getByRole("dialog");
     await expect(addDialog).toBeVisible();
     const addForm = addDialog.locator("form");
-    await addForm.locator('input[name="plannedDate"]').fill(plannedDate);
+    await addForm.getByLabel('Ngày dự kiến').fill(plannedDate);
     await addForm.locator('input[name="title"]').fill(title);
     await addDialog.locator("summary").filter({ hasText: "Nội dung buổi học" }).click();
     await addForm.locator('textarea[name="objectives"]').fill(restricted);
@@ -390,7 +390,8 @@ test.describe("Giáo án Phase 4", () => {
      * không một câu nào giải thích.
      */
     await expect(dialog.locator('select[name="itemType"]')).toBeVisible();
-    await expect(dialog.locator('input[name="plannedDate"]')).toBeVisible();
+    // Đợt C: ô ngày nay là ô chữ dd/MM/yyyy đeo nhãn, còn `name` thuộc về ô ẩn mang ISO.
+    await expect(dialog.getByLabel('Ngày dự kiến')).toBeVisible();
     await expect(dialog.locator('input[name="title"]')).toBeVisible();
     await expect(dialog.locator('select[name="teacherStaffId"]')).toBeVisible();
 

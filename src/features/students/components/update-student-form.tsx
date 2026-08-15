@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,20 +79,18 @@ export function UpdateStudentForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="edit-dob">Ngày sinh</Label>
-          <Input
+          <DateField
             id="edit-dob"
             name="dateOfBirth"
-            type="date"
             defaultValue={student.dateOfBirth}
             required
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="edit-feast">Bổn mạng</Label>
-          <Input
+          <DateField
             id="edit-feast"
             name="patronFeastDate"
-            type="date"
             defaultValue={student.patronFeastDate ?? ""}
           />
         </div>

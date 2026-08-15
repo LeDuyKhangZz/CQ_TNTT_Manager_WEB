@@ -7,6 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -227,10 +228,9 @@ export function SacramentPanel({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="sac-date">Ngày lãnh</Label>
-                  <Input
+                  <DateField
                     id="sac-date"
                     name="sacramentDate"
-                    type="date"
                     defaultValue={editing?.sacramentDate ?? ""}
                   />
                 </div>

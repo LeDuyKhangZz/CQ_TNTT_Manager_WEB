@@ -128,7 +128,15 @@ Quy tắc parse: bỏ dòng trắng + dòng bắt đầu `#`; mỗi dòng còn l
 
 - **API giữ nguyên 100%**: vẫn nhận `<option>`/`<optgroup>` làm children, vẫn `name`/`value`/`defaultValue`/`onChange`/`disabled`/`required`/`placeholder` → **73 call site không phải sửa**.
 - Trước hydration: render đúng `<select>` native như hiện tại (styled trigger) — form GET/POST vẫn chạy không cần JS.
-- Sau hydration: đọc children ra danh sách `{value,label,disabled,group}`, render nút trigger (giữ nguyên mặt tiền hiện tại: `inputBaseClassName` + `h-control` + chevron) + **listbox popover tự vẽ** + `<input type="hidden" name>` để form submit không đổi.
+- ~~Sau hydration: … render nút trigger … + `<input type="hidden" name>` để form submit không đổi.~~
+
+⚠️ **KHÔNG CÒN ĐÚNG từ 2026-08-15 khi triển khai.** Bản thi hành **giữ chính `<select>` thật** làm
+control duy nhất (nó nằm đè lên mặt tiền ở `opacity-0`, `pointerdown` bị chặn để listbox hệ điều
+hành không bung), **không** dùng nút `role="combobox"` + `<input type="hidden">`. Lý do nặng nhất
+là đo được: `getByLabel(...).selectOption(...)` có **43 lần** trong 13 tệp E2E và `selectOptions`
+trong 12 tệp unit; đổi hợp đồng là bắt cả bộ kiểm ấy viết lại trong cùng phiên đang đổi hai
+component lớn. Cộng ba lý do nữa (a11y, nhãn, `required`) — xem `16` §6.2. Con số thật là **74**
+chỗ gọi, không phải 73, và **không chỗ nào phải sửa**.
 
 ### 4.2 Spec listbox (theo token 09)
 
@@ -168,6 +176,11 @@ Unit (jsdom): mở/đóng/chọn bằng chuột + đủ phím · type-ahead có 
 - **Chuẩn hoá bề rộng**: mặc định full-width trong form dọc, `w-44` thống nhất trong hàng lọc ngang — xoá các override lẻ `w-40`/`w-44`/`w-48`/`mt-1` (`semester-milestone-form.tsx:67`, `roster-row.tsx:189`, `staff-assignment-panel.tsx:202`, `report-workbench.tsx:177`).
 
 ### 5.2 Danh sách migrate (33)
+
+⚠️ **Số thật khi triển khai (2026-08-15): 27 `type="date"` + 3 `type="datetime-local"` = 30 ô trên
+22 tệp**, không phải 33. Bảng dưới đây đếm lặp vài dòng. Sau đợt này `src/` còn **0** ô ngày
+native. Chi tiết ở `16` §6.3 — kèm bốn lỗi thật mà bộ kiểm của đợt bắt được, và một hàng rào
+không có trong kế hoạch (`setCustomValidity` chặn gửi khi chuỗi gõ dở không đọc được).
 
 Toàn bộ bảng file:line ở báo cáo khảo sát (mục 2) — 30 `type="date"`: `attendance/page.tsx:94` · `staff/page.tsx:260` · `create-year-form.tsx:76,80,93` · `semester-milestone-form.tsx:67` · `gradebook-editor.tsx:156,295` · `absence-request-panel.tsx:119` · `teaching-plan-editor.tsx:291` · `roster-row.tsx:189` · `enroll-student-form.tsx:53` · `account-admin-panel.tsx:225` · `weekly-plan-editor.tsx:120` · `create-student-form.tsx:145,155` · `update-student-form.tsx:82,92` · `sacrament-panel.tsx:231` · `student-status-panel.tsx:155` · `report-workbench.tsx:177` · `staff-account-panel.tsx:320` · `staff-assignment-panel.tsx:202,257,342` · `staff-create-form.tsx:145` · `staff-profile-editor.tsx:104` — cộng 3 `datetime-local` kể trên.
 

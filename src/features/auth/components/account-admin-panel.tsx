@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateField } from "@/components/ui/date-field";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -226,7 +227,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
               </div>
             ) : null}
 
-            <div className="space-y-2"><Label htmlFor="account-start">Ngày bắt đầu</Label><Input id="account-start" name="startsOn" type="date" required /></div>
+            <div className="space-y-2"><Label htmlFor="account-start">Ngày bắt đầu</Label><DateField id="account-start" name="startsOn" required /></div>
             <Button type="submit" className="w-full">Tạo tài khoản</Button>
           </form>
           {message ? <p className="mt-4 text-sm text-ink-muted" role="status">{message}</p> : null}

@@ -3,8 +3,8 @@
 import { useActionState, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { enrollmentStatusLabel } from "@/features/enrollments/enrollment-status";
@@ -154,7 +154,7 @@ export function StudentStatusPanel({
             </div>
             <div className="space-y-2">
               <Label htmlFor="status-ended-on">Ngày kết thúc</Label>
-              <Input id="status-ended-on" name="endedOn" type="date" defaultValue={today} />
+              <DateField id="status-ended-on" name="endedOn" defaultValue={today} />
             </div>
           </div>
         </div>
