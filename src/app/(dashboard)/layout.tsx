@@ -41,7 +41,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // ba chấm nhún ăn đúng màu ngành của người đang đăng nhập, và NGOÀI `AppShell`
   // để lớp phủ là anh em của cả cái vỏ chứ không nằm lọt trong `<main>` — nằm
   // trong `<main>` thì nó không che nổi sidebar và thanh dưới.
-  const loadingAssets = await getLoadingAssets();
+  const loadingAssets = getLoadingAssets();
 
   return (
     <ThemeScope theme={theme} className="min-h-screen">

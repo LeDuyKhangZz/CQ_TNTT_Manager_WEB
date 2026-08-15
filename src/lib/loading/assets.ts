@@ -1,6 +1,6 @@
 import "server-only";
 
-import { readdir, readFile } from "node:fs/promises";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
   LOADING_IMAGE_DIR,
@@ -16,15 +16,25 @@ import { parseLoiChua, type LoiChuaVerse } from "./verses";
  * 🔴 `server-only`: đọc đĩa. Client chỉ nhận **kết quả** qua prop của
  * `LoadingProvider`, không bao giờ nhận đường dẫn hệ thống tệp.
  *
+ * 🔴 **ĐỒNG BỘ, và đây là điều bắt buộc chứ không phải sở thích.**
+ *
+ * Bản đầu dùng `fs/promises`, nên `getLoadingAssets()` là `async`, nên
+ * `RouteLoadingOverlay` là `async`, nên **`loading.tsx` trở thành async**. Mà
+ * `loading.tsx` chính là *fallback* của Suspense — **một fallback tự nó suspend
+ * là nghịch lý**: React không có gì để hiện trong lúc chờ chính cái đang chờ.
+ * Đo được trên `results.spec.ts:278`: đỏ **cả ba viewport**, tái hiện 100%, và
+ * nó đã kịp lên production ở commit `803f42f`.
+ *
+ * Đọc đĩa đồng bộ ở đây **không** nằm trên đường tới hạn: cache tầng module nên
+ * cả tiến trình chỉ đọc đúng một lần, và nó xảy ra lúc dựng vỏ chứ không lúc
+ * truy vấn dữ liệu.
+ *
  * Cả hai nguồn đều **tự nhận nội dung mới, không cần sửa code** — đúng hai yêu
  * cầu gốc của chủ dự án:
  *   • bỏ thêm ảnh vào `public/loading/` ⇒ ảnh vào vòng quay
  *   • thêm một dòng vào `src/content/LoiChua.md` ⇒ câu vào vòng quay
  *
- * Cache ở tầng module (một lần mỗi tiến trình): thư mục ảnh và kho câu không đổi
- * giữa hai lượt yêu cầu của cùng một tiến trình máy chủ, mà đọc đĩa thì nằm ngay
- * trên đường tới hạn của **mọi** lần dựng trang. Thêm ảnh/câu lúc máy chủ đang
- * chạy thì khởi động lại là thấy.
+ * Thêm ảnh/câu lúc máy chủ đang chạy thì khởi động lại là thấy.
  */
 
 export type LoadingAssets = {
@@ -34,14 +44,13 @@ export type LoadingAssets = {
   verses: LoiChuaVerse[];
 };
 
-let cached: Promise<LoadingAssets> | null = null;
+let cached: LoadingAssets | null = null;
 
-async function readImages(): Promise<string[]> {
+function readImages(): string[] {
   try {
     const directory = path.join(process.cwd(), LOADING_IMAGE_DIR);
-    const entries = await readdir(directory, { withFileTypes: true });
 
-    return entries
+    return readdirSync(directory, { withFileTypes: true })
       .filter((entry) => entry.isFile())
       .map((entry) => entry.name)
       .filter((name) =>
@@ -56,21 +65,17 @@ async function readImages(): Promise<string[]> {
   }
 }
 
-async function readVerses(): Promise<LoiChuaVerse[]> {
+function readVerses(): LoiChuaVerse[] {
   try {
-    const file = path.join(process.cwd(), LOI_CHUA_PATH);
-    return parseLoiChua(await readFile(file, "utf8"));
+    return parseLoiChua(readFileSync(path.join(process.cwd(), LOI_CHUA_PATH), "utf8"));
   } catch {
     return [];
   }
 }
 
-export function getLoadingAssets(): Promise<LoadingAssets> {
+export function getLoadingAssets(): LoadingAssets {
   if (!cached) {
-    cached = Promise.all([readImages(), readVerses()]).then(([images, verses]) => ({
-      images,
-      verses,
-    }));
+    cached = { images: readImages(), verses: readVerses() };
   }
   return cached;
 }

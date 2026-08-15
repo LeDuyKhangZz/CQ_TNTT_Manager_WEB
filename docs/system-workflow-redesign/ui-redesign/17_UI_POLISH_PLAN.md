@@ -82,7 +82,7 @@ Gắn provider ở `src/app/(dashboard)/layout.tsx` (ngoài `AppShell`, trong `T
 
 | Hằng | Giá trị | Ý nghĩa |
 |---|---|---|
-| `SHOW_AFTER_MS` | **1000** | Theo đúng yêu cầu ">1s mới hiện". Thao tác nhanh không bị chớp overlay |
+| `SHOW_AFTER_MS` | ~~1000~~ → **0** | ⚠️ **ĐÃ ĐỔI 2026-08-14 khi triển khai.** Ngưỡng 1000ms đúng yêu cầu gốc ">1s mới hiện", nhưng trên production phần lớn thao tác xong **dưới** một giây nên overlay gần như không bao giờ hiện. Chủ dự án chốt lại: *"cứ loading là xuất hiện"*. Chống chớp nay do `MIN_VISIBLE_MS` gánh một mình |
 | `MIN_VISIBLE_MS` | 600 | Đã hiện thì hiện đủ lâu để đọc, không nháy tắt |
 | `FAILSAFE_HIDE_MS` | 30000 | Chống overlay kẹt vĩnh viễn nếu một `end()` bị nuốt |
 
@@ -97,7 +97,10 @@ Gắn provider ở `src/app/(dashboard)/layout.tsx` (ngoài `AppShell`, trong `T
 ### 3.5 Rủi ro E2E (585 bài đang là baseline của P3-UX-001)
 
 - Overlay chỉ mount khi active; khi ẩn **unmount hẳn** (không phải `opacity-0` treo pointer-events).
-- `SHOW_AFTER_MS=1000` nghĩa là thao tác test nhanh (local DB) hầu như không thấy overlay.
+- ~~`SHOW_AFTER_MS=1000` nghĩa là thao tác test nhanh (local DB) hầu như không thấy overlay.~~
+  ⚠️ **KHÔNG CÒN ĐÚNG từ 2026-08-14**: ngưỡng nay là **0**, nên overlay hiện ở **mọi** thao tác và
+  che màn hình ít nhất `MIN_VISIBLE_MS`. Mọi spec bấm nút liên tiếp đều phải chờ nó biến mất —
+  dùng `waitForIdle(page)` ở `tests/e2e/utils/`.
 - Nếu spec nào flake vì overlay che nút: chờ `data-testid="global-loading-overlay"` biến mất — thêm helper `waitForIdle(page)` vào `tests/e2e/utils`.
 
 ### 3.6 Format `LoiChua.md` (chủ dự án điền)

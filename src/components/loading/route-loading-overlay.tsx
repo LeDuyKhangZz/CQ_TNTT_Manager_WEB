@@ -17,9 +17,14 @@ import { LoadingOverlay } from "./loading-overlay";
  *
  * `loading.tsx` mới là chỗ Next dành riêng cho đúng khoảng chờ ấy. Đây là Server
  * Component nên nó bốc ảnh + câu ngay tại máy chủ, không cần đợi hydrate.
+ *
+ * 🔴 **KHÔNG `async`.** `loading.tsx` là *fallback* của Suspense; một fallback tự
+ * nó suspend là nghịch lý — React không có gì để hiện trong lúc chờ chính cái
+ * đang chờ. Bản đầu `await getLoadingAssets()` và đã làm `results.spec.ts:278`
+ * đỏ **cả ba viewport**, tái hiện 100%. Vì thế `assets.ts` đọc đĩa đồng bộ.
  */
-export async function RouteLoadingOverlay() {
-  const { images, verses } = await getLoadingAssets();
+export function RouteLoadingOverlay() {
+  const { images, verses } = getLoadingAssets();
 
   // Bốc mới mỗi lượt dựng. Không có "lần trước" để tránh trùng ở phía máy chủ —
   // mỗi lượt chuyển route là một tiến trình dựng riêng, không giữ trạng thái.
@@ -28,7 +33,6 @@ export async function RouteLoadingOverlay() {
 
   return (
     <LoadingOverlay
-      delayed
       label="Đang mở trang…"
       image={imageIndex >= 0 ? images[imageIndex] : null}
       verse={verseIndex >= 0 ? verses[verseIndex] : null}

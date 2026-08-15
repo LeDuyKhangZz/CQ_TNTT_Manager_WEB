@@ -1756,7 +1756,43 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
   ở **45 chỗ** dựng lại server component **tại chỗ**, nên `loading.tsx` **không bao giờ chạy** —
   phản hồi duy nhất là một cái nút mờ đi. 9 tệp mới; nối **45 chỗ luồng chậm trên 41 tệp**
   (16 `useTransition` · 18 `useActionState` · 7 cờ `useState` · 3 `useFormStatus` · 2 react-hook-form
-  · 3 `router.push` · 6 form không-cần-JS). Ngưỡng 1000/600/30000ms nằm một chỗ, đổi được.
+  · 3 `router.push` · 6 form không-cần-JS). Ba ngưỡng nằm một chỗ, đổi được.
+- **🔴 Chủ dự án ĐỔI Ý ngay trong ngày về ngưỡng hiện, và lý do đáng ghi:** bản đầu để
+  `SHOW_AFTER_MS = 1000` theo đúng yêu cầu gốc *"mọi thao tác > 1 giây"*. Nhưng trên Vercel phần
+  lớn thao tác xong **dưới** một giây, nên overlay gần như **không bao giờ hiện** — đúng luật mà
+  sai ý muốn, và chủ dự án báo *"chả có hiệu ứng gì"*. Chốt lại: **`SHOW_AFTER_MS = 0` ·
+  `MIN_VISIBLE_MS = 250`**. `17` §3.3 và §3.5 nay **lỗi thời** ở hai dòng nói về ngưỡng 1000ms.
+- **🔴 Hạ ngưỡng làm lộ BA lỗi mà 1568 unit test + lint + typecheck + build đều không thấy** —
+  vì cả ba chỉ xuất hiện khi overlay hiện ở **mọi** thao tác thay vì chỉ thao tác chậm. Đo bằng
+  ba lượt full E2E:
+
+  | Cấu hình | Kết quả | Thời lượng |
+  |---|--:|--:|
+  | 1000 / 600 (bản đầu) | 585 pass · 3 fail | 22,0 ph |
+  | 0 / 600 | 582 pass · **6 fail** | **38,1 ph** |
+  | **0 / 250 (chốt)** | **584 pass · 4 fail** | **27,8 ph** |
+
+  1. **Overlay chặn chuột** — 5 bài mang đúng chữ ký `element intercepts pointer events`. Bỏ chặn
+     (`pointer-events-none`): nó vốn là hàng rào **thứ ba**, vì nút chạy việc chậm đều đã
+     `disabled={pending}` và đường gửi thông báo còn có `requestId` chống bản lặp (D-165).
+  2. **Overlay chiếm `role="status"` ĐẦU TIÊN trong DOM** ⇒ cướp bộ định vị của `FormMessage`
+     (bắt được ở `enrollment-lifecycle` TB-F14). Và nặng hơn chuyện test: mỗi cú bấm sẽ đọc cho
+     người dùng trình đọc màn hình nghe *"Đang xử lý…"* **kèm nguyên một câu Kinh Thánh**, nhấn
+     chìm đúng câu kết quả họ cần nghe. Nay `aria-hidden` — ảnh và câu là an ủi cho **mắt nhìn**.
+  3. **`MIN_VISIBLE_MS = 600` là cái giá thật, không phải con số trang trí**: 600 → 250 kéo bộ
+     kiểm từ 38,1 xuống 27,8 phút, và `results.spec.ts:278` (hành trình dài, trần cứng 240s) từ
+     đỏ **3/3 viewport** xuống **2/3**.
+- **⚠️ Một giả thuyết tôi nêu SAI và phải ghi lại:** tôi kết luận `loading.tsx` thành `async`
+  (fallback của Suspense tự suspend) là nguyên nhân `results:278`, và **sai** — bản vá đồng bộ
+  không đổi được kết quả. Vẫn giữ bản vá vì nó đúng nguyên tắc (`assets.ts` nay đọc đĩa đồng bộ,
+  cache tầng module), nhưng nó **không** phải lời giải. `results:278` chính là bài *"M07 hành
+  trình Kết quả/chuyển lớp"* vốn nằm trong **14 bài đỏ của baseline GĐ3**; nó marginal từ trước.
+- **🔴 Lỗ hổng của Đợt A do chủ dự án tìm ra, không phải bộ kiểm:** chuyển module mất 3–4 giây mà
+  không có overlay. Nguyên nhân: Next commit chuyển route **ngay lập tức** để dựng `loading.tsx`,
+  nên `usePathname()` đổi tức thì, `NavigationSettleWatcher` tưởng route đã xong và tắt cờ chờ.
+  Thao tác chờ **lâu nhất** của ứng dụng lại là thao tác **duy nhất** không có phản hồi. Sửa bằng
+  cách cho chính `loading.tsx` dựng overlay (`RouteLoadingOverlay`, Server Component) và bỏ
+  `"use client"` khỏi `LoadingOverlay` để nó dựng được cả hai phía.
 - **🔴 Ba quyết định cài đặt đáng nhớ:** (1) `useGlobalPending` **không ném lỗi** khi thiếu
   provider — nó nằm trong 41 tệp nghiệp vụ mà bộ kiểm render **trần**; ném lỗi là đánh sập vài
   chục bài đang xanh vì một thứ thuần trang trí. (2) Điều hướng dùng **cờ**, không dùng bộ đếm —

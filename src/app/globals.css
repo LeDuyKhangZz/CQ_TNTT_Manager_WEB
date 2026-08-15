@@ -237,13 +237,12 @@
     animation: loading-dot 1200ms ease-in-out infinite;
   }
 
-  /* Hoãn hiện 1 giây cho overlay của `loading.tsx` — cùng ngưỡng
-     `SHOW_AFTER_MS` của phía client, nhưng làm bằng CSS vì `loading.tsx` được
-     Next dựng ngay lập tức và không có chỗ đặt hẹn giờ. `both` để phần tử giữ
-     `opacity: 0` trong suốt khoảng hoãn: route xong sớm thì nó bị gỡ trước khi
-     kịp nhìn thấy, tức thao tác nhanh KHÔNG bị chớp. */
-  .loading-delayed {
-    animation: loading-appear var(--duration-base) var(--ease-out) 1000ms both;
+  /* Overlay hiện NGAY, chỉ mờ dần vào trong 150ms cho đỡ giật.
+     🔴 KHÔNG còn `animation-delay`: chủ dự án bỏ ngưỡng chờ 2026-08-14 —
+     "cứ loading là xuất hiện". Bản trước hoãn 1000ms để khớp `SHOW_AFTER_MS`,
+     mà ngưỡng ấy nay bằng 0. */
+  .loading-appear {
+    animation: loading-appear var(--duration-base) var(--ease-out) both;
   }
 }
 

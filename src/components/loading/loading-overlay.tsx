@@ -11,13 +11,34 @@ import type { LoiChuaVerse } from "@/lib/loading/verses";
  *
  * 🔴 Ba điều cố ý:
  *
- * 1. **Không phải `dialog`.** `role="status"` + `aria-live="polite"`, không
- *    `aria-modal`, không bẫy focus, không đóng bằng `Escape`. Màn hình chờ không
- *    phải thứ người dùng "trả lời"; cướp focus của họ giữa lúc gõ là làm hỏng ô
- *    nhập họ đang viết dở.
- * 2. **Che thật.** Lớp phủ nhận sự kiện chuột (không `pointer-events-none`): mục
- *    đích của nó là ngăn bấm lần hai vào cái nút vừa bấm trong lúc máy chủ chưa
- *    trả lời — bấm hai lần vào "Chốt báo cáo" là hai bản chốt.
+ * 1. **Không phải `dialog`, và cũng KHÔNG phải vùng `status`.** Không `aria-modal`,
+ *    không bẫy focus, không đóng bằng `Escape` — màn hình chờ không phải thứ người
+ *    dùng "trả lời"; cướp focus giữa lúc họ gõ là làm hỏng ô nhập đang viết dở.
+ *
+ *    🔴 Bản đầu để `role="status"` + `aria-live="polite"` theo `17` §3.2. Điều đó
+ *    **sai từ khi ngưỡng hiện về 0** (2026-08-14), và sai theo hai đường cùng lúc:
+ *      · Với người dùng trình đọc màn hình: mỗi cú bấm đọc *"Đang xử lý…"* kèm
+ *        **nguyên một câu Kinh Thánh**, nhấn chìm đúng câu kết quả họ cần nghe.
+ *      · Với mã: nó thành vùng `status` **đầu tiên** trong DOM, nên
+ *        `getByRole("status").first()` của cả ứng dụng lẫn bộ kiểm trỏ vào nó thay
+ *        vì trỏ vào `FormMessage`. Bắt được ở E2E `enrollment-lifecycle` TB-F14.
+ *
+ *    Nay `aria-hidden`: ảnh và câu Lời Chúa là **an ủi cho mắt nhìn**, không phải
+ *    thông tin. Trạng thái đang chạy đã có `disabled` trên chính nút vừa bấm, và
+ *    kết quả vẫn do vùng `status` thật của ứng dụng công bố.
+ * 2. **KHÔNG chặn chuột** (`pointer-events-none`) — và đây là chỗ đã đo, không suy đoán.
+ *
+ *    Bản đầu cố ý chặn, để ngăn bấm lần hai vào "Chốt báo cáo". Luật ấy viết dưới
+ *    giả định `SHOW_AFTER_MS = 1000`, tức **chỉ chặn khi thao tác thật sự chậm**.
+ *    Khi chủ dự án hạ ngưỡng về 0 (2026-08-14), nó chặn ở **mọi** thao tác, kể cả
+ *    cái xong trong 50ms — đo được trên bộ 588 bài E2E: **545 pass / 18 fail /
+ *    48,3 phút**, so với **585 pass / 3 fail / 22,0 phút** trước đó. Năm bài đỏ
+ *    mang đúng chữ ký `element intercepts pointer events`.
+ *
+ *    Bỏ chặn KHÔNG mở lại lỗ hổng bấm đúp: mọi nút chạy việc chậm đều đã
+ *    `disabled={pending}` ngay tại chỗ, và đường nguy hiểm nhất (gửi thông báo)
+ *    còn có `requestId` chống bản lặp ở máy chủ (D-165). Lớp phủ vốn là hàng rào
+ *    **thứ ba**, không phải hàng rào duy nhất.
  * 3. **Ảnh dùng `unoptimized`.** Provider nạp trước ảnh kế tiếp bằng
  *    `new Image()`, mà nạp trước chỉ có tác dụng khi địa chỉ **trùng khớp** với
  *    địa chỉ lúc hiện. Qua bộ tối ưu của Next thì hai địa chỉ khác nhau và công
@@ -32,32 +53,19 @@ export function LoadingOverlay({
   image,
   verse,
   label = "Đang xử lý…",
-  delayed = false,
 }: {
   image: string | null;
   verse: LoiChuaVerse | null;
   /** Câu trạng thái đọc cho trình đọc màn hình và hiện dưới ba chấm. */
   label?: string;
-  /**
-   * Hoãn hiện bằng **CSS**, dùng cho `loading.tsx`.
-   *
-   * `loading.tsx` được Next dựng **ngay lập tức** khi route bắt đầu chuyển — nó
-   * không có chỗ nào để đặt một hẹn giờ 1 giây như phía client. Nếu hiện ngay
-   * thì mọi lượt chuyển trang nhanh đều chớp một cửa sổ rồi tắt, khó chịu hơn là
-   * không có gì. Hoãn bằng `animation-delay` thì phần tử vẫn mount ngay nhưng
-   * **vô hình trong giây đầu**: route xong sớm là nó biến mất trước khi kịp thấy.
-   */
-  delayed?: boolean;
 }) {
   return (
     <div
       data-testid={LOADING_OVERLAY_TEST_ID}
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
+      aria-hidden="true"
       className={cn(
-        "fixed inset-0 z-loading flex items-center justify-center bg-overlay p-4",
-        delayed && "loading-delayed",
+        "loading-appear pointer-events-none fixed inset-0 z-loading",
+        "flex items-center justify-center bg-overlay p-4",
       )}
     >
       <div className="w-full max-w-xs rounded-xl border border-line bg-surface p-6 text-center shadow-md">

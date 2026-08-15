@@ -7,7 +7,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   // Đăng nhập cũng là một thao tác chậm (`17` §3.2): đổi mật khẩu tạm, tài khoản
   // bị khoá, mạng phòng học kém. Không có `ThemeScope` ở đây — màn hình chờ dùng
   // bộ token mặc định HUYNH_TRUONG của `:root`, đúng như phần còn lại của trang.
-  const loadingAssets = await getLoadingAssets();
+  const loadingAssets = getLoadingAssets();
 
   return (
     <LoadingProvider images={loadingAssets.images} verses={loadingAssets.verses}>

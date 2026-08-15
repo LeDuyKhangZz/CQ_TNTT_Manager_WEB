@@ -52,8 +52,11 @@ test("điều hướng chậm: cửa sổ chờ hiện rồi tự biến mất",
   await accountLink(page).click();
 
   await expect(overlay).toBeVisible({ timeout: 10_000 });
-  await expect(overlay).toHaveAttribute("role", "status");
-  await expect(overlay).toHaveAttribute("aria-live", "polite");
+  // Trang trí cho mắt nhìn, KHÔNG phải vùng phát thông báo — nếu không nó cướp
+  // `getByRole("status").first()` của `FormMessage` và đọc cả câu Kinh Thánh cho
+  // trình đọc màn hình ở mỗi cú bấm.
+  await expect(overlay).toHaveAttribute("aria-hidden", "true");
+  await expect(overlay).toHaveAttribute("class", /pointer-events-none/);
 
   // Không phải hộp thoại: `Escape` KHÔNG đóng được, và focus vẫn ở nơi cũ.
   await page.keyboard.press("Escape");
