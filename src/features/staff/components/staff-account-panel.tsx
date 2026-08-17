@@ -263,7 +263,7 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
               {grantableRoles.length > 0 ? (
                 <Button type="button" variant="outline" size="sm" onClick={() => openDialog("assign")}>Đổi vai trò</Button>
               ) : null}
-              <Button type="button" variant="outline" size="sm" onClick={resetPassword} disabled={pending}>Đặt lại mật khẩu</Button>
+              <Button type="button" variant="outline" size="sm" onClick={resetPassword} pending={pending}>Đặt lại mật khẩu</Button>
               {account.accountStatus === "active" ? (
                 <Button type="button" variant="outline" size="sm" onClick={() => setStatusTarget("disable")}>Vô hiệu hóa</Button>
               ) : (
@@ -282,7 +282,7 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
         footer={
           <>
             <Button type="button" variant="outline" onClick={() => setDialog(null)} disabled={pending}>Hủy</Button>
-            <Button type="button" onClick={submit} disabled={pending}>Xác nhận</Button>
+            <Button type="button" onClick={submit} pending={pending}>Xác nhận</Button>
           </>
         }
       >

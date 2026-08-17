@@ -349,8 +349,8 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
         footer={
           <>
             <Button variant="outline" onClick={closeDelete} disabled={deletePending}>Huỷ</Button>
-            <Button variant="danger" onClick={confirmDelete} disabled={deletePending || !deleteMatches}>
-              {deletePending ? "Đang xóa…" : "Xóa tài khoản"}
+            <Button variant="danger" onClick={confirmDelete} pending={deletePending} disabled={!deleteMatches}>
+              Xóa tài khoản
             </Button>
           </>
         }

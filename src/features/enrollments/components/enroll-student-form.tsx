@@ -54,8 +54,8 @@ export function EnrollStudentForm({
         <Label htmlFor="enroll-date">Ngày ghi danh</Label>
         <DateField id="enroll-date" name="enrolledOn" defaultValue={today} required />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Đang ghi danh…" : "Ghi danh"}
+      <Button type="submit" className="w-full" pending={pending}>
+        Ghi danh
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
     </form>

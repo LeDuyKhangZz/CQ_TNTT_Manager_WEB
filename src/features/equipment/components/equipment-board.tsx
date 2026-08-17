@@ -180,12 +180,12 @@ function StockAdjustForm({
         />
       </div>
       <div className="md:col-span-3">
-        <Button type="submit" variant={increasing ? "primary" : "danger"} disabled={pending}>
+        <Button type="submit" variant={increasing ? "primary" : "danger"} pending={pending}>
           {increasing ? "Ghi nhận nhập thêm" : "Ghi nhận giảm tồn kho"}
         </Button>
       </div>
       {!increasing ? (
-        <p className="text-xs text-muted-foreground md:col-span-3">
+        <p className="text-xs text-ink-muted md:col-span-3">
           Chỉ giảm được tối đa {item.availableQuantity} cái đang có trong kho. Phần đang có người
           mượn phải chờ nhận lại hoặc báo hỏng/mất trên phiếu mượn.
         </p>
@@ -259,8 +259,8 @@ function ItemRow({
     <Panel as="li">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.assetCode})</span></p>
-          <p className="text-xs text-muted-foreground">
+          <p className="font-medium">{item.name} <span className="text-xs text-ink-muted">({item.assetCode})</span></p>
+          <p className="text-xs text-ink-muted">
             Khả dụng {item.availableQuantity}/{item.totalQuantity}
             {item.category ? ` · ${item.category}` : ""}
             {item.storageLocation ? ` · ${item.storageLocation}` : ""}
@@ -318,7 +318,7 @@ function ItemRow({
             <Label htmlFor={`note-${item.id}`}>Ghi chú</Label>
             <Input id={`note-${item.id}`} name="note" maxLength={1000} />
           </div>
-          <div className="md:col-span-2"><Button type="submit" disabled={pending}>Ghi nhận mượn</Button></div>
+          <div className="md:col-span-2"><Button type="submit" pending={pending}>Ghi nhận mượn</Button></div>
         </form>
       ) : null}
 
@@ -362,7 +362,7 @@ function ItemRow({
           <Checkbox name="isActive" defaultChecked={item.isActive} labelClassName="flex md:col-span-2">
             Còn sử dụng
           </Checkbox>
-          <div className="md:col-span-2"><Button type="submit" disabled={pending}>Lưu thiết bị</Button></div>
+          <div className="md:col-span-2"><Button type="submit" pending={pending}>Lưu thiết bị</Button></div>
         </form>
       ) : null}
     </Panel>
@@ -448,14 +448,14 @@ function OpenLoanCard({
   return (
     <Panel>
       <p className="text-sm font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-ink-muted">
         {loan.borrowerName ? `${loan.borrowerName} mượn lúc ` : "Mượn lúc "}
         {formatDateTimeVi(loan.borrowedAt)}
         {loan.expectedReturnAt ? ` · hẹn trả ${formatDateTimeVi(loan.expectedReturnAt)}` : ""}
       </p>
       {loan.borrowNote ? <p className="mt-1 text-sm">{loan.borrowNote}</p> : null}
       {loan.events.length > 0 ? (
-        <ul className="mt-2 space-y-1 text-2xs text-muted-foreground">
+        <ul className="mt-2 space-y-1 text-2xs text-ink-muted">
           {loan.events.map((event) => (
             <li key={event.id}>
               {EQUIPMENT_LOAN_EVENT_LABELS[event.kind]} {event.quantity} cái lúc{" "}
@@ -511,9 +511,9 @@ function OpenLoanCard({
             <Input id={`receive-note-${loan.id}`} name="note" maxLength={1000} />
           </div>
           <div className="md:col-span-3">
-            <Button type="submit" disabled={pending}>Ghi nhận nhận lại</Button>
+            <Button type="submit" pending={pending}>Ghi nhận nhận lại</Button>
           </div>
-          <p className="text-xs text-muted-foreground md:col-span-3">
+          <p className="text-xs text-ink-muted md:col-span-3">
             Tổng kho không đổi. Phiếu chỉ đóng khi nhận đủ {loan.outstandingQuantity} cái còn nợ.
           </p>
         </form>
@@ -549,9 +549,9 @@ function OpenLoanCard({
             {/* Nhãn khác nút mở panel: hai nút cùng tên trên một màn hình là
                 người dùng trình đọc màn hình nghe hai lần "Báo hỏng/mất" mà
                 không biết cái nào mở form, cái nào ghi thật. */}
-            <Button type="submit" variant="danger" disabled={pending}>Ghi nhận hỏng/mất</Button>
+            <Button type="submit" variant="danger" pending={pending}>Ghi nhận hỏng/mất</Button>
           </div>
-          <p className="text-xs text-muted-foreground md:col-span-3">
+          <p className="text-xs text-ink-muted md:col-span-3">
             Tổng kho sẽ giảm và không hoàn tác được. Hệ thống hỏi lại một lần trước khi ghi.
           </p>
         </form>
@@ -657,13 +657,13 @@ export function EquipmentBoard({
                 <Input id="asset-note" name="note" maxLength={1000} />
               </div>
               <div className="md:col-span-2">
-                <Button type="submit" disabled={pending}>{pending ? "Đang lưu…" : "Thêm thiết bị"}</Button>
+                <Button type="submit" pending={pending}>Thêm thiết bị</Button>
               </div>
             </form>
           ) : null}
 
           {board.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Kho chưa có thiết bị nào.</p>
+            <p className="text-sm text-ink-muted">Kho chưa có thiết bị nào.</p>
           ) : (
             <ul className="space-y-3">
               {board.items.map((item) => (
@@ -692,7 +692,7 @@ export function EquipmentBoard({
         </CardHeader>
         <CardContent className="space-y-3">
           {openLoans.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Không có thiết bị nào đang được mượn.</p>
+            <p className="text-sm text-ink-muted">Không có thiết bị nào đang được mượn.</p>
           ) : (
             openLoans.map((loan) =>
               canOperate ? (
@@ -707,7 +707,7 @@ export function EquipmentBoard({
               ) : (
                 <Panel key={loan.id}>
                   <p className="text-sm font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-ink-muted">
                     {loan.borrowerName ? `${loan.borrowerName} mượn lúc ` : "Mượn lúc "}
                     {formatDateTimeVi(loan.borrowedAt)}
                   </p>
@@ -722,11 +722,11 @@ export function EquipmentBoard({
         <Card>
           <CardHeader><CardTitle>Lịch sử mượn/trả</CardTitle></CardHeader>
           <CardContent>
-            <ul className="divide-y divide-border text-sm">
+            <ul className="divide-y divide-line text-sm">
               {closedLoans.map((loan) => (
                 <li key={loan.id} className="py-3">
                   <p className="font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-ink-muted">
                     {loan.borrowerName ? `${loan.borrowerName} · ` : ""}
                     {EQUIPMENT_LOAN_STATUS_LABELS[loan.status]} lúc{" "}
                     {loan.returnedAt ? formatDateTimeVi(loan.returnedAt) : "—"}
@@ -747,7 +747,7 @@ export function EquipmentBoard({
             <CardDescription>Mọi lần nhập thêm hoặc giảm tồn kho ngoài phiếu mượn.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="divide-y divide-border text-sm">
+            <ul className="divide-y divide-line text-sm">
               {board.adjustments.map((adjustment) => (
                 <li key={adjustment.id} className="py-3">
                   {/* Dấu +/- kèm chữ "tăng"/"giảm": không dùng màu làm tín hiệu duy nhất. */}
@@ -755,7 +755,7 @@ export function EquipmentBoard({
                     {adjustment.itemName} · {adjustment.delta > 0 ? "tăng" : "giảm"}{" "}
                     {Math.abs(adjustment.delta)} cái → tổng kho {adjustment.totalAfter}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-ink-muted">
                     {EQUIPMENT_STOCK_ADJUSTMENT_REASON_LABELS[adjustment.reason]} ·{" "}
                     {formatDateTimeVi(adjustment.createdAt)}
                     {adjustment.note ? ` — ${adjustment.note}` : ""}

@@ -145,9 +145,10 @@ export function CloseYearPanel({ academicYearId, code, name, openWork }: CloseYe
         type="submit"
         variant="danger"
         size="sm"
-        disabled={!codeMatches || !reasonReady || openWork === null || pending}
+        pending={pending}
+        disabled={!codeMatches || !reasonReady || openWork === null}
       >
-        {pending ? "Đang chốt sổ…" : "Đóng năm học"}
+        Đóng năm học
       </Button>
 
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}

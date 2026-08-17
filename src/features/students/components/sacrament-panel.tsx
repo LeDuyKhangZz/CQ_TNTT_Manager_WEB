@@ -126,15 +126,15 @@ export function SacramentPanel({
                       <p className="font-medium">
                         {sacramentLabel(item.sacramentType, item.sacramentName)}
                       </p>
-                      <p className="text-muted-foreground">
+                      <p className="text-ink-muted">
                         {item.sacramentDate ? formatDateVi(item.sacramentDate) : "Chưa rõ ngày"}
                         {item.place ? ` · ${item.place}` : ""}
                       </p>
                       {item.godparentName ? (
-                        <p className="text-muted-foreground">Người đỡ đầu: {item.godparentName}</p>
+                        <p className="text-ink-muted">Người đỡ đầu: {item.godparentName}</p>
                       ) : null}
                       {item.registryNumber ? (
-                        <p className="text-muted-foreground">Số sổ: {item.registryNumber}</p>
+                        <p className="text-ink-muted">Số sổ: {item.registryNumber}</p>
                       ) : null}
                     </div>
 
@@ -163,8 +163,8 @@ export function SacramentPanel({
                             <input type="hidden" name="intent" value="delete" />
                             <input type="hidden" name="studentId" value={studentId} />
                             <input type="hidden" name="id" value={item.id} />
-                            <Button type="submit" variant="outline" size="sm" disabled={pending}>
-                              {pending ? "Đang xoá…" : "Xoá"}
+                            <Button type="submit" variant="outline" size="sm" pending={pending}>
+                              Xoá
                             </Button>
                           </form>
                         ) : null}
@@ -273,8 +273,8 @@ export function SacramentPanel({
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={pending}>
-                  {pending ? "Đang lưu…" : editing ? "Lưu thay đổi" : "Lưu bí tích"}
+                <Button type="submit" pending={pending}>
+                  {editing ? "Lưu thay đổi" : "Lưu bí tích"}
                 </Button>
                 {editing ? (
                   <Link href={backHref} className={buttonVariants({ variant: "outline" })}>

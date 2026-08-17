@@ -35,7 +35,7 @@ export default async function AttendanceSessionPage({
           // tay. Margin âm giữ chiều cao header như cũ (khuôn của M03-C).
           <Link
             href="/attendance"
-            className="-my-3 inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-ink"
+            className="-my-3 inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
           >
             ← Danh sách buổi
           </Link>
@@ -54,7 +54,7 @@ export default async function AttendanceSessionPage({
               {SESSION_STATE_LABELS[detail.state]}
             </Badge>
             {detail.finalizedAt ? (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-ink-muted">
                 Chốt lúc {formatDateTimeVi(detail.finalizedAt)}
                 {detail.lockedAt ? ` · khóa lúc ${formatDateTimeVi(detail.lockedAt)}` : ""}
               </span>
@@ -76,7 +76,7 @@ export default async function AttendanceSessionPage({
       {detail.isLocked && !detail.canEdit ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ink-muted">
               Buổi này đã khóa. Chỉ Quản trị viên hệ thống mở khóa và sửa được.
             </p>
           </CardContent>
@@ -90,7 +90,7 @@ export default async function AttendanceSessionPage({
       {detail.unlockedAt && detail.finalizedAt ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ink-muted">
               Buổi này đang mở khóa cho Quản trị viên. Sau khi chốt lại, buổi sẽ khóa lại ngay vì mốc
               khóa tính từ lần chốt đầu tiên ({formatDateTimeVi(detail.finalizedAt)}).
             </p>

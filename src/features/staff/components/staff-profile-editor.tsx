@@ -121,7 +121,7 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
           {SERVICE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </Select>
       </div>
-      <Button type="submit" disabled={pending}>{pending ? "Đang lưu…" : "Lưu hồ sơ"}</Button>
+      <Button type="submit" pending={pending}>Lưu hồ sơ</Button>
     </form>
   );
 }

@@ -25,7 +25,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         {/* 09 §12 A5 — `rounded-2xl` + `shadow-xl` nằm NGOÀI thang đã duyệt (4 mức
             bo, 2 mức bóng). Về đúng `rounded-xl` (20px, mức dialog) + `shadow-md`. */}
         <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-xl border border-line bg-surface shadow-md lg:grid-cols-[0.9fr_1.1fr]">
-          <section className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
+          <section className="hidden flex-col justify-between bg-theme-primary p-10 text-theme-on-primary lg:flex">
             <Link href="/login" className="flex items-center gap-3">
               {/* Logo có nền trắng nên đặt trên nền cam phải là một ô trắng bo
                   góc, không phải ảnh trong suốt — khăn quàng trắng của ngành
@@ -35,14 +35,14 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
             </Link>
             <div>
               <p className="text-3xl font-semibold leading-tight">Đồng hành và chăm sóc các em trong một mái nhà chung.</p>
-              <p className="mt-4 text-sm leading-6 text-primary-foreground/85">Không gian quản lý nội bộ dành cho Giáo xứ Chợ Quán.</p>
+              <p className="mt-4 text-sm leading-6 text-theme-on-primary">Không gian quản lý nội bộ dành cho Giáo xứ Chợ Quán.</p>
             </div>
-            <p className="text-xs text-primary-foreground/75">Xứ đoàn Thiếu Nhi Thánh Thể · Giáo xứ Chợ Quán</p>
+            <p className="text-xs text-theme-on-primary">Xứ đoàn Thiếu Nhi Thánh Thể · Giáo xứ Chợ Quán</p>
           </section>
           <section className="p-6 sm:p-10 lg:p-12">
             <div className="mb-8 flex items-center gap-3 lg:hidden">
               <Image src="/logo.png" alt="" width={44} height={44} className="h-11 w-11 rounded-xl object-contain" priority />
-              <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Giáo xứ Chợ Quán</p><p className="font-semibold text-ink">Thiếu Nhi Thánh Thể</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-wider text-theme-primary">Giáo xứ Chợ Quán</p><p className="font-semibold text-ink">Thiếu Nhi Thánh Thể</p></div>
             </div>
             {children}
           </section>

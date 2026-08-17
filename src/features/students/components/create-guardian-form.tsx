@@ -92,8 +92,8 @@ export function CreateGuardianForm() {
         <Label htmlFor="guardian-address">Địa chỉ</Label>
         <Input id="guardian-address" name="address" defaultValue={values.address} />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Đang lưu…" : showingDuplicates ? "Vẫn tạo phụ huynh mới" : "Tạo phụ huynh"}
+      <Button type="submit" className="w-full" pending={pending}>
+        {showingDuplicates ? "Vẫn tạo phụ huynh mới" : "Tạo phụ huynh"}
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
     </form>

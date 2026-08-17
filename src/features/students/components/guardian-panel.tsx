@@ -83,7 +83,7 @@ export function GuardianPanel({
 
   if (!guardian) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-ink-muted">
         {studentName} chưa gắn với người giám hộ nào.
       </p>
     );
@@ -93,8 +93,8 @@ export function GuardianPanel({
     return (
       <div className="space-y-1 text-sm">
         <p className="font-medium">{guardian.fullName}</p>
-        <p className="text-muted-foreground">Điện thoại: {guardian.phone}</p>
-        <p className="text-muted-foreground">Địa chỉ: {guardian.address ?? "—"}</p>
+        <p className="text-ink-muted">Điện thoại: {guardian.phone}</p>
+        <p className="text-ink-muted">Địa chỉ: {guardian.address ?? "—"}</p>
       </div>
     );
   }
@@ -155,8 +155,8 @@ export function GuardianPanel({
             <option value="inactive">Ngừng sử dụng</option>
           </Select>
         </div>
-        <Button type="submit" disabled={pending}>
-          {pending ? "Đang lưu…" : "Lưu thông tin liên lạc"}
+        <Button type="submit" pending={pending}>
+          Lưu thông tin liên lạc
         </Button>
       </form>
 
@@ -185,11 +185,11 @@ export function GuardianPanel({
               ))}
             </Select>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ink-muted">
             Thao tác này đổi ngay ai xem được {studentName} trong cổng phụ huynh.
           </p>
-          <Button type="submit" variant="outline" disabled={pending}>
-            {pending ? "Đang đổi…" : "Đổi người giám hộ"}
+          <Button type="submit" variant="outline" pending={pending}>
+            Đổi người giám hộ
           </Button>
         </form>
       ) : null}

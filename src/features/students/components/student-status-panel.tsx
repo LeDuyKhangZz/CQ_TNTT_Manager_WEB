@@ -157,8 +157,8 @@ export function StudentStatusPanel({
         </Panel>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Đang lưu…" : "Đổi trạng thái hồ sơ"}
+      <Button type="submit" className="w-full" pending={pending}>
+        Đổi trạng thái hồ sơ
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
 

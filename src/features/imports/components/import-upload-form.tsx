@@ -143,8 +143,8 @@ export function ImportUploadForm({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Đang kiểm tra…" : "Kiểm tra file"}
+        <Button type="submit" pending={pending}>
+          Kiểm tra file
         </Button>
         {/* This is a file download served by a route handler, not a page:
             next/link would client-navigate and break it. */}

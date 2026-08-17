@@ -66,14 +66,14 @@ export function PublishedResultsPortal({
               <div><CardTitle>{result.studentName}</CardTitle><CardDescription>{result.className} · {result.academicYearCode}</CardDescription></div>
               <div className="flex flex-col items-start gap-1 sm:items-end">
                 <Badge variant="success">TB {result.weightedAverage ?? "—"}</Badge>
-                <p className="text-xs text-muted-foreground">{averageNote(result)}</p>
+                <p className="text-xs text-ink-muted">{averageNote(result)}</p>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
             <section>
               <h2 className="mb-2 font-semibold">Điểm đã công bố</h2>
-              {result.assessments.length === 0 ? <p className="text-sm text-muted-foreground">Chưa có cột điểm được công bố.</p> : (
+              {result.assessments.length === 0 ? <p className="text-sm text-ink-muted">Chưa có cột điểm được công bố.</p> : (
                 <div
                   className={tableScrollFrameClassName}
                   tabIndex={0}
@@ -87,7 +87,7 @@ export function PublishedResultsPortal({
                 </div>
               )}
             </section>
-            {result.comments.length > 0 ? <section><h2 className="mb-2 font-semibold">Nhận xét của lớp</h2><div className="space-y-2">{result.comments.map((comment) => <div key={comment.id} className="rounded-md bg-muted p-3 text-sm"><p>{comment.content}</p><p className="mt-1 text-xs text-muted-foreground">{comment.authorName} · {formatDateVi(comment.commentDate)}</p></div>)}</div></section> : null}
+            {result.comments.length > 0 ? <section><h2 className="mb-2 font-semibold">Nhận xét của lớp</h2><div className="space-y-2">{result.comments.map((comment) => <div key={comment.id} className="rounded-md bg-surface-muted p-3 text-sm"><p>{comment.content}</p><p className="mt-1 text-xs text-ink-muted">{comment.authorName} · {formatDateVi(comment.commentDate)}</p></div>)}</div></section> : null}
             {result.leaderboards.length > 0 ? <section><h2 className="mb-2 font-semibold">Top 5 của lớp</h2><div className="grid gap-3 lg:grid-cols-2">{result.leaderboards.map((leaderboard) => <Panel key={leaderboard.id}><h3 className="font-medium">{leaderboard.title}</h3><ol className="mt-2 space-y-1 text-sm">{leaderboard.entries.map((entry) => <li key={`${leaderboard.id}-${entry.rank}`} className="flex justify-between gap-3"><span>#{entry.rank} · {entry.saintName} {entry.fullName}</span><span>{entry.score ?? "—"}</span></li>)}</ol></Panel>)}</div></section> : null}
           </CardContent>
         </Card>

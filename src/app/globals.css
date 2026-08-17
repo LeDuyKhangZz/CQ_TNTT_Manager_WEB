@@ -130,29 +130,11 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ======================================================================
-     BÍ DANH TƯƠNG THÍCH — tên token cũ của docs/06 §2.
-     Giữ để 172 file hiện có nhận bảng màu mới mà không phải đổi tên hàng
-     loạt (CLAUDE.md §3). Sẽ gỡ dần khi từng module được redesign ở 2B.
-     KHÔNG dùng các tên này trong code mới.
+     BÍ DANH TƯƠNG THÍCH (tên token cũ của docs/06 §2) — ĐÃ XOÁ (Đợt F).
+     Tailwind config trỏ THẲNG vào token mới (--bg-page, --text, --theme-…),
+     nên các biến trung gian --background, --card, --primary, … không còn ai
+     đọc — đã grep "var(--…)" toàn src/ trước khi xoá: 0 tham chiếu.
      ====================================================================== */
-  --background: var(--bg-page);
-  --foreground: var(--text);
-  --card: var(--bg-surface);
-  --card-foreground: var(--text);
-  --surface: var(--bg-surface);
-  --surface-muted: var(--bg-surface-muted);
-  --primary: var(--theme-primary);
-  --primary-hover: var(--theme-primary-hover);
-  --primary-foreground: var(--theme-on-primary);
-  --secondary: var(--theme-soft);
-  --secondary-foreground: var(--text);
-  --accent: var(--theme-tint);
-  --muted: var(--bg-surface-muted);
-  --muted-foreground: var(--text-muted);
-  --ring: var(--theme-ring);
-  --success-surface: var(--success-subtle);
-  --warning-surface: var(--warning-subtle);
-  --danger-surface: var(--danger-subtle);
 }
 
 /* Thang chữ lớn hơn một bậc cho cổng phụ huynh & thiếu nhi — Q-08, 09 §2.

@@ -34,7 +34,7 @@ export default async function TeachingPlanDetailPage({
           */
           <Link
             href="/teaching-plan"
-            className="-my-3 inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-ink"
+            className="-my-3 inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
           >
             ← Danh sách lớp
           </Link>

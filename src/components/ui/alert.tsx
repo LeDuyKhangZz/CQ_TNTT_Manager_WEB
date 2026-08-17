@@ -15,10 +15,14 @@ const alertVariants = cva(
   {
     variants: {
       tone: {
-        info: "border-info/30 bg-info-subtle text-ink",
-        success: "border-success/30 bg-success-subtle text-ink",
-        warning: "border-warning/30 bg-warning-subtle text-ink",
-        danger: "border-danger/30 bg-danger-subtle text-ink",
+        // Nợ #5 (Đợt F): `border-{tone}/30` KHÔNG sinh CSS — token màu là
+        // `var()` trần nên Tailwind bỏ bổ ngữ độ mờ, viền rơi về màu mặc định
+        // `--border` từ trước tới nay. Dùng token đặc như dải cảnh báo của
+        // imports/[batchId] đã làm.
+        info: "border-info bg-info-subtle text-ink",
+        success: "border-success bg-success-subtle text-ink",
+        warning: "border-warning bg-warning-subtle text-ink",
+        danger: "border-danger bg-danger-subtle text-ink",
       },
     },
     defaultVariants: { tone: "info" },

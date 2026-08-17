@@ -487,8 +487,8 @@ export function BatchRowEditor({
           >
             Áp dụng Nữ cho dòng đang chọn
           </Button>
-          <Button type="submit" disabled={pending} className="ms-auto">
-            {pending ? "Đang lưu…" : "Lưu tất cả thay đổi"}
+          <Button type="submit" pending={pending} className="ms-auto">
+            Lưu tất cả thay đổi
           </Button>
         </Card>
       ) : null}

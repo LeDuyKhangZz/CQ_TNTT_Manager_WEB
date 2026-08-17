@@ -134,7 +134,7 @@ export function AbsenceRequestPanel({
                 />
               </div>
               <FormMessage>{error}</FormMessage>
-              <Button className="w-full" onClick={submit} disabled={pending}>
+              <Button className="w-full" onClick={submit} pending={pending}>
                 Gửi đơn
               </Button>
             </div>
@@ -167,7 +167,7 @@ export function AbsenceRequestPanel({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-medium">{request.studentLabel}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-ink-muted">
                       {MEETING_TYPE_LABELS[request.meetingType]} · {formatDateVi(request.absenceDate)}
                     </p>
                   </div>
@@ -177,7 +177,7 @@ export function AbsenceRequestPanel({
                 </div>
                 <p className="mt-2 text-sm">{request.reason}</p>
                 {request.staffNote ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-ink-muted">
                     Giáo lý viên: {request.staffNote}
                   </p>
                 ) : null}

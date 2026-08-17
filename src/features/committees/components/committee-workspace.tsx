@@ -230,7 +230,7 @@ function OverviewPanel({ detail, pending, run }: PanelProps) {
                 </div>
                 <p className="text-xs text-ink-muted">Mã Ban ({committee.code}) là khoá nghiệp vụ, không sửa được ở đây.</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="submit" disabled={pending}>{pending ? "Đang lưu…" : "Lưu thông tin Ban"}</Button>
+                  <Button type="submit" pending={pending}>Lưu thông tin Ban</Button>
                   <Button type="button" variant="outline" onClick={() => setEditing(false)} disabled={pending}>Hủy</Button>
                 </div>
               </form>
@@ -320,7 +320,7 @@ function MembersPanel({ detail, pending, run, requestConfirm }: PanelProps) {
               </Select>
             </div>
             <div className="md:col-span-3">
-              <Button type="submit" disabled={pending}>{pending ? "Đang lưu…" : "Thêm vào Ban"}</Button>
+              <Button type="submit" pending={pending}>Thêm vào Ban</Button>
             </div>
           </form>
         ) : null}
@@ -450,7 +450,7 @@ function AnnouncementsPanel({ detail, pending, run, requestConfirm }: PanelProps
               <Label htmlFor="announcement-content">Nội dung thông báo</Label>
               <Textarea id="announcement-content" name="content" required maxLength={5000} />
             </div>
-            <div><Button type="submit" disabled={pending}>{pending ? "Đang đăng…" : "Đăng thông báo"}</Button></div>
+            <div><Button type="submit" pending={pending}>Đăng thông báo</Button></div>
           </form>
         ) : null}
 
@@ -573,8 +573,8 @@ function MeetingsPanel({ detail, pending, run, requestConfirm }: PanelProps) {
               <Input id="meeting-note" name="note" maxLength={2000} defaultValue={editing?.note ?? ""} />
             </div>
             <div className="flex flex-wrap gap-2 md:col-span-2">
-              <Button type="submit" disabled={pending}>
-                {pending ? "Đang lưu…" : editing ? "Cập nhật lịch họp" : "Lưu lịch họp"}
+              <Button type="submit" pending={pending}>
+                {editing ? "Cập nhật lịch họp" : "Lưu lịch họp"}
               </Button>
               {editing ? (
                 <Button type="button" variant="outline" onClick={() => setEditing(null)} disabled={pending}>

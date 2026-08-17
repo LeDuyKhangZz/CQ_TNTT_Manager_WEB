@@ -81,8 +81,8 @@ export function ConfirmSubmitForm({
       {Object.entries(fields).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
-      <Button type="submit" variant={variant} size="sm" disabled={pending}>
-        {pending ? "Đang xử lý…" : label}
+      <Button type="submit" variant={variant} size="sm" pending={pending}>
+        {label}
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
       <ConfirmDialog

@@ -120,7 +120,7 @@ export function AbsenceReviewPanel({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium">{request.studentLabel}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-ink-muted">
                   {request.className} · {MEETING_TYPE_LABELS[request.meetingType]} ·{" "}
                   {formatDateVi(request.absenceDate)}
                 </p>
@@ -147,7 +147,7 @@ export function AbsenceReviewPanel({
                 </Button>
               </div>
             ) : (
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-2 text-xs text-ink-muted">
                 Bạn đang xem ở chế độ chỉ đọc. Việc ghi nhận đơn thuộc về giáo lý viên của lớp.
               </p>
             )}

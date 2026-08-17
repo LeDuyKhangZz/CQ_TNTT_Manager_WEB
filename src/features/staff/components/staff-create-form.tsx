@@ -26,8 +26,8 @@ function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   useGlobalPending(pending);
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Đang lưu…" : label}
+    <Button type="submit" className="w-full" pending={pending}>
+      {label}
     </Button>
   );
 }

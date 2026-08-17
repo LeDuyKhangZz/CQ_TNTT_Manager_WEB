@@ -4151,7 +4151,7 @@ Không sửa `09`/`10`/`11`.
 | **C** | `DateField` / `DateTimeField` — 30 chỗ | ✅ **XONG 2026-08-15** |
 | **D** | `Checkbox` + vét control trần — **10** ô tick (không phải 11) + 1 textarea + 1 input file | ✅ **XONG 2026-08-17** |
 | **E** | `FilterField` (**27** ô trên 9 tệp) + `Panel`/`Card` (**37** khối) + quét bí danh token về **0** | ✅ **XONG 2026-08-17** |
-| F | `Button pending` + tổng nghiệm thu | ☐ chưa làm |
+| **F** | `Button pending` (**67** nút, không phải 11 chuỗi) + nợ #5 + xoá nhóm "BÍ DANH CŨ" + tổng nghiệm thu | ✅ **XONG 2026-08-17** ⇒ **ĐÓNG KẾ HOẠCH 17** |
 
 > ➕ Phiên 2026-08-15 làm thêm một task **ngoài kế hoạch 17**: `P3-PERF-001` —
 > chữa lag 3–4 giây của bản Vercel. Xem §8.
@@ -4652,6 +4652,9 @@ token **đặc** `--theme-soft` / `--theme-tint` — hai bậc pastel `09` §4.2
 `imports/[batchId]` ×1 · `gradebook-editor` ×1 (`bg-muted/50`) · `promotion-board` ×1
 (`bg-surface-muted/40`) · `app-header` ×1 (trong chú thích). Đó là **nợ #5**, không thuộc phạm vi
 §7.3 (§7.3 nói về **bí danh token**, không nói về độ mờ) — để Đợt F đóng trọn một lượt.
+**[Cập nhật Đợt F]** ✅ **Đã đóng 2026-08-17** — và con số 16 ở trên **đã cũ ngay lúc viết**:
+số sống thật là **12** (`classes/page` ×2 và `imports/[batchId]` ×1 đã được trả ngay trong Đợt E
+mà đoạn này không cập nhật; `app-header` ×1 là chú thích). Chi tiết ở §6.6.
 
 #### Bài kiểm của đợt — canh hợp đồng, không chỉ canh render
 
@@ -4725,6 +4728,178 @@ nhất một hồ sơ chưa từng dùng để xoá"* — viewport chạy trư�
 > lần nghi ngờ**. Việc phải làm ở Đợt F: cho **mỗi viewport một tập dữ liệu riêng** (khuôn
 > `reports.spec.ts` đã làm đúng — mỗi viewport một tháng riêng), rồi **đo lại nợ #10 bằng số
 > thật** thay vì giữ con số 10 đang sai.
+
+### 6.6 Đợt F — ✅ XONG (2026-08-17) ⇒ **ĐÓNG KẾ HOẠCH 17 / `P3-UI-001`**
+
+**Tệp thay đổi ~64** (60 trong `src/` + `tailwind.config.ts` + 2 tệp kiểm + tài liệu).
+**0 tệp mới trong `src/`** — Đợt F chỉ mở rộng `button.tsx` và dọn cấu hình.
+
+#### `Button pending` — spinner đè lên nhãn, nhãn giữ nguyên làm TÊN của nút
+
+`pending?: boolean` trên `Button`: spinner 16px (`Loader2`, `animate-spin`, `strokeWidth` 1.75)
+trong overlay `absolute inset-0` có `aria-hidden`; nhãn vẫn render ở `opacity-0` nên **bề rộng
+nút không đổi một pixel** — và vì `opacity` không rút phần tử khỏi cây trợ năng (khác
+`visibility`/`display`), `getByRole("button", { name })` của cả bộ kiểm **vẫn khớp trong lúc
+chờ**. Tự `disabled` + `aria-busy`. `relative` thêm vào chuỗi base của `cva`.
+
+🔴 **Ba ràng buộc cài đặt:**
+1. **KHÔNG `"use client"`** — `filter-bar.tsx` (không-client, 6 trang Server Component dùng)
+   import thẳng `./button`. `lucide-react` đi được cả hai phía ranh giới RSC — `filter-bar`/
+   `checkbox` đã dùng đúng cách này từ Đợt D/E. `button.test.tsx` có bài đo **chỉ thị** (câu
+   lệnh đầu tệp, không dò chuỗi con) theo đúng khuôn `panel.test.tsx`.
+2. **Nhãn không đổi trong lúc chờ là CHỦ Ý.** Bản cũ đổi "Lưu cấu hình" → "Đang lưu…" tức đổi
+   TÊN trợ năng của nút giữa chừng — trình đọc màn hình mất dấu nút đang theo, mọi locator theo
+   tên phải chờ tên cũ quay lại. Nay tên đứng yên, trạng thái nói bằng `aria-busy` — và lượt
+   E2E của đợt này chứng minh giá trị tức thì: khối lỗi `attendance:517` in ra nguyên văn
+   `<button disabled aria-busy="true">`, tức **nút kẹt pending tự khai trong log** thay vì là
+   một nút chết vô danh như hồi §8.6.
+3. **`size="sm"` vẫn cao 44px** (09 §11 — KHÔNG ĐƯỢC ĐỤNG); bài kiểm mới canh `min-h-control`
+   ở cả ba size. `button.test.tsx` 2 → **9 bài**.
+
+#### Quét chỗ gọi — số của `17` §8 sai gấp gần 5 lần
+
+| | Kế hoạch ghi | Số thật (grep + `git diff`) |
+|---|--:|--:|
+| Chuỗi "Đang …" trên nút | **11** | **51** (50 ternary JSX + 1 nhánh `pending` của `sendButtonLabel`) |
+| Nút chỉ-disabled-không-nói-gì được thêm tín hiệu | — | **16** |
+| **Tổng nút chuyển sang `pending`** | — | **67** trên **38 tệp** (đếm `pending={` trong diff) |
+
+**Luật chọn nút, ghi ra để đợt sau khỏi đoán:** nút **gọi thẳng action** → `pending` theo đúng
+cờ của nó (`gradebook` tách `pending`/`publishPending` cho hai nút cạnh nhau); nút **chỉ mở
+ConfirmDialog** → giữ `disabled` (spinner thuộc nút xác nhận trong hộp thoại — `ConfirmDialog`
+nay tự `pending`); nút **anh em dùng cờ chung trong danh sách** (markAll/markRead/thu hồi của
+thông báo, "Hủy đơn" cổng phụ huynh, "Ghi nhận" bảng duyệt đơn, cụm Top 5) → giữ `disabled`,
+vì gắn `pending` là cả loạt cùng xoay khi MỘT nút chạy. `promotion-board` gỡ 3 chỗ
+`aria-busy={pending}` viết tay — prop lo. Điểm danh (CLAUDE.md §5): chỉ "Tiếp quản" + "Lưu
+nháp" đổi vỏ, **0 dòng hành vi**. `sendButtonLabel` bỏ tham số `pending` — đổi hợp đồng unit
+có chủ ý, bài kiểm đổi theo có ghi chú.
+
+#### Nợ #5 — sổ ghi 16, số thật khi làm: **12 lớp sống**
+
+3 chỗ trong sổ **đã được trả sẵn giữa Đợt E** mà sổ không cập nhật (`classes/page` ×2 sang
+`theme-pastel`, `imports/[batchId]` ×1 sang `border-warning` đặc), 1 là **chú thích**
+(`app-header`). 12 lớp sống:
+
+| Chỗ | Cũ (không sinh CSS) | Mới (token đặc) | Đổi nhìn thấy? |
+|---|---|---|---|
+| `alert.tsx` ×4 | `border-{tone}/30` | `border-{tone}` | Có — alert lần đầu có viền màu trạng thái (trước rơi về `--border` xám) |
+| `badge.tsx` ×4 | `border-{tone}/30` | `border-{tone}` | Có — cùng lỗi cùng cách |
+| `(auth)/layout.tsx` ×2 | `text-primary-foreground/85\|75` | `text-theme-on-primary` | Không — bổ ngữ chưa từng render, chữ vốn thừa kế màu đặc |
+| `gradebook-editor` ×1 | `bg-muted/50` (thead) | `bg-surface-muted` | Có — header bảng nay đúng 09 §6 |
+| `promotion-board` ×1 | `bg-surface-muted/40` | `bg-surface-muted` | Có — khối lõm lần đầu có nền |
+
+#### Xoá nhóm "BÍ DANH CŨ" — tiền đề "usage đã về 0" là SAI
+
+🔴 **"Usage về 0 từ Đợt E" chỉ đúng với 4 bí danh mà §7.3 đã quét.** Kiểm TỪNG khoá trước khi
+xoá lộ ra **126 lượt còn sống** trên ~30 tệp. Di trú giá-trị-giống-hệt (không đổi CSS xuất ra):
+
+| Bí danh còn sống | Lượt | Token mới (cùng biến CSS) |
+|---|--:|---|
+| `text-muted-foreground` | 106 | `text-ink-muted` (= `var(--text-muted)`) |
+| `text-primary` / `border-primary` / `bg-primary` | 5+3+2 | `-theme-primary` |
+| `text-primary-foreground` | 3 | `text-theme-on-primary` (2 là nợ #5 ở trên) |
+| `bg-muted` | 3 | `bg-surface-muted` (1 là nợ #5) |
+| `divide-border` | 4 | `divide-line` — **§7.3 Đợt E bỏ sót biến thể `divide-`** |
+
+**Một chỗ cố ý đổi GIÁ TRỊ:** vòng tròn hạng Top 5 (`gradebook-editor:1182`) `text-white` →
+`text-theme-on-primary`. `09` §4.1: Nghĩa Sĩ nền vàng nghệ chữ ĐẬM `#2E2A27` — trắng trên vàng
+trượt AA mà 5/6 ngành trông vẫn đúng. Cùng họ lỗi Đợt D đã chữa ở dấu tick `Checkbox`.
+
+**Rồi mới xoá:** 10 khoá bí danh + 3 khoá phụ `-surface` của status khỏi `tailwind.config.ts`;
+khối 18 biến "BÍ DANH TƯƠNG THÍCH" khỏi `globals.css` (grep `var(--…)`: **0** tham chiếu).
+⚠️ **`surface` là token MỚI nằm lẫn trong nhóm cũ** — chuyển lên nhóm trung tính kèm chú thích
+cảnh báo, KHÔNG xoá. Viền mặc định không phụ thuộc khoá `border` cũ — `globals.css` đặt thẳng
+`* { border-color: var(--border) }`.
+
+**Ba lỗi trong đợt, tự gây tự bắt:** (1) bản quét đè cả chú thích của `classes/page.tsx`
+(backtick nằm xa chữ bị thay) — lộ vì đối chiếu số lượt thay (4) với số chỗ sống (3), đúng bài
+học Đợt E *"bản quét có luật loại trừ thì phải grep lại"*; (2) chú thích CSS chứa `*/` trong
+"--bg-*/--text*" **đóng comment sớm**, build đỏ ngay — viết lại không dùng chuỗi ấy; (3) suýt
+chèn `{/* … */}` ngay trước phần tử gốc trong `return (` của `promotion-board` — vỡ cú pháp JSX.
+
+#### Xác minh CSS thật sự được sinh ra (khuôn Đợt D/E)
+
+Grep thẳng `.next/static/css`: **17/17 lớp phải-có đều có mặt** (`.animate-spin` +
+`@keyframes spin` · `.text-ink-muted` · `.border-{tone}{border-color:var(--…)}` ×4 ·
+`.bg-surface-muted` · `.bg-theme-primary` · `.text-theme-on-primary` · `.text-theme-primary` ·
+`.border-theme-primary` + biến thể `hover:` · `.divide-line` · `.relative`/`.inset-0`/
+`.opacity-0`/`.h-4`/`.w-4`), và **0 lần** mọi lớp bí danh cũ + mọi bổ ngữ `/30 /40 /50 /75 /85`.
+`.text-white` còn 1 — sinh từ **chú thích** (bộ quét Tailwind đọc cả chú thích, hiện tượng đã
+ghi ở §7.3); trong mã đã hết. Đối chiếu **từng dòng `-`** có `rounded-`/`border-`/`bg-` trong
+diff: 18 dòng `src/` đều có dòng thay thế; 5 dòng còn lại là khối biến xoá chủ ý ở `globals.css`.
+
+#### Số kiểm thử thật (2026-08-17)
+
+lint **0 warning 0 error** · typecheck ✓ · unit **1691 pass / 18 skip** trên **121** tệp
+(trước 1684 ⇒ **+7 bài** của `button.test.tsx`) · build ✓ **29/29 trang**.
+
+#### E2E — 15 đỏ / 573 xanh (45 phút, DB reset+seed), và một cuộc điều tra đáng giá
+
+Lượt đầy đủ: **15 đỏ / 573 xanh** — nằm trong dải **13–21** của ba lượt Đợt E (16 §6.5).
+Phân loại đủ 15: **5 bài nợ-ổn-định đều có mặt** (`results:278` · `attendance:454` ·
+`students-directory:156` · `imports:332` ×3 viewport · `teaching-plan:92` ×2) · **flapper đã
+hồ sơ** (`committees:156` ×3 · `teaching-plan:255` ×2 · `attendance:517`) · và **một tên mới:
+`academic-year:106`** [chỉ mobile-360] — được điều tra tới cùng thay vì phán "nhiễu":
+
+1. **Chạy riêng vẫn đỏ** (2 lượt, máy rảnh) ⇒ loại giả thuyết tải máy.
+2. **Lùi commit đối chứng `6685f5e` chạy riêng: xanh** ⇒ tưởng là hồi quy Đợt F thật.
+3. **Trace Playwright lượt đỏ** — bằng chứng pháp y sâu nhất từ trước tới nay cho họ lỗi này:
+   `POST /admin` trả **200 + `x-action-revalidated` trong 169ms** (máy chủ XONG VIỆC), nhưng
+   client **không bao giờ hoàn tất transition** — `useActionState.pending` không hạ, overlay
+   "Đang xử lý…" treo tới hết 20s, không một request hay lỗi console nào sau đó. Trace còn cho
+   thấy các prefetch `?_rsc` của trang trước bị **huỷ giữa chừng** khi `goto` — tập prefetch
+   **đổi theo viewport** (bottom-nav ở mobile), một biến số viewport thật sự trong router.
+4. **Bisect vô hiệu hoá phần render pending của `Button`: vẫn đỏ** ⇒ spinner/overlay/aria-busy
+   vô can. Revert nhóm call-site (toàn thay đổi tương-đương-hành-vi): xanh. Hai kết quả
+   **mâu thuẫn logic** ⇒ nghi timing.
+5. **Chạy lại nguyên trạng Đợt F lần 4: XANH (3,2s).** Kết luận: **không tất định** — một cuộc
+   đua nhạy theo **từng bản build** (đổi hash chunk là đổi cửa sổ đua), thiên vị nặng về đỏ ở
+   một tổ hợp build×viewport rồi biến mất ở build sau. Lượt đối chứng xanh 1/1 ở bước 2 là
+   **một mẫu của một cuộc đua** — không đủ để kết tội, và các mẫu sau đã minh oan cho Đợt F.
+
+**Điều này KHÔNG phải tin xấu vô ích — nó nâng cấp hồ sơ nợ #10:** câu *"cơ chế chưa truy ra"*
+(§7.2, §8.6) nay có bằng chứng mạng cụ thể: **máy chủ đã trả lời xong mà client không áp dụng
+được phản hồi**. Ứng viên sửa gốc khớp với khuôn P3-UX-001 §7.1 đã dùng cho M02/M03/M07: các
+action còn `revalidatePath` bên trong (header lượt này cho thấy `generateDefaultClasses` vẫn
+revalidate) chuyển sang khuôn *refresh-sau-phản-hồi*. Việc ấy + *mỗi viewport một tập dữ liệu*
+là hai việc kế tiếp của bộ E2E, ngoài phạm vi kế hoạch 17.
+
+### 6.7 Tổng kết kế hoạch 17 (A→F) — ✅ `P3-UI-001` ĐÓNG 2026-08-17
+
+**Sáu đợt (2026-08-14 → 2026-08-17), toàn bộ thuần trình bày:** 0 business rule · 0 migration ·
+0 đổi RLS · 0 đổi quyền · 0 dòng dữ liệu bị đụng.
+
+| Đợt | Cái được sửa | Con số chốt |
+|---|---|---|
+| A | `LoadingOverlay` toàn cục — cứ loading là hiện, ảnh + câu Kinh Thánh | 9 tệp mới · ngưỡng chờ 0ms theo lệnh chủ dự án |
+| B | `Select` v2 — listbox tự vẽ đè lên `<select>` thật | **74** chỗ gọi không sửa một dòng · 43 locator E2E giữ nguyên |
+| C | `DateField`/`DateTimeField` — DD/MM/YYYY toàn web | **30 + 3** ô; né bẫy hydration bằng ô ẩn |
+| D | `Checkbox` — một cỡ 20px thay bốn cỡ | **10** ô tick (17 §6 ghi 11 — sai) + textarea + input file cuối |
+| E | `FilterField` ba tầng + `Panel` 2 mẫu + bí danh §7.3 về 0 | **27** ô/9 tệp · **37** khối (17 §7 ghi ~33 — sai) · 64 lượt token |
+| F | `Button pending` + nợ #5 + xoá "BÍ DANH CŨ" | **67** nút/38 tệp (17 §8 ghi 11 chuỗi — sai) · 12 lớp mờ · 126 lượt di trú |
+
+**Bài học xuyên suốt — các kế hoạch sau sẽ lại mắc nếu không đọc:**
+1. **Mọi con số của kế hoạch viết trước khi làm đều lệch sau đợt đầu tiên** — sai số đo được từ
+   10% (10↔11) tới ~500% (11↔51). Kế hoạch nên ghi *cách đếm*; số thật ghi vào log lúc làm.
+2. **Class Tailwind viết ra không có nghĩa là CSS tồn tại.** D/E/F cùng bắt lỗi bằng một phép
+   đo: grep thẳng `.next/static/css`, hai chiều phải-có/phải-vắng. Token `var()` trần không
+   nhận bổ ngữ độ mờ — họ lỗi này đã diệt tuyệt ở F.
+3. **Ranh giới RSC không lộ ở lint/typecheck/unit/build** — `card`/`filter-bar`/`data-table`/
+   `checkbox`/`button` đều cần bài kiểm đọc thẳng tệp đo CHỈ THỊ.
+4. **Sau mọi lượt quét diện rộng: đối chiếu từng dòng `-` có `rounded-`/`border-`/`bg-`.**
+5. **Bản quét có luật loại trừ thì phải grep lại sau khi chạy** — E sót template literal,
+   F đè nhầm chú thích: cùng bài học, hai chiều.
+6. **Một mẫu đối chứng không đủ để kết tội khi bộ kiểm có cuộc đua** — Đợt F suýt bị mổ nhầm vì
+   một lượt xanh đơn lẻ; bốn mẫu sau lật lại kết luận. Chi phí điều tra ~1 giờ; ghi lại để lần
+   sau đi thẳng: *đỏ mới → chạy riêng ×2 → đối chứng ×1 → nguyên trạng ×1 nữa → rồi hãy bisect*.
+
+**Trạng thái bộ kiểm khi đóng kế hoạch:** lint 0/0 · typecheck ✓ · unit **1691/18 skip/121
+tệp** · build ✓ 29/29 · E2E **15 đỏ / 573 xanh** — toàn bộ 15 thuộc quần thể nợ đã hồ sơ.
+
+**Nợ để lại, nói bằng số:** bộ E2E vẫn chạy 3 viewport nối tiếp trên MỘT database — chưa dùng
+làm cổng tự động được. Hai việc kế tiếp đã có hồ sơ: (1) mỗi viewport một tập dữ liệu riêng
+(khuôn `reports.spec.ts`), đo lại nợ #10; (2) chuyển nốt các action còn `revalidatePath` sang
+khuôn refresh-sau-phản-hồi (§6.6 mục E2E).
 
 ---
 

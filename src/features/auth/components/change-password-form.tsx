@@ -71,7 +71,7 @@ export function ChangePasswordForm({
       <div className="space-y-2">
         <Label htmlFor="new-password">Mật khẩu mới</Label>
         <PasswordField id="new-password" autoComplete="new-password" placeholder="Tối thiểu 8 ký tự" aria-invalid={!!errors.password} aria-describedby={errors.password ? "password-help new-password-error" : "password-help"} {...register("password")} />
-        <p id="password-help" className="text-xs text-muted-foreground">Có thể dùng chữ thường và số; tối thiểu 8 ký tự.</p>
+        <p id="password-help" className="text-xs text-ink-muted">Có thể dùng chữ thường và số; tối thiểu 8 ký tự.</p>
         <FormMessage id="new-password-error">{errors.password?.message}</FormMessage>
       </div>
       <div className="space-y-2">
@@ -80,8 +80,8 @@ export function ChangePasswordForm({
         <FormMessage id="confirm-password-error">{errors.confirmPassword?.message}</FormMessage>
       </div>
       <FormMessage tone="muted">{foundationMessage}</FormMessage>
-      <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Đang kiểm tra…" : "Lưu mật khẩu mới"}
+      <Button type="submit" size="lg" className="w-full" pending={isSubmitting}>
+        Lưu mật khẩu mới
       </Button>
     </form>
   );

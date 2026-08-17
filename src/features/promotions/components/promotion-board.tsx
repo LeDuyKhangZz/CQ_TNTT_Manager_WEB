@@ -346,8 +346,10 @@ function PromotionDetailPanel({
   const reviewTargetId = `review-target-${item.enrollmentId}`;
   const reviewNoteId = `review-note-${item.enrollmentId}`;
 
+  // Nợ #5 (Đợt F): `bg-surface-muted/40` không sinh CSS — khối này chưa từng
+  // có nền. Token đặc cho đúng ý đồ khối lõm.
   return (
-    <div className="space-y-4 border-l-2 border-theme-border bg-surface-muted/40 p-4">
+    <div className="space-y-4 border-l-2 border-theme-border bg-surface-muted p-4">
       {item.review ? (
         <div className="space-y-1 text-sm">
           <p>
@@ -448,12 +450,8 @@ function PromotionDetailPanel({
           </div>
 
           <div className="md:col-span-2 space-y-2">
-            <Button type="submit" disabled={pending} aria-busy={pending}>
-              {pending
-                ? "Đang lưu…"
-                : directMode
-                  ? "Chuyển lớp"
-                  : "Gửi đề xuất cho Trưởng ngành"}
+            <Button type="submit" pending={pending}>
+              {directMode ? "Chuyển lớp" : "Gửi đề xuất cho Trưởng ngành"}
             </Button>
             {directMode ? (
               // D-159: nói ra rằng đây là MỘT bước, không phải bước đầu của hai.
@@ -531,8 +529,8 @@ function PromotionDetailPanel({
           </div>
 
           <div className="flex flex-wrap gap-2 md:col-span-2">
-            <Button type="submit" disabled={pending} aria-busy={pending}>
-              {pending ? "Đang xử lý…" : "Duyệt"}
+            <Button type="submit" pending={pending}>
+              Duyệt
             </Button>
             <Button
               type="button"
@@ -900,14 +898,14 @@ function PromotionBatchBar({
 
       <Button
         type="button"
-        disabled={pending || selected.length === 0 || blocked}
-        aria-busy={pending}
+        pending={pending}
+        disabled={selected.length === 0 || blocked}
         onClick={() => {
           setMessage(null);
           setConfirming(true);
         }}
       >
-        {pending ? "Đang gửi…" : `Xem lại và gửi ${selected.length} đề xuất`}
+        {`Xem lại và gửi ${selected.length} đề xuất`}
       </Button>
 
       {message ? (

@@ -140,8 +140,8 @@ export function ClassSettingsForm({
         />
       </div>
 
-      <Button type="submit" disabled={pending}>
-        {pending ? "Đang lưu…" : "Lưu cài đặt lớp"}
+      <Button type="submit" pending={pending}>
+        Lưu cài đặt lớp
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
 

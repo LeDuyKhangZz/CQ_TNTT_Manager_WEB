@@ -1749,6 +1749,70 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-08-17] Phiên 71 — Claude — `P3-UI-001` (Đợt F — đợt CUỐI) ⇒ **ĐÓNG kế hoạch 17**
+
+- **Claim:** kế hoạch 17 **Đợt F** — `Button pending` + trả nợ #5 + xoá nhóm "BÍ DANH CŨ" +
+  tổng nghiệm thu. Đợt cuối ⇒ `P3-UI-001` **XONG**, có mục tổng kết A→F ở `16` §6.7.
+
+- **🔴 Số của `17` §8 sai gấp gần 5 lần — đếm lại chứ không chép, như mọi đợt.** Kế hoạch ghi
+  *"11 chuỗi Đang…"*; số thật **51** (50 ternary JSX + 1 nhánh trong `sendButtonLabel`). Cộng
+  **16** nút chỉ-disabled-không-nói-gì ⇒ **67 nút trên 38 tệp** sang `pending` prop (đo bằng
+  `git diff | grep -c "pending={"`).
+
+- **`Button pending` — nhãn GIỮ NGUYÊN làm tên trợ năng, spinner đè lên trên.** Overlay
+  `absolute inset-0` + `aria-hidden`, nhãn `opacity-0` giữ đúng bề rộng; tự `disabled` +
+  `aria-busy`. Bản cũ đổi nhãn thành "Đang lưu…" là đổi TÊN nút giữa chừng. KHÔNG `"use client"`
+  (`filter-bar` không-client import `./button`); bài kiểm chỉ thị đo câu lệnh đầu tệp theo khuôn
+  panel.test; `size="sm"` vẫn 44px có bài canh. Luật chọn nút ghi ở `16` §6.6: gọi thẳng action
+  → `pending` theo đúng cờ; chỉ-mở-hộp-thoại hoặc anh-em-dùng-cờ-chung → giữ `disabled`.
+  Điểm danh chỉ đổi vỏ 2 nút ("Tiếp quản", "Lưu nháp"), 0 dòng hành vi.
+
+- **🔴 Nợ #5: sổ ghi 16, số thật 12** — 3 chỗ đã trả sẵn giữa Đợt E mà sổ không cập nhật, 1 là
+  chú thích. Alert/badge LẦN ĐẦU có viền màu trạng thái thật (trước `/30` không sinh CSS, rơi về
+  xám); thead bảng điểm nay đúng 09 §6; khối lõm promotion-board lần đầu có nền.
+
+- **🔴 Xoá "BÍ DANH CŨ": tiền đề "usage = 0 từ Đợt E" SAI** — chỉ đúng với 4 bí danh §7.3 đã
+  quét. Kiểm từng khoá lộ **126 lượt sống** (`text-muted-foreground` ×106 · `-primary*` ×13 ·
+  `bg-muted` ×3 · `divide-border` ×4 — §7.3 bỏ sót biến thể `divide-`). Di trú cùng-biến-CSS
+  toàn bộ, trừ MỘT chỗ cố ý đổi giá trị: vòng tròn hạng Top 5 `text-white` →
+  `text-theme-on-primary` (Nghĩa Sĩ vàng nghệ + trắng là trượt AA — cùng họ Đợt D). Rồi mới
+  xoá 10 khoá + 3 khoá phụ khỏi tailwind.config, khối 18 biến khỏi globals.css. ⚠️ `surface` là
+  token MỚI nằm lẫn trong nhóm cũ — chuyển lên nhóm trung tính, KHÔNG xoá.
+
+- **🔴 E2E 15 đỏ / 573 xanh (45 phút) — và một cuộc điều tra ~1 giờ đáng từng phút.** 14/15
+  khớp hồ sơ nợ cũ (5 bài ổn định + flapper + hạ tầng). Tên mới `academic-year:106` [m360]:
+  chạy riêng ×2 vẫn đỏ → đối chứng Đợt E xanh → **tưởng hồi quy thật** → trace Playwright cho
+  bằng chứng pháp y sâu nhất từ trước tới nay của họ nợ #10: **`POST /admin` 200 +
+  `x-action-revalidated` trong 169ms mà client không bao giờ hoàn tất transition, overlay treo
+  vĩnh viễn** → bisect cho kết quả mâu thuẫn logic → chạy nguyên trạng lần 4: **XANH**. Kết
+  luận: cuộc đua nhạy theo **từng bản build** (đổi hash chunk là đổi cửa sổ đua), không phải
+  hồi quy Đợt F; một mẫu đối chứng xanh không đủ kết tội. Quy trình chuẩn ghi ở `16` §6.7 mục 6.
+  Hồ sơ nợ #10 được nâng cấp: *"chưa truy ra cơ chế"* → *"máy chủ trả lời xong, client không áp
+  dụng được"*; ứng viên sửa gốc = chuyển nốt action còn `revalidatePath` sang khuôn
+  refresh-sau-phản-hồi (P3-UX-001 §7.1).
+
+- **File thay đổi (~64):** `button.tsx` + 38 tệp chỗ gọi + ~28 tệp di trú (chồng nhau một phần)
+  · `tailwind.config.ts` · `globals.css` · `alert/badge/confirm-dialog` · `publish-preview.ts` ·
+  `button.test.tsx` (2→9 bài) · `notification-publish-preview.test.ts` · `16` · `WORKLOG`.
+
+- **Migration/data impact:** **không có.** 0 business rule · 0 migration · 0 đổi RLS · 0 đổi
+  quyền · 0 dòng dữ liệu — thuần trình bày.
+
+- **Đã test:** lint **0 warning 0 error** · typecheck ✓ · unit **1691 pass / 18 skip / 121 tệp**
+  (+7 bài button) · build ✓ **29/29** · grep `.next/static/css` hai chiều (17/17 phải-có, 0
+  phải-vắng; CSS build ra cùng hash trước/sau điều tra — bằng chứng cây được khôi phục trung
+  thực) · full E2E trên DB reset+seed như trên.
+
+- **Quyết định mới:** không có quyết định nghiệp vụ. `sendButtonLabel` bỏ tham số `pending`
+  (nhãn không còn nhiệm vụ báo trạng thái chờ — việc của `Button pending`).
+
+- **Blocker/rủi ro:** ⚠️ Bộ E2E vẫn chưa là cổng tự động (3 viewport chung một DB — 16 §6.5);
+  hai việc kế tiếp có hồ sơ sẵn: mỗi viewport một tập dữ liệu + đo lại nợ #10, và khuôn
+  refresh-sau-phản-hồi cho các action còn `revalidatePath`.
+
+- **Next action:** `P3-UI-001` **ĐÓNG toàn bộ A→F**. Việc treo kế tiếp nằm ngoài kế hoạch 17
+  (xem Blocker).
+
 ### [2026-08-17] Phiên 70 — Claude — `P3-UI-001` (Đợt E) + đóng sổ Đợt D
 
 - **Claim:** kế hoạch 17 **Đợt E** — đợt quét **rộng nhất** của kế hoạch: `FilterField` canh thẳng

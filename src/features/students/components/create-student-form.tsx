@@ -204,12 +204,8 @@ export function CreateStudentForm({
       >
         Hoàn cảnh khó khăn
       </Checkbox>
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending
-          ? "Đang tạo hồ sơ…"
-          : showingDuplicates
-            ? "Vẫn tạo hồ sơ mới"
-            : "Tạo hồ sơ thiếu nhi"}
+      <Button type="submit" className="w-full" pending={pending}>
+        {showingDuplicates ? "Vẫn tạo hồ sơ mới" : "Tạo hồ sơ thiếu nhi"}
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
     </form>

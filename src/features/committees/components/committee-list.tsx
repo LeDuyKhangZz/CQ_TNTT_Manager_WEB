@@ -128,7 +128,7 @@ export function CommitteeList({
                   <Input id="committee-description" name="description" maxLength={1000} />
                 </div>
                 <div className="flex flex-wrap gap-2 md:col-span-2">
-                  <Button type="submit" disabled={pending}>{pending ? "Đang lưu…" : "Lưu Ban"}</Button>
+                  <Button type="submit" pending={pending}>Lưu Ban</Button>
                   <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Hủy</Button>
                 </div>
               </form>

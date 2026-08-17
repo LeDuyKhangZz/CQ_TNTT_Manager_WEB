@@ -309,13 +309,13 @@ export function AttendanceEditor({
         <Card>
           <CardContent className="space-y-3 pt-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-ink-muted">
                 {editorName
                   ? `${editorName} đang phụ trách buổi này. Bạn chỉ xem.`
                   : "Bạn không giữ quyền chỉnh sửa buổi này."}
               </p>
               {canTakeover ? (
-                <Button variant="outline" onClick={takeover} disabled={pending}>
+                <Button variant="outline" onClick={takeover} pending={pending}>
                   Tiếp quản
                 </Button>
               ) : null}
@@ -336,7 +336,7 @@ export function AttendanceEditor({
         <Card>
           <CardContent className="space-y-3 pt-6" role="alert">
             <p className="text-sm font-medium text-danger">{lostLease}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ink-muted">
               Phần bạn vừa sửa <strong>chưa được lưu</strong> và trang này không tự gửi nó đi — gửi
               lúc này sẽ ghi đè lên dữ liệu của người đang phụ trách. Chép lại phần dưới đây rồi tải
               lại trang.
@@ -346,7 +346,7 @@ export function AttendanceEditor({
                 nào của luồng ghi chú điểm danh (CLAUDE.md §5). Chuỗi class cũ còn
                 mang hai bí danh token đã bỏ (`border-border`, `bg-card`). */}
             <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">Thay đổi chưa lưu của bạn</span>
+              <span className="text-xs text-ink-muted">Thay đổi chưa lưu của bạn</span>
               <Textarea
                 readOnly
                 rows={4}
@@ -366,7 +366,7 @@ export function AttendanceEditor({
       {lease ? (
         <p
           aria-live="polite"
-          className={`text-sm ${lease.tone === "info" ? "text-muted-foreground" : "text-warning"}`}
+          className={`text-sm ${lease.tone === "info" ? "text-ink-muted" : "text-warning"}`}
         >
           {lease.text}
         </p>
@@ -378,10 +378,10 @@ export function AttendanceEditor({
             <CardTitle>Tổng kết buổi</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <div><span className="text-muted-foreground">Sĩ số</span><p className="text-lg font-semibold">{summary.studentTotal}</p></div>
-            <div><span className="text-muted-foreground">Đủ hai buổi</span><p className="text-lg font-semibold">{summary.studentPresent}</p></div>
-            <div><span className="text-muted-foreground">Có vắng</span><p className="text-lg font-semibold">{summary.studentAbsent}</p></div>
-            <div><span className="text-muted-foreground">GLV có mặt</span><p className="text-lg font-semibold">{summary.staffPresent}/{summary.staffTotal}</p></div>
+            <div><span className="text-ink-muted">Sĩ số</span><p className="text-lg font-semibold">{summary.studentTotal}</p></div>
+            <div><span className="text-ink-muted">Đủ hai buổi</span><p className="text-lg font-semibold">{summary.studentPresent}</p></div>
+            <div><span className="text-ink-muted">Có vắng</span><p className="text-lg font-semibold">{summary.studentAbsent}</p></div>
+            <div><span className="text-ink-muted">GLV có mặt</span><p className="text-lg font-semibold">{summary.staffPresent}/{summary.staffTotal}</p></div>
           </CardContent>
         </Card>
       ) : null}
@@ -404,7 +404,7 @@ export function AttendanceEditor({
         </CardHeader>
         <CardContent className="space-y-3">
           {roster.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Lớp chưa có thiếu nhi ghi danh.</p>
+            <p className="text-sm text-ink-muted">Lớp chưa có thiếu nhi ghi danh.</p>
           ) : (
             <>
               {/* U-11 — bộ lọc dính đầu danh sách. Con số trên nhãn là con số
@@ -439,7 +439,7 @@ export function AttendanceEditor({
               </div>
 
               {visibleRoster.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{emptyRosterMessage(filter, query)}</p>
+                <p className="text-sm text-ink-muted">{emptyRosterMessage(filter, query)}</p>
               ) : (
                 visibleRoster.map((entry) => {
                   const draft = students[entry.enrollmentId];
@@ -472,7 +472,7 @@ export function AttendanceEditor({
         </CardHeader>
         <CardContent className="space-y-3">
           {staff.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Lớp chưa phân công nhân sự.</p>
+            <p className="text-sm text-ink-muted">Lớp chưa phân công nhân sự.</p>
           ) : (
             staff.map((entry) => {
               const draft = staffDraft[entry.classStaffAssignmentId];
@@ -548,7 +548,7 @@ export function AttendanceEditor({
             ) : null}
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => submit(false)} disabled={pending}>
+            <Button variant="outline" onClick={() => submit(false)} pending={pending}>
               Lưu nháp
             </Button>
             <Button onClick={() => setConfirming(true)} disabled={pending}>

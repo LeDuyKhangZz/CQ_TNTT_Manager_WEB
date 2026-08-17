@@ -16,8 +16,8 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   useGlobalPending(pending);
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Đang tạo…" : "Tạo năm học nháp"}
+    <Button type="submit" className="w-full" pending={pending}>
+      Tạo năm học nháp
     </Button>
   );
 }

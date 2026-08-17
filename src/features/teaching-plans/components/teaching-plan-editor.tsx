@@ -486,7 +486,7 @@ function ItemForm({
             Tải lại mục này
           </Button>
         ) : null}
-        <Button type="submit" disabled={pending}>{pending ? "Đang lưu…" : item ? "Lưu thay đổi" : "Thêm vào giáo án"}</Button>
+        <Button type="submit" pending={pending}>{item ? "Lưu thay đổi" : "Thêm vào giáo án"}</Button>
       </div>
     </form>
   );
@@ -494,7 +494,7 @@ function ItemForm({
 
 function DetailLine({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
-  return <div><dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{value}</dd></div>;
+  return <div><dt className="text-xs font-medium uppercase tracking-wide text-ink-muted">{label}</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{value}</dd></div>;
 }
 
 function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: TeachingPlanItem }) {
@@ -627,7 +627,7 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <Badge variant={item.itemType === "assessment" ? "warning" : "secondary"}>{itemTypeLabel}</Badge>
-              <span className="text-sm text-muted-foreground">Tuần {weekNumber(item.plannedDate, detail.yearStart)} · {formatDateVi(item.plannedDate)}</span>
+              <span className="text-sm text-ink-muted">Tuần {weekNumber(item.plannedDate, detail.yearStart)} · {formatDateVi(item.plannedDate)}</span>
             </div>
             <CardTitle>{item.title}</CardTitle>
             <CardDescription>Người dạy: {item.teacherName}</CardDescription>
@@ -668,20 +668,20 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
           <DetailLine label="Ghi chú nội bộ" value={item.note} />
         </dl>
         <div className="border-t border-line pt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tài liệu</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Tài liệu</p>
           {item.materialName ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="min-w-0 flex-1 break-all text-sm">
                 {item.materialName}{item.materialSize ? ` · ${(item.materialSize / 1024).toFixed(0)} KB` : ""}
               </span>
-              <Button size="sm" variant="outline" disabled={pending} onClick={downloadMaterial}>
-                {pending ? "Đang mở…" : "Tải xuống"}
+              <Button size="sm" variant="outline" pending={pending} onClick={downloadMaterial}>
+                Tải xuống
               </Button>
               {detail.canManage ? (
                 <Button size="sm" variant="ghost" disabled={pending} onClick={() => setConfirming("material")}>Gỡ tệp</Button>
               ) : null}
             </div>
-          ) : <p className="mt-2 text-sm text-muted-foreground">Chưa đính kèm tài liệu.</p>}
+          ) : <p className="mt-2 text-sm text-ink-muted">Chưa đính kèm tài liệu.</p>}
           {detail.canManage ? (
             /*
               Dùng `FileUpload` của design system (mục 0.8) thay cho `<input
@@ -704,10 +704,10 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
                 disabled={pending}
                 className="flex-1"
               />
-              <Button type="submit" size="sm" disabled={pending}>Lưu tài liệu</Button>
+              <Button type="submit" size="sm" pending={pending}>Lưu tài liệu</Button>
             </form>
           ) : (
-            <p className="mt-2 text-xs text-muted-foreground">{TEACHING_MATERIAL_SUMMARY}</p>
+            <p className="mt-2 text-xs text-ink-muted">{TEACHING_MATERIAL_SUMMARY}</p>
           )}
         </div>
       </CardContent>
@@ -827,12 +827,12 @@ export function TeachingPlanEditor({ detail, view }: { detail: TeachingPlanDetai
           {detail.canManage ? (
             <form onSubmit={createPlan} className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2"><Label htmlFor="new-plan-title">Tên giáo án</Label><Input id="new-plan-title" name="title" defaultValue={`Kế hoạch giảng dạy ${detail.className} ${detail.academicYearCode}`} maxLength={150} required /></div>
-              <Button type="submit" disabled={pending}>Tạo giáo án</Button>
+              <Button type="submit" pending={pending}>Tạo giáo án</Button>
               {message ? (
                 <FormMessage tone={message.tone === "error" ? "danger" : "success"}>{message.text}</FormMessage>
               ) : null}
             </form>
-          ) : <p className="text-sm text-muted-foreground">GLV đại diện chưa khởi tạo giáo án cho lớp.</p>}
+          ) : <p className="text-sm text-ink-muted">GLV đại diện chưa khởi tạo giáo án cho lớp.</p>}
         </CardContent>
       </Card>
     );
@@ -845,7 +845,7 @@ export function TeachingPlanEditor({ detail, view }: { detail: TeachingPlanDetai
           {detail.canManage ? (
             <form onSubmit={renamePlan} className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2"><Label htmlFor="plan-title">Tên giáo án</Label><Input id="plan-title" name="title" defaultValue={detail.planTitle ?? ""} maxLength={150} required /></div>
-              <Button type="submit" variant="outline" disabled={pending}>Lưu tên</Button>
+              <Button type="submit" variant="outline" pending={pending}>Lưu tên</Button>
             </form>
           ) : <p className="font-medium">{detail.planTitle}</p>}
           {message ? <FormMessage className="mt-2" tone={message.tone === "error" ? "danger" : "success"}>{message.text}</FormMessage> : null}
@@ -854,7 +854,7 @@ export function TeachingPlanEditor({ detail, view }: { detail: TeachingPlanDetai
 
       {detail.canManage ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">Mỗi ngày có tối đa một mục giáo án.</p>
+          <p className="text-sm text-ink-muted">Mỗi ngày có tối đa một mục giáo án.</p>
           <Button onClick={() => setAdding(true)}>Thêm mục giáo án</Button>
         </div>
       ) : null}
@@ -877,7 +877,7 @@ export function TeachingPlanEditor({ detail, view }: { detail: TeachingPlanDetai
       </Dialog>
 
       {detail.items.length === 0 ? (
-        <Card><CardContent className="pt-6 text-sm text-muted-foreground">Giáo án chưa có bài dạy hoặc bài kiểm tra.</CardContent></Card>
+        <Card><CardContent className="pt-6 text-sm text-ink-muted">Giáo án chưa có bài dạy hoặc bài kiểm tra.</CardContent></Card>
       ) : groups.map(([key, items]) => (
         <section key={key} className="space-y-3">
           {view === "calendar" ? <h2 className="text-lg font-semibold">Tháng {key.slice(5)}/{key.slice(0, 4)}</h2> : null}

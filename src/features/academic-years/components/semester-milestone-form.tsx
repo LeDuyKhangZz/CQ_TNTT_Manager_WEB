@@ -71,8 +71,8 @@ export function SemesterMilestoneForm({
           max={endDate}
           defaultValue={semester1EndDate ?? ""}
         />
-        <Button type="submit" variant="outline" size="sm" disabled={pending}>
-          {pending ? "Đang lưu…" : "Lưu mốc"}
+        <Button type="submit" variant="outline" size="sm" pending={pending}>
+          Lưu mốc
         </Button>
       </div>
       <p className="text-sm text-ink-muted">

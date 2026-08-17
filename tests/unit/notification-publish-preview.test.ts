@@ -71,18 +71,21 @@ describe("publishConfirmation", () => {
 
 describe("sendButtonLabel", () => {
   it("hiện số người nhận ngay trên nút gửi khi đã đếm được", () => {
-    expect(sendButtonLabel(42, false)).toContain("42");
+    expect(sendButtonLabel(42)).toContain("42");
   });
 
   it("chưa đếm được thì nút vẫn dùng được, chỉ không có số", () => {
-    expect(sendButtonLabel(null, false)).toBe("Gửi thông báo");
+    expect(sendButtonLabel(null)).toBe("Gửi thông báo");
   });
 
   it("phạm vi rỗng nói thẳng trên nút, trước cả hộp xác nhận", () => {
-    expect(sendButtonLabel(0, false)).toMatch(/chưa có ai/i);
+    expect(sendButtonLabel(0)).toMatch(/chưa có ai/i);
   });
 
-  it("đang gửi thì nhãn đổi để nút không bị bấm lại", () => {
-    expect(sendButtonLabel(42, true)).toBe("Đang gửi…");
+  // Đợt F (17 §8): "Đang gửi…" không còn là việc của hàm nhãn — trạng thái chờ
+  // là việc của `Button pending` (spinner + aria-busy + giữ nguyên tên nút).
+  // Nhãn vì thế KHÔNG đổi theo pending nữa, và đó là chủ ý.
+  it("nhãn không đổi theo trạng thái chờ — tên nút phải ổn định", () => {
+    expect(sendButtonLabel(42)).toBe("Gửi thông báo tới 42 người");
   });
 });

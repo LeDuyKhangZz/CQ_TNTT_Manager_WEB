@@ -37,6 +37,14 @@ const config: Config = {
         // ---- Nền · chữ · viền trung tính ------------------------------
         page: "var(--bg-page)",
         overlay: "var(--bg-overlay)",
+        // ⚠️ `surface` là token MỚI (09 §3) — nó từng nằm lẫn trong nhóm
+        // "BÍ DANH CŨ" bên dưới trước khi nhóm ấy bị xoá ở Đợt F. Xoá nhầm
+        // khoá này là `bg-surface`/`bg-surface-muted` biến mất khỏi toàn bộ
+        // CSS xuất ra — gần như mọi thẻ trong app mất nền.
+        surface: {
+          DEFAULT: "var(--bg-surface)",
+          muted: "var(--bg-surface-muted)",
+        },
         ink: {
           DEFAULT: "var(--text)",
           muted: "var(--text-muted)",
@@ -48,57 +56,31 @@ const config: Config = {
         },
 
         // ---- Trạng thái — KHÔNG BAO GIỜ lấy từ token ngành -------------
+        // (bí danh `-surface` của ba màu này đã xoá cùng nhóm BÍ DANH CŨ.)
         success: {
           DEFAULT: "var(--success)",
           subtle: "var(--success-subtle)",
-          surface: "var(--success-subtle)",
         },
         warning: {
           DEFAULT: "var(--warning)",
           subtle: "var(--warning-subtle)",
-          surface: "var(--warning-subtle)",
         },
         danger: {
           DEFAULT: "var(--danger)",
           subtle: "var(--danger-subtle)",
-          surface: "var(--danger-subtle)",
         },
         info: {
           DEFAULT: "var(--info)",
           subtle: "var(--info-subtle)",
         },
 
-        // ---- BÍ DANH CŨ (docs/06 §2) — không dùng trong code mới -------
-        background: "var(--bg-page)",
-        foreground: "var(--text)",
-        card: {
-          DEFAULT: "var(--bg-surface)",
-          foreground: "var(--text)",
-        },
-        surface: {
-          DEFAULT: "var(--bg-surface)",
-          muted: "var(--bg-surface-muted)",
-        },
-        primary: {
-          DEFAULT: "var(--theme-primary)",
-          hover: "var(--theme-primary-hover)",
-          foreground: "var(--theme-on-primary)",
-        },
-        secondary: {
-          DEFAULT: "var(--theme-soft)",
-          foreground: "var(--text)",
-        },
-        accent: "var(--theme-tint)",
-        muted: {
-          DEFAULT: "var(--bg-surface-muted)",
-          foreground: "var(--text-muted)",
-        },
-        text: {
-          DEFAULT: "var(--text)",
-          muted: "var(--text-muted)",
-        },
-        border: "var(--border)",
-        ring: "var(--theme-ring)",
+        // ---- BÍ DANH CŨ (docs/06 §2) — ĐÃ XOÁ (Đợt F, 17 §10) ----------
+        // `background`/`foreground`/`card`/`primary`/`secondary`/`accent`/
+        // `muted`/`text`/`border`/`ring` không còn: usage trong `src/` đã về 0
+        // (Đợt E quét 4 bí danh, Đợt F di trú nốt `text-muted-foreground` ×106
+        // · `-primary*` ×13 · `bg-muted` ×3 · `divide-border` ×4). Viền mặc
+        // định KHÔNG phụ thuộc khoá `border` cũ — globals.css đặt thẳng
+        // `* { border-color: var(--border) }`.
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

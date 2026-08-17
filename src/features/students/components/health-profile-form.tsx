@@ -82,8 +82,8 @@ export function HealthProfileForm({
           defaultValue={health?.emergencyNotes ?? ""}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Đang lưu…" : "Lưu thông tin sức khỏe"}
+      <Button type="submit" className="w-full" pending={pending}>
+        Lưu thông tin sức khỏe
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
     </form>

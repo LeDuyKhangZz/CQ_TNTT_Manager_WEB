@@ -402,8 +402,8 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                 </Select>
               </label>
               <div className="md:col-span-2">
-                <Button type="submit" disabled={pending}>
-                  {sendButtonLabel(audienceCount, pending)}
+                <Button type="submit" pending={pending}>
+                  {sendButtonLabel(audienceCount)}
                 </Button>
               </div>
             </form>
@@ -489,14 +489,14 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
               }
               action={
                 data.filter === "unread" ? (
-                  <Link href="/notifications" className="text-sm text-primary hover:underline">
+                  <Link href="/notifications" className="text-sm text-theme-primary hover:underline">
                     Xem tất cả thông báo
                   </Link>
                 ) : null
               }
             />
           ) : (
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-line">
               {data.inbox.map((item) => (
                 // `data-testid` để bài E2E đếm ĐÚNG dòng hộp thư: `getByRole
                 // ("listitem")` gom cả mục điều hướng ở vỏ và danh sách "Tôi đã
@@ -530,7 +530,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.linkPath ? (
-                        <Link href={item.linkPath} className="text-sm text-primary hover:underline">Mở trang liên quan</Link>
+                        <Link href={item.linkPath} className="text-sm text-theme-primary hover:underline">Mở trang liên quan</Link>
                       ) : null}
                       {item.readAt === null ? (
                         <Button variant="outline" size="sm" disabled={pending} onClick={() => markRead(item.id)}>
@@ -572,7 +572,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-line">
               {sentList.map((item) => (
                 <li key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                   <div className="min-w-0">

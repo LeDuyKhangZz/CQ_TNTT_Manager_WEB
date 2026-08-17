@@ -275,12 +275,12 @@ export function ReportWorkbench({
               {data.canSnapshotAnyScope ? (
                 <Button
                   size="sm"
-                  disabled={pending || !data.canSnapshot || data.rows.length === 0}
-                  aria-busy={pending}
+                  pending={pending}
+                  disabled={!data.canSnapshot || data.rows.length === 0}
                   aria-describedby={data.canSnapshot ? undefined : "snapshot-scope-hint"}
                   onClick={() => setConfirmOpen(true)}
                 >
-                  {pending ? "Đang chốt…" : "Chốt báo cáo"}
+                  Chốt báo cáo
                 </Button>
               ) : null}
             </div>

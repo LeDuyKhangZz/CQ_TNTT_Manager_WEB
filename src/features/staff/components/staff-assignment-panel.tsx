@@ -259,8 +259,8 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
             <Label htmlFor="assign-start">Ngày bắt đầu</Label>
             <DateField id="assign-start" name="startsOn" defaultValue={today()} required />
           </div>
-          <Button type="submit" size="sm" disabled={pending}>
-            {pending ? "Đang lưu…" : "Lưu phân công"}
+          <Button type="submit" size="sm" pending={pending}>
+            Lưu phân công
           </Button>
         </form>
       ) : null}
@@ -305,8 +305,8 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
               <Button variant="outline" onClick={() => setTransferOpen(false)} disabled={pending}>
                 Huỷ
               </Button>
-              <Button onClick={runTransfer} disabled={pending || !newClassId}>
-                {pending ? "Đang chuyển…" : "Xác nhận chuyển lớp"}
+              <Button onClick={runTransfer} pending={pending} disabled={!newClassId}>
+                Xác nhận chuyển lớp
               </Button>
             </>
           }

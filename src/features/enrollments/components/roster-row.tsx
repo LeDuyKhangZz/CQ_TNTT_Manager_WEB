@@ -146,16 +146,16 @@ export function RosterRow({
               <form action={formAction}>
                 <input type="hidden" name="enrollmentId" value={enrollmentId} />
                 <input type="hidden" name="intent" value="resume" />
-                <Button type="submit" variant="outline" size="sm" disabled={pending}>
-                  {pending ? "Đang lưu…" : "Khôi phục"}
+                <Button type="submit" variant="outline" size="sm" pending={pending}>
+                  Khôi phục
                 </Button>
               </form>
             ) : (
               <form action={formAction}>
                 <input type="hidden" name="enrollmentId" value={enrollmentId} />
                 <input type="hidden" name="intent" value="pause" />
-                <Button type="submit" variant="outline" size="sm" disabled={pending}>
-                  {pending ? "Đang lưu…" : "Tạm nghỉ"}
+                <Button type="submit" variant="outline" size="sm" pending={pending}>
+                  Tạm nghỉ
                 </Button>
               </form>
             )}
@@ -194,8 +194,8 @@ export function RosterRow({
                 aria-label={`Ngày kết thúc ghi danh của ${studentName}`}
                 required
               />
-              <Button type="submit" variant="outline" size="sm" disabled={pending}>
-                {pending ? "Đang lưu…" : "Kết thúc"}
+              <Button type="submit" variant="outline" size="sm" pending={pending}>
+                Kết thúc
               </Button>
             </form>
             )}

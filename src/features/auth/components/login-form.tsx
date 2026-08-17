@@ -46,10 +46,10 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
         <FormMessage id="password-error">{errors.password?.message}</FormMessage>
       </div>
       <FormMessage>{submissionError}</FormMessage>
-      <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Đang kiểm tra…" : "Đăng nhập"}
+      <Button type="submit" size="lg" className="w-full" pending={isSubmitting}>
+        Đăng nhập
       </Button>
-      <p className="text-center text-xs text-muted-foreground">Tài khoản do Ban quản trị Giáo xứ cấp. Hệ thống không hỗ trợ đăng ký công khai.</p>
+      <p className="text-center text-xs text-ink-muted">Tài khoản do Ban quản trị Giáo xứ cấp. Hệ thống không hỗ trợ đăng ký công khai.</p>
     </form>
   );
 }

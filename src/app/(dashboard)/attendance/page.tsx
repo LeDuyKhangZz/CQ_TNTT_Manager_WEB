@@ -40,7 +40,7 @@ export default async function AttendancePage({
         <PageHeader title="Điểm danh" description="Điểm danh Thánh lễ và Giáo lý theo từng buổi." />
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ink-muted">
               Chưa có năm học nào đang diễn ra. Vào <Link href="/admin" className="underline">Quản trị hệ thống</Link> để đặt năm học hiện hành.
             </p>
           </CardContent>
@@ -72,7 +72,7 @@ export default async function AttendancePage({
           </CardHeader>
           <CardContent>
             {editableClasses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-ink-muted">
                 {viewOnly
                   ? "Bạn xem điểm danh ở chế độ chỉ đọc. Việc mở buổi và ghi điểm danh thuộc về Giáo lý viên của lớp."
                   : "Bạn chưa được phân công lớp nào nên không mở được buổi điểm danh. Trưởng ngành chỉ điểm danh trực tiếp ở lớp mình đứng."}
@@ -118,7 +118,7 @@ export default async function AttendancePage({
           </CardHeader>
           <CardContent className="space-y-2">
             {sessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Chưa có buổi điểm danh nào.</p>
+              <p className="text-sm text-ink-muted">Chưa có buổi điểm danh nào.</p>
             ) : (
               sessions.map((session) => (
                 <Link
@@ -128,7 +128,7 @@ export default async function AttendancePage({
                 >
                   <div>
                     <p className="text-sm font-medium">{session.className}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-ink-muted">
                       {MEETING_TYPE_LABELS[session.meetingType]} · {formatDateVi(session.attendanceDate)}
                       {session.editorName ? ` · ${session.editorName} đang phụ trách` : ""}
                     </p>

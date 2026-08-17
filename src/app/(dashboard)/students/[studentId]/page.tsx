@@ -75,7 +75,7 @@ export default async function StudentDetailPage({
           */
           <Link
             href="/students"
-            className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-ink"
+            className="inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
           >
             ← Danh sách thiếu nhi
           </Link>
@@ -85,7 +85,7 @@ export default async function StudentDetailPage({
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
           <div>
-            <p className="text-sm text-muted-foreground">Người giám hộ</p>
+            <p className="text-sm text-ink-muted">Người giám hộ</p>
             <p className="font-medium">
               {student.guardian ? `${student.guardian.fullName} · ${student.guardian.phone}` : "Chưa gán"}
             </p>
@@ -118,8 +118,8 @@ export default async function StudentDetailPage({
               href={tabHref(studentId, item.key)}
               className={`min-h-[44px] rounded-t-md px-4 py-2 text-sm font-medium ${
                 activeTab === item.key
-                  ? "border-b-2 border-primary text-ink"
-                  : "text-muted-foreground hover:text-ink"
+                  ? "border-b-2 border-theme-primary text-ink"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               {item.label}
@@ -134,17 +134,17 @@ export default async function StudentDetailPage({
               <CardTitle>Thông tin</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <p><span className="text-muted-foreground">Tên thánh: </span>{student.saintName}</p>
-              <p><span className="text-muted-foreground">Họ tên: </span>{student.fullName}</p>
-              <p><span className="text-muted-foreground">Giới tính: </span>{genderLabel(student.gender)}</p>
-              <p><span className="text-muted-foreground">Ngày sinh: </span>{formatDateVi(student.dateOfBirth)}</p>
+              <p><span className="text-ink-muted">Tên thánh: </span>{student.saintName}</p>
+              <p><span className="text-ink-muted">Họ tên: </span>{student.fullName}</p>
+              <p><span className="text-ink-muted">Giới tính: </span>{genderLabel(student.gender)}</p>
+              <p><span className="text-ink-muted">Ngày sinh: </span>{formatDateVi(student.dateOfBirth)}</p>
               <p>
-                <span className="text-muted-foreground">Bổn mạng: </span>
+                <span className="text-ink-muted">Bổn mạng: </span>
                 {student.patronFeastDate ? formatDateVi(student.patronFeastDate) : "—"}
               </p>
-              <p><span className="text-muted-foreground">Điện thoại: </span>{student.phone ?? "—"}</p>
-              <p><span className="text-muted-foreground">Địa chỉ: </span>{student.address ?? "—"}</p>
-              <p><span className="text-muted-foreground">Ghi chú: </span>{student.generalNotes ?? "—"}</p>
+              <p><span className="text-ink-muted">Điện thoại: </span>{student.phone ?? "—"}</p>
+              <p><span className="text-ink-muted">Địa chỉ: </span>{student.address ?? "—"}</p>
+              <p><span className="text-ink-muted">Ghi chú: </span>{student.generalNotes ?? "—"}</p>
             </CardContent>
           </Card>
 
@@ -240,13 +240,13 @@ export default async function StudentDetailPage({
           </CardHeader>
           <CardContent className="space-y-2">
             {student.enrollments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Chưa có ghi danh nào.</p>
+              <p className="text-sm text-ink-muted">Chưa có ghi danh nào.</p>
             ) : (
               student.enrollments.map((item) => (
                 <Panel key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <div>
                     <p className="font-medium">{item.className}</p>
-                    <p className="text-muted-foreground">
+                    <p className="text-ink-muted">
                       Năm học {item.academicYearCode} · từ {formatDateVi(item.enrolledOn)}
                       {item.endedOn ? ` đến ${formatDateVi(item.endedOn)}` : ""}
                     </p>
@@ -292,10 +292,10 @@ export default async function StudentDetailPage({
               <HealthProfileForm studentId={student.id} health={student.health ?? null} />
             ) : (
               <div className="space-y-2 text-sm">
-                <p><span className="text-muted-foreground">Dị ứng: </span>{student.health?.allergies ?? "—"}</p>
-                <p><span className="text-muted-foreground">Bệnh lý: </span>{student.health?.medicalConditions ?? "—"}</p>
-                <p><span className="text-muted-foreground">Thuốc: </span>{student.health?.medications ?? "—"}</p>
-                <p><span className="text-muted-foreground">Ghi chú khẩn cấp: </span>{student.health?.emergencyNotes ?? "—"}</p>
+                <p><span className="text-ink-muted">Dị ứng: </span>{student.health?.allergies ?? "—"}</p>
+                <p><span className="text-ink-muted">Bệnh lý: </span>{student.health?.medicalConditions ?? "—"}</p>
+                <p><span className="text-ink-muted">Thuốc: </span>{student.health?.medications ?? "—"}</p>
+                <p><span className="text-ink-muted">Ghi chú khẩn cấp: </span>{student.health?.emergencyNotes ?? "—"}</p>
               </div>
             )}
           </CardContent>

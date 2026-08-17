@@ -76,19 +76,19 @@ export function AttendanceHistory({
             <>
               <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div>
-                  <span className="text-muted-foreground">Số buổi</span>
+                  <span className="text-ink-muted">Số buổi</span>
                   <p className="text-lg font-semibold">{summary.sessionsCounted}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Có mặt lễ</span>
+                  <span className="text-ink-muted">Có mặt lễ</span>
                   <p className="text-lg font-semibold">{summary.massPresentCount}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Điểm Thánh lễ</span>
+                  <span className="text-ink-muted">Điểm Thánh lễ</span>
                   <p className="text-lg font-semibold">{summary.massAttendanceScore ?? "—"}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Điểm Giáo lý</span>
+                  <span className="text-ink-muted">Điểm Giáo lý</span>
                   <p className="text-lg font-semibold">{summary.catechismAttendanceScore ?? "—"}</p>
                 </div>
               </div>
@@ -122,7 +122,7 @@ export function AttendanceHistory({
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Chưa có dữ liệu điểm danh đã chốt.</p>
+            <p className="text-sm text-ink-muted">Chưa có dữ liệu điểm danh đã chốt.</p>
           ) : (
             <div
               className={tableScrollFrameClassName}

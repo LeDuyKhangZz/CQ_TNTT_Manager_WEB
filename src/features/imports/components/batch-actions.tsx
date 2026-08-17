@@ -107,8 +107,8 @@ export function BatchActions({
         {canCommit ? (
           <form ref={commit.formRef} action={commit.formAction} onSubmit={commit.handleSubmit}>
             <input type="hidden" name="batchId" value={batchId} />
-            <Button type="submit" disabled={commit.pending}>
-              {commit.pending ? "Đang ghi…" : `Ghi ${pendingRows} dòng vào hệ thống`}
+            <Button type="submit" pending={commit.pending}>
+              {`Ghi ${pendingRows} dòng vào hệ thống`}
             </Button>
           </form>
         ) : null}
@@ -116,8 +116,8 @@ export function BatchActions({
         {isDryRun ? (
           <form ref={cancel.formRef} action={cancel.formAction} onSubmit={cancel.handleSubmit}>
             <input type="hidden" name="batchId" value={batchId} />
-            <Button type="submit" variant="outline" disabled={cancel.pending}>
-              {cancel.pending ? "Đang huỷ…" : "Huỷ lần nhập"}
+            <Button type="submit" variant="outline" pending={cancel.pending}>
+              Huỷ lần nhập
             </Button>
           </form>
         ) : null}
@@ -125,8 +125,8 @@ export function BatchActions({
         {!isDryRun && !rawPurged ? (
           <form ref={purge.formRef} action={purge.formAction} onSubmit={purge.handleSubmit}>
             <input type="hidden" name="batchId" value={batchId} />
-            <Button type="submit" variant="outline" disabled={purge.pending}>
-              {purge.pending ? "Đang xoá…" : "Xoá dữ liệu thô"}
+            <Button type="submit" variant="outline" pending={purge.pending}>
+              Xoá dữ liệu thô
             </Button>
           </form>
         ) : null}

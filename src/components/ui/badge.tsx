@@ -22,10 +22,12 @@ const badgeVariants = cva(
       variant: {
         default: "border-transparent bg-surface-muted text-ink",
         secondary: "border-transparent bg-surface-muted text-ink-muted",
-        success: "border-success/30 bg-success-subtle text-success",
-        warning: "border-warning/30 bg-warning-subtle text-warning",
-        danger: "border-danger/30 bg-danger-subtle text-danger",
-        info: "border-info/30 bg-info-subtle text-info",
+        // Nợ #5 (Đợt F): `border-{tone}/30` chưa từng sinh CSS (var() trần
+        // không nhận bổ ngữ độ mờ) — viền thật là màu mặc định. Token đặc.
+        success: "border-success bg-success-subtle text-success",
+        warning: "border-warning bg-warning-subtle text-warning",
+        danger: "border-danger bg-danger-subtle text-danger",
+        info: "border-info bg-info-subtle text-info",
         outline: "border-line-strong bg-surface text-ink-muted",
       },
     },

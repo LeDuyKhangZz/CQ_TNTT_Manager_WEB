@@ -172,7 +172,7 @@ function NewAssessmentForm({ detail }: { detail: GradebookDetail }) {
             </label>
           ) : null}
           <div className="flex items-end xl:col-span-5">
-            <Button type="submit" disabled={pending}>{pending ? "Đang thêm…" : "Thêm cột"}</Button>
+            <Button type="submit" pending={pending}>Thêm cột</Button>
           </div>
           {message ? <FormMessage className="md:col-span-2 xl:col-span-5" tone={MESSAGE_TONES[message.tone]}>{message.text}</FormMessage> : null}
         </form>
@@ -300,14 +300,14 @@ function AssessmentSettings({
           <div className="space-y-2"><Label htmlFor={`date-${assessment.id}`}>Ngày</Label><DateField id={`date-${assessment.id}`} name="assessmentDate" min={detail.yearStart} max={detail.yearEnd} defaultValue={assessment.assessmentDate ?? ""} disabled={detail.isLocked} /></div>
           <div className="space-y-2"><Label htmlFor={`weight-${assessment.id}`}>Hệ số</Label><Input id={`weight-${assessment.id}`} name="weight" type="number" min="0.01" max="100" step="0.01" defaultValue={assessment.weight} required disabled={detail.isLocked} /></div>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" variant="outline" disabled={pending || publishPending || detail.isLocked}>Lưu</Button>
+            <Button type="submit" size="sm" variant="outline" pending={pending} disabled={publishPending || detail.isLocked}>Lưu</Button>
             {/*
               M07-C · TB-M07-02 / D-154 — **nút duy nhất của thẻ này còn sống
               sau khi khóa**, và nó đổi từ `ghost` sang `outline`: `06_UI_UX` §3
               ghi thẳng rằng thao tác *"có tác động ra ngoài tổ chức"* đang là
               thứ **nhẹ nhất về thị giác** trong hàng.
             */}
-            <Button size="sm" variant="outline" disabled={pending || publishPending} onClick={togglePublish}>{published ? "Ẩn khỏi cổng" : "Công bố"}</Button>
+            <Button size="sm" variant="outline" pending={publishPending} disabled={pending} onClick={togglePublish}>{published ? "Ẩn khỏi cổng" : "Công bố"}</Button>
             {/*
               M07-B · TB-M07-01 bước 1 — **một nút, hai nhãn**, chọn theo dữ liệu
               thật. Hai nhãn khác nhau vì hai hậu quả khác nhau; để một chữ "Xóa"
@@ -398,7 +398,7 @@ function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Cột đã ẩn</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ink-muted">
             {detail.hiddenAssessments.length} cột không tham gia bảng điểm, bản xuất, điểm trung
             bình, Top 5 và cổng phụ huynh. Điểm vẫn còn nguyên.
           </p>
@@ -422,7 +422,7 @@ function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
             >
               <div className="min-w-0">
                 <p className="font-medium">{assessment.title}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-ink-muted">
                   {ASSESSMENT_KIND_LABELS[assessment.kind]} · hệ số {assessment.weight} ·{" "}
                   {assessment.scoredCount === 0 ? "chưa có điểm" : `${assessment.scoredCount} điểm đã nhập`}
                   {assessment.isPublished ? " · trạng thái công bố: Đã công bố" : ""}
@@ -564,7 +564,7 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
           <div className={tableScrollFrameClassName}>
             <table className="w-full min-w-[34rem] text-sm">
               <caption className="sr-only">Nhập điểm {assessment.title}</caption>
-              <thead className="bg-muted/50"><tr><th className="sticky left-0 bg-muted px-3 py-3 text-left">Thiếu nhi</th><th className="w-32 px-3 py-3 text-left">Điểm</th><th className="px-3 py-3 text-left">Ghi chú</th></tr></thead>
+              <thead className="bg-surface-muted"><tr><th className="sticky left-0 bg-surface-muted px-3 py-3 text-left">Thiếu nhi</th><th className="w-32 px-3 py-3 text-left">Điểm</th><th className="px-3 py-3 text-left">Ghi chú</th></tr></thead>
               <tbody>
                 {detail.students.map((student) => {
                   const score = student.scores[assessment.id];
@@ -574,9 +574,9 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
                       <td className="px-3 py-2">
                         <Input key={`${assessment.id}-${student.enrollmentId}-${score?.score ?? "null"}`} name={`score-${student.enrollmentId}`} type="number" min="0" max={assessment.maxScore} step="0.01" defaultValue={score?.score ?? ""} disabled={detail.isLocked || !detail.canGrade} aria-label={`Điểm ${student.saintName} ${student.fullName}`} />
                         {assessment.kind === "attendance" ? (
-                          <div className="mt-1 space-y-1 text-xs text-muted-foreground">
+                          <div className="mt-1 space-y-1 text-xs text-ink-muted">
                             <p>Đề xuất: {score?.suggestedScore === null || score?.suggestedScore === undefined ? "—" : score.suggestedScore.toFixed(2)}</p>
-                            {score?.isManualOverride ? <button type="button" className="min-h-11 text-primary underline" disabled={pending || detail.isLocked} onClick={() => resetOverride(student.enrollmentId)}>Đang chỉnh tay · dùng lại đề xuất</button> : null}
+                            {score?.isManualOverride ? <button type="button" className="min-h-11 text-theme-primary underline" disabled={pending || detail.isLocked} onClick={() => resetOverride(student.enrollmentId)}>Đang chỉnh tay · dùng lại đề xuất</button> : null}
                           </div>
                         ) : null}
                       </td>
@@ -596,7 +596,7 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
               </tbody>
             </table>
           </div>
-          {detail.canGrade ? <Button className="mt-3" type="submit" disabled={pending || detail.isLocked}>{pending ? "Đang lưu…" : `Lưu điểm ${assessment.title}`}</Button> : null}
+          {detail.canGrade ? <Button className="mt-3" type="submit" pending={pending} disabled={detail.isLocked}>{`Lưu điểm ${assessment.title}`}</Button> : null}
           {message ? <FormMessage className="mt-3" tone={MESSAGE_TONES[message.tone]}>{message.text}</FormMessage> : null}
         </form>
       </CardContent>
@@ -649,7 +649,7 @@ function CommentVisibilityField({
           Nội dung này sẽ hiện trên cổng phụ huynh/thiếu nhi.
         </FormMessage>
       ) : (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-ink-muted">
           Ghi chú nội bộ — phụ huynh và thiếu nhi không đọc được, kể cả số lượng.
         </p>
       )}
@@ -765,7 +765,7 @@ function CommentItem({
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" disabled={pending}>{pending ? "Đang lưu…" : "Lưu nhận xét"}</Button>
+            <Button type="submit" size="sm" pending={pending}>Lưu nhận xét</Button>
             <Button
               type="button"
               size="sm"
@@ -780,7 +780,7 @@ function CommentItem({
       ) : (
         <p className="whitespace-pre-wrap">{comment.content}</p>
       )}
-      <p className="mt-2 text-xs text-muted-foreground">{comment.authorName} · {formatDateVi(comment.commentDate)}</p>
+      <p className="mt-2 text-xs text-ink-muted">{comment.authorName} · {formatDateVi(comment.commentDate)}</p>
     </Panel>
   );
 }
@@ -836,7 +836,7 @@ function CommentComposer({
         <Label htmlFor={`new-comment-content-${enrollmentId}`}>Nội dung</Label>
         <Textarea id={`new-comment-content-${enrollmentId}`} name="content" maxLength={2000} required />
       </div>
-      <Button type="submit" disabled={pending}>Thêm nhận xét</Button>
+      <Button type="submit" pending={pending}>Thêm nhận xét</Button>
     </form>
   );
 }
@@ -857,7 +857,7 @@ function StudentCommentsPanel({ detail }: { detail: GradebookDetail }) {
     <section className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">Nhận xét</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-ink-muted">
           Nhận xét công khai hiển thị trên cổng phụ huynh/thiếu nhi; ghi chú nội bộ không rò nội
           dung lẫn số lượng. Sửa và xóa dành cho người viết, Giáo lý viên đại diện lớp và Ban điều
           hành xứ đoàn.
@@ -872,7 +872,7 @@ function StudentCommentsPanel({ detail }: { detail: GradebookDetail }) {
               <CardDescription>{student.comments.length} nhận xét trong phạm vi bạn được xem</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {student.comments.length === 0 ? <p className="text-sm text-muted-foreground">Chưa có nhận xét.</p> : (
+              {student.comments.length === 0 ? <p className="text-sm text-ink-muted">Chưa có nhận xét.</p> : (
                 <ul className="space-y-3">
                   {student.comments.map((comment) => (
                     <CommentItem
@@ -968,7 +968,7 @@ function NewLeaderboardForm({
           <div className="space-y-2"><Label htmlFor="leaderboard-title">Tiêu đề</Label><Input id="leaderboard-title" name="title" maxLength={120} required placeholder="Top 5 tháng 10" /></div>
           <label className="space-y-2"><span className="text-sm font-medium">Nguồn</span><Select name="sourceType" value={sourceType} onChange={(event) => setSourceType(event.target.value as LeaderboardSourceType)}>{LEADERBOARD_SOURCE_TYPES.map((value) => <option key={value} value={value}>{LEADERBOARD_SOURCE_LABELS[value]}</option>)}</Select></label>
           {sourceType === "assessment" ? <label className="space-y-2"><span className="text-sm font-medium">Cột điểm</span><Select name="sourceAssessmentId" required defaultValue=""><option value="">Chọn cột điểm</option>{detail.assessments.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</Select></label> : <div />}
-          <div className="md:col-span-3"><Button type="submit" disabled={pending}>{pending ? "Đang tạo…" : "Tạo bảng Top 5"}</Button></div>
+          <div className="md:col-span-3"><Button type="submit" pending={pending}>Tạo bảng Top 5</Button></div>
           {message ? <FormMessage className="md:col-span-3" tone={MESSAGE_TONES[message.tone]}>{message.text}</FormMessage> : null}
         </form>
       </CardContent>
@@ -1179,7 +1179,7 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
             </div>
           </form>
         ) : null}
-        {preview ? <ol className="space-y-2">{preview.map((entry) => <Panel as="li" key={entry.enrollmentId} className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-bold text-white">{entry.rank}</span><span className="min-w-0 flex-1 font-medium">{entry.saintName} {entry.fullName}</span><span className="font-semibold tabular-nums">{entry.score === null ? "—" : entry.score.toFixed(2)}</span></Panel>)}</ol> : <p className="text-sm text-muted-foreground">Chưa có bản xem trước.</p>}
+        {preview ? <ol className="space-y-2">{preview.map((entry) => <Panel as="li" key={entry.enrollmentId} className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-theme-primary font-bold text-theme-on-primary">{entry.rank}</span><span className="min-w-0 flex-1 font-medium">{entry.saintName} {entry.fullName}</span><span className="font-semibold tabular-nums">{entry.score === null ? "—" : entry.score.toFixed(2)}</span></Panel>)}</ol> : <p className="text-sm text-ink-muted">Chưa có bản xem trước.</p>}
         {message ? <FormMessage tone={MESSAGE_TONES[message.tone]}>{message.text}</FormMessage> : null}
         <ConfirmDialog
           open={confirming === "publish"}
@@ -1240,12 +1240,12 @@ function LeaderboardPanel({ detail }: { detail: GradebookDetail }) {
     <section className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">Top 5</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-ink-muted">
           Danh sách đã chốt không tự đổi khi điểm nguồn thay đổi. Muốn xếp hạng lại thì bấm “Chốt
           lại danh sách” — bản đang giữ được lưu vào lịch sử, không mất đi.
         </p>
       </div>
-      {!detail.top5Enabled ? <Card><CardContent className="pt-6 text-sm text-muted-foreground">Super Admin chưa bật tính năng Top 5 cho năm học này.</CardContent></Card> : null}
+      {!detail.top5Enabled ? <Card><CardContent className="pt-6 text-sm text-ink-muted">Super Admin chưa bật tính năng Top 5 cho năm học này.</CardContent></Card> : null}
       {detail.top5Enabled && detail.canManageTop5 ? (
         <NewLeaderboardForm
           detail={detail}
@@ -1253,7 +1253,7 @@ function LeaderboardPanel({ detail }: { detail: GradebookDetail }) {
         />
       ) : null}
       {leaderboards.map((leaderboard) => <LeaderboardCard key={leaderboard.id} detail={detail} leaderboard={leaderboard} />)}
-      {detail.top5Enabled && leaderboards.length === 0 ? <Card><CardContent className="pt-6 text-sm text-muted-foreground">Chưa có bảng Top 5.</CardContent></Card> : null}
+      {detail.top5Enabled && leaderboards.length === 0 ? <Card><CardContent className="pt-6 text-sm text-ink-muted">Chưa có bảng Top 5.</CardContent></Card> : null}
     </section>
   );
 }
@@ -1292,7 +1292,7 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
         <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={detail.isLocked ? "warning" : "success"}>{detail.isLocked ? "Đã khóa" : "Đang mở"}</Badge>
-            <span className="text-sm text-muted-foreground">{detail.assessments.length} cột điểm · {detail.students.length} thiếu nhi</span>
+            <span className="text-sm text-ink-muted">{detail.assessments.length} cột điểm · {detail.students.length} thiếu nhi</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <a href={`/results/${detail.classId}/export?format=xlsx`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>Xuất Excel</a>
@@ -1354,7 +1354,7 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
       {detail.canGrade ? <HiddenAssessmentsPanel detail={detail} /> : null}
 
       {detail.assessments.length === 0 ? (
-        <Card><CardContent className="pt-6 text-sm text-muted-foreground">Lớp chưa tạo cột điểm. Đây là trạng thái hợp lệ; không có cột bắt buộc.</CardContent></Card>
+        <Card><CardContent className="pt-6 text-sm text-ink-muted">Lớp chưa tạo cột điểm. Đây là trạng thái hợp lệ; không có cột bắt buộc.</CardContent></Card>
       ) : (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Nhập điểm</h2>

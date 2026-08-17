@@ -80,9 +80,14 @@ export function publishConfirmation({
  */
 const WARNING = "Thông báo đã gửi không thu hồi được.";
 
-/** Nhãn nút gửi ở biểu mẫu chính — con số hiện ngay khi đã đếm được. */
-export function sendButtonLabel(audienceCount: number | null, pending: boolean): string {
-  if (pending) return "Đang gửi…";
+/**
+ * Nhãn nút gửi ở biểu mẫu chính — con số hiện ngay khi đã đếm được.
+ *
+ * Đợt F (17 §8): hàm này KHÔNG còn nhận `pending` — trạng thái chờ nay là việc
+ * của `Button pending` (spinner đè lên nhãn, nhãn giữ nguyên làm tên trợ năng).
+ * Đổi nhãn thành "Đang gửi…" giữa chừng là đổi TÊN của nút trong lúc chờ.
+ */
+export function sendButtonLabel(audienceCount: number | null): string {
   if (audienceCount === null) return "Gửi thông báo";
   if (audienceCount === 0) return "Gửi thông báo · chưa có ai trong phạm vi";
   return `Gửi thông báo tới ${audienceCount} người`;

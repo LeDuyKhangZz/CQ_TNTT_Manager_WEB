@@ -33,7 +33,7 @@ export default async function TeachingPlanPage() {
       />
       <WeekAheadSchedule data={weekAhead} />
       {isPortal ? null : !data.year ? (
-        <Card className="mt-5"><CardContent className="pt-6 text-sm text-muted-foreground">Chưa có năm học hiện hành.</CardContent></Card>
+        <Card className="mt-5"><CardContent className="pt-6 text-sm text-ink-muted">Chưa có năm học hiện hành.</CardContent></Card>
       ) : data.classes.length === 0 ? (
         /*
           TB-08 — trước đợt này nhánh này trả thẳng `null`: **đúng một khoảng
@@ -63,12 +63,12 @@ export default async function TeachingPlanPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {data.classes.map((item) => (
               <Link key={item.id} href={`/teaching-plan/${item.id}`} className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <Card className="h-full transition-colors hover:border-primary">
+                <Card className="h-full transition-colors hover:border-theme-primary">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3"><CardTitle>{item.displayName}</CardTitle><Badge variant={item.planId ? "success" : "secondary"}>{item.planId ? `${item.itemCount} mục` : "Chưa tạo"}</Badge></div>
                     <CardDescription>{item.planTitle ?? "Chưa có kế hoạch giảng dạy"}</CardDescription>
                   </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">{item.canManage ? "Bạn có quyền chỉnh sửa" : "Chỉ xem"}</CardContent>
+                  <CardContent className="text-sm text-ink-muted">{item.canManage ? "Bạn có quyền chỉnh sửa" : "Chỉ xem"}</CardContent>
                 </Card>
               </Link>
             ))}

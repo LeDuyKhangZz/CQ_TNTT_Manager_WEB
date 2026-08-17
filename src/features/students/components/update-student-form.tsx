@@ -128,8 +128,8 @@ export function UpdateStudentForm({
       >
         Hoàn cảnh khó khăn
       </Checkbox>
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Đang lưu…" : "Lưu thay đổi"}
+      <Button type="submit" className="w-full" pending={pending}>
+        Lưu thay đổi
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
     </form>

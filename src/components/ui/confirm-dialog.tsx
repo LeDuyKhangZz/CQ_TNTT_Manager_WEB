@@ -52,9 +52,9 @@ export function ConfirmDialog({
           <Button
             variant={tone === "danger" ? "danger" : "primary"}
             onClick={onConfirm}
-            disabled={pending}
+            pending={pending}
           >
-            {pending ? "Đang xử lý…" : confirmLabel}
+            {confirmLabel}
           </Button>
         </>
       }

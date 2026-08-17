@@ -154,12 +154,8 @@ export function WeeklyPlanEditor({
             />
           </div>
           <div>
-            <Button type="submit" disabled={pending}>
-              {pending
-                ? "Đang lưu…"
-                : existing
-                  ? "Cập nhật công việc tuần"
-                  : "Tạo công việc tuần"}
+            <Button type="submit" pending={pending}>
+              {existing ? "Cập nhật công việc tuần" : "Tạo công việc tuần"}
             </Button>
           </div>
         </form>

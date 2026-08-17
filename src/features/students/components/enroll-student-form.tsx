@@ -49,8 +49,8 @@ export function EnrollStudentForm({
           ))}
         </Select>
       </div>
-      <Button type="submit" disabled={pending}>
-        {pending ? "Đang ghi danh…" : "Ghi danh"}
+      <Button type="submit" pending={pending}>
+        Ghi danh
       </Button>
       {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
     </form>
