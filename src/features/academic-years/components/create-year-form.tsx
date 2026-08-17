@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
@@ -131,16 +132,14 @@ export function CreateYearForm() {
       {/* `key` theo chính giá trị: ô đánh dấu cũng không tự nhận `defaultChecked`
           mới khi React dựng lại biểu mẫu ở pha lỗi — đúng cái bẫy đã làm hai ô
           CHỌN ở biểu mẫu "Thêm nhân sự" âm thầm quay về mặc định (M04-B). */}
-      <label className="flex min-h-11 items-center gap-3 text-sm">
-        <input
-          key={`top5-${state.values.top5Enabled}`}
-          name="top5Enabled"
-          type="checkbox"
-          defaultChecked={state.values.top5Enabled}
-          className="h-5 w-5 rounded border-border"
-        />
+      <Checkbox
+        key={`top5-${state.values.top5Enabled}`}
+        name="top5Enabled"
+        defaultChecked={state.values.top5Enabled}
+        labelClassName="flex gap-3"
+      >
         Bật tính năng Top 5 cho năm học
-      </label>
+      </Checkbox>
       <SubmitButton />
     </form>
   );

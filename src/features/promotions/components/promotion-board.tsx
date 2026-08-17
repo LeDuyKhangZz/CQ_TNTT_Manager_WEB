@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
@@ -420,17 +421,15 @@ function PromotionDetailPanel({
           ) : null}
 
           {status === "recommended_promote" && item.canProposeTrainee ? (
-            <label className="flex min-h-11 items-center gap-3 text-sm md:col-span-2">
-              {/* Vùng chạm 44px cho chính ô tick, không chỉ cho nhãn bọc ngoài —
-                  `06_UI_UX_RECOMMENDATIONS` §7 đo được ô cũ chỉ ~13–16px. */}
-              <input
-                type="checkbox"
-                checked={trainee}
-                onChange={(event) => setTrainee(event.target.checked)}
-                className="h-6 w-6 shrink-0 rounded border-line-strong"
-              />
-              <span>Đề xuất vào Dự trưởng (hệ thống chọn lớp năm sau khi duyệt)</span>
-            </label>
+            /* Vùng chạm 44px do `<label>` của `Checkbox` gánh — `09` §11 chốt đúng
+               cách đo ấy; `06_UI_UX_RECOMMENDATIONS` §7 đo được ô cũ chỉ ~13–16px. */
+            <Checkbox
+              checked={trainee}
+              onChange={(event) => setTrainee(event.target.checked)}
+              labelClassName="flex gap-3 md:col-span-2"
+            >
+              Đề xuất vào Dự trưởng (hệ thống chọn lớp năm sau khi duyệt)
+            </Checkbox>
           ) : null}
 
           <div className="space-y-1 md:col-span-2">
@@ -656,18 +655,16 @@ function PromotionRow({
               // Vùng chạm 44px ở **mọi** cỡ màn (`11` §5), không chỉ trên điện
               // thoại: dòng của bảng vốn đã cao hơn thế nhờ nút "Chi tiết", nên
               // giữ ngưỡng ở đây không làm bảng cao thêm một pixel nào.
-              <label className="flex min-h-11 items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selected}
-                  onChange={(event) => onSelectChange(event.target.checked)}
-                  className="h-6 w-6 shrink-0 rounded border-line-strong"
-                  // Nhãn nêu TÊN EM: 25 ô tick giống hệt nhau thì trình đọc màn
-                  // hình không nói lên được ô nào là của ai.
-                  aria-label={`Chọn ${item.studentName} cho lượt đề xuất hàng loạt`}
-                />
+              <Checkbox
+                checked={selected}
+                onChange={(event) => onSelectChange(event.target.checked)}
+                // Nhãn nêu TÊN EM: 25 ô tick giống hệt nhau thì trình đọc màn
+                // hình không nói lên được ô nào là của ai.
+                aria-label={`Chọn ${item.studentName} cho lượt đề xuất hàng loạt`}
+                labelClassName="flex"
+              >
                 <span className={cn(MOBILE_LABEL, "m-0")}>Chọn</span>
-              </label>
+              </Checkbox>
             ) : null}
           </td>
         ) : null}

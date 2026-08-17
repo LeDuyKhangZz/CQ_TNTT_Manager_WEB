@@ -3,11 +3,10 @@
 import { useActionState, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { FileUpload } from "@/components/ui/file-upload";
 import { FormMessage } from "@/components/ui/form-message";
-import { inputBaseClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import type { ImportFeedback } from "../import-feedback";
 import {
   checkUploadSize,
@@ -94,25 +93,34 @@ export function ImportUploadForm({
         tải lên chỉ kiểm tra, chưa ghi gì vào hệ thống.
       </p>
 
-      <div className="space-y-2">
-        {/* TO-BE 8 — hai cái trần nói ra NGAY TRÊN Ô CHỌN FILE. Bản cũ chỉ báo
-            sau khi đã tải xong, tức người dùng chờ hết một lượt tải rồi mới biết
-            là vô ích — mà mạng phòng học thì chậm. */}
-        <Label htmlFor="import-file">
-          File Excel (.xlsx — tối đa {MAX_UPLOAD_LABEL} và {formatRowCount(MAX_IMPORT_ROWS)} dòng)
-        </Label>
-        <input
-          id="import-file"
-          type="file"
-          name="file"
-          required
-          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          className={cn(
-            inputBaseClassName,
-            "block py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-surface-muted file:px-3 file:py-1.5 file:text-sm file:text-ink",
-          )}
-        />
-      </div>
+      {/*
+        Đợt D (`17` §6) — `<input type="file">` trần cuối cùng của `src/` đi sang
+        `FileUpload`, primitive đã có từ mục 0.8 mà đến nay mới **một** chỗ dùng.
+
+        🔴 TO-BE 8 vẫn nguyên: **cả hai cái trần** nói ra NGAY TRÊN Ô CHỌN FILE,
+        trước khi người dùng tải. Chỗ nói đổi từ **thân nhãn** sang dòng chú thích
+        `aria-describedby` ngay dưới ô — đúng chỗ của nó: nhãn là TÊN của ô, giới
+        hạn là MÔ TẢ. Trình đọc màn hình vẫn đọc đủ cả hai, và bài kiểm canh đúng
+        vế ấy (`import-upload-form.test.tsx`).
+
+        Cố ý **không** truyền `maxSizeMb`: phép kiểm dung lượng của biểu mẫu này
+        là `checkUploadSize` ở `limits.ts` — cùng một hàm với máy chủ, và câu chữ
+        của nó nói ra cả cỡ file thật lẫn việc phải làm. Bật thêm phép kiểm sẵn có
+        của `FileUpload` là hiện **hai** câu từ chối cho cùng một lượt.
+
+        `accept` chỉ mang phần đuôi, không mang MIME: `FileUpload` in chính chuỗi
+        ấy ra màn hình, mà `application/vnd.openxmlformats-…sheet` thì đúng kỹ
+        thuật và vô nghĩa với Giáo lý viên (cùng lý do đã ghi ở
+        `teaching-plans/constants.ts`). Máy chủ vẫn tự kiểm lại định dạng.
+      */}
+      <FileUpload
+        id="import-file"
+        name="file"
+        label="File Excel"
+        accept=".xlsx"
+        required
+        hint={`Tối đa ${MAX_UPLOAD_LABEL} và ${formatRowCount(MAX_IMPORT_ROWS)} dòng`}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="classId">Lớp đích (nếu file không có cột lớp)</Label>

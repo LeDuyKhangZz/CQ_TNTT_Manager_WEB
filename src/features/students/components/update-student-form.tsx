@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
@@ -119,16 +120,14 @@ export function UpdateStudentForm({
           defaultValue={student.generalNotes ?? ""}
         />
       </div>
-      <label className="flex min-h-11 items-center gap-2 text-sm" htmlFor="edit-hardship">
-        <input
-          id="edit-hardship"
-          name="hardshipFlag"
-          type="checkbox"
-          defaultChecked={student.hardshipFlag}
-          className="h-4 w-4"
-        />
+      <Checkbox
+        id="edit-hardship"
+        name="hardshipFlag"
+        defaultChecked={student.hardshipFlag}
+        labelClassName="flex"
+      >
         Hoàn cảnh khó khăn
-      </label>
+      </Checkbox>
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Đang lưu…" : "Lưu thay đổi"}
       </Button>

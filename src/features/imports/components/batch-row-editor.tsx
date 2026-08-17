@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormMessage } from "@/components/ui/form-message";
 import { Select } from "@/components/ui/select";
 import { formatDateVi } from "@/lib/dates";
@@ -157,6 +158,14 @@ export function BatchRowEditor({
   const editableRows = rows.filter((row) => isEditable(row, batchCancelled));
   const pickedCount = editableRows.filter((row) => draft[row.id]?.picked).length;
   const allPicked = editableRows.length > 0 && pickedCount === editableRows.length;
+  /**
+   * Ô chọn-tất-cả ở trạng thái "một phần" — Đợt D (`17` §6).
+   *
+   * Trước đợt này ô ấy chỉ có hai mặt: đánh dấu 3/10 dòng thì nó vẽ **y hệt**
+   * lúc chưa chọn dòng nào, nên nó nói sai. Nay chọn dở dang thì nó hiện dấu
+   * gạch và trình đọc màn hình nghe `aria-checked="mixed"`.
+   */
+  const partiallyPicked = pickedCount > 0 && !allPicked;
 
   function updateDraft(rowId: string, patch: Partial<RowDraft>) {
     setDraft((previous) => ({
@@ -211,11 +220,10 @@ export function BatchRowEditor({
             <tr className="border-b border-line bg-surface-muted text-left">
               <th scope="col" className="px-3 py-2">
                 <span className="sr-only">Chọn dòng</span>
-                <input
-                  type="checkbox"
+                <Checkbox
                   aria-label="Chọn tất cả dòng của trang này"
-                  className="h-5 w-5 rounded border-line-strong"
                   checked={allPicked}
+                  indeterminate={partiallyPicked}
                   onChange={togglePickAll}
                   disabled={editableRows.length === 0}
                 />
@@ -271,20 +279,15 @@ export function BatchRowEditor({
                 <tr className="block md:table-row md:border-b md:border-line">
                   <td className={CELL}>
                     {editable ? (
-                      <label className="inline-flex min-h-11 items-center gap-2">
-                        <input
-                          type="checkbox"
-                          name={`${ROW_FIELD_PREFIX.pick}${row.id}`}
-                          className="h-5 w-5 rounded border-line-strong"
-                          checked={values.picked}
-                          onChange={(event) =>
-                            updateDraft(row.id, { picked: event.target.checked })
-                          }
-                        />
+                      <Checkbox
+                        name={`${ROW_FIELD_PREFIX.pick}${row.id}`}
+                        checked={values.picked}
+                        onChange={(event) => updateDraft(row.id, { picked: event.target.checked })}
+                      >
                         <span className="text-xs text-ink-muted md:sr-only">
                           Chọn dòng {row.rowNumber}
                         </span>
-                      </label>
+                      </Checkbox>
                     ) : null}
                   </td>
 

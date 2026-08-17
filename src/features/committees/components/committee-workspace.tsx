@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition, type FormEvent, type ReactNode } fr
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { DateTimeField } from "@/components/ui/date-field";
@@ -219,10 +220,13 @@ function OverviewPanel({ detail, pending, run }: PanelProps) {
                     <Label htmlFor="edit-sort">Thứ tự hiển thị</Label>
                     <Input id="edit-sort" name="sortOrder" type="number" min={0} max={32767} defaultValue={committee.sortOrder} />
                   </div>
-                  <label className="flex items-center gap-2 pt-8 text-sm">
-                    <input type="checkbox" name="isActive" defaultChecked={committee.isActive} className="size-4 rounded border-line-strong" />
+                  <Checkbox
+                    name="isActive"
+                    defaultChecked={committee.isActive}
+                    labelClassName="flex pt-8"
+                  >
                     Ban đang hoạt động
-                  </label>
+                  </Checkbox>
                 </div>
                 <p className="text-xs text-ink-muted">Mã Ban ({committee.code}) là khoá nghiệp vụ, không sửa được ở đây.</p>
                 <div className="flex flex-wrap gap-2">

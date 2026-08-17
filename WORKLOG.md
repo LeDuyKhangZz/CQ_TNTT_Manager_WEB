@@ -1744,6 +1744,82 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-08-17] Phiên 69 — Claude — `P3-UI-001` (Đợt D)
+
+- **Claim:** kế hoạch 17 **Đợt D** — `Checkbox` + vét nốt các control trần còn lại.
+  ⚠️ **Entry này được viết ở phiên 70**: phiên 69 làm xong việc, cập nhật `16` §6.4 bằng số thật,
+  nhưng **hết phiên trước khi ghi `WORKLOG` và commit** — cây làm việc còn nguyên 12 tệp chưa
+  commit. Phiên 70 chạy lại **toàn bộ** cửa kiểm trên đúng cây ấy trước khi commit, và số ghi dưới
+  đây là số của **lượt chạy lại**, khớp từng con với số phiên 69 ghi ở `16` §6.4.
+
+- **🔴 Số của kế hoạch `17` §6 SAI, và đợt này đếm lại chứ không chép.** Kế hoạch viết *"migrate
+  11 chỗ"* rồi liệt kê **10** cặp `file:line` — con số 11 chưa bao giờ khớp với chính danh sách
+  của nó. Số thật, đếm bằng `grep type="checkbox"` **sau** khi Đợt B/C đã xê dịch mọi dòng:
+  **10 ô tick trần trên 8 tệp** (kết quả thứ 11 của `grep` là một dòng **chú thích**). Cả **10**
+  cặp `file:line` của kế hoạch đều đã lệch 1–11 dòng — dùng lại chúng là sửa nhầm dòng. Bảng đối
+  chiếu *dòng cũ ↔ dòng thật* nằm ở `16` §6.4.
+
+- **Bốn cỡ khác nhau cho cùng một thứ — đó mới là lỗi, không phải màu sắc.** 10 ô tick ấy có
+  **bốn** cỡ (`h-4 w-4` ×3 · `h-5 w-5` ×3 · `h-6 w-6` ×2 · `size-4` ×1) và **một chỗ không có
+  class nào** — ô duy nhất trong toàn ứng dụng còn do Windows vẽ (`equipment-board`). Nay tất cả
+  là 20×20px, bo 6px, viền `--border-strong`, tick nền `--theme-primary`.
+
+- **🔴 Ba quyết định cài đặt:** (1) `checkbox.tsx` **không** có `"use client"` — cố ý, vì
+  `dropdownItemClassName` xuất từ một tệp `"use client"` từng làm **chết cả trang `/account`**
+  (mục 0.7) trong khi typecheck/lint/unit đều xanh. (2) `indeterminate` là **thuộc tính DOM**, chỉ
+  đặt được bằng JS ⇒ sẽ kéo cả tệp sang `"use client"` **và** dựng lại đúng lỗi hydration của
+  Đợt C; nay dùng `data-indeterminate` + `aria-checked="mixed"`, máy chủ vẽ được ngay.
+  (3) Vẫn là chính `<input type="checkbox">` cũ, chỉ khoác CSS phủ ⇒ **74 chỗ gọi/locator của bộ
+  kiểm không phải sửa một dòng**, và **không dính** bẫy hydration đã suýt làm mất dữ liệu ở Đợt C.
+
+- **🔴 Bài kiểm quan trọng nhất canh một thứ mắt người không thấy.** `09` §4.1 cho **Nghĩa Sĩ**
+  `--theme-on-primary` là **`#2E2A27`** chứ không phải trắng. Viết `text-white` cho dấu tick thì
+  **5/6 ngành vẫn trông đúng** và người review đang mở ngành khác **không bao giờ nhìn thấy**.
+  `checkbox.test.tsx` canh ba lớp, trong đó có một bài canh **tiền đề** — sửa `sector-palette.ts`
+  cho Nghĩa Sĩ về trắng thì bài kiểm **đỏ** chứ không âm thầm trở nên vô nghĩa.
+
+- **Đã xác minh CSS thật sự được sinh ra**, không chỉ tin vào chuỗi class: `peer-data-[…]` là biến
+  thể tuỳ biến, Tailwind bỏ qua thì dấu gạch **im lặng không bao giờ hiện**. Grep thẳng
+  `.next/static/css`: 4/4 lớp có mặt (chi tiết ở `16` §6.4).
+
+- **Hai control trần cuối cùng:** `attendance-editor.tsx` `<textarea>` → `<Textarea>` (điểm danh
+  thuộc danh sách nhạy cảm CLAUDE.md §5 ⇒ **chỉ đổi vỏ**, 0 dòng luồng ghi chú bị đụng) ·
+  `import-upload-form.tsx` `<input type="file">` → `<FileUpload>`. Sau đợt này `src/` còn **0** ô
+  tick trần, **0** `<textarea>` trần, **0** `<input type="file">` trần.
+
+- **🔴 Một bài đỏ ngẫu nhiên KHÔNG được ghi là "nhiễu do tải máy".** `import-upload-form.test.tsx`
+  đỏ ở *"mở trang kết quả sau khi phản hồi tải file đã hoàn tất"* (`Number of calls: 0`); chạy
+  riêng thì xanh. Truy ra cơ chế thay vì đoán: `findByText` thoát ngay khi **DOM** đổi — pha
+  commit — còn `router.push` nằm trong `useEffect`, tức pha hiệu ứng **thụ động**, bị bộ lập lịch
+  đẩy lùi khi máy tải nặng. Bài ấy đang đo **tốc độ máy** chứ không đo mã; đã bọc `waitFor`.
+
+- **File thay đổi (14):** `src/components/ui/checkbox.tsx` **mới** · `tests/unit/checkbox.test.tsx`
+  **mới** · `create-year-form.tsx` · `attendance-editor.tsx` · `committee-workspace.tsx` ·
+  `equipment-board.tsx` · `batch-row-editor.tsx` · `import-upload-form.tsx` · `promotion-board.tsx` ·
+  `create-student-form.tsx` · `student-status-panel.tsx` · `update-student-form.tsx` ·
+  `tests/unit/import-upload-form.test.tsx` · `16_PHASE_2B_IMPLEMENTATION_LOG.md`.
+
+- **Migration/data impact:** **không có.** 0 business rule · 0 migration · 0 đổi RLS · 0 đổi quyền ·
+  0 dòng dữ liệu bị đụng — thuần trình bày.
+
+- **Đã test (lượt chạy lại ở phiên 70, trên đúng cây làm việc của phiên 69):** `npm run lint`
+  **0 warning 0 error** · `npm run typecheck` ✓ · `npm test` **1656 pass / 18 skip** trên **119**
+  tệp (trước 1642 ⇒ **+14 bài mới** trên 1 tệp) · `npm run build` ✓. **Không chạy E2E riêng cho
+  Đợt D** — bộ kiểm E2E không phải sửa một locator nào (xem quyết định cài đặt #3), và lượt E2E
+  đầy đủ chạy ở cuối Đợt E trên cùng cây.
+
+- **Quyết định mới:** không có quyết định nghiệp vụ. Một **giá trị ngoài thang nói ra chứ không
+  giấu**: bo **6px** của ô tick không thuộc 4 mức của `09` §5 (8/12/16/20) — đó là con số của
+  chính `17` §6, lý do là hình học (`rounded-sm` 8px trên hộp 20px cho ra hình gần tròn, nhìn ra ô
+  chọn-một chứ không ra ô tick). Nó nằm ở **một hằng số duy nhất** (`BOX_RADIUS`).
+
+- **Blocker/rủi ro:** ⚠️ Phiên 69 kết thúc **không ghi sổ và không commit** — đây là lần thứ hai
+  chuyện ấy xảy ra trong dự án (lần đầu ở M11-A, xem Phiên 62). Cách phát hiện vẫn là cũ: đối
+  chiếu `git status` với `16`.
+
+- **Next action:** **`P3-UI-001` Đợt E** — `FilterField` + đồng nhất 9 biến thể panel + quét bí
+  danh token cũ về 0.
+
 ### [2026-08-15] Phiên 68 — Claude — `P3-UI-001` (Đợt B + Đợt C) + `P3-PERF-001`
 
 - **Claim:** ba việc trong một phiên theo lệnh chủ dự án — kế hoạch 17 **Đợt B** và **Đợt C** làm

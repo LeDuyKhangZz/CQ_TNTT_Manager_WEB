@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ImportFeedback } from "@/features/imports/import-feedback";
 
@@ -57,7 +57,17 @@ it("mở trang kết quả sau khi phản hồi tải file đã hoàn tất", as
   );
   submitUploadForm();
   expect(await screen.findByText("Đã kiểm tra file.")).toBeInTheDocument();
-  expect(routerPush).toHaveBeenCalledWith("/imports/batch-1");
+  /*
+    🔴 Phải `waitFor`, không được khẳng định thẳng — và đây là lỗi ĐO ĐƯỢC, không
+    phải phòng xa. Lượt chạy toàn bộ đầu tiên của Đợt D bắt được bài này đỏ
+    ("Number of calls: 0") rồi chạy lại thì xanh; chạy riêng tệp thì luôn xanh.
+    Cơ chế: `findByText` thoát ngay khi **DOM** đổi, mà DOM đổi ở pha commit,
+    còn `router.push` nằm trong `useEffect` — tức pha hiệu ứng **thụ động**, chạy
+    sau đó và có thể bị bộ lập lịch đẩy lùi khi máy đang tải nặng. Bài kiểm vì thế
+    đang đo tốc độ của máy chứ không đo mã. Vẫn đòi đúng lượt `push` ấy, chỉ là
+    chờ nó đến. (Đợt D không đụng đường điều hướng này; bẫy có sẵn từ M12-A.)
+  */
+  await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/imports/batch-1"));
 });
 
 /**
@@ -107,9 +117,21 @@ describe("AC-13 · tải lên hỏng phải có thông điệp", () => {
   it("nói rõ năm học đích và CẢ HAI giới hạn ngay trên biểu mẫu", () => {
     renderForm();
     expect(screen.getByText(/2026-2027/)).toBeTruthy();
-    // M12-C / TO-BE 8 — nhãn phải nêu cả dung lượng lẫn số dòng. Bản cũ chỉ nói
-    // dung lượng, và nói sai con số (5MB trong khi nền tảng chặn ở ~4,5 MB).
-    expect(screen.getByLabelText(/tối đa 4 MB và 1\.000 dòng/)).toBeTruthy();
+    // M12-C / TO-BE 8 — phải nêu cả dung lượng lẫn số dòng, và phải nêu TRƯỚC
+    // khi người dùng tải. Bản cũ chỉ nói dung lượng, và nói sai con số (5MB
+    // trong khi nền tảng chặn ở ~4,5 MB).
+    //
+    // ⚠️ Đợt D (`17` §6) chuyển câu ấy từ **thân nhãn** sang dòng mô tả ngay
+    // dưới ô, khi `<input type="file">` trần đi sang `FileUpload`: nhãn là TÊN
+    // của ô, giới hạn là MÔ TẢ. Bài kiểm vì thế canh **cả hai** vế — câu có mặt,
+    // và nó thật sự được nối vào ô bằng `aria-describedby` (nếu không thì trình
+    // đọc màn hình không bao giờ đọc tới nó, tức yêu cầu chỉ đúng bằng mắt).
+    const field = screen.getByLabelText(/File Excel/);
+    const describedBy = field.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy ?? "")).toHaveTextContent(
+      /Tối đa 4 MB và 1\.000 dòng/,
+    );
   });
 
   /**

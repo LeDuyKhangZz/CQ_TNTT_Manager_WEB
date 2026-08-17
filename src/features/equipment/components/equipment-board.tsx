@@ -5,6 +5,7 @@ import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DateTimeField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
@@ -358,9 +359,9 @@ function ItemRow({
             <Label htmlFor={`itemnote-${item.id}`}>Ghi chú</Label>
             <Input id={`itemnote-${item.id}`} name="note" defaultValue={item.note ?? ""} maxLength={1000} />
           </div>
-          <label className="flex min-h-11 items-center gap-2 text-sm md:col-span-2">
-            <input type="checkbox" name="isActive" defaultChecked={item.isActive} /> Còn sử dụng
-          </label>
+          <Checkbox name="isActive" defaultChecked={item.isActive} labelClassName="flex md:col-span-2">
+            Còn sử dụng
+          </Checkbox>
           <div className="md:col-span-2"><Button type="submit" disabled={pending}>Lưu thiết bị</Button></div>
         </form>
       ) : null}

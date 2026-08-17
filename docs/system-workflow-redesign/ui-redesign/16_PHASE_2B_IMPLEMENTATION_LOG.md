@@ -4149,7 +4149,7 @@ Không sửa `09`/`10`/`11`.
 | **A** | Hệ thống `LoadingOverlay` toàn cục | ✅ **XONG 2026-08-14** |
 | **B** | `Select` v2 — listbox tự dựng, giữ nguyên 74 chỗ gọi | ✅ **XONG 2026-08-15** |
 | **C** | `DateField` / `DateTimeField` — 30 chỗ | ✅ **XONG 2026-08-15** |
-| D | `Checkbox` + vét control trần | ☐ chưa làm |
+| **D** | `Checkbox` + vét control trần — **10** ô tick (không phải 11) + 1 textarea + 1 input file | ✅ **XONG 2026-08-17** |
 | E | `FilterField` + đồng nhất 9 biến thể panel | ☐ chưa làm |
 | F | `Button pending` + tổng nghiệm thu | ☐ chưa làm |
 
@@ -4388,6 +4388,110 @@ nên trên máy đặt tiếng Anh nó hiện kiểu 12 giờ `07:00 PM`. Yêu c
 
 **Số thật:** lint 0 warning 0 error · typecheck ✓ · unit **1640 pass / 18 skip** (trước 1601 —
 **+39 bài mới** trên 2 tệp) · build ✓ 29/29 trang.
+
+### 6.4 Đợt D — ✅ XONG (2026-08-17)
+
+**Tệp mới (2):** `src/components/ui/checkbox.tsx` · `tests/unit/checkbox.test.tsx`.
+
+#### 🔴 Số của kế hoạch `17` §6 SAI, và tôi đếm lại chứ không chép
+
+Kế hoạch viết *"migrate 11 chỗ"* rồi liệt kê **10** cặp `file:line` — con số 11 ở §1 và §6 chưa bao
+giờ khớp với chính danh sách của nó. Số thật, đếm bằng `grep type="checkbox"` trên `src/` **sau** khi
+Đợt B/C đã xê dịch mọi dòng: **10 ô tick trần trên 8 tệp** (kết quả thứ 11 của `grep` là một dòng
+**chú thích** trong `student-status-panel.tsx`, không phải mã). Toàn bộ `file:line` trong `17` §6 đều
+đã lệch sau hai đợt trước — dùng lại chúng là sửa nhầm dòng.
+
+| Tệp | Dòng cũ (`17` §6) | Dòng thật khi làm | Ô tick |
+|---|--:|--:|---|
+| `committee-workspace.tsx` | 220 | **223** | `isActive` — Ban đang hoạt động |
+| `equipment-board.tsx` | 360 | **362** | `isActive` — Còn sử dụng |
+| `create-year-form.tsx` | 136 | **138** | `top5Enabled` |
+| `batch-row-editor.tsx` | 204 · 265 | **215 · 276** | chọn-tất-cả · chọn từng dòng |
+| `promotion-board.tsx` | 425 · 659 | **427 · 661** | đề xuất Dự trưởng · chọn em |
+| `create-student-form.tsx` | 201 | **202** | `hardshipFlag` |
+| `update-student-form.tsx` | 125 | **126** | `hardshipFlag` |
+| `student-status-panel.tsx` | 137 | **139** | `closeEnrollment` |
+
+Sau đợt này `src/` còn **0** ô tick trần, **0** `<textarea>` trần, **0** `<input type="file">` trần.
+
+#### Bốn cỡ khác nhau cho cùng một thứ — đó mới là lỗi, không phải màu sắc
+
+10 ô tick ấy có **bốn** cỡ (`h-4 w-4` ×3 · `h-5 w-5` ×3 · `h-6 w-6` ×2 · `size-4` ×1) và **một chỗ
+không có class nào** — tức ô duy nhất trong toàn ứng dụng còn do Windows vẽ (`equipment-board`). Hai
+chỗ còn đeo bí danh token đã bỏ (`border-border`). Nay tất cả là **20×20px**, bo 6px, viền
+`--border-strong` (cùng viền với `Input`), tick nền `--theme-primary`.
+
+#### 🔴 Ba quyết định cài đặt, và lý do của từng cái
+
+1. **`checkbox.tsx` KHÔNG có `"use client"` — cố ý.** Nó không dùng hook, không dùng ref của riêng
+   nó, nên dùng được ở **cả hai phía** ranh giới RSC. Đây là trả giá đã học: `dropdownItemClassName`
+   xuất từ một tệp `"use client"` từng làm **chết cả trang `/account`** (mục 0.7), mà typecheck,
+   lint và unit test đều xanh.
+2. **`indeterminate` là THUỘC TÍNH HTML, không phải thuộc tính DOM.** Thuộc tính DOM
+   `input.indeterminate` chỉ đặt được bằng JavaScript sau khi phần tử đã có mặt ⇒ phải có
+   `useEffect` ⇒ kéo cả tệp sang `"use client"` **và** dựng lại đúng loại lỗi của Đợt C (ô chỉ đúng
+   sau khi hydration xong). Nay nó là `data-indeterminate="true"` + `aria-checked="mixed"`: máy chủ
+   vẽ được ngay, không cần JS, và trình đọc màn hình nghe đúng giá trị mà `indeterminate` gốc ánh xạ
+   tới. Có một bài kiểm canh riêng việc `aria-checked="mixed"` **không** làm hỏng `toBeChecked()` của
+   bộ kiểm sẵn có — nếu nó hỏng thì hàng loạt bài E2E đang dùng `.check()` sẽ đỏ mà không ai hiểu vì sao.
+3. **Vẫn là chính `<input type="checkbox">` cũ, chỉ khoác CSS phủ** (`appearance-none` + hai dấu SVG
+   `peer-checked`/`peer-data-[indeterminate]`). Vì thế Đợt D **không dính** bẫy hydration đã suýt làm
+   mất dữ liệu ở Đợt C (§6.3): máy chủ và trình duyệt dựng ra đúng một phần tử giống nhau, **không có
+   khoảng giữa nào để nuốt** thứ người dùng vừa bấm. Không phải viết `useHydratedInput` cho ô tick.
+   Cùng lý do ấy, **74 chỗ gọi/locator của bộ kiểm không phải sửa một dòng**.
+
+⚠️ **Một giá trị ngoài thang, nói ra chứ không giấu:** bo **6px** không thuộc 4 mức của `09` §5
+(8/12/16/20). Đó là con số của chính `17` §6, và lý do là hình học: `rounded-sm` (8px) trên một hộp
+20px cho ra hình gần tròn, nhìn ra ô chọn-một chứ không ra ô tick. Nó nằm ở **một hằng số duy nhất**
+(`BOX_RADIUS` trong `checkbox.tsx`) để đổi lại chỉ mất một dòng nếu chủ dự án muốn tuyệt đối không có
+giá trị ngoài thang.
+
+#### 🔴 Bài kiểm quan trọng nhất của đợt canh một thứ mắt người không thấy
+
+`09` §4.1 cho **Nghĩa Sĩ** một `--theme-on-primary` là **`#2E2A27` (chữ đậm)** chứ không phải trắng.
+Viết `text-white` cho dấu tick thì **5/6 ngành vẫn trông đúng**, còn Nghĩa Sĩ được một dấu tick trắng
+trên nền vàng nghệ — và người review đang mở ngành khác thì **không bao giờ nhìn thấy**. `checkbox.test.tsx`
+canh ba lớp: dấu tick đeo `text-theme-on-primary`; **không một chuỗi** `text-white`/`bg-white`/`#fff`
+nào lọt vào mã dựng ra; và một bài canh **tiền đề** — nếu ai đó sửa `sector-palette.ts` cho Nghĩa Sĩ
+về trắng thì bài kiểm đỏ chứ không âm thầm trở nên vô nghĩa.
+
+Đã xác minh **CSS thật sự được sinh ra**, không chỉ tin vào chuỗi class: `peer-data-[indeterminate=true]`
+là biến thể tuỳ biến, nếu Tailwind bỏ qua thì dấu gạch **im lặng không bao giờ hiện**. Grep bản dựng
+`.next/static/css`: `.peer[data-indeterminate=true]~….peer-data-…:opacity-100` ✓ ·
+`.peer:checked~.peer-checked\:opacity-100` ✓ · `.text-theme-on-primary{color:var(--theme-on-primary)}` ✓ ·
+`.rounded-\[6px\]{border-radius:6px}` ✓.
+
+#### Hai control trần còn lại
+
+- **`attendance-editor.tsx:345`** — `<textarea>` trần cuối cùng → `<Textarea>`. Điểm danh nằm trong
+  danh sách nhạy cảm (CLAUDE.md §5) nên **chỉ đổi vỏ**: vẫn `readOnly`, vẫn đúng `handoffText` ấy,
+  **0 dòng** của luồng ghi chú bị đụng. Chuỗi class cũ còn mang hai bí danh token đã bỏ
+  (`border-border`, `bg-card`) — trả luôn một phần nợ của Đợt E §7.3.
+- **`import-upload-form.tsx:104`** — `<input type="file">` trần cuối cùng → `<FileUpload>`, primitive
+  có từ mục 0.8 mà đến nay mới **một** chỗ dùng. Ba quyết định: `accept` chỉ mang **phần đuôi**
+  (`.xlsx`) vì `FileUpload` in chính chuỗi ấy ra màn hình, mà `application/vnd.openxmlformats-…sheet`
+  thì đúng kỹ thuật và vô nghĩa với Giáo lý viên (cùng lý do đã ghi ở `teaching-plans/constants.ts`);
+  **không** truyền `maxSizeMb` vì biểu mẫu này đã có `checkUploadSize` của `limits.ts` — cùng một hàm
+  với máy chủ — và bật thêm phép kiểm sẵn có của `FileUpload` là hiện **hai** câu từ chối cho một
+  lượt; giữ `id="import-file"` để `imports.spec.ts:100` không phải đổi bộ định vị.
+
+**Bộ kiểm phải sửa theo — hai chỗ, nói đúng như nó là:**
+
+1. `import-upload-form.test.tsx` — TO-BE 8 đòi *"nêu cả dung lượng lẫn số dòng ngay trên biểu mẫu"*.
+   Câu ấy chuyển từ **thân nhãn** sang dòng mô tả ngay dưới ô: nhãn là **TÊN** của ô, giới hạn là
+   **MÔ TẢ**. Bài kiểm nay canh **chặt hơn** trước — không chỉ đòi câu có mặt mà đòi nó thật sự được
+   nối vào ô bằng `aria-describedby` (bản cũ chỉ cần chuỗi nằm trong nhãn; nếu ai đó tách nó ra một
+   thẻ `<p>` rời thì bài cũ đỏ **và** bài mới đỏ, nhưng nếu tách ra mà quên nối thì chỉ bài mới bắt được).
+2. 🔴 **Một bài đỏ ngẫu nhiên mà tôi KHÔNG ghi là "nhiễu do tải máy".** Lượt `npm run test` đầu tiên
+   của đợt để lại `import-upload-form.test.tsx` đỏ ở *"mở trang kết quả sau khi phản hồi tải file đã
+   hoàn tất"* (`Number of calls: 0`); chạy riêng tệp thì xanh, chạy lại toàn bộ cũng xanh. Truy ra cơ
+   chế thay vì đoán: `findByText` thoát ngay khi **DOM** đổi — pha commit — còn `router.push` nằm
+   trong `useEffect`, tức pha hiệu ứng **thụ động**, chạy sau đó và bị bộ lập lịch đẩy lùi khi máy
+   đang tải nặng. Tức bài ấy đang đo **tốc độ máy** chứ không đo mã. Bẫy có sẵn từ M12-A, Đợt D
+   không đụng đường điều hướng ấy; đã bọc `waitFor` để nó tất định mà vẫn đòi đúng lượt `push`.
+
+**Số thật:** lint 0 warning 0 error · typecheck ✓ · unit **1656 pass / 18 skip** trên **119** tệp
+(trước 1642 — **+14 bài mới** trên 1 tệp) · build ✓ **29/29 trang**.
 
 ---
 

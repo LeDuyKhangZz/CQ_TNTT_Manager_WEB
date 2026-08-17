@@ -9,6 +9,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ATTENDANCE_STATUS_LABELS,
   STAFF_ATTENDANCE_STATUS_LABELS,
@@ -340,14 +341,18 @@ export function AttendanceEditor({
               lúc này sẽ ghi đè lên dữ liệu của người đang phụ trách. Chép lại phần dưới đây rồi tải
               lại trang.
             </p>
+            {/* Đợt D (`17` §6) — `<textarea>` trần cuối cùng của `src/`. Chỉ đổi
+                VỎ: vẫn `readOnly`, vẫn đúng `handoffText` ấy, không đụng một dòng
+                nào của luồng ghi chú điểm danh (CLAUDE.md §5). Chuỗi class cũ còn
+                mang hai bí danh token đã bỏ (`border-border`, `bg-card`). */}
             <label className="block space-y-1">
               <span className="text-xs text-muted-foreground">Thay đổi chưa lưu của bạn</span>
-              <textarea
+              <Textarea
                 readOnly
                 rows={4}
                 value={handoffText}
                 aria-label="Thay đổi chưa lưu của bạn"
-                className="w-full rounded-md border border-border bg-card p-2 text-sm"
+                className="text-sm"
               />
             </label>
             <Button variant="outline" onClick={() => router.refresh()}>

@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
@@ -129,18 +130,13 @@ export function StudentStatusPanel({
             chuyển sang &quot;{STUDENT_STATUS_LABELS[nextStatus]}&quot; khi ghi danh này được kết
             thúc.
           </p>
-          <label
-            className="flex min-h-11 items-center gap-2 text-sm"
-            htmlFor="status-close-enrollment"
+          <Checkbox
+            id="status-close-enrollment"
+            name="closeEnrollment"
+            labelClassName="flex"
           >
-            <input
-              id="status-close-enrollment"
-              name="closeEnrollment"
-              type="checkbox"
-              className="h-4 w-4"
-            />
             Đồng thời kết thúc ghi danh ở lớp {openClassName}
-          </label>
+          </Checkbox>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="status-reason">Lý do kết thúc</Label>
