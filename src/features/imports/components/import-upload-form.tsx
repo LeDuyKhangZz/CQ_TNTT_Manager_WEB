@@ -119,7 +119,11 @@ export function ImportUploadForm({
         label="File Excel"
         accept=".xlsx"
         required
-        hint={`Tối đa ${MAX_UPLOAD_LABEL} và ${formatRowCount(MAX_IMPORT_ROWS)} dòng`}
+        // 🔴 Chữ "tối đa" viết THƯỜNG, và đó không phải chuyện thẩm mỹ: câu này
+        // giữ nguyên từng ký tự của nửa sau nhãn cũ, nên `imports.spec.ts:530`
+        // (`getByText` phân biệt hoa–thường) không phải đổi. Bản đầu viết hoa
+        // "Tối đa" và **đo được**: 3 bài E2E đỏ ở cả ba viewport.
+        hint={`tối đa ${MAX_UPLOAD_LABEL} và ${formatRowCount(MAX_IMPORT_ROWS)} dòng`}
       />
 
       <div className="space-y-2">

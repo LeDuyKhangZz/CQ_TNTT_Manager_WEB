@@ -130,7 +130,7 @@ describe("AC-13 · tải lên hỏng phải có thông điệp", () => {
     const describedBy = field.getAttribute("aria-describedby");
     expect(describedBy).toBeTruthy();
     expect(document.getElementById(describedBy ?? "")).toHaveTextContent(
-      /Tối đa 4 MB và 1\.000 dòng/,
+      /tối đa 4 MB và 1\.000 dòng/,
     );
   });
 
