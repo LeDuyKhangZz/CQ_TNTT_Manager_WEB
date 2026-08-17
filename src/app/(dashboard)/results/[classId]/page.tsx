@@ -26,7 +26,7 @@ export default async function GradebookPage({ params }: { params: Promise<{ clas
           */
           <Link
             href="/results"
-            className="-my-3 inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+            className="-my-3 inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-ink"
           >
             ← Danh sách lớp
           </Link>

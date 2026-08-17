@@ -54,7 +54,7 @@ export function FinalizeConfirmDialog({
               Phân bố trạng thái điểm danh tính từ những gì bạn vừa chọn
             </caption>
             <thead>
-              <tr className="border-b border-border text-xs uppercase text-ink-muted">
+              <tr className="border-b border-line text-xs uppercase text-ink-muted">
                 <th scope="col" className="py-1 pr-2 font-medium">Trạng thái</th>
                 <th scope="col" className="py-1 pr-2 text-right font-medium">Thánh lễ</th>
                 <th scope="col" className="py-1 text-right font-medium">Giáo lý</th>
@@ -62,7 +62,7 @@ export function FinalizeConfirmDialog({
             </thead>
             <tbody>
               {rows.map((status) => (
-                <tr key={status} className="border-b border-border last:border-0">
+                <tr key={status} className="border-b border-line last:border-0">
                   <th scope="row" className="py-1 pr-2 font-normal text-ink">
                     {ATTENDANCE_STATUS_LABELS[status]}
                   </th>

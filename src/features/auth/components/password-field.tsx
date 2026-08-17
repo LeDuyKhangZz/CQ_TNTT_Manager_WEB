@@ -15,7 +15,7 @@ export const PasswordField = React.forwardRef<HTMLInputElement, InputProps>(
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          className="absolute inset-y-0 right-0 grid min-h-11 min-w-11 place-items-center rounded-r-md text-muted-foreground hover:text-foreground"
+          className="absolute inset-y-0 right-0 grid min-h-11 min-w-11 place-items-center rounded-r-md text-muted-foreground hover:text-ink"
           aria-label={visible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
           aria-pressed={visible}
         >

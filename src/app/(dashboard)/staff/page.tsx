@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { DateField } from "@/components/ui/date-field";
-import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchInput } from "@/components/ui/search-input";
+import { SearchInputControl } from "@/components/ui/search-input";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
@@ -94,17 +94,20 @@ export default async function StaffPage({
             action="/staff"
             resetHref={isFiltered ? "/staff" : undefined}
           >
-            <div className="sm:col-span-2 lg:col-span-1">
-              <SearchInput
-                label="Tìm theo họ tên, tên thánh, mã GLV hoặc số điện thoại"
+            <FilterField
+              className="sm:col-span-2 lg:col-span-1"
+              label="Tìm theo họ tên"
+              htmlFor="filter-staff-search"
+              helper="Gõ không dấu cũng tìm được — cả tên thánh, mã GLV và số điện thoại."
+            >
+              <SearchInputControl
+                id="filter-staff-search"
                 name="q"
                 defaultValue={search}
                 placeholder="Tìm theo tên hoặc mã GLV"
-                hint="Gõ không dấu cũng tìm được."
               />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="filter-class">Lớp đang phục vụ</Label>
+            </FilterField>
+            <FilterField label="Lớp đang phục vụ" htmlFor="filter-class">
               <Select id="filter-class" name="classId" defaultValue={classFilter}>
                 <option value="all">Mọi lớp</option>
                 <option value="none">Chưa phân lớp</option>
@@ -112,15 +115,14 @@ export default async function StaffPage({
                   <option key={item.id} value={item.id}>{item.name}</option>
                 ))}
               </Select>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="filter-service">Trạng thái phục vụ</Label>
+            </FilterField>
+            <FilterField label="Trạng thái phục vụ" htmlFor="filter-service">
               <Select id="filter-service" name="service" defaultValue={service}>
                 {SERVICE_FILTERS.map((value) => (
                   <option key={value} value={value}>{SERVICE_FILTER_LABELS[value]}</option>
                 ))}
               </Select>
-            </div>
+            </FilterField>
           </FilterBar>
 
           <Card>
@@ -171,7 +173,7 @@ export default async function StaffPage({
                     visibility,
                   );
                   return (
-                    <div key={item.id} className="rounded-md border border-border p-4">
+                    <Panel key={item.id} padding="md">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
                           {/* 🔴 `prefetch={false}` là BẮT BUỘC, không phải tinh
@@ -207,7 +209,7 @@ export default async function StaffPage({
                           </Badge>
                         </div>
                       </div>
-                    </div>
+                    </Panel>
                   );
                 })
               )}

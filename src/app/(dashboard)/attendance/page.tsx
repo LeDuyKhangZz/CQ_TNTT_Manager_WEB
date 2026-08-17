@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, panelClassName } from "@/components/ui/card";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import { openAttendanceSessionFromForm } from "@/features/attendance/server/acti
 import { getAttendanceHubData } from "@/features/attendance/server/queries";
 import { formatDateVi, todayVi } from "@/lib/dates";
 import { ATTENDANCE_VIEW_ONLY_ROLES } from "@/lib/permissions/route-map";
+import { cn } from "@/lib/utils";
 
 export default async function AttendancePage({
   searchParams,
@@ -123,7 +124,7 @@ export default async function AttendancePage({
                 <Link
                   key={session.id}
                   href={`/attendance/${session.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3 hover:bg-surface-muted"
+                  className={cn(panelClassName(), "flex flex-wrap items-center justify-between gap-2 hover:bg-surface-muted")}
                 >
                   <div>
                     <p className="text-sm font-medium">{session.className}</p>

@@ -9,8 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTable } from "@/components/ui/data-table";
 import { DateField } from "@/components/ui/date-field";
+import {
+  FilterField,
+  filterFieldLockedValueClassName as lockedValueClassName,
+} from "@/components/ui/filter-bar";
 import { FormMessage } from "@/components/ui/form-message";
-import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatDateTimeVi, formatDateVi } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -130,12 +133,15 @@ export function ReportWorkbench({
           <CardDescription>File tải về và bản chốt dùng đúng bộ lọc đang hiển thị.</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Đợt E — khối lọc tự chế. Trước đây bốn ô trong cùng một lưới có ô
+              đeo `<Label>` + `mt-1`, ô đeo `<span>` giả nhãn, ô có dòng giải
+              thích, ô không; và hai ô "khoá cứng" thay `Select` bằng một `<p>`
+              cao `h-control`. Mọi khác biệt ấy đổi chiều cao ⇒ lưới so le. Nay
+              cả sáu nhánh đi qua đúng một `FilterField`. */}
           <form onSubmit={applyFilter} className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div>
-              <Label htmlFor="report-type">Loại báo cáo</Label>
+            <FilterField label="Loại báo cáo" htmlFor="report-type">
               <Select
                 id="report-type"
-                className="mt-1"
                 value={reportType}
                 onChange={(event) => setReportType(event.target.value as ReportType)}
               >
@@ -143,23 +149,22 @@ export function ReportWorkbench({
                   <option key={value} value={value}>{REPORT_TYPE_LABELS[value]}</option>
                 ))}
               </Select>
-            </div>
+            </FilterField>
             {periodLocked ? (
-              <div>
-                <span className="text-sm font-medium text-ink">Kỳ báo cáo</span>
-                <p className="mt-1 flex h-control items-center rounded-md border border-line bg-surface-muted px-3 text-sm text-ink">
+              <FilterField
+                label="Kỳ báo cáo"
+                htmlFor="period-type-locked"
+                staticValue
+                helper="Báo cáo Kết quả học tập luôn tính cho cả năm học."
+              >
+                <p id="period-type-locked" className={lockedValueClassName}>
                   {REPORT_PERIOD_LABELS.year}
                 </p>
-                <p className="mt-1 text-xs text-ink-muted">
-                  Báo cáo Kết quả học tập luôn tính cho cả năm học.
-                </p>
-              </div>
+              </FilterField>
             ) : (
-              <div>
-                <Label htmlFor="period-type">Kỳ báo cáo</Label>
+              <FilterField label="Kỳ báo cáo" htmlFor="period-type">
                 <Select
                   id="period-type"
-                  className="mt-1"
                   value={periodType}
                   onChange={(event) => setPeriodType(event.target.value as ReportPeriod)}
                 >
@@ -167,7 +172,7 @@ export function ReportWorkbench({
                     <option key={value} value={value}>{REPORT_PERIOD_LABELS[value]}</option>
                   ))}
                 </Select>
-              </div>
+              </FilterField>
             )}
             {periodLocked ? (
               // Ngày trong kỳ không còn nghĩa gì khi kỳ là cả năm học, nhưng giá
@@ -175,21 +180,17 @@ export function ReportWorkbench({
               // đổi ngược về "Chuyên cần".
               <input type="hidden" name="anchorDate" value={data.filter.anchorDate} />
             ) : (
-              <div>
-                <Label htmlFor="anchor-date">Ngày trong kỳ</Label>
+              <FilterField label="Ngày trong kỳ" htmlFor="anchor-date">
                 <DateField
                   id="anchor-date"
                   name="anchorDate"
-                  className="mt-1"
                   defaultValue={data.filter.anchorDate}
                 />
-              </div>
+              </FilterField>
             )}
-            <div>
-              <Label htmlFor="scope-type">Phạm vi</Label>
+            <FilterField label="Phạm vi" htmlFor="scope-type">
               <Select
                 id="scope-type"
-                className="mt-1"
                 value={scopeType}
                 onChange={(event) => setScopeType(event.target.value as ReportScope)}
               >
@@ -197,32 +198,39 @@ export function ReportWorkbench({
                   <option key={value} value={value}>{REPORT_SCOPE_LABELS[value]}</option>
                 ))}
               </Select>
-            </div>
+            </FilterField>
             {scopeType !== "global" && lockedScopeOption ? (
-              <div className="md:col-span-2">
-                <span className="text-sm font-medium text-ink">{scopeType === "sector" ? "Ngành" : "Lớp"}</span>
-                <p className="mt-1 flex h-control items-center rounded-md border border-line bg-surface-muted px-3 text-sm text-ink">
+              <FilterField
+                className="md:col-span-2"
+                label={scopeType === "sector" ? "Ngành" : "Lớp"}
+                htmlFor="scope-id-locked"
+                staticValue
+                helper="Bạn chỉ xem được đúng phạm vi này nên nó không đổi được."
+              >
+                <p id="scope-id-locked" className={lockedValueClassName}>
                   {lockedScopeOption.label}
+                  <input type="hidden" name="scopeId" value={lockedScopeOption.id} />
                 </p>
-                <input type="hidden" name="scopeId" value={lockedScopeOption.id} />
-              </div>
+              </FilterField>
             ) : null}
             {scopeType !== "global" && !lockedScopeOption ? (
-              <div className="md:col-span-2">
-                <Label htmlFor="scope-id">Chọn {scopeType === "sector" ? "ngành" : "lớp"}</Label>
+              <FilterField
+                className="md:col-span-2"
+                label={`Chọn ${scopeType === "sector" ? "ngành" : "lớp"}`}
+                htmlFor="scope-id"
+              >
                 <Select
                   id="scope-id"
                   name="scopeId"
                   required
                   defaultValue={data.filter.scopeId ?? ""}
                   placeholder="Chọn phạm vi"
-                  className="mt-1"
                 >
                   {scopeOptions.map((option) => (
                     <option key={option.id} value={option.id}>{option.label}</option>
                   ))}
                 </Select>
-              </div>
+              </FilterField>
             ) : null}
             <div className="md:col-span-2 xl:col-span-4">
               <Button type="submit">Xem báo cáo</Button>

@@ -10,6 +10,8 @@ import { Select } from "@/components/ui/select";
 import { guardianPanelFormAction } from "@/features/guardians/server/actions";
 import { guardianChangeConsequence, type StudentFeedback } from "../student-feedback";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { panelClassName } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export interface GuardianOption {
   id: string;
@@ -169,7 +171,7 @@ export function GuardianPanel({
           action={formAction}
           onSubmit={handleChangeSubmit}
           aria-label={`Đổi người giám hộ của ${studentName}`}
-          className="space-y-3 rounded-md border border-line-strong bg-surface-muted p-3"
+          className={cn(panelClassName({ variant: "muted" }), "space-y-3")}
         >
           <input type="hidden" name="intent" value="change" />
           <input type="hidden" name="studentId" value={studentId} />

@@ -15,6 +15,8 @@ import {
   transferClassStaff,
 } from "@/features/staff/server/actions";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { panelClassName } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const CAPACITY_LABELS: Record<string, string> = {
   representative: "Giáo lý viên đại diện",
@@ -187,7 +189,7 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
   }
 
   return (
-    <div className="space-y-3 border-t border-border pt-3">
+    <div className="space-y-3 border-t border-line pt-3">
       {notice ? <FormMessage tone="success">{notice}</FormMessage> : null}
       {/* Hộp thoại Chuyển lớp GIỮ nguyên các ô đã điền khi lỗi và tự nêu câu lỗi
           bên trong, nên ở đây phải im — cùng một câu hiện hai chỗ là người dùng
@@ -350,7 +352,7 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
                 lớp, hai ngày, và vai trò đăng nhập đi đâu — không có chữ "bạn có
                 chắc không". */}
             <div
-              className="rounded-md border border-border bg-surface-muted p-3 text-sm text-ink"
+              className={cn(panelClassName({ variant: "muted" }), "text-sm text-ink")}
               role="status"
               aria-live="polite"
             >

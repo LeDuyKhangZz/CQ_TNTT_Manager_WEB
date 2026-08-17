@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Label } from "@/components/ui/label";
+import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -158,14 +157,12 @@ export default async function ImportsPage({
               action="/imports"
               resetHref={filtered ? "/imports" : undefined}
             >
-              <div>
-                <Label htmlFor="filter-batch-year">Năm học</Label>
-                <Select
-                  id="filter-batch-year"
-                  name="year"
-                  defaultValue={criteria.yearId}
-                  className="mt-1"
-                >
+              <FilterField
+                label="Năm học"
+                htmlFor="filter-batch-year"
+                helper="Mặc định chỉ hiện lần nhập của năm học đang chạy."
+              >
+                <Select id="filter-batch-year" name="year" defaultValue={criteria.yearId}>
                   <option value="current">Năm học hiện hành</option>
                   <option value="all">Tất cả năm học</option>
                   {years.map((item) => (
@@ -174,22 +171,16 @@ export default async function ImportsPage({
                     </option>
                   ))}
                 </Select>
-              </div>
-              <div>
-                <Label htmlFor="filter-batch-status">Trạng thái</Label>
-                <Select
-                  id="filter-batch-status"
-                  name="status"
-                  defaultValue={criteria.status}
-                  className="mt-1"
-                >
+              </FilterField>
+              <FilterField label="Trạng thái" htmlFor="filter-batch-status">
+                <Select id="filter-batch-status" name="status" defaultValue={criteria.status}>
                   {BATCH_STATUS_FILTERS.map((value) => (
                     <option key={value} value={value}>
                       {BATCH_STATUS_FILTER_LABELS[value]}
                     </option>
                   ))}
                 </Select>
-              </div>
+              </FilterField>
             </FilterBar>
 
             {list.batches.length === 0 ? (

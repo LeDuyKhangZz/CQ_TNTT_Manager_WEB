@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -462,7 +462,7 @@ function AnnouncementsPanel({ detail, pending, run, requestConfirm }: PanelProps
         ) : (
           <ul className="space-y-3">
             {detail.announcements.map((item) => (
-              <li key={item.id} className="rounded-md border border-line p-3">
+              <Panel as="li" key={item.id}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="font-medium text-ink">{item.title}</p>
                   {detail.canWriteContent ? (
@@ -488,7 +488,7 @@ function AnnouncementsPanel({ detail, pending, run, requestConfirm }: PanelProps
                 <p className="mt-2 text-xs text-ink-muted">
                   {item.authorName ?? "Ban điều hành"} · {formatDateTimeVi(item.publishedAt)}
                 </p>
-              </li>
+              </Panel>
             ))}
           </ul>
         )}

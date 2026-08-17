@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeVi, formatDateVi } from "@/lib/dates";
 import type { CommitteeWeeklyPlan } from "../server/queries";
+import { Panel } from "@/components/ui/card";
 
 /** Thứ Hai của tuần chứa `date`, ở dạng yyyy-MM-dd. */
 export function mondayOf(date: Date): string {
@@ -169,7 +170,7 @@ export function WeeklyPlanEditor({
       ) : (
         <ul className="space-y-3">
           {plans.map((plan) => (
-            <li key={plan.id} className="rounded-md border border-line p-3">
+            <Panel as="li" key={plan.id}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <p className="font-medium">Tuần {formatDateVi(plan.weekStart)}</p>
                 {canWrite ? (
@@ -206,7 +207,7 @@ export function WeeklyPlanEditor({
                 </ul>
               ) : null}
               <p className="mt-2 text-2xs text-ink-muted">{describeExistingPlan(plan)}</p>
-            </li>
+            </Panel>
           ))}
         </ul>
       )}

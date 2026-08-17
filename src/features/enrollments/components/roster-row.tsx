@@ -17,6 +17,7 @@ import {
 import type { EnrollmentFeedback } from "../enrollment-feedback";
 import { enrollmentRowFormAction } from "../server/actions";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { Panel } from "@/components/ui/card";
 
 /**
  * Một dòng trong danh sách thiếu nhi của lớp — M03-A, TB-F10 / AC-F10-01…03.
@@ -115,7 +116,7 @@ export function RosterRow({
       từng em. Bản cũ là một chồng `<div>` nên người dùng bàn phím không biết mình
       đang ở đâu trong danh sách.
     */
-    <li className="rounded-md border border-border p-3">
+    <Panel as="li">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/students/${studentId}`} className="text-sm font-medium hover:underline">
@@ -218,6 +219,6 @@ export function RosterRow({
         tone="danger"
         consequence={<p>{closeReasonConsequence(pendingReason, studentName, className)}</p>}
       />
-    </li>
+    </Panel>
   );
 }

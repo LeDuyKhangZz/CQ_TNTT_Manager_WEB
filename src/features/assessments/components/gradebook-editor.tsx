@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useTransition, type FormEvent } from 
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel, panelClassName } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
@@ -57,6 +57,7 @@ import type {
 } from "../server/queries";
 import { changedScoreCells, readNoteInput, readScoreInput } from "../score-diff";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { tableScrollFrameClassName } from "@/components/ui/data-table";
 
 type Message = { tone: "success" | "error" | "info"; text: string } | null;
 
@@ -417,7 +418,7 @@ function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
           {detail.hiddenAssessments.map((assessment) => (
             <li
               key={assessment.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
+              className={cn(panelClassName(), "flex flex-wrap items-center justify-between gap-3")}
             >
               <div className="min-w-0">
                 <p className="font-medium">{assessment.title}</p>
@@ -560,7 +561,7 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
       </CardHeader>
       <CardContent>
         <form onSubmit={submit}>
-          <div className="overflow-x-auto rounded-md border border-border">
+          <div className={tableScrollFrameClassName}>
             <table className="w-full min-w-[34rem] text-sm">
               <caption className="sr-only">Nhập điểm {assessment.title}</caption>
               <thead className="bg-muted/50"><tr><th className="sticky left-0 bg-muted px-3 py-3 text-left">Thiếu nhi</th><th className="w-32 px-3 py-3 text-left">Điểm</th><th className="px-3 py-3 text-left">Ghi chú</th></tr></thead>
@@ -568,8 +569,8 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
                 {detail.students.map((student) => {
                   const score = student.scores[assessment.id];
                   return (
-                    <tr key={student.enrollmentId} className="border-t border-border">
-                      <th className="sticky left-0 bg-card px-3 py-2 text-left font-medium">{student.saintName} {student.fullName}</th>
+                    <tr key={student.enrollmentId} className="border-t border-line">
+                      <th className="sticky left-0 bg-surface px-3 py-2 text-left font-medium">{student.saintName} {student.fullName}</th>
                       <td className="px-3 py-2">
                         <Input key={`${assessment.id}-${student.enrollmentId}-${score?.score ?? "null"}`} name={`score-${student.enrollmentId}`} type="number" min="0" max={assessment.maxScore} step="0.01" defaultValue={score?.score ?? ""} disabled={detail.isLocked || !detail.canGrade} aria-label={`Điểm ${student.saintName} ${student.fullName}`} />
                         {assessment.kind === "attendance" ? (
@@ -716,7 +717,7 @@ function CommentItem({
   }
 
   return (
-    <li className="rounded-md border border-border p-3 text-sm">
+    <Panel as="li" className="text-sm">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <Badge variant={comment.visibility === "student_visible" ? "success" : "warning"}>
           {COMMENT_VISIBILITY_LABELS[comment.visibility]}
@@ -780,7 +781,7 @@ function CommentItem({
         <p className="whitespace-pre-wrap">{comment.content}</p>
       )}
       <p className="mt-2 text-xs text-muted-foreground">{comment.authorName} · {formatDateVi(comment.commentDate)}</p>
-    </li>
+    </Panel>
   );
 }
 
@@ -1178,7 +1179,7 @@ function LeaderboardCard({ detail, leaderboard }: { detail: GradebookDetail; lea
             </div>
           </form>
         ) : null}
-        {preview ? <ol className="space-y-2">{preview.map((entry) => <li key={entry.enrollmentId} className="flex items-center gap-3 rounded-md border border-border p-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-bold text-white">{entry.rank}</span><span className="min-w-0 flex-1 font-medium">{entry.saintName} {entry.fullName}</span><span className="font-semibold tabular-nums">{entry.score === null ? "—" : entry.score.toFixed(2)}</span></li>)}</ol> : <p className="text-sm text-muted-foreground">Chưa có bản xem trước.</p>}
+        {preview ? <ol className="space-y-2">{preview.map((entry) => <Panel as="li" key={entry.enrollmentId} className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-bold text-white">{entry.rank}</span><span className="min-w-0 flex-1 font-medium">{entry.saintName} {entry.fullName}</span><span className="font-semibold tabular-nums">{entry.score === null ? "—" : entry.score.toFixed(2)}</span></Panel>)}</ol> : <p className="text-sm text-muted-foreground">Chưa có bản xem trước.</p>}
         {message ? <FormMessage tone={MESSAGE_TONES[message.tone]}>{message.text}</FormMessage> : null}
         <ConfirmDialog
           open={confirming === "publish"}
@@ -1365,7 +1366,7 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
       <Card>
         <CardHeader><CardTitle>Điểm trung bình có trọng số</CardTitle><CardDescription>Chỉ tính các ô đã nhập; thay hệ số cập nhật kết quả ngay.</CardDescription></CardHeader>
         <CardContent>
-          <div className="overflow-x-auto"><table className="w-full min-w-[24rem] text-sm"><thead><tr className="border-b border-border"><th className="py-3 text-left">Thiếu nhi</th><th className="py-3 text-right">Điểm trung bình</th></tr></thead><tbody>{detail.students.map((student) => <tr key={student.enrollmentId} className="border-b border-border last:border-0"><td className="py-3">{student.saintName} {student.fullName}</td><td className="py-3 text-right font-semibold tabular-nums">{student.weightedAverage === null ? "—" : student.weightedAverage.toFixed(2)}</td></tr>)}</tbody></table></div>
+          <div className="overflow-x-auto"><table className="w-full min-w-[24rem] text-sm"><thead><tr className="border-b border-line"><th className="py-3 text-left">Thiếu nhi</th><th className="py-3 text-right">Điểm trung bình</th></tr></thead><tbody>{detail.students.map((student) => <tr key={student.enrollmentId} className="border-b border-line last:border-0"><td className="py-3">{student.saintName} {student.fullName}</td><td className="py-3 text-right font-semibold tabular-nums">{student.weightedAverage === null ? "—" : student.weightedAverage.toFixed(2)}</td></tr>)}</tbody></table></div>
         </CardContent>
       </Card>
 

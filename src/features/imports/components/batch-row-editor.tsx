@@ -22,6 +22,7 @@ import { DUPLICATE_PENDING_FIELD, canMergeInto, type RowAction } from "../row-de
 import type { BatchRow } from "../server/queries";
 import { refreshBatchPage, rowEditsFormAction } from "../server/actions";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { Card, Panel } from "@/components/ui/card";
 
 /**
  * Bảng duyệt dòng của một lần nhập — M12-B, **TO-BE 4 + TO-BE 7 / AC-21 · AC-25**.
@@ -366,7 +367,7 @@ export function BatchRowEditor({
                         (cùng lý lẽ D-82 của `Dropdown`). Dòng nào có vấn đề mới
                         có khối này, nên nó không thành nhiễu cho 900 dòng sạch.
                       */}
-                      <details className="rounded-md border border-line bg-surface-muted">
+                      <Panel as="details" variant="muted" padding="none">
                         <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm font-medium">
                           {undecidedDuplicate
                             ? `Dòng #${row.rowNumber} — đối chiếu hồ sơ nghi trùng`
@@ -440,7 +441,7 @@ export function BatchRowEditor({
                             </Button>
                           ) : null}
                         </div>
-                      </details>
+                      </Panel>
                     </td>
                   </tr>
                 ) : null}
@@ -451,7 +452,7 @@ export function BatchRowEditor({
       </div>
 
       {editableRows.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface p-3">
+        <Card className="flex flex-wrap items-center gap-2 p-3">
           <p className="basis-full text-sm text-ink-muted sm:basis-auto">
             {pickedCount === 0
               ? "Đánh dấu vài dòng rồi áp dụng giới tính cho cả nhóm."
@@ -489,7 +490,7 @@ export function BatchRowEditor({
           <Button type="submit" disabled={pending} className="ms-auto">
             {pending ? "Đang lưu…" : "Lưu tất cả thay đổi"}
           </Button>
-        </div>
+        </Card>
       ) : null}
 
       {feedback ? (

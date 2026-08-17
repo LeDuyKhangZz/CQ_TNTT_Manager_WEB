@@ -35,7 +35,7 @@ export default async function AttendanceSessionPage({
           // tay. Margin âm giữ chiều cao header như cũ (khuôn của M03-C).
           <Link
             href="/attendance"
-            className="-my-3 inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+            className="-my-3 inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-ink"
           >
             ← Danh sách buổi
           </Link>

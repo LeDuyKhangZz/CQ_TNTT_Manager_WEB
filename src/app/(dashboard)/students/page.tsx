@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel, panelClassName } from "@/components/ui/card";
+import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchInput } from "@/components/ui/search-input";
+import { SearchInputControl } from "@/components/ui/search-input";
 import { Select } from "@/components/ui/select";
 import { BranchChip } from "@/components/theme/branch-chip";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -22,6 +21,7 @@ import {
   STUDENT_STATUS_FILTERS,
 } from "@/features/students/student-directory";
 import { getStudentsPageData } from "@/features/students/server/queries";
+import { cn } from "@/lib/utils";
 
 /**
  * Trang Thiếu nhi — TB-F03 (đóng M03-F03) + TB-F13 + TB-F02/F09 + D-123.
@@ -73,18 +73,20 @@ export default async function StudentsPage({
             action="/students"
             resetHref={filtered ? "/students" : undefined}
           >
-            <div className="sm:col-span-2 lg:col-span-1">
-              <SearchInput
-                label="Tìm theo tên thiếu nhi, mã hoặc số điện thoại phụ huynh"
-                hideLabel={false}
+            <FilterField
+              className="sm:col-span-2 lg:col-span-1"
+              label="Tìm theo tên thiếu nhi"
+              htmlFor="filter-student-search"
+              helper="Gõ không dấu cũng tìm được — cả mã em và số điện thoại phụ huynh."
+            >
+              <SearchInputControl
+                id="filter-student-search"
                 defaultValue={criteria.search}
                 placeholder="Ví dụ: tran ngoc"
-                hint="Gõ không dấu cũng tìm được."
               />
-            </div>
-            <div>
-              <Label htmlFor="filter-sector">Ngành</Label>
-              <Select id="filter-sector" name="sector" defaultValue={criteria.sectorId} className="mt-1">
+            </FilterField>
+            <FilterField label="Ngành" htmlFor="filter-sector">
+              <Select id="filter-sector" name="sector" defaultValue={criteria.sectorId}>
                 <option value="all">Tất cả ngành</option>
                 {sectors.map((sector) => (
                   <option key={sector.id} value={sector.id}>
@@ -92,10 +94,9 @@ export default async function StudentsPage({
                   </option>
                 ))}
               </Select>
-            </div>
-            <div>
-              <Label htmlFor="filter-class">Lớp</Label>
-              <Select id="filter-class" name="class" defaultValue={criteria.classId} className="mt-1">
+            </FilterField>
+            <FilterField label="Lớp" htmlFor="filter-class">
+              <Select id="filter-class" name="class" defaultValue={criteria.classId}>
                 <option value="all">Tất cả lớp</option>
                 <option value="none">Chưa xếp lớp</option>
                 {classes.map((item) => (
@@ -104,17 +105,16 @@ export default async function StudentsPage({
                   </option>
                 ))}
               </Select>
-            </div>
-            <div>
-              <Label htmlFor="filter-status">Trạng thái hồ sơ</Label>
-              <Select id="filter-status" name="status" defaultValue={criteria.status} className="mt-1">
+            </FilterField>
+            <FilterField label="Trạng thái hồ sơ" htmlFor="filter-status">
+              <Select id="filter-status" name="status" defaultValue={criteria.status}>
                 {STUDENT_STATUS_FILTERS.map((value) => (
                   <option key={value} value={value}>
                     {STUDENT_STATUS_FILTER_LABELS[value]}
                   </option>
                 ))}
               </Select>
-            </div>
+            </FilterField>
           </FilterBar>
 
           <Card>
@@ -203,11 +203,11 @@ export default async function StudentsPage({
                           người dùng sẽ báo "hệ thống mất hồ sơ của em".
                         */}
                         {feeScope ? (
-                          <div className="rounded-md border border-line p-4">{row}</div>
+                          <Panel padding="md">{row}</Panel>
                         ) : (
                           <Link
                             href={`/students/${item.id}`}
-                            className="block rounded-md border border-line p-4 transition-colors hover:border-theme-primary hover:bg-theme-soft"
+                            className={cn(panelClassName({ padding: "md" }), "block transition-colors hover:border-theme-primary hover:bg-theme-soft")}
                           >
                             {row}
                           </Link>

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DateTimeField } from "@/components/ui/date-field";
@@ -143,7 +143,7 @@ function StockAdjustForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-3">
+    <form onSubmit={submit} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-3">
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-amount`}>
           {increasing ? "Số cái nhập thêm" : "Số cái giảm bớt"}
@@ -256,7 +256,7 @@ function ItemRow({
   }
 
   return (
-    <li className="rounded-md border border-border p-3">
+    <Panel as="li">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.assetCode})</span></p>
@@ -287,7 +287,7 @@ function ItemRow({
       </div>
 
       {panel === "borrow" ? (
-        <form onSubmit={submitBorrow} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-2">
+        <form onSubmit={submitBorrow} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`borrower-${item.id}`}>Người mượn</Label>
             {/* D-94 · AC-M09-30: mọi nhân sự xứ đoàn, không chỉ thành viên Ban
@@ -334,7 +334,7 @@ function ItemRow({
       ) : null}
 
       {panel === "edit" ? (
-        <form onSubmit={submitEdit} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-2">
+        <form onSubmit={submitEdit} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`name-${item.id}`}>Tên thiết bị</Label>
             <Input id={`name-${item.id}`} name="name" defaultValue={item.name} required maxLength={200} />
@@ -365,7 +365,7 @@ function ItemRow({
           <div className="md:col-span-2"><Button type="submit" disabled={pending}>Lưu thiết bị</Button></div>
         </form>
       ) : null}
-    </li>
+    </Panel>
   );
 }
 
@@ -446,7 +446,7 @@ function OpenLoanCard({
   }
 
   return (
-    <div className="rounded-md border border-border p-3">
+    <Panel>
       <p className="text-sm font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
       <p className="text-xs text-muted-foreground">
         {loan.borrowerName ? `${loan.borrowerName} mượn lúc ` : "Mượn lúc "}
@@ -484,7 +484,7 @@ function OpenLoanCard({
       </div>
 
       {panel === "receive" ? (
-        <form onSubmit={submitReceive} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-3">
+        <form onSubmit={submitReceive} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor={`receive-qty-${loan.id}`}>Số cái nhận lại</Label>
             <Input
@@ -520,7 +520,7 @@ function OpenLoanCard({
       ) : null}
 
       {panel === "write_off" ? (
-        <form onSubmit={submitWriteOff} className="mt-3 grid gap-3 border-t border-border pt-3 md:grid-cols-3">
+        <form onSubmit={submitWriteOff} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor={`writeoff-qty-${loan.id}`}>Số cái hỏng/mất</Label>
             <Input
@@ -556,7 +556,7 @@ function OpenLoanCard({
           </p>
         </form>
       ) : null}
-    </div>
+    </Panel>
   );
 }
 
@@ -705,13 +705,13 @@ export function EquipmentBoard({
                   askConfirm={askConfirm}
                 />
               ) : (
-                <div key={loan.id} className="rounded-md border border-border p-3">
+                <Panel key={loan.id}>
                   <p className="text-sm font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
                   <p className="text-xs text-muted-foreground">
                     {loan.borrowerName ? `${loan.borrowerName} mượn lúc ` : "Mượn lúc "}
                     {formatDateTimeVi(loan.borrowedAt)}
                   </p>
-                </div>
+                </Panel>
               ),
             )
           )}

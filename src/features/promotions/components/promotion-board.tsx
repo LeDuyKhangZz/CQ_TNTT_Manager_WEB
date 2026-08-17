@@ -55,6 +55,8 @@ import {
 } from "../server/actions";
 import type { PromotionRosterItem, PromotionTargetOption } from "../server/queries";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { cardClassName, Panel } from "@/components/ui/card";
+import { tableScrollFrameClassName } from "@/components/ui/data-table";
 
 type Message = { tone: "success" | "error"; text: string } | null;
 
@@ -121,7 +123,7 @@ function WarningSummary({ item }: { item: PromotionRosterItem }) {
 function DecisionJournal({ events }: { events: readonly PromotionReviewEvent[] }) {
   if (!hasPromotionHistory(events)) return null;
   return (
-    <section className="rounded-md border border-line bg-surface p-3">
+    <Panel as="section">
       <h4 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
         Nhật ký quyết định
       </h4>
@@ -140,7 +142,7 @@ function DecisionJournal({ events }: { events: readonly PromotionReviewEvent[] }
           );
         })}
       </ol>
-    </section>
+    </Panel>
   );
 }
 
@@ -823,7 +825,7 @@ function PromotionBatchBar({
   return (
     <section
       aria-labelledby="promotion-batch-heading"
-      className="space-y-3 rounded-lg border border-line bg-surface p-4"
+      className={cn(cardClassName, "space-y-3 p-4")}
     >
       <h3 id="promotion-batch-heading" className="text-sm font-semibold">
         Đề xuất hàng loạt
@@ -994,7 +996,7 @@ export function PromotionBoard({
         />
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border border-line">
+      <div className={tableScrollFrameClassName}>
         <table className="w-full border-collapse text-sm md:min-w-[44rem]">
           <caption className="sr-only">
             Danh sách thiếu nhi và trạng thái đề xuất chuyển lớp. Mở &quot;Chi tiết&quot; của một em

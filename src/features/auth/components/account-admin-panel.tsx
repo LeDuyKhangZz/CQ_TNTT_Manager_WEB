@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { DateField } from "@/components/ui/date-field";
 import { Dialog } from "@/components/ui/dialog";
+import { FilterField } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -177,14 +178,14 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="mb-4 rounded-md border border-line bg-surface p-3 text-sm text-ink-muted">
+          <Panel as="p" className="mb-4 text-sm text-ink-muted">
             Tài khoản của Giáo lý viên được cấp ngay tại hồ sơ người đó —{" "}
             <Link href="/staff" className="font-medium text-ink underline underline-offset-2">
               mở Danh sách nhân sự
             </Link>
             , chọn đúng người rồi bấm &ldquo;Cấp tài khoản&rdquo;. Ở đó trang biết sẵn mã GLV, lớp và
             phân công nên không phải gõ lại.
-          </p>
+          </Panel>
           <form action={provision} className="space-y-4">
             <FormPendingBridge />
             <div className="space-y-2">
@@ -238,27 +239,47 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
       <Card>
         <CardHeader><CardTitle>Tài khoản hiện có</CardTitle><CardDescription>Chỉ tài khoản không phải Super Admin mới sửa hoặc xóa được tại đây.</CardDescription></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="account-search" className="sr-only">Tìm tài khoản</Label>
-              <Input
-                id="account-search"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Tìm theo tên hoặc tên đăng nhập"
-              />
+          {/* Đợt E — khối lọc tự chế, và là ví dụ rõ nhất của "lệch tùm lum":
+              ô tìm có `<Label>` nhưng `sr-only` **không chiếm chỗ**, hai ô chọn
+              cạnh nó chỉ có `aria-label` nên **không có** hàng nhãn nào ⇒ ba ô
+              trong một lưới bắt đầu ở ba độ cao khác nhau. Nay cả ba đi qua
+              `FilterField`, và cả nhóm nằm trong `<fieldset>`+`<legend>` theo
+              `09` §6 — trước đó ba ô lọc này rời rạc với trình đọc màn hình.
+              🔴 Nhãn của hai ô chọn giữ **nguyên văn** "Lọc theo vai trò" /
+              "Lọc theo trạng thái": `account-security.spec.ts:106` tìm ô "Vai
+              trò" bằng `exact: true` đúng vì trên trang còn ô này. */}
+          <fieldset className="min-w-0 border-0 p-0">
+            <legend className="mb-3 text-sm font-semibold text-ink">Lọc danh sách tài khoản</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <FilterField
+                className="sm:col-span-2"
+                label="Tìm tài khoản"
+                htmlFor="account-search"
+                helper="Tìm theo tên hiển thị hoặc tên đăng nhập."
+              >
+                <Input
+                  id="account-search"
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Tìm theo tên hoặc tên đăng nhập"
+                />
+              </FilterField>
+              <FilterField label="Lọc theo vai trò" htmlFor="account-role-filter">
+                <Select id="account-role-filter" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as AccountRoleFilter)}>
+                  <option value="all">Tất cả vai trò</option>
+                  {APP_ROLES.map((item) => <option key={item} value={item}>{ROLE_LABELS[item]}</option>)}
+                </Select>
+              </FilterField>
+              <FilterField label="Lọc theo trạng thái" htmlFor="account-status-filter">
+                <Select id="account-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AccountStatusFilter)}>
+                  <option value="all">Mọi trạng thái</option>
+                  <option value="active">Đang hoạt động</option>
+                  <option value="disabled">Đã vô hiệu hóa</option>
+                </Select>
+              </FilterField>
             </div>
-            <Select aria-label="Lọc theo vai trò" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as AccountRoleFilter)}>
-              <option value="all">Tất cả vai trò</option>
-              {APP_ROLES.map((item) => <option key={item} value={item}>{ROLE_LABELS[item]}</option>)}
-            </Select>
-            <Select aria-label="Lọc theo trạng thái" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AccountStatusFilter)}>
-              <option value="all">Mọi trạng thái</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="disabled">Đã vô hiệu hóa</option>
-            </Select>
-          </div>
+          </fieldset>
 
           <p className="text-sm text-ink-muted" role="status">
             {paged.total === 0
@@ -270,7 +291,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
             const canManage = account.role !== "super_admin";
             const status = STATUS_META[account.status];
             return (
-              <div key={account.id} className="rounded-md border border-line p-4">
+              <Panel key={account.id} padding="md">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-medium text-ink">{account.displayName}</p>
@@ -298,7 +319,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                     </div>
                   </div>
                 ) : <p className="mt-3 text-xs text-ink-muted">Tài khoản Super Admin không được sửa/xóa qua danh sách này.</p>}
-              </div>
+              </Panel>
             );
           })}
 

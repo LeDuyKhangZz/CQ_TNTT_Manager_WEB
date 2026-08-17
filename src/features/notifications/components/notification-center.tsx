@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
@@ -59,7 +59,8 @@ interface DraftForConfirm {
 // M10-C — bốn thẻ `<select>` trần với chuỗi class chép tay đã đi hết sang
 // component `Select` của design system (`09` §10 · `11` §5 *"không `<select>`
 // native mới"*), và `<textarea>` trần sang `Textarea`. Cả hai chuỗi class cũ
-// còn viết `border-border`/`bg-card` — bí danh token **cũ** từ trước mục 0.2.
+// còn viết `border-border`/`bg-card` — bí danh token **cũ** từ trước mục 0.2;
+// Đợt E (`17` §7.3) đã quét nốt chúng khỏi tệp này.
 type Message = { tone: PublishFeedbackTone; text: string } | null;
 
 export function NotificationCenter({ data }: { data: NotificationsPageData }) {
@@ -427,10 +428,10 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
           <span className="block space-y-2">
             <span className="block">{confirmation.scopeLine}</span>
             {draft ? (
-              <span className="block rounded-md border border-border bg-surface-muted p-3">
+              <Panel as="span" variant="muted" className="block">
                 <span className="block font-semibold">{draft.title}</span>
                 <span className="mt-1 block whitespace-pre-line text-sm">{draft.content}</span>
-              </span>
+              </Panel>
             ) : null}
             <span className="block font-medium">{confirmation.warning}</span>
           </span>
@@ -462,7 +463,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                   "grid min-h-control place-items-center rounded-md border px-4 text-sm",
                   data.filter === value
                     ? "border-theme-accent bg-theme-tint font-semibold text-theme-accent-text"
-                    : "border-border text-ink-muted hover:bg-surface-muted",
+                    : "border-line text-ink-muted hover:bg-surface-muted",
                 )}
               >
                 {value === "all" ? "Tất cả" : "Chưa đọc"}
@@ -520,7 +521,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                           duy nhất.
                         */}
                         {item.targetType ? (
-                          <span className="mr-2 rounded-full border border-border px-2 py-0.5">
+                          <span className="mr-2 rounded-full border border-line px-2 py-0.5">
                             {NOTIFICATION_TARGET_LABELS[item.targetType]}
                           </span>
                         ) : null}
@@ -579,7 +580,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                       {item.title}
                     </p>
                     <p className="mt-1 text-xs text-ink-muted">
-                      <span className="mr-2 rounded-full border border-border px-2 py-0.5">
+                      <span className="mr-2 rounded-full border border-line px-2 py-0.5">
                         {NOTIFICATION_TARGET_LABELS[item.targetType]}
                       </span>
                       {formatDateTimeVi(item.publishedAt)} · {item.recipientCount} người nhận

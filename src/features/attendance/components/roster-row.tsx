@@ -15,6 +15,7 @@ import {
   type AttendanceStatus,
 } from "../constants";
 import type { AttendanceRosterEntry } from "../server/queries";
+import { panelClassName } from "@/components/ui/card";
 
 /**
  * Một em trong danh sách điểm danh — M05-C / U-10 · U-21 · TB-09.
@@ -85,7 +86,7 @@ export function RosterRow({
 
   return (
     <div
-      className="rounded-md border border-border"
+      className={panelClassName({ padding: "none" })}
       // Móc kiểm thử ổn định cho E2E. Bài test cũ bám vào `select[aria-label^=…]`
       // và gãy hết khi ô chọn thành hàng nút (D-142) — `07_IMPLEMENTATION_IMPACT`
       // §2.6 gọi đúng đó là "chi phí ẩn lớn nhất của U-10". Neo vào một thuộc
@@ -137,7 +138,7 @@ export function RosterRow({
       </button>
 
       {expanded ? (
-        <div id={panelId} className="space-y-3 border-t border-border p-3">
+        <div id={panelId} className="space-y-3 border-t border-line p-3">
           {entry.warnings.length > 0 ? (
             <p className="text-xs text-warning">Cảnh báo chuyên cần: {warningText}</p>
           ) : null}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { promotionCellHref, type PromotionClassProgress } from "../promotion-directory";
+import { tableScrollFrameClassName } from "@/components/ui/data-table";
 
 /**
  * Bảng tiến độ theo lớp — **M08-A, TO-BE 1 bước 1 / AC-12**.
@@ -88,7 +89,7 @@ export function PromotionProgress({
         Tiến độ theo lớp
       </h2>
 
-      <div className="overflow-x-auto rounded-lg border border-line">
+      <div className={tableScrollFrameClassName}>
         <table className="w-full border-collapse text-sm sm:min-w-[40rem]">
           <caption className="sr-only">
             Số thiếu nhi theo từng trạng thái đề xuất chuyển lớp, tính trên toàn bộ phạm vi bạn phụ

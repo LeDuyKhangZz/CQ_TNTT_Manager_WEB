@@ -18,7 +18,7 @@ import type { ShellViewer } from "@/lib/auth/types";
 export function AppHeader({ viewer, title, pathname, notificationBell, academicYear, onOpenMenu }: { viewer: ShellViewer; title: string; pathname: string; notificationBell: React.ReactNode; academicYear: AcademicYearOption | null; onOpenMenu: () => void }) {
   return (
     // 🔴 Nền ĐẶC, không phải `bg-page/95`. Token màu là `var()` trần nên
-    // Tailwind KHÔNG sinh nổi lớp có bổ ngữ độ mờ: `.bg-background\/95` của bản
+    // Tailwind KHÔNG sinh nổi lớp có bổ ngữ độ mờ: `.bg-page\/95` của bản
     // cũ không hề có trong CSS xuất ra (kiểm bằng grep vào `.next/static/css`),
     // tức header dính trên cùng đang trong suốt và chữ đè lên nội dung cuộn bên
     // dưới. `backdrop-blur` cũng bỏ luôn vì sau nền đặc nó không làm gì.

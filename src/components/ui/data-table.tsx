@@ -53,6 +53,21 @@ export type DataTableProps<Row> = {
 const HEAD_CELL = "px-4 py-3 text-left text-sm font-semibold text-ink";
 const BODY_CELL = "px-4 py-3 align-middle text-sm text-ink";
 
+/**
+ * Khung bọc vùng cuộn ngang của bảng — `17` §7.2 V7.
+ *
+ * `DataTable` không phủ được **mọi** bảng: vài bảng dựng tay vì có ô nhập trong
+ * từng ô, có `colSpan`, hoặc có hai tầng `<thead>`. Trước Đợt E, mỗi bảng như
+ * thế tự chọn lấy bo và viền của mình ⇒ **bốn kiểu khung khác nhau** cho cùng
+ * một thứ. Hằng số này để chúng dùng lại **đúng** khung của `DataTable` thay vì
+ * chép gần đúng.
+ *
+ * 🔴 Là hằng chuỗi, không phải component, và tệp này **không có `"use client"`**
+ * — vài bảng dựng tay nằm trong Client Component, vài bảng nằm trong Server
+ * Component; một hằng chuỗi đi được cả hai phía.
+ */
+export const tableScrollFrameClassName = "overflow-x-auto rounded-lg border border-line bg-surface";
+
 export function DataTable<Row>({
   caption,
   hideCaption = false,
@@ -72,7 +87,7 @@ export function DataTable<Row>({
           "Vuốt ngang…" bên dưới. Bóng cũng không được nằm TRONG vùng cuộn —
           nằm trong thì nó cuộn theo nội dung và biến mất khỏi mép phải. */}
       <div className="relative">
-        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+        <div className={tableScrollFrameClassName}>
           <table className={cn("w-full border-collapse", minWidthClassName)}>
             <caption
               className={cn(

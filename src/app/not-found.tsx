@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
       <p className="text-5xl font-bold text-primary">404</p>
-      <h1 className="text-xl font-semibold text-foreground">Không tìm thấy trang</h1>
+      <h1 className="text-xl font-semibold text-ink">Không tìm thấy trang</h1>
       <p className="text-muted-foreground">
         Trang bạn tìm không tồn tại hoặc đã được di chuyển.
       </p>

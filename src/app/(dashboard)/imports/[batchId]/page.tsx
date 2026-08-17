@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, Panel } from "@/components/ui/card";
+import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -106,13 +105,13 @@ export default async function ImportBatchPage({
             ) : null}
 
             {batch.missingGenderCount > 0 ? (
-              <p className="rounded-md border border-line-strong bg-surface-muted p-3 text-sm text-ink">
+              <Panel as="p" variant="muted" className="text-sm text-ink">
                 <strong>{batch.missingGenderCount} dòng</strong> chưa có giới tính (
                 {sampleText(batch.missingGenderSample, batch.missingGenderCount)}). Sổ SYLL của giáo
                 xứ không có cột này nên phải chọn tay; đánh dấu nhiều dòng rồi bấm{" "}
                 <em>Áp dụng Nam/Nữ cho dòng đang chọn</em> để điền nhanh. Hệ thống{" "}
                 <strong>không tự đoán</strong> giới tính theo tên.
-              </p>
+              </Panel>
             ) : null}
 
             <BatchActions
@@ -168,21 +167,15 @@ export default async function ImportBatchPage({
             action={`/imports/${batch.id}`}
             resetHref={filtered ? `/imports/${batch.id}` : undefined}
           >
-            <div>
-              <Label htmlFor="filter-row-status">Trạng thái dòng</Label>
-              <Select
-                id="filter-row-status"
-                name="status"
-                defaultValue={criteria.status}
-                className="mt-1"
-              >
+            <FilterField label="Trạng thái dòng" htmlFor="filter-row-status">
+              <Select id="filter-row-status" name="status" defaultValue={criteria.status}>
                 {ROW_STATUS_FILTERS.map((value) => (
                   <option key={value} value={value}>
                     {ROW_STATUS_FILTER_LABELS[value]}
                   </option>
                 ))}
               </Select>
-            </div>
+            </FilterField>
           </FilterBar>
 
           {batch.rows.length === 0 ? (

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -109,10 +109,10 @@ export default async function StaffDetailPage({
               ) : (
                 <ul className="space-y-2">
                   {staff.assignmentHistory.map((item) => (
-                    <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3 text-sm">
+                    <Panel as="li" key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                       <span>{item.className} · {CAPACITY_LABELS[item.capacity] ?? item.capacity}<span className="text-ink-muted"> · từ {formatDate(item.startsOn)}{item.endsOn ? ` đến ${formatDate(item.endsOn)}` : ""}</span></span>
                       <Badge variant={item.isActive ? "success" : "secondary"}>{item.isActive ? "Đang phục vụ" : "Đã kết thúc"}</Badge>
-                    </li>
+                    </Panel>
                   ))}
                 </ul>
               )}

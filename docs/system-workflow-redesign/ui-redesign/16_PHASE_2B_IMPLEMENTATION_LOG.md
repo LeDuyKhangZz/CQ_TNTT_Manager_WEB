@@ -4150,7 +4150,7 @@ Không sửa `09`/`10`/`11`.
 | **B** | `Select` v2 — listbox tự dựng, giữ nguyên 74 chỗ gọi | ✅ **XONG 2026-08-15** |
 | **C** | `DateField` / `DateTimeField` — 30 chỗ | ✅ **XONG 2026-08-15** |
 | **D** | `Checkbox` + vét control trần — **10** ô tick (không phải 11) + 1 textarea + 1 input file | ✅ **XONG 2026-08-17** |
-| E | `FilterField` + đồng nhất 9 biến thể panel | ☐ chưa làm |
+| **E** | `FilterField` (**27** ô trên 9 tệp) + `Panel`/`Card` (**37** khối) + quét bí danh token về **0** | ✅ **XONG 2026-08-17** |
 | F | `Button pending` + tổng nghiệm thu | ☐ chưa làm |
 
 > ➕ Phiên 2026-08-15 làm thêm một task **ngoài kế hoạch 17**: `P3-PERF-001` —
@@ -4492,6 +4492,239 @@ là biến thể tuỳ biến, nếu Tailwind bỏ qua thì dấu gạch **im l�
 
 **Số thật:** lint 0 warning 0 error · typecheck ✓ · unit **1656 pass / 18 skip** trên **119** tệp
 (trước 1642 — **+14 bài mới** trên 1 tệp) · build ✓ **29/29 trang**.
+
+⚠️ **Phiên 69 kết thúc mà KHÔNG commit và KHÔNG ghi `WORKLOG`** — mục §6.4 này được viết xong
+nhưng 12 tệp còn nằm trong cây làm việc. Phiên 70 chạy **lại toàn bộ** cửa kiểm trên đúng cây ấy
+(số ở trên là số của lượt chạy lại, khớp từng con) rồi mới commit thành **commit riêng của Đợt D**
+(`fd8acfa`), trước khi mở Đợt E. Đây là **lần thứ hai** chuyện bỏ dở không ghi sổ xảy ra — lần đầu
+ở M11-A; cách phát hiện vẫn là đối chiếu `git status` với chính file này.
+
+### 6.5 Đợt E — ✅ XONG (2026-08-17)
+
+**Tệp mới (2):** `tests/unit/filter-field.test.tsx` · `tests/unit/panel.test.tsx`.
+**Component mới, không tệp mới nào:** `FilterField` + 2 hằng xuất từ `filter-bar.tsx` ·
+`Panel` + `panelClassName` + `cardClassName` từ `card.tsx` · `tableScrollFrameClassName` từ
+`data-table.tsx` · `SearchInputControl` từ `search-input.tsx`.
+
+> `FilterField` **không** là component thứ năm — `09` §12 A2 đã chốt nó là phần con của
+> `FilterBar`. Không có tệp mới nào trong `src/` ở đợt này, và đó là chủ ý.
+
+#### 🔴 Mọi con số của `17` §7 đều đã lệch — đếm lại, ghi cả số cũ lẫn số thật
+
+Đợt D đã bắt được kiểu sai này một lần (§6 ghi 11, liệt kê 10). §7 nặng hơn vì nó liệt kê ~40 chỗ
+trên nhiều module, và Đợt B/C/D đã xê dịch gần hết:
+
+| Mục `17` §7.2 | Kế hoạch ghi | Số thật khi làm | Vì sao lệch |
+|---|--:|--:|---|
+| V2 `border-border` panel | 13 | **21** | kế hoạch bỏ sót 8 chỗ: `attendance/page` · `staff/[staffId]` · `students/[studentId]` · `sacrament-panel` · `enrollments/roster-row` · `gradebook-editor` ×2 · `staff-assignment-panel` |
+| V3 `border-line` panel | 4 | **6** | thêm khối thứ hai của `account-admin-panel`, cái `<Link>` của `students/page`, và `<fieldset>` của `teaching-plan-editor` |
+| V4 surface panel tay | 5 | **3 → `Card`** | 2 chỗ kế hoạch xếp V4 thật ra là khối **lồng trong** thẻ (`promotion-board` nhật ký · `account-admin-panel` ô ghi chú) ⇒ `Panel`, không phải `Card`; đặt `Card` có bóng vào trong `Card` là chồng hai tầng bóng |
+| V5 inset muted | 3 | **5** | thêm 2 `<details>` nền lõm (`batch-row-editor` · `teaching-plan-editor`) |
+| V6 warning hai cách viết | 4 + 3 | **5 + 5** | 5 chỗ `-surface` đổi sang `-subtle`, 5 chỗ vốn đã đúng |
+| V7 table wrapper | 5 | **5** | khớp |
+| V8 sticky điểm danh | 2 | **2** | khớp — chỉ đổi token, xem dưới |
+| V9 auth card | 1 | **2 đốm** | phần thẻ đã trả ở Đợt A |
+| **Tổng khối đổi** | ~33 | **37** | 26 `<Panel>` + 8 `panelClassName()` + 2 `Card` + 1 `cardClassName` |
+
+Và **mọi** `file:line` của `17` §7.1/§7.2 đều lệch — `attendance-editor.tsx:406-417` nay ở
+**412–430**, `report-workbench.tsx:130-208` nay ở **138–233**, `account-admin-panel.tsx:247,251`
+nay ở **246–275**. Dùng lại chúng là sửa nhầm dòng.
+
+#### `FilterField` — ba tầng cố định, và lý do từng con số
+
+Cấu trúc **không đổi theo ô**: hàng nhãn `h-5` (20px) + `mb-1.5` (6px) → hàng control `min-h-11`
+(44px) → hàng gợi ý `min-h-[18px]` 13px `--ink-muted`. Hai tầng ngoài **luôn render kể cả khi
+rỗng** — đó chính là điều kiện để các ô cao bằng nhau, và là lời giải cho "lệch tùm lum" ở hình 3.
+
+🔴 **`leading-5` cho hàng nhãn không phải chuyện thẩm mỹ.** `Label` mặc định `leading-normal`
+(1,5), tức 14px × 1,5 = **21px** — tràn 1px khỏi hàng 20px và kéo lệch trở lại đúng thứ vừa chữa.
+
+**Ba quyết định cài đặt:**
+
+1. **`filter-bar.tsx` KHÔNG có `"use client"`, và không được có.** Nó đang được **6 trang Server
+   Component** import. Vì thế `FilterField` nối `aria-describedby` bằng `React.cloneElement` —
+   hàm **thuần** trên mô tả phần tử, chạy được cả hai phía ranh giới RSC — chứ **không** dùng
+   `createContext`, thứ chỉ sống ở phía client. Cùng lý do khiến `checkbox.tsx` của Đợt D cố ý
+   không có chỉ thị ấy (§6.4), và khiến `card.tsx` được canh bằng một bài kiểm riêng.
+2. **`SearchInputControl` — tách phần điều khiển khỏi `SearchInput`.** `SearchInput` tự dựng nhãn
+   và dòng gợi ý của nó; đặt nguyên nó vào `FilterField` là trang có **hai nhãn trỏ vào cùng một
+   ô**. Bẫy này đã có ghi chú sẵn ở `promotions/page.tsx`. `SearchInput` đứng một mình giữ nguyên
+   hợp đồng cũ, chỉ dựng **trên chính** `SearchInputControl`.
+3. 🔴 **`staticValue` — `<label for>` KHÔNG trỏ được vào `<p>`.** Hai ô "khoá cứng" của
+   `report-workbench` (kỳ báo cáo khi loại là *Kết quả*, và phạm vi khi người dùng chỉ xem được
+   một) hiện giá trị bằng `<p>` chứ không bằng `Select`. Thuộc tính `for` chỉ trỏ được vào **phần
+   tử nhận-nhãn-được**; trỏ vào `<p>` thì trình duyệt **âm thầm bỏ qua** — không lỗi, không cảnh
+   báo, chỉ là một quan hệ **không tồn tại**. `staticValue` vì thế render hàng nhãn bằng `<span>`
+   thay cho `<label>`: vẫn đúng ba tầng, nhưng không dựng một quan hệ `for` giả.
+
+   🔴 **Và đây là chỗ đợt này ĐÃ ĐI QUÁ, rồi phải lùi lại — lượt E2E đầy đủ bắt được.** Bản đầu
+   còn gắn thêm `aria-labelledby` cho chính giá trị, để nó "có tên" với trình đọc màn hình. Nghe
+   đúng, nhưng nó làm **đỏ 3 bài trên cả ba viewport**: `reports.spec.ts:279` (**AC-B14**) đòi
+   *"khi kỳ bị khoá thì KHÔNG phần tử nào mang nhãn 'Kỳ báo cáo'"* — tức **ô chọn đã biến mất**;
+   đặt tên cho `<p>` làm `getByLabel("Kỳ báo cáo")` khớp trở lại và AC đổ.
+   **Đã bỏ phần `aria-labelledby`, KHÔNG sửa bài kiểm.** Lý lẽ: đây là **chữ tĩnh**, không phải
+   control — trình đọc màn hình đọc tuần tự vẫn nghe "Kỳ báo cáo" rồi "Cả năm học", nên cái thêm
+   được là rất nhỏ; còn thứ đánh đổi là một **AC đã duyệt** trong module Đợt E vốn không được giao
+   sửa. Sửa bộ định vị của AC cho vừa một cải tiến *không ai yêu cầu* là đúng nghĩa "sửa test để
+   che". Có **một bài đơn vị canh riêng** để không ai vô tình gắn lại.
+
+**Nhãn dài phải viết ngắn lại, và phần mô tả xuống `helper`** — nhãn là **TÊN** của ô, gợi ý là
+**MÔ TẢ** (cùng lý lẽ Đợt D đã dùng cho `import-upload-form`). Ví dụ `/staff`: *"Tìm theo họ tên,
+tên thánh, mã GLV hoặc số điện thoại"* (xuống dòng thành 2–3 hàng trong một cột lưới ~260px, tức
+phá luôn hàng nhãn 20px) ⇒ nhãn **"Tìm theo họ tên"** + gợi ý *"Gõ không dấu cũng tìm được — cả
+tên thánh, mã GLV và số điện thoại."*
+
+⚠️ **Bộ định vị của E2E được giữ có chủ ý, không phải may mắn:** `students-directory.spec.ts` tìm
+`/Tìm theo tên thiếu nhi/` và `getByLabel("Lớp", { exact: true })` · `staff-directory.spec.ts` tìm
+`/Tìm theo họ tên/` · `account-security.spec.ts:106` tìm `"Vai trò"` với `exact: true` **đúng vì**
+trang còn một ô *"Lọc theo vai trò"*. Nhãn mới được chọn để cả bốn bộ định vị ấy vẫn khớp ⇒
+**0 tệp E2E phải sửa** ở phần lọc.
+
+**Phủ sóng:** 6 chỗ gọi `FilterBar` + 4 khối lọc tự chế ⇒ **27 ô** trên **9 tệp**. Xoá hết
+`className="mt-1"` lẻ trong khối lọc — **16 chỗ** (15 trên `Select`, 1 trên `DateField`); hai
+`mt-1` còn lại trong `src/` nằm trên `<p>` chữ thường, không thuộc khối lọc.
+
+#### 🔴 Một chỗ CỐ Ý lệch khỏi `17` §7.1 — thanh lọc dính của điểm danh
+
+Kế hoạch xếp `attendance-editor` vào danh sách "dùng `FilterField` bên trong". **Không làm**, và
+lý do đo được: khối ấy có **một** ô lọc xếp **dọc** dưới `SegmentedControl` — không có ô nào để
+canh thẳng hàng cùng, tức ba tầng cố định ở đây mang lại **0** lợi ích. Cái giá thì có thật:
+26px hàng nhãn (ẩn) + 22px hàng gợi ý (rỗng) = **48px** thêm vào một thanh **dính**, bằng **7,5%**
+chiều cao màn hình 360px, ngay trong luồng mà tốc độ là lý do tồn tại của thiết kế (`09` §11).
+V8 vì thế **chỉ đổi token** (`border-border bg-card` → `border-line bg-surface`, `z-10` →
+`z-sticky`), giữ nguyên sticky và **0 dòng** hành vi — điểm danh thuộc danh sách nhạy cảm
+(CLAUDE.md §5).
+
+#### `Panel` — hai mẫu thay chín biến thể
+
+`Card` (thẻ nổi, bo 16px, `--shadow-sm`) + **`Panel`** mới (khối phẳng **trong** thẻ, bo 12px,
+`border-line`, **không bóng**). Bóng là thứ **duy nhất** phân biệt hai mẫu, và có một bài kiểm
+canh riêng vế đó — thêm bóng cho `Panel` là biến nó thành `Card` thứ hai.
+
+- **`bg-transparent` chứ không `bg-surface`:** `Panel` nằm sẵn trên nền thẻ, tô lại đúng màu ấy là
+  vẽ thừa — và khi thẻ đổi nền thì khối bên trong lộ ra thành một ô vá màu.
+- **`as` là bắt buộc phải có:** **9** trong 26 chỗ gọi là `<li>`, 2 là `<details>`, còn lại có
+  `section`/`article`/`fieldset`/`p`/`span`. Ép hết thành `<div>` là bỏ ngữ nghĩa danh sách —
+  trình đọc màn hình hết đọc *"mục 3 trên 19"*.
+- **`panelClassName()` cho chỗ không dùng được component** (8 chỗ: `<Link href>`, chỗ chỉ nhận một
+  `className`). Cùng một nguồn với `Panel` nên hai bên không lệch — có bài kiểm canh.
+- **`cardClassName` cho `<section aria-labelledby>`** của `promotion-board`. `Card` cố ý **không**
+  nhận `as`: nó là component bị dùng nhiều nhất trong dự án, nới chữ ký của nó là mở đường cho mọi
+  thẻ HTML đi qua.
+
+🔴 **Một lỗi do chính đợt này gây ra và tự bắt được, đáng ghi vì nó im lặng:** bản quét đầu đổi
+`className` của `promotion-board.tsx:826` từ `space-y-3 rounded-lg border border-line bg-surface p-4`
+thành `space-y-3 p-4` mà **quên** đổi `<section>` thành `Card` ⇒ khối *"Đề xuất hàng loạt"* mất
+sạch viền và nền. **lint, typecheck, 1683 bài unit và cả build đều xanh** — không cửa kiểm nào
+thấy một khối mất viền. Nó lộ ra khi đối chiếu **từng dòng `-` có `rounded-`** trong `git diff`
+với chỗ thay thế tương ứng; đó là phép kiểm nên làm sau mọi lượt quét diện rộng.
+
+#### Quét bí danh token cũ (§7.3) — về **0**
+
+**64 lượt trên 34 tệp**: `border-border`→`line` · `bg-card`→`surface` · `text-foreground`→`ink` ·
+`bg-warning-surface`/`-danger-surface`→`-subtle`. `bg-background` chỉ còn trong **một chú thích**.
+
+Hai điều đáng ghi:
+
+1. **Bản quét bỏ qua chữ nằm giữa hai dấu `` ` ``** — đó là văn xuôi trong chú thích, và nhiều chú
+   thích của dự án *cố ý* nhắc tên token cũ để giải thích vì sao nó bị bỏ. Đổi cả trong chú thích
+   là làm hỏng chính lời giải thích ấy.
+2. **Một chỗ bản quét KHÔNG bắt được**, đúng vì luật trên: `change-password/page.tsx:31` viết class
+   trong một **template literal**, tức nằm giữa hai dấu `` ` ``. Sửa tay. Bài học: một bản quét có
+   luật loại trừ thì **phải grep lại sau khi chạy**, không được tin vào số nó tự báo.
+
+⛔ **Nhóm "BÍ DANH CŨ" trong `tailwind.config.ts` GIỮ NGUYÊN** — đúng `17` §10, để một phiên riêng.
+Kiểm chứng trên bản dựng: `.border-border` nay **0** lần trong `.next/static/css` (Tailwind tự loại
+vì không còn ai dùng), `.bg-card` còn **1** — sinh ra từ một chuỗi trong **chú thích**, vì bộ quét
+của Tailwind đọc cả chú thích.
+
+#### 🔴 V9 — hai đốm trang trí của trang đăng nhập CHƯA TỪNG HIỆN RA
+
+Không phải "khác token", mà là **một lỗi**. Bản cũ viết `bg-secondary/45` và `bg-accent/55`; token
+màu của dự án là `var()` **trần** nên Tailwind **không sinh nổi** lớp có bổ ngữ độ mờ. Đo, không
+đoán: grep `.next/static/css` cho **0** kết quả với cả `\/45` lẫn `\/55`. Đây là bản sinh đôi của
+lỗi `.bg-background\/95` mà `app-header.tsx` đã ghi lại (header dính từng trong suốt). Nay dùng
+token **đặc** `--theme-soft` / `--theme-tint` — hai bậc pastel `09` §4.2 dành cho mảng nền lớn.
+
+⚠️ **Cùng họ, CHƯA sửa, và nói ra bằng số:** còn **16** lớp bổ-ngữ-độ-mờ trên token màu ở
+`src/`, tất cả đều **không sinh CSS** — `alert.tsx` ×4 · `badge.tsx` ×4 · `classes/page.tsx` ×2
+(`border-primary/50 bg-accent/40`) · `(auth)/layout.tsx` ×2 (`text-primary-foreground/85|75`) ·
+`imports/[batchId]` ×1 · `gradebook-editor` ×1 (`bg-muted/50`) · `promotion-board` ×1
+(`bg-surface-muted/40`) · `app-header` ×1 (trong chú thích). Đó là **nợ #5**, không thuộc phạm vi
+§7.3 (§7.3 nói về **bí danh token**, không nói về độ mờ) — để Đợt F đóng trọn một lượt.
+
+#### Bài kiểm của đợt — canh hợp đồng, không chỉ canh render
+
+`filter-field.test.tsx` (**12 bài**) + `panel.test.tsx` (**15 bài**). Thứ `FilterField` sinh ra để
+chữa là **chiều cao**, mà chiều cao thì `jsdom` không đo được; thứ đo được — và đúng là thứ hỏng
+khi ai đó sửa ẩu — là **cấu trúc ba tầng luôn có mặt**. Ba bài đáng kể riêng:
+
+1. *"KHÔNG có gợi ý thì hàng gợi ý VẪN render và VẪN chiếm chỗ"* — xoá hàng ấy là lưới so le trở lại.
+2. *"`staticValue` đổi sang `aria-labelledby`"* — canh đúng cái bẫy `<label for>` ở trên.
+3. 🔴 *"`card.tsx`/`filter-bar.tsx` không có chỉ thị `use client`"*, kể cả gián tiếp qua thứ chúng
+   import. **Bản đầu của bài này tự đỏ ở chính đoạn chú thích giải thích vì sao không được có
+   `"use client"`** — nó dò **chuỗi con**, tức đo văn xuôi chứ không đo mã. Nay nó đo **chỉ thị**
+   (câu lệnh đầu tiên của tệp — chỗ duy nhất chỉ thị có tác dụng), và có thêm một bài canh chính
+   phép đo ấy phân biệt được chỉ thị với văn xuôi.
+
+#### Xác minh CSS thật sự được sinh ra (khuôn của Đợt D)
+
+Class viết ra không có nghĩa là CSS tồn tại. Grep thẳng `.next/static/css` sau `npm run build`:
+`.min-h-\[18px\]{min-height:18px}` ✓ · `.leading-\[18px\]{line-height:18px}` ✓ ·
+`.mb-1\.5{margin-bottom:.375rem}` ✓ · `.h-5{height:1.25rem}` ✓ · `.leading-5{line-height:1.25rem}` ✓ ·
+`.min-h-11{min-height:2.75rem}` ✓ · `.h-control{height:var(--control-height)}` ✓ ·
+`.bg-transparent` ✓ · `.bg-theme-soft{background-color:var(--theme-soft)}` ✓ ·
+`.bg-theme-tint{background-color:var(--theme-tint)}` ✓ · `.sr-only` ✓ · và **0** lần
+`.bg-secondary\/45` / `.bg-accent\/55`.
+
+#### Số kiểm thử thật (2026-08-17)
+
+lint **0 warning 0 error** · typecheck ✓ · unit **1684 pass / 18 skip** trên **121** tệp
+(trước 1656/119 ⇒ **+28 bài mới** trên 2 tệp) · build ✓ **29/29 trang**.
+
+#### 🔴 E2E — ba lượt ĐẦY ĐỦ, và cái chúng đo được không phải điều ai cũng đoán
+
+Mỗi lượt chạy trên **DB vừa `db:reset` + `seed:dev`**, **không chạy gì khác cùng lúc**, mỗi lượt
+**~50 phút**:
+
+| # | Commit | Kết quả |
+|---|---|--:|
+| 1 | Đợt E (bản đầu) | **21 đỏ / 567 xanh** |
+| 2 | **`9b30dd9` — ĐỐI CHỨNG, ngay TRƯỚC Đợt E** | **13 đỏ / 575 xanh** |
+| 3 | Đợt E (sau khi sửa AC-B14) | **21 đỏ / 567 xanh** |
+
+**Một hồi quy thật, tìm ra bằng lượt 1 và đóng ở lượt 3:** `reports.spec.ts:275` (**AC-B14**) đỏ
+**cả ba viewport** ở lượt 1 → **xanh cả ba** ở lượt 3. Nguyên nhân và cách sửa ở quyết định cài
+đặt #3 bên trên. **Đây là lỗi duy nhất của Đợt E mà bộ E2E bắt được**, và nó **không** lộ ra ở
+lint/typecheck/unit/build.
+
+🔴 **Phát hiện lớn hơn Đợt E, và nó lật một câu ghi trong sổ nợ:** *"nợ #10 — 10 bài đỏ **ỔN
+ĐỊNH**"* **không ổn định**. Đo bằng chính ba lượt trên:
+
+- **Đổi danh sách giữa các lượt, kể cả trên CÙNG một commit.** `staff-directory:71` và `:196` đỏ ở
+  lượt 1, **xanh** ở lượt 3. `attendance:555` và `teaching-plan:255` đỏ ở lượt **đối chứng** rồi
+  xanh ở lượt Đợt E. `committees:156` — bài mà nợ #10 ghi là đỏ ×3 viewport — **không đỏ một lần
+  nào** ở lượt đối chứng.
+- **Chỉ 5 bài đỏ ở CẢ BA lượt**, và đó mới là nợ thật: `results:278` · `attendance:454` ·
+  `students-directory:156` · `imports:332` · `teaching-plan:92`.
+- **11/21 bài đỏ của lượt 3 mang chữ ký HẠ TẦNG, không phải khẳng định nghiệp vụ:**
+  `Không đăng nhập được bằng GLV904/GLV901` (7) · `Target page, context or browser has been
+  closed` · `Test timeout 30s/180s` · `browserContext.close: Test ended`. Riêng **7 bài
+  `student-lifecycle` đỏ thành một CHÙM trên đúng `laptop-1366`** vì cùng một lần không đăng nhập
+  được — một sự cố, bảy bài đỏ.
+
+**Nguyên nhân gốc đọc được từ chính câu lỗi:** ba viewport chạy **nối tiếp trên MỘT cơ sở dữ
+liệu**, và nhiều bài **ghi/xoá dữ liệu seed**. `staff-directory:196` đỏ đúng câu *"seed phải còn ít
+nhất một hồ sơ chưa từng dùng để xoá"* — viewport chạy trước đã xoá mất bản ghi duy nhất, nên
+**ai chạy trước thì xanh, hai viewport sau đỏ**. Đó là lỗi của **bộ đồ gá**, không phải của mã
+ứng dụng.
+
+> ⚠️ **Hệ quả phải nói ra:** một bộ E2E cho ra ba danh sách đỏ khác nhau trên cùng một commit thì
+> **không dùng làm cổng nghiệm thu** được — nó không phân biệt nổi "hồi quy" với "thứ tự chạy".
+> Cách duy nhất còn lại để bắt hồi quy là **lùi commit đối chứng**, tức trả **~100 phút cho mỗi
+> lần nghi ngờ**. Việc phải làm ở Đợt F: cho **mỗi viewport một tập dữ liệu riêng** (khuôn
+> `reports.spec.ts` đã làm đúng — mỗi viewport một tháng riêng), rồi **đo lại nợ #10 bằng số
+> thật** thay vì giữ con số 10 đang sai.
 
 ---
 

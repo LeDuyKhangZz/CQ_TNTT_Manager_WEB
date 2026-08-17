@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { DateField } from "@/components/ui/date-field";
@@ -120,7 +120,7 @@ export function SacramentPanel({
           ) : (
             <ul aria-label={`Bí tích của ${studentName}`} className="space-y-3">
               {sacraments.map((item) => (
-                <li key={item.id} className="rounded-md border border-border p-3 text-sm">
+                <Panel as="li" key={item.id} className="text-sm">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-medium">
@@ -171,7 +171,7 @@ export function SacramentPanel({
                       </div>
                     ) : null}
                   </div>
-                </li>
+                </Panel>
               ))}
             </ul>
           )}

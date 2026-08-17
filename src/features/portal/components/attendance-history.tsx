@@ -11,6 +11,7 @@ import type { AppAudience } from "@/lib/permissions/roles";
 import type { PortalDataStatus } from "../status";
 import type { PortalAttendanceRow, PortalAttendanceSummary } from "../server/queries";
 import { PortalEmptyState } from "./portal-empty-state";
+import { tableScrollFrameClassName } from "@/components/ui/data-table";
 
 /** Dùng chung cho trang phụ huynh và trang thiếu nhi — cùng dữ liệu, cùng cách đọc. */
 export function AttendanceHistory({
@@ -95,7 +96,7 @@ export function AttendanceHistory({
                 <div
                   role="status"
                   aria-live="polite"
-                  className="rounded-md border border-warning bg-warning-surface p-3 text-sm text-warning"
+                  className="rounded-md border border-warning bg-warning-subtle p-3 text-sm text-warning"
                 >
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
@@ -124,7 +125,7 @@ export function AttendanceHistory({
             <p className="text-sm text-muted-foreground">Chưa có dữ liệu điểm danh đã chốt.</p>
           ) : (
             <div
-              className="overflow-x-auto rounded-md border border-line-strong"
+              className={tableScrollFrameClassName}
               tabIndex={0}
               aria-label="Bảng lịch sử điểm danh, có thể cuộn ngang"
             >

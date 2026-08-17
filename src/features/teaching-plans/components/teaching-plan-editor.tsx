@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DateField } from "@/components/ui/date-field";
 import { Dialog } from "@/components/ui/dialog";
@@ -146,13 +146,13 @@ function CollapsibleGroup({
   children: ReactNode;
 }) {
   return (
-    <details className="rounded-md border border-line bg-surface-muted">
+    <Panel as="details" variant="muted" padding="none">
       <summary className="flex min-h-control cursor-pointer flex-wrap items-center gap-x-2 px-3 py-2 text-sm font-medium">
         <span>{title}</span>
         <span className="font-normal text-ink-muted">· {filledSummary(filled, total)}</span>
       </summary>
       <div className="space-y-4 px-3 pb-3">{children}</div>
-    </details>
+    </Panel>
   );
 }
 
@@ -270,7 +270,7 @@ function ItemFields({
 
   return (
     <div className="space-y-4">
-      <fieldset className="rounded-md border border-line px-3 pb-3">
+      <Panel as="fieldset" padding="none" className="px-3 pb-3">
         <legend className="px-1 text-sm font-medium">Thông tin bắt buộc</legend>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -346,7 +346,7 @@ function ItemFields({
             ) : null}
           </div>
         </div>
-      </fieldset>
+      </Panel>
 
       <CollapsibleGroup title="Nội dung buổi học" filled={contentFilled} total={CONTENT_FIELDS.length}>
         <div className="grid gap-4 pt-2 md:grid-cols-2">
@@ -667,7 +667,7 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
           <DetailLine label="Chuẩn bị" value={item.preparation} />
           <DetailLine label="Ghi chú nội bộ" value={item.note} />
         </dl>
-        <div className="border-t border-border pt-4">
+        <div className="border-t border-line pt-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tài liệu</p>
           {item.materialName ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">

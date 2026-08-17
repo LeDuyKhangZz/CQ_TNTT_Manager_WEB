@@ -2,11 +2,10 @@ import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { FormMessage } from "@/components/ui/form-message";
-import { Label } from "@/components/ui/label";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchInput } from "@/components/ui/search-input";
+import { SearchInputControl } from "@/components/ui/search-input";
 import { Select } from "@/components/ui/select";
 import { PromotionBoard } from "@/features/promotions/components/promotion-board";
 import { PromotionProgress } from "@/features/promotions/components/promotion-progress";
@@ -124,13 +123,11 @@ export default async function PromotionsPage({
               action="/promotions"
               resetHref={filtered ? "/promotions" : undefined}
             >
-              <div>
-                <Label htmlFor="filter-promotion-class">Lớp</Label>
+              <FilterField label="Lớp" htmlFor="filter-promotion-class">
                 <Select
                   id="filter-promotion-class"
                   name="classId"
                   defaultValue={effectiveCriteria.classId}
-                  className="mt-1"
                 >
                   <option value="all">Tất cả lớp</option>
                   {data.classOptions.map((option) => (
@@ -139,14 +136,12 @@ export default async function PromotionsPage({
                     </option>
                   ))}
                 </Select>
-              </div>
-              <div>
-                <Label htmlFor="filter-promotion-status">Trạng thái</Label>
+              </FilterField>
+              <FilterField label="Trạng thái" htmlFor="filter-promotion-status">
                 <Select
                   id="filter-promotion-status"
                   name="status"
                   defaultValue={effectiveCriteria.status}
-                  className="mt-1"
                 >
                   {PROMOTION_STATUS_FILTERS.map((value) => (
                     <option key={value} value={value}>
@@ -154,19 +149,22 @@ export default async function PromotionsPage({
                     </option>
                   ))}
                 </Select>
-              </div>
-              <div>
-                {/* `SearchInput` tự dựng `<label htmlFor>` của nó — thêm một
-                    `<Label>` nữa ở ngoài là hai nhãn trỏ vào cùng một ô. */}
-                <SearchInput
+              </FilterField>
+              {/* `FilterField` dựng nhãn cho cả lưới, nên ô tìm dùng bản
+                  `SearchInputControl` không nhãn — đặt nguyên `SearchInput` vào
+                  đây là hai nhãn trỏ vào cùng một ô. */}
+              <FilterField
+                label="Tìm tên thiếu nhi"
+                htmlFor="filter-promotion-search"
+                helper="Gõ không dấu cũng tìm được."
+              >
+                <SearchInputControl
                   id="filter-promotion-search"
                   name="q"
-                  label="Tìm tên thiếu nhi"
-                  hideLabel={false}
                   defaultValue={effectiveCriteria.search}
                   placeholder="Gõ không dấu cũng được"
                 />
-              </div>
+              </FilterField>
             </FilterBar>
 
             {data.roster.length === 0 ? (

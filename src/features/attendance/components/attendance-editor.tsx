@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
@@ -408,8 +408,16 @@ export function AttendanceEditor({
           ) : (
             <>
               {/* U-11 — bộ lọc dính đầu danh sách. Con số trên nhãn là con số
-                  của cả buổi, không phải của trang đang xem. */}
-              <div className="sticky top-16 z-10 space-y-2 rounded-md border border-border bg-card p-2">
+                  của cả buổi, không phải của trang đang xem.
+                  Đợt E V8: chỉ đổi TOKEN (`border-border bg-card` → `border-line
+                  bg-surface`, `z-10` → `z-sticky`), giữ nguyên sticky và hành vi
+                  — điểm danh thuộc danh sách nhạy cảm (CLAUDE.md §5).
+                  🔴 CỐ Ý KHÔNG bọc `FilterField` ở đây, khác `17` §7.1: khối này
+                  có **một** ô lọc xếp DỌC dưới `SegmentedControl`, không có ô
+                  nào để canh thẳng hàng cùng. Ba tầng cố định sẽ chỉ thêm 48px
+                  trống vào một thanh DÍNH — 7,5% chiều cao màn hình 360px, ngay
+                  trong luồng mà tốc độ là lý do tồn tại của thiết kế. */}
+              <div className="sticky top-16 z-sticky space-y-2 rounded-md border border-line bg-surface p-2">
                 <SegmentedControl
                   name="roster-filter"
                   legend="Lọc danh sách thiếu nhi"
@@ -470,7 +478,7 @@ export function AttendanceEditor({
               const draft = staffDraft[entry.classStaffAssignmentId];
               if (!draft) return null;
               return (
-                <div key={entry.classStaffAssignmentId} className="rounded-md border border-border p-3">
+                <Panel key={entry.classStaffAssignmentId}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-sm font-medium">{entry.label}</span>
                     <Badge variant="secondary">{capacityLabels[entry.capacity] ?? entry.capacity}</Badge>
@@ -516,7 +524,7 @@ export function AttendanceEditor({
                       }
                     />
                   ) : null}
-                </div>
+                </Panel>
               );
             })
           )}
@@ -524,7 +532,8 @@ export function AttendanceEditor({
       </Card>
 
       {readOnly ? null : (
-        <div className="sticky bottom-4 space-y-2 rounded-md border border-border bg-card p-3 shadow-sm">
+        // Đợt E V8 — thanh hành động dính đáy: chỉ đổi token, giữ nguyên sticky.
+        <div className="sticky bottom-4 space-y-2 rounded-md border border-line bg-surface p-3 shadow-sm">
           {/* 🔴 U-17 — thông báo nằm TRONG thanh hành động, cạnh đúng cái nút
               vừa bấm. Bản cũ đặt nó ở đầu editor trong khi hai nút ở đáy màn
               hình: trên máy 360px với 50 em, hai chỗ ấy cách nhau hàng nghìn

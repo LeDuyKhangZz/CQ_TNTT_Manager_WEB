@@ -4,7 +4,8 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SearchInput } from "@/components/ui/search-input";
+import { FilterField, filterFieldLabelRowClassName } from "@/components/ui/filter-bar";
+import { SearchInputControl } from "@/components/ui/search-input";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatDateVi, todayVi } from "@/lib/dates";
@@ -213,20 +214,30 @@ export default async function ClassDetailPage({
               <CardContent className="space-y-3">
                 {/* Ô tìm nằm NGOÀI biểu mẫu ghi danh: hai `<form>` lồng nhau là
                     HTML không hợp lệ, và biểu mẫu trong cùng sẽ nuốt lượt gửi. */}
-                <form method="get" className="flex flex-wrap items-end gap-2">
-                  <div className="min-w-0 flex-1">
-                    <SearchInput
+                {/* Đợt E — khối lọc tự chế: ô tìm và nút "Tìm" đứng cùng một
+                    hàng `items-end`, nên nút bị dòng gợi ý của ô đẩy lệch xuống.
+                    `FilterField` giữ ba tầng cố định, nút tự canh theo tầng
+                    control chứ không theo đáy khối. */}
+                <form method="get" className="flex flex-wrap items-start gap-2">
+                  <FilterField
+                    className="min-w-0 flex-1"
+                    label="Tìm thiếu nhi theo tên hoặc mã"
+                    htmlFor="class-student-search"
+                    helper="Gõ không dấu cũng tìm được."
+                  >
+                    <SearchInputControl
+                      id="class-student-search"
                       name="student"
-                      label="Tìm thiếu nhi theo tên hoặc mã"
-                      hideLabel={false}
                       defaultValue={studentSearch}
                       placeholder="Ví dụ: tran ngoc"
-                      hint="Gõ không dấu cũng tìm được."
                     />
+                  </FilterField>
+                  <div>
+                    <div className={filterFieldLabelRowClassName} aria-hidden="true" />
+                    <Button type="submit" variant="secondary">
+                      Tìm
+                    </Button>
                   </div>
-                  <Button type="submit" variant="secondary">
-                    Tìm
-                  </Button>
                 </form>
 
                 {classDetail.availableStudents.length === 0 ? (

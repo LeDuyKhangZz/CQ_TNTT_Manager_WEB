@@ -27,6 +27,39 @@ export type SearchInputProps = Omit<
   hint?: string;
 };
 
+/**
+ * Chỉ phần **điều khiển**: kính lúp + `<input type="search">`. Không nhãn,
+ * không dòng gợi ý.
+ *
+ * Sinh ra cho `FilterField` (Đợt E): khung ngoài ấy đã lo tầng nhãn và tầng gợi
+ * ý cho **mọi** ô lọc, nên đặt nguyên `SearchInput` vào trong là trang có **hai
+ * nhãn trỏ vào cùng một ô** — đúng cái bẫy đã ghi ở `promotions/page.tsx`.
+ * `SearchInput` đứng một mình vẫn giữ nguyên hợp đồng cũ, chỉ dựng trên chính
+ * component này.
+ */
+export const SearchInputControl = React.forwardRef<
+  HTMLInputElement,
+  Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">
+>(({ className, name = "q", ...props }, ref) => (
+  <div className="relative w-full">
+    <Search
+      className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    />
+    <input
+      ref={ref}
+      name={name}
+      type="search"
+      inputMode="search"
+      enterKeyHint="search"
+      className={cn(inputBaseClassName, "flex h-control pl-10", className)}
+      {...props}
+    />
+  </div>
+));
+SearchInputControl.displayName = "SearchInputControl";
+
 export const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
   ({ className, label, hideLabel = true, hint, id, name = "q", ...props }, ref) => {
     const generatedId = React.useId();
@@ -45,24 +78,14 @@ export const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
           {label}
         </label>
 
-        <div className="relative">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted"
-            strokeWidth={1.75}
-            aria-hidden="true"
-          />
-          <input
-            ref={ref}
-            id={inputId}
-            name={name}
-            type="search"
-            inputMode="search"
-            enterKeyHint="search"
-            aria-describedby={hint ? hintId : undefined}
-            className={cn(inputBaseClassName, "flex h-control pl-10", className)}
-            {...props}
-          />
-        </div>
+        <SearchInputControl
+          ref={ref}
+          id={inputId}
+          name={name}
+          aria-describedby={hint ? hintId : undefined}
+          className={className}
+          {...props}
+        />
 
         {hint ? (
           <p id={hintId} className="mt-1 text-xs text-ink-muted">

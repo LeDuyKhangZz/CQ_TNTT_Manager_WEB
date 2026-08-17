@@ -28,7 +28,7 @@ export default async function ChangePasswordPage({
   return (
     <div className="mx-auto max-w-md">
       {forced ? <Badge variant="warning">Bắt buộc</Badge> : null}
-      <h1 className={`${forced ? "mt-4" : ""} text-3xl font-semibold tracking-tight text-foreground`}>
+      <h1 className={`${forced ? "mt-4" : ""} text-3xl font-semibold tracking-tight text-ink`}>
         {forced ? "Tạo mật khẩu mới" : "Đổi mật khẩu"}
       </h1>
       <p className="mb-7 mt-2 text-sm text-muted-foreground">

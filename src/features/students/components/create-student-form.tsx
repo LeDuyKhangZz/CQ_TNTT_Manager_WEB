@@ -74,7 +74,7 @@ export function CreateStudentForm({
     >
       {showingDuplicates ? (
         <div
-          className="space-y-2 rounded-md border border-warning bg-warning-surface p-3"
+          className="space-y-2 rounded-md border border-warning bg-warning-subtle p-3"
           role="status"
           aria-live="polite"
         >

@@ -4,7 +4,7 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, panelClassName } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,7 +115,7 @@ export function AbsenceReviewPanel({
           <div
             key={request.id}
             data-absence-request={request.id}
-            className="rounded-md border border-border p-3"
+            className={panelClassName()}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>

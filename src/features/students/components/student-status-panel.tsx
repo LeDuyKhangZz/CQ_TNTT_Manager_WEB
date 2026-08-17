@@ -19,6 +19,7 @@ import {
 import type { StudentFeedback } from "../student-feedback";
 import { setStudentStatusFormAction } from "../server/actions";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { Panel } from "@/components/ui/card";
 
 /**
  * Khối "Trạng thái hồ sơ" — M03-C, **TB-F06 / BR-M03-N12·N14 / D-130**.
@@ -124,7 +125,7 @@ export function StudentStatusPanel({
         theo phản xạ.
       */}
       {closing && openClassName ? (
-        <div className="space-y-3 rounded-md border border-line-strong bg-surface-muted p-3">
+        <Panel variant="muted" className="space-y-3">
           <p className="text-sm">
             {studentName} vẫn đang ghi danh ở lớp <strong>{openClassName}</strong>. Hồ sơ chỉ
             chuyển sang &quot;{STUDENT_STATUS_LABELS[nextStatus]}&quot; khi ghi danh này được kết
@@ -153,7 +154,7 @@ export function StudentStatusPanel({
               <DateField id="status-ended-on" name="endedOn" defaultValue={today} />
             </div>
           </div>
-        </div>
+        </Panel>
       ) : null}
 
       <Button type="submit" className="w-full" disabled={pending}>

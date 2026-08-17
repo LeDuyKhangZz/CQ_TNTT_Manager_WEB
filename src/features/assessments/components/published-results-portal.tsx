@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { formatDateVi } from "@/lib/dates";
 import type { AppAudience } from "@/lib/permissions/roles";
 import { PortalEmptyState } from "@/features/portal/components/portal-empty-state";
 import type { PortalDataStatus } from "@/features/portal/status";
 import { ASSESSMENT_KIND_LABELS } from "../constants";
 import type { PublishedPortalResult } from "../server/queries";
+import { tableScrollFrameClassName } from "@/components/ui/data-table";
 
 /**
  * M07-A · **TB-M07-07 phương án A / AC-07-01** — nói ra con số trung bình được
@@ -74,7 +75,7 @@ export function PublishedResultsPortal({
               <h2 className="mb-2 font-semibold">Điểm đã công bố</h2>
               {result.assessments.length === 0 ? <p className="text-sm text-muted-foreground">Chưa có cột điểm được công bố.</p> : (
                 <div
-                  className="overflow-x-auto rounded-md border border-line-strong"
+                  className={tableScrollFrameClassName}
                   tabIndex={0}
                   aria-label={`Bảng điểm đã công bố của ${result.studentName}, có thể cuộn ngang`}
                 >
@@ -87,7 +88,7 @@ export function PublishedResultsPortal({
               )}
             </section>
             {result.comments.length > 0 ? <section><h2 className="mb-2 font-semibold">Nhận xét của lớp</h2><div className="space-y-2">{result.comments.map((comment) => <div key={comment.id} className="rounded-md bg-muted p-3 text-sm"><p>{comment.content}</p><p className="mt-1 text-xs text-muted-foreground">{comment.authorName} · {formatDateVi(comment.commentDate)}</p></div>)}</div></section> : null}
-            {result.leaderboards.length > 0 ? <section><h2 className="mb-2 font-semibold">Top 5 của lớp</h2><div className="grid gap-3 lg:grid-cols-2">{result.leaderboards.map((leaderboard) => <div key={leaderboard.id} className="rounded-md border border-border p-3"><h3 className="font-medium">{leaderboard.title}</h3><ol className="mt-2 space-y-1 text-sm">{leaderboard.entries.map((entry) => <li key={`${leaderboard.id}-${entry.rank}`} className="flex justify-between gap-3"><span>#{entry.rank} · {entry.saintName} {entry.fullName}</span><span>{entry.score ?? "—"}</span></li>)}</ol></div>)}</div></section> : null}
+            {result.leaderboards.length > 0 ? <section><h2 className="mb-2 font-semibold">Top 5 của lớp</h2><div className="grid gap-3 lg:grid-cols-2">{result.leaderboards.map((leaderboard) => <Panel key={leaderboard.id}><h3 className="font-medium">{leaderboard.title}</h3><ol className="mt-2 space-y-1 text-sm">{leaderboard.entries.map((entry) => <li key={`${leaderboard.id}-${entry.rank}`} className="flex justify-between gap-3"><span>#{entry.rank} · {entry.saintName} {entry.fullName}</span><span>{entry.score ?? "—"}</span></li>)}</ol></Panel>)}</div></section> : null}
           </CardContent>
         </Card>
       ))}

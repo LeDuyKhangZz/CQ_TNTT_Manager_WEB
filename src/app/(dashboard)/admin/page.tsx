@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -84,7 +84,7 @@ export default async function AdminPage() {
               const short = `${year.classCount}/${templateCount ?? "?"} lớp`;
               const missingClasses = templateCount !== null && year.classCount < templateCount;
               return (
-                <div key={year.id} className="rounded-md border border-border p-4">
+                <Panel key={year.id} padding="md">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-medium">{year.name}</p>
@@ -100,7 +100,7 @@ export default async function AdminPage() {
                       áp dụng. Năm đã đóng thì không: sửa mốc của một năm đã kết thúc
                       chỉ làm đổi cảnh báo trên dữ liệu quá khứ. */}
                   {canGenerateClasses(year.status) ? (
-                    <div className="mt-3 border-t border-border pt-3">
+                    <div className="mt-3 border-t border-line pt-3">
                       <SemesterMilestoneForm
                         academicYearId={year.id}
                         startDate={year.start_date}
@@ -127,7 +127,7 @@ export default async function AdminPage() {
                   {/* I7 / TB-F09 — chốt sổ. Chỉ năm đang áp dụng: năm nháp chưa từng
                       chạy, năm đã đóng thì đóng lại sẽ ghi đè thời điểm chốt sổ thật. */}
                   {year.status === "current" ? (
-                    <div className="mt-3 border-t border-border pt-3">
+                    <div className="mt-3 border-t border-line pt-3">
                       <CloseYearPanel
                         academicYearId={year.id}
                         code={year.code}
@@ -226,7 +226,7 @@ export default async function AdminPage() {
                       />
                     ) : null}
                   </div>
-                </div>
+                </Panel>
               );
             })}
           </CardContent>

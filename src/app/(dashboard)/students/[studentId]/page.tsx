@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatDateVi } from "@/lib/dates";
@@ -75,7 +75,7 @@ export default async function StudentDetailPage({
           */
           <Link
             href="/students"
-            className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+            className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-ink"
           >
             ← Danh sách thiếu nhi
           </Link>
@@ -109,7 +109,7 @@ export default async function StudentDetailPage({
         </CardContent>
       </Card>
 
-      <nav className="flex flex-wrap gap-1 border-b border-border">
+      <nav className="flex flex-wrap gap-1 border-b border-line">
         {tabs
           .filter((item) => item.visible)
           .map((item) => (
@@ -118,8 +118,8 @@ export default async function StudentDetailPage({
               href={tabHref(studentId, item.key)}
               className={`min-h-[44px] rounded-t-md px-4 py-2 text-sm font-medium ${
                 activeTab === item.key
-                  ? "border-b-2 border-primary text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-b-2 border-primary text-ink"
+                  : "text-muted-foreground hover:text-ink"
               }`}
             >
               {item.label}
@@ -243,7 +243,7 @@ export default async function StudentDetailPage({
               <p className="text-sm text-muted-foreground">Chưa có ghi danh nào.</p>
             ) : (
               student.enrollments.map((item) => (
-                <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3 text-sm">
+                <Panel key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <div>
                     <p className="font-medium">{item.className}</p>
                     <p className="text-muted-foreground">
@@ -254,7 +254,7 @@ export default async function StudentDetailPage({
                   <Badge variant={enrollmentStatusBadgeVariant(item.status)}>
                     {enrollmentStatusLabel(item.status)}
                   </Badge>
-                </div>
+                </Panel>
               ))
             )}
           </CardContent>

@@ -4,8 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Label } from "@/components/ui/label";
+import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
 import { formatDateTimeVi, formatDateVi } from "@/lib/dates";
@@ -133,33 +132,34 @@ export default async function ReportSnapshotsPage({
         action="/reports/snapshots"
         resetHref={filtered ? "/reports/snapshots" : undefined}
       >
-        <div>
-          <Label htmlFor="filter-year">Năm học</Label>
-          <Select id="filter-year" name="year" defaultValue={criteria.academicYearId ?? "all"} className="mt-1">
+        <FilterField label="Năm học" htmlFor="filter-year">
+          <Select id="filter-year" name="year" defaultValue={criteria.academicYearId ?? "all"}>
             <option value="all">Tất cả năm học</option>
             {years.map((year) => (
               <option key={year.id} value={year.id}>{year.code}</option>
             ))}
           </Select>
-        </div>
-        <div>
-          <Label htmlFor="filter-report-type">Loại báo cáo</Label>
-          <Select id="filter-report-type" name="reportType" defaultValue={criteria.reportType ?? "all"} className="mt-1">
+        </FilterField>
+        <FilterField label="Loại báo cáo" htmlFor="filter-report-type">
+          <Select id="filter-report-type" name="reportType" defaultValue={criteria.reportType ?? "all"}>
             <option value="all">Tất cả loại</option>
             {REPORT_TYPES.map((value) => (
               <option key={value} value={value}>{REPORT_TYPE_LABELS[value]}</option>
             ))}
           </Select>
-        </div>
-        <div>
-          <Label htmlFor="filter-scope-type">Phạm vi</Label>
-          <Select id="filter-scope-type" name="scopeType" defaultValue={criteria.scopeType ?? "all"} className="mt-1">
+        </FilterField>
+        <FilterField
+          label="Phạm vi"
+          htmlFor="filter-scope-type"
+          helper="Bản chốt giữ nguyên phạm vi lúc chốt, không lọc lại theo quyền hiện tại."
+        >
+          <Select id="filter-scope-type" name="scopeType" defaultValue={criteria.scopeType ?? "all"}>
             <option value="all">Mọi phạm vi</option>
             {REPORT_SCOPES.map((value) => (
               <option key={value} value={value}>{REPORT_SCOPE_LABELS[value]}</option>
             ))}
           </Select>
-        </div>
+        </FilterField>
       </FilterBar>
 
       {items.length === 0 ? (

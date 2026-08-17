@@ -54,9 +54,14 @@
 > verification không xác nhận Giai đoạn 2 hoàn tất vì còn blocker quyết định/AC, bảo mật, toàn vẹn
 > và browser gate.
 
-- **`P3-UI-001 · Đợt A — XONG — Claude — 2026-08-14`** — màn hình chờ toàn cục (kế hoạch 17 Đợt A).
+- **`P3-UI-001 · Đợt A→E — XONG — Claude — 2026-08-17`** — kế hoạch 17, **còn đúng Đợt F**.
+  A màn hình chờ toàn cục · B `Select` v2 (74 chỗ gọi không sửa) · C `DateField`/`DateTimeField`
+  (30 ô, toàn web DD/MM/YYYY) · D `Checkbox` (10 ô tick + 2 control trần cuối) · E `FilterField`
+  (27 ô/9 tệp) + `Panel`/`Card` (37 khối) + bí danh token cũ về **0** trong `src/`.
   Chủ dự án ra lệnh *"làm theo kế hoạch 17"* ⇒ **duyệt §2**, `09` có thêm **§12 (A1–A5)**.
-  **0 business rule · 0 migration · 0 đổi RLS · 0 đổi quyền · 0 đổi dữ liệu.** Đợt B–F chưa làm.
+  **0 business rule · 0 migration · 0 đổi RLS · 0 đổi quyền · 0 đổi dữ liệu** ở cả năm đợt.
+  ⚠️ Còn nợ cho Đợt F: **nợ #5** (16 lớp bổ-ngữ-độ-mờ trên token màu, **không sinh CSS** — đã có
+  danh sách đủ ở `16` §6.5) và xoá nhóm "BÍ DANH CŨ" khỏi `tailwind.config.ts` (`17` §10).
 
 - **`P3-UX-001 — XONG phần 14 bài baseline — Claude — 2026-08-14`** (🔁 bàn giao từ Codex
   2026-08-13). **14/14 bài đỏ của baseline GĐ3 nay xanh**: 11 bài do đợt sửa `revalidatePath` của
@@ -1743,6 +1748,120 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-08-17] Phiên 70 — Claude — `P3-UI-001` (Đợt E) + đóng sổ Đợt D
+
+- **Claim:** kế hoạch 17 **Đợt E** — đợt quét **rộng nhất** của kế hoạch: `FilterField` canh thẳng
+  khối lọc · gom **9 biến thể panel** về 2 mẫu · quét bí danh token cũ về **0**. Phiên mở đầu bằng
+  việc **đóng sổ Đợt D của phiên 69** (xem entry dưới): chạy lại toàn bộ cửa kiểm trên cây làm việc
+  còn dở rồi commit riêng `fd8acfa`, để **một commit vẫn là một đợt**.
+
+- **🔴 Mọi con số của `17` §7 đều đã lệch — đếm lại chứ không chép.** Đợt D bắt được kiểu sai này
+  một lần (§6 ghi 11, liệt kê 10); §7 nặng hơn vì nó liệt kê ~40 chỗ trên nhiều module và Đợt B/C/D
+  đã xê dịch gần hết. Số thật: V2 **21** (kế hoạch ghi 13, bỏ sót 8 chỗ) · V3 **6** (ghi 4) ·
+  V4 **3** về `Card` (ghi 5 — 2 chỗ thật ra là khối **lồng trong** thẻ, đặt `Card` có bóng vào
+  trong `Card` là chồng hai tầng bóng) · V5 **5** (ghi 3) · V6 **5+5** (ghi 4+3) · V7/V8 khớp.
+  **Tổng 37 khối** đổi, không phải ~33. Và **mọi** `file:line` của §7.1/§7.2 đều lệch — bảng đối
+  chiếu đầy đủ ở `16` §6.5.
+
+- **`FilterField` — ba tầng CỐ ĐỊNH là lời giải cho "lệch tùm lum" (hình 3 của chủ dự án).**
+  Hàng nhãn `h-5` + `mb-1.5` → control `min-h-11` → gợi ý `min-h-[18px]`; **hai tầng ngoài luôn
+  render kể cả khi rỗng** — đó chính là điều kiện để các ô cao bằng nhau. Trước đó trong **cùng một
+  lưới** có ô đeo `<Label>`, ô chỉ có `aria-label` (không hàng nhãn nào), ô có dòng gợi ý, ô không.
+  Áp cho **27 ô** trên **9 tệp** (6 chỗ gọi `FilterBar` + 4 khối lọc tự chế), xoá **16** `mt-1` lẻ.
+
+- **🔴 Ba quyết định cài đặt, và cái thứ nhất là rủi ro lớn nhất của đợt:**
+  1. **`filter-bar.tsx` và `card.tsx` KHÔNG được có `"use client"`** — `card.tsx` đang được rất
+     nhiều Server Component dùng, `filter-bar.tsx` được 6 trang dùng. Vì thế `FilterField` nối
+     `aria-describedby` bằng **`React.cloneElement`** (hàm thuần trên mô tả phần tử, chạy được cả
+     hai phía ranh giới RSC) chứ **không** dùng `createContext` — thứ chỉ sống ở phía client. Cùng
+     lý do khiến `checkbox.tsx` của Đợt D cố ý không có chỉ thị ấy.
+  2. **Tách `SearchInputControl` khỏi `SearchInput`.** `SearchInput` tự dựng nhãn + gợi ý của nó;
+     đặt nguyên nó vào `FilterField` là trang có **hai nhãn trỏ vào cùng một ô**.
+  3. **`staticValue` — `<label for>` KHÔNG trỏ được vào `<p>`.** Hai ô "khoá cứng" của
+     `report-workbench` hiện giá trị bằng `<p>`; `for` chỉ trỏ được vào phần tử **nhận-nhãn-được**,
+     trỏ vào `<p>` thì trình duyệt **âm thầm bỏ qua** ⇒ ô **mất tên** với trình đọc màn hình. Nay
+     nối chiều ngược lại bằng `aria-labelledby`. Bản cũ dùng `<span>` trần nên **chưa từng** có tên
+     — đây là chỗ đợt này làm *tốt hơn*, không chỉ *đều hơn*.
+
+- **🔴 Một chỗ CỐ Ý lệch khỏi `17` §7.1 — thanh lọc dính của điểm danh.** Kế hoạch xếp
+  `attendance-editor` vào danh sách "dùng `FilterField` bên trong". **Không làm**, vì khối ấy có
+  **một** ô lọc xếp **dọc** dưới `SegmentedControl` — không có ô nào để canh thẳng hàng cùng, tức
+  ba tầng cố định cho **0** lợi ích, còn cái giá là **48px** trống thêm vào một thanh **DÍNH**,
+  bằng **7,5%** màn hình 360px, ngay trong luồng mà tốc độ là lý do tồn tại của thiết kế. V8 vì thế
+  **chỉ đổi token**, giữ nguyên sticky và **0 dòng** hành vi (CLAUDE.md §5).
+
+- **🔴 V9 — hai đốm trang trí của trang đăng nhập CHƯA TỪNG HIỆN RA.** Không phải "khác token" mà
+  là **một lỗi**: `bg-secondary/45`, `bg-accent/55` — token màu là `var()` **trần** nên Tailwind
+  không sinh nổi lớp có bổ ngữ độ mờ. Đo chứ không đoán: grep `.next/static/css` cho **0** kết quả
+  với cả `/45` lẫn `/55`. Bản sinh đôi của lỗi `bg-background/95` ở `app-header`. Nay dùng token
+  đặc `--theme-soft`/`--theme-tint`. ⚠️ **Còn 16 lớp cùng họ** trong `src/`, tất cả đều không sinh
+  CSS (`alert` ×4 · `badge` ×4 · `classes/page` ×2 · `(auth)/layout` ×2 · 4 chỗ lẻ) — đó là **nợ
+  #5**, ngoài phạm vi §7.3, đã liệt kê đủ file cho Đợt F đóng một lượt.
+
+- **🔴 Một lỗi do CHÍNH đợt này gây ra và tự bắt được, đáng ghi vì nó im lặng.** Bản quét đầu đổi
+  `className` của `promotion-board.tsx:826` mà **quên** đổi `<section>` thành `Card` ⇒ khối *"Đề
+  xuất hàng loạt"* mất sạch viền và nền. **lint, typecheck, 1683 bài unit và build đều xanh** —
+  không cửa kiểm nào thấy một khối mất viền. Nó lộ ra khi đối chiếu **từng dòng `-` có `rounded-`**
+  trong `git diff` với chỗ thay thế tương ứng. Đó là phép kiểm bắt buộc sau mọi lượt quét diện rộng.
+
+- **Quét bí danh token về 0 (§7.3):** **64 lượt trên 34 tệp**. Bản quét **bỏ qua chữ nằm giữa hai
+  dấu `` ` ``** vì nhiều chú thích *cố ý* nhắc tên token cũ để giải thích vì sao nó bị bỏ — nhưng
+  đúng luật ấy làm nó **bỏ sót một chỗ thật**: `change-password/page.tsx:31` viết class trong một
+  **template literal**. Bài học: bản quét có luật loại trừ thì **phải grep lại sau khi chạy**,
+  không được tin con số nó tự báo. ⛔ Nhóm "BÍ DANH CŨ" trong `tailwind.config.ts` **giữ nguyên**
+  đúng `17` §10.
+
+- **File thay đổi (~60):** 5 tệp `ui/` (`filter-bar` `card` `data-table` `search-input` + 6 trang
+  gọi `FilterBar`) · 4 khối lọc tự chế · ~40 tệp của lượt quét panel/token · 2 tệp kiểm **mới**
+  (`filter-field.test.tsx` · `panel.test.tsx`) · `16` · `WORKLOG`.
+
+- **Migration/data impact:** **không có.** 0 business rule · 0 migration · 0 đổi RLS · 0 đổi quyền ·
+  0 dòng dữ liệu bị đụng — thuần trình bày.
+
+- **Đã test:** `npm run lint` **0 warning 0 error** · `npm run typecheck` ✓ ·
+  `npm test` **1684 pass / 18 skip** trên **121** tệp (trước 1656/119 ⇒ **+28 bài mới** trên 2 tệp)
+  · `npm run build` ✓ **29/29 trang** · **xác minh CSS thật sự được sinh ra** bằng grep thẳng
+  `.next/static/css` (11/11 lớp có mặt, kể cả hai giá trị tuỳ biến `min-h-[18px]` và
+  `leading-[18px]`; và **0** lần `.bg-secondary\/45` / `.bg-accent\/55`).
+
+- **🔴 E2E — BA lượt đầy đủ, mỗi lượt trên DB vừa reset+seed, không chạy gì khác cùng lúc
+  (~50 phút/lượt):** Đợt E bản đầu **21 đỏ / 567 xanh** → **đối chứng `9b30dd9` ngay trước Đợt E
+  13 đỏ / 575 xanh** → Đợt E sau khi sửa **21 đỏ / 567 xanh**.
+  **Hồi quy thật, đúng một cái, và bộ E2E là cửa duy nhất bắt được nó:** `reports.spec.ts:275`
+  (**AC-B14**) đỏ **cả ba viewport** ở lượt 1, **xanh cả ba** ở lượt 3 sau khi bỏ `aria-labelledby`.
+  🔴 **Và ba lượt ấy lật một câu trong sổ nợ:** *"nợ #10 — 10 bài đỏ **ỔN ĐỊNH**"* **không ổn định**
+  — danh sách đỏ đổi giữa các lượt **kể cả trên cùng một commit** (`staff-directory:71`/`:196` đỏ
+  lượt 1 xanh lượt 3; `attendance:555` + `teaching-plan:255` đỏ ở **đối chứng** rồi xanh ở Đợt E;
+  `committees:156` — bài nợ #10 ghi đỏ ×3 viewport — **không đỏ lần nào** ở lượt đối chứng).
+  Chỉ **5** bài đỏ ở **cả ba** lượt: `results:278` · `attendance:454` · `students-directory:156` ·
+  `imports:332` · `teaching-plan:92`. Và **11/21** bài đỏ lượt cuối mang chữ ký **hạ tầng**
+  (`Không đăng nhập được bằng GLV904/901` ×7 · `browser has been closed` · timeout 30s/180s) —
+  trong đó **7 bài `student-lifecycle` đỏ thành một CHÙM trên đúng `laptop-1366`** vì **một** lần
+  không đăng nhập được. Nguyên nhân gốc: **ba viewport chạy nối tiếp trên MỘT cơ sở dữ liệu** và
+  nhiều bài ghi/xoá dữ liệu seed — `staff-directory:196` đỏ đúng câu *"seed phải còn ít nhất một hồ
+  sơ chưa từng dùng để xoá"*, tức viewport chạy trước đã xoá mất. **Lỗi của bộ đồ gá, không phải
+  của mã ứng dụng.**
+
+- **Quyết định mới:** không có quyết định nghiệp vụ. Ba bổ sung API thuần trình bày, ghi ở `16`
+  §6.5: `Panel` + `panelClassName()` + `cardClassName` (`card.tsx`) · `tableScrollFrameClassName`
+  (`data-table.tsx`) · `FilterField` + `SearchInputControl`. **`Card` cố ý KHÔNG nhận `as`** — nó
+  là component bị dùng nhiều nhất, nới chữ ký của nó là mở đường cho mọi thẻ HTML đi qua.
+
+- **Blocker/rủi ro:**
+  🔴 **Bộ E2E hiện KHÔNG dùng làm cổng nghiệm thu được.** Ba danh sách đỏ khác nhau trên cùng một
+  commit thì nó không phân biệt nổi *"hồi quy"* với *"thứ tự chạy"*. Cách duy nhất còn lại để bắt
+  hồi quy là **lùi commit đối chứng**, tức trả **~100 phút cho mỗi lần nghi ngờ** — phiên này đã
+  trả đúng cái giá ấy. Việc phải làm: cho **mỗi viewport một tập dữ liệu riêng** (khuôn
+  `reports.spec.ts` đã làm đúng), rồi **đo lại nợ #10 bằng số thật** thay cho con số 10 đang sai.
+  ⚠️ Lượt E2E đầu của phiên **không chạy được** vì cổng 3107 còn một tiến trình `next start` **bỏ
+  lại từ lượt trước** — chốt an toàn của `run-e2e.mjs` chặn đúng, vì chạy tiếp là kiểm **bản build
+  cũ**. Đã tắt tiến trình ấy.
+  ⚠️ **Nợ #5** (16 lớp bổ-ngữ-độ-mờ trên token màu, **không sinh CSS**) chưa đóng — đã có danh sách
+  đủ file:line ở `16` §6.5.
+
+- **Next action:** **`P3-UI-001` Đợt F** — `Button pending` + tổng nghiệm thu; gộp luôn nợ #5 và
+  việc xoá nhóm "BÍ DANH CŨ" khỏi `tailwind.config.ts` (`17` §10).
 
 ### [2026-08-17] Phiên 69 — Claude — `P3-UI-001` (Đợt D)
 
