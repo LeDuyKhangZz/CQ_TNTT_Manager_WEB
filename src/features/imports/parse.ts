@@ -14,7 +14,9 @@ import ExcelJS from "exceljs";
 import { mapHeaderRow, type ImportField } from "./columns";
 import { normalizeText } from "./normalize";
 
-export type SheetLayout = "template" | "syll" | "ds_dau_nam";
+// `paste` không phải một sheet: nó là khối văn bản dán thẳng vào trang, đọc bởi
+// `paste.ts` và đi tiếp qua đúng pipeline này (IMP-BULK-001).
+export type SheetLayout = "template" | "syll" | "ds_dau_nam" | "paste";
 
 export interface RawRow {
   /** 1-based row number in the source sheet, for the error report. */
@@ -206,7 +208,9 @@ export async function parseWorkbook(
   // Pick the richest sheet, not merely the first of the preferred layout: some
   // workbooks carry several SYLL-named sheets (SYLL, "SY LL 25-26",
   // SYLL_details) where only one holds the real roster.
-  const priority: Record<SheetLayout, number> = { template: 0, syll: 1, ds_dau_nam: 2 };
+  // `paste` không bao giờ đi qua đây (khối dán không có sheet để xếp hạng), giữ
+  // một giá trị để bảng đủ khoá — kiểu `Record` là thứ canh việc quên nhánh.
+  const priority: Record<SheetLayout, number> = { template: 0, syll: 1, ds_dau_nam: 2, paste: 3 };
   const score = (sheet: ParsedSheet) => {
     const importable = sheet.rows.filter((row) =>
       REQUIRED_FOR_IMPORT.every((field) => normalizeText(row.values[field]) !== ""),

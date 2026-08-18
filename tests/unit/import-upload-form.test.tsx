@@ -30,8 +30,9 @@ const { ImportUploadForm } = await import("@/features/imports/components/import-
 function renderForm() {
   return render(
     <ImportUploadForm
-      yearCode="2026-2027"
-      classOptions={[{ id: "class-1", displayName: "Ấu 1A" }]}
+      years={[{ id: "year-1", code: "2026-2027", name: "Năm học 2026-2027", status: "current" }]}
+      classOptionsByYear={{ "year-1": [{ id: "class-1", displayName: "Ấu 1A" }] }}
+      defaultYearId="year-1"
     />,
   );
 }
@@ -116,7 +117,10 @@ describe("AC-13 · tải lên hỏng phải có thông điệp", () => {
 
   it("nói rõ năm học đích và CẢ HAI giới hạn ngay trên biểu mẫu", () => {
     renderForm();
-    expect(screen.getByText(/2026-2027/)).toBeTruthy();
+    // IMP-BULK-001: năm học đích nay là một Ô CHỌN, không còn là câu chữ cố định
+    // — nhập được vào năm nháp (sổ năm cũ) chứ không chỉ năm đang áp dụng.
+    expect(screen.getByLabelText(/Năm học đích/)).toHaveValue("year-1");
+    expect(screen.getByRole("option", { name: /2026-2027/ })).toBeTruthy();
     // M12-C / TO-BE 8 — phải nêu cả dung lượng lẫn số dòng, và phải nêu TRƯỚC
     // khi người dùng tải. Bản cũ chỉ nói dung lượng, và nói sai con số (5MB
     // trong khi nền tảng chặn ở ~4,5 MB).

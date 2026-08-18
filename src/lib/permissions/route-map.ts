@@ -53,6 +53,14 @@ export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/access-denied", public: false },
   { path: "/students", public: false, roles: STAFF_ROLES },
   { path: "/classes", public: false, roles: STAFF_ROLES },
+  // IMP-BULK-001 — nhập hàng loạt nhân sự tạo hồ sơ + phân công lớp theo lô,
+  // nên hẹp hơn `/staff` đúng bằng nhóm ghi toàn xứ đoàn, khớp `/imports`.
+  // `getRouteRule` chọn luật có `path` dài nhất nên luật này thắng `/staff`.
+  {
+    path: "/staff/bulk",
+    public: false,
+    roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"],
+  },
   { path: "/staff", public: false, roles: STAFF_ROLES },
   { path: "/attendance", public: false, roles: ATTENDANCE_VIEW_ROLES },
   { path: "/teaching-plan", public: false },

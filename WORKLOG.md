@@ -54,6 +54,17 @@
 > verification không xác nhận Giai đoạn 2 hoàn tất vì còn blocker quyết định/AC, bảo mật, toàn vẹn
 > và browser gate.
 
+- **`IMP-BULK-001 — XONG — Claude — 2026-08-18`** — yêu cầu trực tiếp của chủ dự án (ngoài 2B).
+  (a) Import chọn được **năm học đích** (`draft` + `current`) thay vì khoá cứng năm hiện hành —
+  không có đường này thì sổ năm cũ **không có cách nào** vào hệ thống. (b) Đường **dán văn bản**
+  đi qua **đúng** pipeline dry-run → duyệt → ghi của đường tải file (khác một khâu đọc ô).
+  (c) `/staff/bulk` — nhập hàng loạt huynh trưởng/dự trưởng **kèm phân công lớp**, khoảng trống
+  lớn nhất của hệ thống trước đợt này (`createStaff`/`assignStaffToClass` đều một-người-một-lượt).
+  (d) Năm học **2025-2026 + 19 lớp đã tạo trên production** (draft; 2026-2027 giữ `current`).
+  (e) `NH_2025-2026/NHAP_LIEU_HANG_LOAT.md` — trích **toàn bộ** ~40 file Excel của giáo xứ thành
+  khối dán sẵn: **364/593** thiếu nhi và **81/87** nhân sự đủ điều kiện nhập ngay.
+  **1 migration** (nới `source_format` cho `'paste'`) · **0 đổi RLS · 0 đổi quyền DB · 0 backfill**.
+
 - **`P3-UI-001 · Đợt A→E — XONG — Claude — 2026-08-17`** — kế hoạch 17, **còn đúng Đợt F**.
   A màn hình chờ toàn cục · B `Select` v2 (74 chỗ gọi không sửa) · C `DateField`/`DateTimeField`
   (30 ô, toàn web DD/MM/YYYY) · D `Checkbox` (10 ô tick + 2 control trần cuối) · E `FilterField`
@@ -1748,6 +1759,77 @@ repo và có thể import lại bằng lệnh Gate Phase 2 ở trên.
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-08-18] Phiên 72 — Claude — `IMP-BULK-001` (ngoài 2B — yêu cầu trực tiếp của chủ dự án)
+
+- **Claim:** chủ dự án hỏi *"nhập liệu từ đâu, theo thứ tự nào"* + *"có cách nhập hàng loạt không"*
+  + *"tạo năm học cũ 2025-2026"*, kèm thư mục `NH_2025-2026/` (~40 file Excel). Đọc **toàn bộ**
+  các file ấy rồi mở đường nhập cho chúng.
+- **Làm được:**
+  1. 🔴 **Import chọn được NĂM HỌC ĐÍCH.** `createDryRunBatch` trước đây khoá cứng vào năm
+     `current`, nên sổ của một năm đã qua **không có đường nào** vào hệ thống — mà đưa năm cũ về
+     `current` để nhập rồi đổi lại là thao tác nguy hiểm (chỉ MỘT năm được `current`, mọi màn hình
+     khác đọc theo nó). Nay chọn trong `draft` + `current`; `resolveTargetYear` tra lại năm ở máy
+     chủ chứ không tin biểu mẫu, và hàng rào thật vẫn là
+     `import_batches_insert_global_write` (`writable_academic_year_ids`) — không cấp quyền mới nào.
+  2. **Đường DÁN VĂN BẢN** (`paste.ts` + `createPasteBatch`). Khối dán đi qua **đúng** pipeline của
+     đường tải file — dry-run → duyệt → ghi — vì `stageParsedRows` được tách ra dùng chung; hai
+     đường chỉ khác khâu đọc ô. Nhờ vậy trần số dòng, dò trùng, D-133, chặn thiếu giới tính áp dụng
+     y nguyên mà không phải nhắc lại. Nhận TAB (chép từ Excel) lẫn `|` (bảng Markdown).
+  3. **`/staff/bulk` — nhập hàng loạt nhân sự + phân công lớp.** Đây là khoảng trống lớn nhất còn
+     lại: `createStaff` và `assignStaffToClass` đều **một người một lượt**, trong khi xứ đoàn có ~90
+     nhân sự và mỗi năm phân công lại toàn bộ. Cố ý **không** dựng bảng tạm (luồng này không có khâu
+     duyệt nhiều lượt như thiếu nhi): hai pha *xem trước → ghi* đều đọc lại chính khối văn bản đang
+     hiện. Hồ sơ và phân công **báo cáo tách nhau** — tạo được hồ sơ mà lớp đã có đại diện thì không
+     phải một lượt hỏng, gọi là lỗi rồi bắt nhập lại sẽ sinh hồ sơ trùng (khuôn `enrollmentSkipped`
+     của TO-BE 6).
+  4. **Năm học 2025-2026 + 19 lớp đã tạo trên production** (`draft`; 2026-2027 giữ `current`).
+     `generate_default_classes` không gọi được qua psql (nó đòi `app.is_super_admin()` mà
+     `auth.uid()` của phiên psql là null) nên chép đúng thân hàm ấy bằng SQL.
+  5. **`NH_2025-2026/NHAP_LIEU_HANG_LOAT.md`** — trích toàn bộ Excel thành khối dán sẵn kèm phân
+     tích thiếu/đủ: **364/593** thiếu nhi và **81/87** nhân sự đủ điều kiện nhập ngay.
+- **File thay đổi:** `supabase/migrations/20260818000100_import_paste_source.sql` (mới) ·
+  `src/features/imports/{paste.ts,parse.ts}` · `src/features/imports/server/{actions,queries}.ts` ·
+  `src/features/imports/components/{import-target-fields,import-paste-form,import-upload-form}.tsx` ·
+  `src/app/(dashboard)/imports/page.tsx` · `src/features/staff/bulk/**` (mới: `parse.ts`,
+  `messages.ts`, `server/actions.ts`, `components/staff-bulk-form.tsx`) ·
+  `src/app/(dashboard)/staff/bulk/page.tsx` (mới) · `src/lib/permissions/route-map.ts` ·
+  `src/config/navigation.ts` · `tests/unit/{import-paste,staff-bulk-parse}.test.ts` (mới) ·
+  `tests/unit/{import-upload-form,permissions}.test.ts` · `WORKLOG.md`.
+- **Migration/data impact:** **1 migration** — nới `check` của `import_batches.source_format` cho
+  giá trị `'paste'`. **0 `alter table` khác · 0 đổi policy · 0 đổi RLS · 0 quyền mới cho
+  `authenticated` · 0 backfill.** Dữ liệu production: **+1 năm học (`draft`) + 19 lớp**, không đụng
+  bản ghi nào đã có (lúc thao tác: 0 thiếu nhi, 0 nhân sự, 0 ghi danh).
+- **Đã test (số thật):** `npm test` → **1710 pass / 24 skip** (trước 1709/24 — **+27** bài mới, trừ
+  các bài scratch đã xoá) · `npm run lint` → **0 warning** · `npm run typecheck` → ✓ ·
+  `npm run build` → ✓ **30/30 trang** (thêm `/staff/bulk`) · production: `migration list` xác nhận
+  `20260818000100` đã áp, `pg_get_constraintdef` xác nhận `'paste'` được nhận.
+  🔴 **Kiểm chứng bằng chính parser của web, không phải bằng mắt:** toàn bộ khối dán trong file MD
+  vừa sinh được cho chạy qua `parsePastedText` + `buildRow` → **746/746 dòng thiếu nhi, 0 lỗi chặn
+  ghi**; nhân sự 119 dòng, 25 lỗi và cả 25 đều nằm đúng trong hai khối *"thiếu số điện thoại"* được
+  đánh dấu cố ý. Lượt chạy đầu bắt được **3 lỗi thật**: một cột `STT` thừa làm lệch mọi chỉ số cột
+  của sổ Nghĩa 2, một sheet **tên là `SYLL` nhưng thật ra là sổ danh sách** (ô dưới tiêu đề "Ngày
+  tháng năm sinh" chứa tên lớp cũ, làm rơi nguyên lớp Hiệp 1), và một ngày sinh ở tương lai.
+  **KHÔNG chạy được `npm run test:db`** — Docker Desktop không chạy trên máy này (xem rủi ro 1).
+- **Blocker/rủi ro:**
+  1. ⚠️ **Chưa có pgTAP cho migration này.** Docker tắt nên không `db:reset` được. Rủi ro thấp một
+     cách có chủ ý: migration **chỉ nới một `check` constraint**, không đụng policy/hàm/cột nào.
+     Vẫn nên chạy lại `npm run test:db` khi Docker sống lại.
+  2. ⚠️ **`/staff/bulk` chưa có E2E.** Đường ghi của nó là `insert` thẳng qua RLS sẵn có
+     (`staff_profiles_insert_global_write`, `class_staff_assignments_insert_global_write`), không
+     RPC mới — nhưng luồng hai pha *xem trước → ghi* thì chưa có bài nào chạy trên trình duyệt thật.
+  3. 🔴 **Nhập cả hai năm học bằng đường Excel sẽ đụng tường D-133.** Trùng cả tên + ngày sinh + SĐT
+     phụ huynh là mức `high` ⇒ phải xác nhận **từng dòng**. Với ~600 em là ~600 cú bấm. Đường đúng
+     là `/promotions`. Đã ghi rõ ở §0 của file `NHAP_LIEU_HANG_LOAT.md`.
+  4. ⚠️ **Sổ giáo xứ không có cột giới tính** mà `students.gender` là `not null` ⇒ phần lớn dòng
+     phải chọn Nam/Nữ ở màn hình duyệt (có nút áp hàng loạt cho các dòng đang tick). Hệ thống **cố ý
+     không đoán theo tên** — không đổi điều đó.
+  5. ⚠️ **Hai lớp Dự Trưởng 1/2 của sổ 2026-2027 không khớp cấu trúc**: hệ thống chỉ cho **một** lớp
+     Dự trưởng mỗi năm (`classes_one_trainee_per_year_idx`). Đang gộp 32 người vào một lớp.
+  6. ⚠️ **Chưa có danh sách phân công huynh trưởng cho 2026-2027** — thư mục chỉ có sổ chia lớp
+     2025-2026. Khối §2.1 dùng phân công cũ, phải sửa cột `Lớp` trước khi dán.
+- **Next action:** quay lại **M11-B** (D-170 · D-171 · D-172 + AC-B09) — việc của 2B không đổi.
+
 
 ### [2026-08-17] Phiên 71 — Claude — `P3-UI-001` (Đợt F — đợt CUỐI) ⇒ **ĐÓNG kế hoạch 17**
 

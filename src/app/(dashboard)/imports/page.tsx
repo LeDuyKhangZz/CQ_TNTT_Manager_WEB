@@ -9,6 +9,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatDateTimeVi } from "@/lib/dates";
 import { ImportUploadForm } from "@/features/imports/components/import-upload-form";
+import { ImportPasteForm } from "@/features/imports/components/import-paste-form";
 import {
   BATCH_STATUS_FILTERS,
   BATCH_STATUS_FILTER_LABELS,
@@ -22,7 +23,9 @@ import {
   listBatches,
   listClassOptions,
   listImportYears,
+  listWritableYears,
   type BatchSummary,
+  type ClassOption,
 } from "@/features/imports/server/queries";
 import { requireImportPage } from "@/features/imports/server/permissions";
 
@@ -48,6 +51,7 @@ const SOURCE_LABELS: Record<string, string> = {
   syll: "sheet SYLL",
   ds_dau_nam: "sheet DS_dau_nam",
   template: "file mẫu chuẩn",
+  paste: "dán văn bản",
 };
 
 function BatchCard({ batch }: { batch: BatchSummary }) {
@@ -98,11 +102,25 @@ export default async function ImportsPage({
 }) {
   await requireImportPage();
   const criteria = parseBatchListCriteria(await searchParams);
-  const [year, years] = await Promise.all([getCurrentAcademicYear(), listImportYears()]);
-  const [list, classOptions] = await Promise.all([
-    listBatches(criteria, year?.id ?? null),
-    year ? listClassOptions(year.id) : Promise.resolve([]),
+  const [year, years, writableYears] = await Promise.all([
+    getCurrentAcademicYear(),
+    listImportYears(),
+    listWritableYears(),
   ]);
+  const [list, ...classLists] = await Promise.all([
+    listBatches(criteria, year?.id ?? null),
+    // Lớp của **từng** năm nhập được. Ít dữ liệu (19 lớp một năm, hai ba năm mở
+    // cùng lúc là cùng) và tránh một lượt đi về mỗi lần người dùng đổi năm học
+    // trong biểu mẫu — xem `import-target-fields.tsx`.
+    ...writableYears.map((item) => listClassOptions(item.id)),
+  ]);
+  const classOptionsByYear: Record<string, ClassOption[]> = Object.fromEntries(
+    writableYears.map((item, index) => [item.id, classLists[index] ?? []]),
+  );
+  // Mặc định vẫn là năm đang áp dụng; không có năm nào `current` thì lấy năm
+  // nhập được mới nhất, để một hệ thống chỉ có năm nháp vẫn nhập liệu được.
+  const defaultYearId =
+    writableYears.find((item) => item.id === year?.id)?.id ?? writableYears[0]?.id ?? "";
   const filtered = hasActiveBatchFilter(criteria);
   const selectedYear =
     criteria.yearId === "current"
@@ -118,11 +136,11 @@ export default async function ImportsPage({
         description="Tải file lên để kiểm tra thử, xem trước kết quả rồi mới ghi vào hệ thống."
       />
 
-      {!year ? (
+      {writableYears.length === 0 ? (
         <EmptyState
           variant="no-data"
-          title="Chưa có năm học hiện hành"
-          description="Nhập dữ liệu luôn ghi danh vào năm học đang áp dụng, mà hiện chưa có năm nào ở trạng thái đó. Hãy đặt năm học hiện hành ở trang Quản trị trước."
+          title="Chưa có năm học nào nhập được"
+          description="Nhập dữ liệu phải ghi danh vào một năm học đang áp dụng hoặc ở trạng thái nháp, mà hiện chưa có năm nào như vậy. Hãy tạo năm học ở trang Quản trị trước."
           action={
             <Link
               href="/admin"
@@ -139,7 +157,24 @@ export default async function ImportsPage({
               <CardTitle>Tải file lên</CardTitle>
             </CardHeader>
             <CardContent>
-              <ImportUploadForm yearCode={year.code} classOptions={classOptions} />
+              <ImportUploadForm
+                years={writableYears}
+                classOptionsByYear={classOptionsByYear}
+                defaultYearId={defaultYearId}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Hoặc dán dữ liệu trực tiếp</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ImportPasteForm
+                years={writableYears}
+                classOptionsByYear={classOptionsByYear}
+                defaultYearId={defaultYearId}
+              />
             </CardContent>
           </Card>
 
@@ -190,7 +225,9 @@ export default async function ImportsPage({
                 description={
                   filtered
                     ? `${scopeText(criteria, selectedYear)} Bỏ bớt bộ lọc để xem các lần nhập khác.`
-                    : `Năm học ${year.code} chưa có lần nhập Excel nào. Tải một file lên để bắt đầu — bước tải lên chỉ kiểm tra, chưa ghi gì vào hệ thống.`
+                    : `${
+                        year ? `Năm học ${year.code}` : "Hệ thống"
+                      } chưa có lần nhập nào. Tải một file lên hoặc dán dữ liệu để bắt đầu — bước này chỉ kiểm tra, chưa ghi gì vào hệ thống.`
                 }
                 action={
                   filtered ? (

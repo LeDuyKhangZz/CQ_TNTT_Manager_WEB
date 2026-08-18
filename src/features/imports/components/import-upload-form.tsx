@@ -5,16 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/ui/file-upload";
 import { FormMessage } from "@/components/ui/form-message";
-import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import type { ImportFeedback } from "../import-feedback";
+import { ImportTargetFields, type ImportTargetProps } from "./import-target-fields";
 import {
   checkUploadSize,
   formatRowCount,
   MAX_IMPORT_ROWS,
   MAX_UPLOAD_LABEL,
 } from "../limits";
-import type { ClassOption } from "../server/queries";
 import { uploadFormAction } from "../server/actions";
 import { useGlobalLoading, useGlobalPending } from "@/components/loading/loading-provider";
 
@@ -41,13 +39,7 @@ import { useGlobalLoading, useGlobalPending } from "@/components/loading/loading
  * **không** thay hàng rào máy chủ: người gọi thẳng Server Action không đi qua
  * biểu mẫu, nên cả hai phía cùng gọi `checkUploadSize` của `limits.ts`.
  */
-export function ImportUploadForm({
-  yearCode,
-  classOptions,
-}: {
-  yearCode: string;
-  classOptions: readonly ClassOption[];
-}) {
+export function ImportUploadForm({ years, classOptionsByYear, defaultYearId }: ImportTargetProps) {
   const router = useRouter();
   const [feedback, formAction, pending] = useActionState<ImportFeedback | null, FormData>(
     uploadFormAction,
@@ -88,9 +80,8 @@ export function ImportUploadForm({
       aria-label="Tải file Excel lên"
     >
       <p className="text-sm text-ink-muted">
-        Dữ liệu sẽ được ghi danh vào năm học <strong>{yearCode}</strong>. Hệ thống đọc được file mẫu
-        chuẩn, sheet <strong>SYLL</strong> hoặc sheet <strong>DS_dau_nam</strong> của sổ lớp. Bước
-        tải lên chỉ kiểm tra, chưa ghi gì vào hệ thống.
+        Hệ thống đọc được file mẫu chuẩn, sheet <strong>SYLL</strong> hoặc sheet{" "}
+        <strong>DS_dau_nam</strong> của sổ lớp. Bước tải lên chỉ kiểm tra, chưa ghi gì vào hệ thống.
       </p>
 
       {/*
@@ -126,21 +117,12 @@ export function ImportUploadForm({
         hint={`tối đa ${MAX_UPLOAD_LABEL} và ${formatRowCount(MAX_IMPORT_ROWS)} dòng`}
       />
 
-      <div className="space-y-2">
-        <Label htmlFor="classId">Lớp đích (nếu file không có cột lớp)</Label>
-        <Select id="classId" name="classId" defaultValue="">
-          <option value="">— Lấy theo cột lớp trong file —</option>
-          {classOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.displayName}
-            </option>
-          ))}
-        </Select>
-        <p className="text-xs text-ink-muted">
-          Sổ lớp Chiên Con không có cột lớp — hãy chọn lớp ở đây. Dòng nào đã ghi lớp trong file thì
-          vẫn ưu tiên giá trị trong file.
-        </p>
-      </div>
+      <ImportTargetFields
+        idPrefix="upload"
+        years={years}
+        classOptionsByYear={classOptionsByYear}
+        defaultYearId={defaultYearId}
+      />
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" pending={pending}>

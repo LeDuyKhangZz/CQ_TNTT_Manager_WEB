@@ -22,7 +22,7 @@ export interface CurrentYear {
   name: string;
 }
 
-/** The academic year an import targets. Imports always land in the current year. */
+/** Năm học đang áp dụng — vẫn là mặc định của mọi lần nhập. */
 export async function getCurrentAcademicYear(): Promise<CurrentYear | null> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -31,6 +31,54 @@ export async function getCurrentAcademicYear(): Promise<CurrentYear | null> {
     .eq("status", "current")
     .maybeSingle();
   return data ?? null;
+}
+
+export interface TargetYear extends CurrentYear {
+  status: string;
+}
+
+/**
+ * Năm học **ghi được**, tức năm mà một lần nhập có thể nhắm tới — IMP-BULK-001.
+ *
+ * 🔴 Trước đợt này `createDryRunBatch` khoá cứng vào năm `current`, nên **không
+ * có đường nào** đưa dữ liệu của một năm đã qua vào hệ thống: giáo xứ có sổ của
+ * năm 2025-2026 muốn lưu lại, mà năm hiện hành là 2026-2027. Đưa năm cũ về
+ * `current` để nhập rồi đổi lại là một thao tác nguy hiểm (chỉ **một** năm được
+ * `current`, và mọi màn hình khác đọc theo nó).
+ *
+ * Phạm vi của danh sách này là **tập con an toàn** của luật RLS sẽ áp: policy
+ * `import_batches_insert_global_write` đòi `academic_year_id` nằm trong
+ * `app.writable_academic_year_ids()` — `draft` + `current` với mọi vai trò, và
+ * **tất cả** với Super Admin (D-117). Ở đây cố ý chỉ liệt kê `draft` + `current`
+ * cho **mọi** vai trò: nhập dữ liệu vào một năm đã đóng là việc chưa ai yêu cầu,
+ * và một danh sách hẹp hơn luật thì không bao giờ mời người dùng làm một việc mà
+ * cơ sở dữ liệu sẽ từ chối. Năm cũ cần nhập thì tạo ở dạng `draft` (đúng cách
+ * `createAcademicYear` tạo mọi năm mới).
+ */
+export async function listWritableYears(): Promise<TargetYear[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("academic_years")
+    .select("id, code, name, status")
+    .in("status", ["draft", "current"])
+    .order("code", { ascending: false });
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    status: row.status,
+  }));
+}
+
+/** Một năm học cụ thể, dùng để xác nhận năm đích người dùng chọn có thật. */
+export async function getYearById(academicYearId: string): Promise<TargetYear | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("academic_years")
+    .select("id, code, name, status")
+    .eq("id", academicYearId)
+    .maybeSingle();
+  return data ? { id: data.id, code: data.code, name: data.name, status: data.status } : null;
 }
 
 /**

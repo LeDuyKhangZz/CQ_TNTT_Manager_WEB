@@ -26,7 +26,8 @@ import {
   type RowEditsSummary,
 } from "../import-feedback";
 import { checkUploadSize, MAX_IMPORT_ROWS, tooManyRowsText } from "../limits";
-import { ImportParseError, parseWorkbook } from "../parse";
+import { ImportParseError, parseWorkbook, type ParsedSheet } from "../parse";
+import { parsePastedText } from "../paste";
 import {
   decideDuplicateRow,
   hasPendingDuplicate,
@@ -41,6 +42,7 @@ import {
   getClassLookup,
   getCurrentAcademicYear,
   getExistingStudents,
+  getYearById,
   listClassOptions,
 } from "./queries";
 
@@ -89,6 +91,170 @@ export interface DryRunSummary {
 }
 
 /**
+ * Năm học mà lần nhập này nhắm tới — IMP-BULK-001.
+ *
+ * 🔴 Không tin `academicYearId` đến từ biểu mẫu mà **không tra lại**: người gọi
+ * thẳng Server Action gửi được bất kỳ UUID nào. Tra lại rồi kiểm trạng thái ở
+ * đây để câu từ chối là một câu tiếng Việt, chứ không phải một lỗi `42501` của
+ * RLS ở tận lệnh `insert` (hàng rào thật vẫn nằm ở đó — xem
+ * `import_batches_insert_global_write` của `20260813000300`).
+ *
+ * Không chọn gì thì vẫn là **năm hiện hành**, đúng như trước đợt này.
+ */
+async function resolveTargetYear(rawYearId: unknown) {
+  const yearId = typeof rawYearId === "string" && rawYearId !== "" ? rawYearId : null;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear();
+    if (!current) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Chưa có năm học hiện tại. Vui lòng tạo năm học trước khi import.",
+      );
+    }
+    return current;
+  }
+
+  const year = await getYearById(yearId);
+  if (!year) throw new AppError("VALIDATION_ERROR", "Không tìm thấy năm học đã chọn.");
+  if (year.status !== "draft" && year.status !== "current") {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `Năm học ${year.code} đã đóng nên không nhập thêm dữ liệu được. Chỉ nhập được vào năm học đang áp dụng hoặc năm học ở trạng thái nháp.`,
+    );
+  }
+  return year;
+}
+
+/**
+ * Khâu chung của **cả hai** đường nhập (tải file và dán văn bản): dựng từng
+ * dòng, dò trùng, rồi ghi vào `import_batches`/`import_rows`. Không bảng nghiệp
+ * vụ nào bị đụng cho tới khi `commitBatch` chạy (docs/09 §2, §9).
+ *
+ * Tách ra khỏi `createDryRunBatch` khi thêm đường dán (IMP-BULK-001): hai đường
+ * chỉ khác nhau ở khâu **đọc ô**, còn luật dựng dòng, luật dò trùng và luật
+ * quyết định mặc định phải là **một** — chép đôi là cách chắc chắn nhất để hai
+ * đường lệch nhau sau vài đợt sửa.
+ */
+async function stageParsedRows(
+  parsed: ParsedSheet,
+  options: {
+    actorProfileId: string;
+    yearId: string;
+    filename: string;
+    rawClassId: unknown;
+  },
+): Promise<DryRunSummary> {
+  // 🔴 TO-BE 8 / SEC-12 / D-138 — chặn NGAY SAU khi đọc và **trước** khi đọc cơ
+  // sở dữ liệu. Mỗi dòng kéo theo một lượt `buildRow` cộng một lượt dò trùng
+  // trên toàn bộ hồ sơ đã có, nên một khối trăm nghìn dòng làm treo hàm trước
+  // khi ghi được gì. Giới hạn dung lượng không thay được phép kiểm này: sheet
+  // toàn chữ nén rất tốt, và văn bản dán thì không có dung lượng file để đo.
+  if (parsed.rows.length > MAX_IMPORT_ROWS) {
+    throw new AppError("VALIDATION_ERROR", tooManyRowsText(parsed.rows.length));
+  }
+  const { actorProfileId, yearId, filename, rawClassId } = options;
+  const [classes, existing] = await Promise.all([getClassLookup(yearId), getExistingStudents()]);
+  // Trạng thái hồ sơ đối chiếu không đi kèm `DuplicateMatch` (kiểu dùng chung
+  // với đường nhập tay), nên tra lại tại chỗ bằng id.
+  const statusById = new Map(existing.map((student) => [student.id, student.status]));
+
+  // Optional target class for sheets with no class column (Chiên Con roster).
+  // The label is resolved server-side rather than trusted from the form.
+  const fallbackClassId = String(rawClassId ?? "") || null;
+  let fallbackClassLabel: string | null = null;
+  if (fallbackClassId) {
+    const option = (await listClassOptions(yearId)).find((item) => item.id === fallbackClassId);
+    if (!option) {
+      throw new AppError("VALIDATION_ERROR", "Lớp đích không thuộc năm học đã chọn.");
+    }
+    fallbackClassLabel = option.displayName;
+  }
+
+  const built = parsed.rows.map((row) =>
+    buildRow(row, classes, { fallbackClassId, fallbackClassLabel }),
+  );
+  const inFileConflicts = findInFileDuplicates(built.map((row) => row.normalized));
+
+  const supabase = await createClient();
+  const { data: batch, error: batchError } = await supabase
+    .from("import_batches")
+    .insert({
+      filename,
+      source_format: parsed.layout,
+      academic_year_id: yearId,
+      uploaded_by: actorProfileId,
+      total_rows: built.length,
+    })
+    .select("id")
+    .single();
+  if (batchError || !batch) throw new AppError("VALIDATION_ERROR");
+
+  let validRows = 0;
+  let warningRows = 0;
+  let errorRows = 0;
+
+  const rowsPayload = built.map((row, index) => {
+    const warnings: RowIssue[] = [...row.warnings];
+
+    // 🔴 M12-A / TO-BE 2: quyết định mặc định của dòng trùng nay do
+    // `decideDuplicateRow` đặt, không còn là `"create"` viết cứng. Xem
+    // `row-decision.ts` để biết vì sao mặc định an toàn thôi thì chưa đủ.
+    const duplicate = findDuplicate(row.normalized, existing);
+    const decision = decideDuplicateRow(
+      duplicate
+        ? {
+            level: duplicate.level,
+            studentId: duplicate.student.id,
+            reason: duplicate.reason,
+            status: statusById.get(duplicate.student.id) ?? "active",
+          }
+        : null,
+    );
+    if (decision.warning) warnings.push(decision.warning);
+
+    const inFile = inFileConflicts.get(index);
+    if (inFile) warnings.push({ field: "duplicate", message: inFile });
+
+    const status: "valid" | "warning" | "error" =
+      row.errors.length > 0 ? "error" : warnings.length > 0 ? "warning" : "valid";
+    if (status === "error") errorRows += 1;
+    else if (status === "warning") warningRows += 1;
+    else validRows += 1;
+
+    return {
+      batch_id: batch.id,
+      row_number: row.rowNumber,
+      raw_json: toJson(parsed.rows[index].values),
+      normalized_json: toJson(row.normalized),
+      status,
+      errors_json: toJson(row.errors),
+      warnings_json: toJson(warnings),
+      matched_student_id: duplicate?.student.id ?? null,
+      action: decision.action,
+    };
+  });
+
+  if (rowsPayload.length > 0) {
+    const { error: rowsError } = await supabase.from("import_rows").insert(rowsPayload);
+    if (rowsError) throw new AppError("VALIDATION_ERROR");
+  }
+
+  await supabase
+    .from("import_batches")
+    .update({ valid_rows: validRows, warning_rows: warningRows, error_rows: errorRows })
+    .eq("id", batch.id);
+
+  return {
+    batchId: batch.id,
+    sourceFormat: parsed.layout,
+    totalRows: built.length,
+    validRows,
+    warningRows,
+    errorRows,
+  };
+}
+
+/**
  * Parse an uploaded workbook, validate every row and stage the result.
  * Writes only to import_batches/import_rows — no business table is touched
  * until commitBatch runs (docs/09 §2, §9).
@@ -109,127 +275,59 @@ export async function createDryRunBatch(
     const tooLarge = checkUploadSize(file.size);
     if (tooLarge) throw new AppError("VALIDATION_ERROR", tooLarge);
 
-    const year = await getCurrentAcademicYear();
-    if (!year) {
-      throw new AppError(
-        "VALIDATION_ERROR",
-        "Chưa có năm học hiện tại. Vui lòng tạo năm học trước khi import.",
-      );
-    }
-
+    const year = await resolveTargetYear(formData.get("academicYearId"));
     const parsed = await parseWorkbook(await file.arrayBuffer());
-    // 🔴 TO-BE 8 / SEC-12 / D-138 — chặn NGAY SAU khi đọc file và **trước** khi
-    // đọc cơ sở dữ liệu. Mỗi dòng kéo theo một lượt `buildRow` cộng một lượt dò
-    // trùng trên toàn bộ hồ sơ đã có, nên một file trăm nghìn dòng làm treo hàm
-    // trước khi ghi được gì. Giới hạn dung lượng không thay được phép kiểm này:
-    // sheet toàn chữ nén rất tốt.
-    if (parsed.rows.length > MAX_IMPORT_ROWS) {
-      throw new AppError("VALIDATION_ERROR", tooManyRowsText(parsed.rows.length));
-    }
-    const [classes, existing] = await Promise.all([
-      getClassLookup(year.id),
-      getExistingStudents(),
-    ]);
-    // Trạng thái hồ sơ đối chiếu không đi kèm `DuplicateMatch` (kiểu dùng chung
-    // với đường nhập tay), nên tra lại tại chỗ bằng id.
-    const statusById = new Map(existing.map((student) => [student.id, student.status]));
-
-    // Optional target class for sheets with no class column (Chiên Con roster).
-    // The label is resolved server-side rather than trusted from the form.
-    const fallbackClassId = String(formData.get("classId") ?? "") || null;
-    let fallbackClassLabel: string | null = null;
-    if (fallbackClassId) {
-      const option = (await listClassOptions(year.id)).find((item) => item.id === fallbackClassId);
-      if (!option) {
-        throw new AppError("VALIDATION_ERROR", "Lớp đích không thuộc năm học hiện tại.");
-      }
-      fallbackClassLabel = option.displayName;
-    }
-
-    const built = parsed.rows.map((row) =>
-      buildRow(row, classes, { fallbackClassId, fallbackClassLabel }),
-    );
-    const inFileConflicts = findInFileDuplicates(built.map((row) => row.normalized));
-
-    const supabase = await createClient();
-    const { data: batch, error: batchError } = await supabase
-      .from("import_batches")
-      .insert({
-        filename: file.name,
-        source_format: parsed.layout,
-        academic_year_id: year.id,
-        uploaded_by: actor.profileId,
-        total_rows: built.length,
-      })
-      .select("id")
-      .single();
-    if (batchError || !batch) throw new AppError("VALIDATION_ERROR");
-
-    let validRows = 0;
-    let warningRows = 0;
-    let errorRows = 0;
-
-    const rowsPayload = built.map((row, index) => {
-      const warnings: RowIssue[] = [...row.warnings];
-
-      // 🔴 M12-A / TO-BE 2: quyết định mặc định của dòng trùng nay do
-      // `decideDuplicateRow` đặt, không còn là `"create"` viết cứng. Xem
-      // `row-decision.ts` để biết vì sao mặc định an toàn thôi thì chưa đủ.
-      const duplicate = findDuplicate(row.normalized, existing);
-      const decision = decideDuplicateRow(
-        duplicate
-          ? {
-              level: duplicate.level,
-              studentId: duplicate.student.id,
-              reason: duplicate.reason,
-              status: statusById.get(duplicate.student.id) ?? "active",
-            }
-          : null,
-      );
-      if (decision.warning) warnings.push(decision.warning);
-
-      const inFile = inFileConflicts.get(index);
-      if (inFile) warnings.push({ field: "duplicate", message: inFile });
-
-      const status: "valid" | "warning" | "error" =
-        row.errors.length > 0 ? "error" : warnings.length > 0 ? "warning" : "valid";
-      if (status === "error") errorRows += 1;
-      else if (status === "warning") warningRows += 1;
-      else validRows += 1;
-
-      return {
-        batch_id: batch.id,
-        row_number: row.rowNumber,
-        raw_json: toJson(parsed.rows[index].values),
-        normalized_json: toJson(row.normalized),
-        status,
-        errors_json: toJson(row.errors),
-        warnings_json: toJson(warnings),
-        matched_student_id: duplicate?.student.id ?? null,
-        action: decision.action,
-      };
-    });
-
-    if (rowsPayload.length > 0) {
-      const { error: rowsError } = await supabase.from("import_rows").insert(rowsPayload);
-      if (rowsError) throw new AppError("VALIDATION_ERROR");
-    }
-
-    await supabase
-      .from("import_batches")
-      .update({ valid_rows: validRows, warning_rows: warningRows, error_rows: errorRows })
-      .eq("id", batch.id);
 
     return {
       ok: true,
-      data: {
-        batchId: batch.id,
-        sourceFormat: parsed.layout,
-        totalRows: built.length,
-        validRows,
-        warningRows,
-        errorRows,
-      },
+      data: await stageParsedRows(parsed, {
+        actorProfileId: actor.profileId,
+        yearId: year.id,
+        filename: file.name,
+        rawClassId: formData.get("classId"),
+      }),
+    };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/**
+ * Nhập bằng **văn bản dán** — IMP-BULK-001.
+ *
+ * Cùng hai pha, cùng bảng tạm, cùng màn hình duyệt với đường tải file: khác
+ * đúng một khâu là đọc ô (`parsePastedText` thay cho `parseWorkbook`). Vì thế
+ * mọi hàng rào đã dựng cho đường file — trần số dòng, dò trùng, D-133, chặn
+ * thiếu giới tính lúc ghi — áp dụng y nguyên cho đường này mà không phải nhắc
+ * lại ở đâu.
+ *
+ * `filename` là nhãn người dùng tự đặt (mặc định "Dán văn bản"), vì cột ấy
+ * `not null` và là thứ duy nhất phân biệt các lần dán trong danh sách.
+ */
+export async function createPasteBatch(
+  formData: FormData,
+): Promise<ImportActionResult<DryRunSummary>> {
+  const actor = await importRouteContext();
+  try {
+    assertImportAccess(actor);
+
+    const text = String(formData.get("pastedText") ?? "");
+    if (text.trim() === "") {
+      throw new AppError("VALIDATION_ERROR", "Vui lòng dán dữ liệu vào ô văn bản.");
+    }
+
+    const year = await resolveTargetYear(formData.get("academicYearId"));
+    const parsed = parsePastedText(text);
+    const label = String(formData.get("label") ?? "").trim();
+
+    return {
+      ok: true,
+      data: await stageParsedRows(parsed, {
+        actorProfileId: actor.profileId,
+        yearId: year.id,
+        filename: label === "" ? "Dán văn bản" : label,
+        rawClassId: formData.get("classId"),
+      }),
     };
   } catch (error) {
     return fail(error);
@@ -685,6 +783,16 @@ export async function uploadFormAction(
   // Let the action settle before navigation. A redirect emitted from the
   // multipart Server Action intermittently kept mobile clients pending even
   // though the batch had already been written successfully.
+  return result.ok
+    ? uploadSuccessFeedback(result.data.batchId)
+    : uploadFailureFeedback(result.message);
+}
+
+export async function pasteFormAction(
+  _previous: ImportFeedback | null,
+  formData: FormData,
+): Promise<ImportFeedback> {
+  const result = await createPasteBatch(formData);
   return result.ok
     ? uploadSuccessFeedback(result.data.batchId)
     : uploadFailureFeedback(result.message);

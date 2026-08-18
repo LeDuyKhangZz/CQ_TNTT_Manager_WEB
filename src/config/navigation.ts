@@ -80,6 +80,10 @@ export const platformNavigation: readonly NavigationItem[] = [
   { href: "/notifications", label: "Thông báo", icon: Bell, group: "Chung", audiences: ["staff", "guardian", "student"], scopes: ["global", "sector", "class", "ownership"] },
   { href: "/reports", label: "Báo cáo", icon: ChartNoAxesCombined, group: "Điều hành", audiences: staffOnly, scopes: allStaffScopes },
   { href: "/imports", label: "Nhập dữ liệu Excel", icon: FileSpreadsheet, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"] },
+  // IMP-BULK-001 — `roles` khớp ĐÚNG `ROUTE_RULES` của `/staff/bulk`, cùng bài học
+  // M14 A-11 ghi ngay trên: bỏ trống thì Giáo lý viên lớp thấy mục này rồi bấm vào
+  // và bị chặn. Nằm cạnh `/imports` vì cùng là việc nhập hàng loạt.
+  { href: "/staff/bulk", label: "Nhập hàng loạt nhân sự", icon: UserRoundCog, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"] },
   { href: "/admin", label: "Quản trị hệ thống", icon: Settings, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin"] },
 ];
 
