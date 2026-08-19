@@ -17,7 +17,8 @@ export interface DuplicateCandidate {
   staffCode: string;
   fullName: string;
   saintName: string | null;
-  phone: string;
+  /** Null từ IMP-BULK-002 — hồ sơ nhập hàng loạt có thể chưa có số. */
+  phone: string | null;
   dateOfBirth: string | null;
   serviceStatus: string;
 }
@@ -57,7 +58,9 @@ export function findDuplicateSuspects(
 
   const suspects: DuplicateSuspect[] = [];
   for (const candidate of candidates) {
-    if (phone && normalizePhone(candidate.phone) === phone) {
+    // `candidate.phone` có thể trống: hồ sơ không số thì không có dấu hiệu
+    // trùng MẠNH nào, chỉ còn đường tên + ngày sinh bên dưới.
+    if (phone && candidate.phone && normalizePhone(candidate.phone) === phone) {
       suspects.push({ ...candidate, reason: "phone" });
       continue;
     }

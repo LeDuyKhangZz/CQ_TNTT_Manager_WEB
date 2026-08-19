@@ -171,3 +171,83 @@ describe("câu chữ cảnh báo", () => {
     expect(DUPLICATE_LEVEL_LABELS.low).toMatch(/\p{L}/u);
   });
 });
+
+/**
+ * IMP-BULK-002 — mức dò trùng **chỉ tồn tại từ khi hồ sơ được phép thiếu dữ liệu**.
+ *
+ * 🔴 Vì sao nó cần thiết: ba mức cũ (`high`/`medium`/`low`) đều tựa vào ngày sinh
+ * hoặc số điện thoại phụ huynh. Một em chỉ có mỗi cái tên thì không mức nào bắt
+ * được, nên dán lại đúng khối ấy lần thứ hai sẽ đẻ ra hồ sơ thứ hai **không một
+ * lời cảnh báo** — mà dán lại sau khi sửa vài dòng chính là đường đi thường gặp
+ * nhất của người nhập.
+ */
+describe("IMP-BULK-002 · hồ sơ trống ngày sinh lẫn số điện thoại", () => {
+  const BARE: ExistingStudent = {
+    id: "s3",
+    studentCode: "CQ0777",
+    fullName: "Lê Nhật Anh",
+    dateOfBirth: null,
+    guardianPhone: null,
+    className: "Chiên Con 1",
+  };
+
+  it("trùng đúng họ tên khi cả hai bên đều trống hai điểm tựa", () => {
+    const match = findStrongestDuplicate(
+      { fullName: "LÊ NHẬT ANH", dateOfBirth: null, guardianPhone: null },
+      [BARE],
+    );
+    expect(match?.level).toBe("low");
+    expect(match?.reason).toContain("CQ0777");
+  });
+
+  it("KHÔNG báo trùng khi một bên có ngày sinh — hai em khác nhau thật", () => {
+    expect(
+      findStrongestDuplicate(
+        { fullName: "Lê Nhật Anh", dateOfBirth: "2016-05-05", guardianPhone: null },
+        [BARE],
+      ),
+    ).toBeNull();
+    expect(
+      findStrongestDuplicate({ fullName: "Lê Nhật Anh", dateOfBirth: null, guardianPhone: null }, [
+        { ...BARE, dateOfBirth: "2016-05-05" },
+      ]),
+    ).toBeNull();
+  });
+
+  it("KHÔNG báo trùng khi chỉ gần giống tên — mức này đòi trùng khít", () => {
+    expect(
+      findStrongestDuplicate(
+        { fullName: "Lê Nhật Anh Thư", dateOfBirth: null, guardianPhone: null },
+        [BARE],
+      ),
+    ).toBeNull();
+  });
+
+  /**
+   * ⚠️ "Ánh" và "Anh" VẪN bị coi là một, vì `normalizeForMatch` bỏ dấu — đúng
+   * như ba mức cũ vẫn làm. Ghi lại thành một bài kiểm để lần sau ai đọc cũng
+   * biết đây là hành vi đã chọn chứ không phải lỗ hổng: cảnh báo trùng là cảnh
+   * báo MỀM, và sổ giấy của giáo xứ viết tên lúc có dấu lúc không.
+   */
+  it("bỏ dấu khi so tên, nên Ánh và Anh vào chung một mối nghi", () => {
+    expect(
+      findStrongestDuplicate(
+        { fullName: "Lê Nhật Ánh", dateOfBirth: null, guardianPhone: null },
+        [BARE],
+      )?.level,
+    ).toBe("low");
+  });
+
+  it("hai đường vào cùng kết luận (AC-F13-04 vẫn đứng sau đợt nới)", () => {
+    const row = {
+      full_name: "Lê Nhật Anh",
+      date_of_birth: null,
+      guardian_phone: null,
+    } as unknown as NormalizedRow;
+    expect(findDuplicate(row, [BARE])?.level).toBe(
+      findStudentDuplicates({ fullName: "Lê Nhật Anh", dateOfBirth: null, guardianPhone: null }, [
+        BARE,
+      ])[0]?.level,
+    );
+  });
+});

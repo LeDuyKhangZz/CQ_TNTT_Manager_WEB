@@ -432,7 +432,8 @@ export interface MatchedStudent {
   id: string;
   studentCode: string;
   fullName: string;
-  dateOfBirth: string;
+  /** Null từ IMP-BULK-002 — hồ sơ cũ nhập từ sổ chỉ có tên. */
+  dateOfBirth: string | null;
   status: string;
   guardianPhone: string | null;
 }

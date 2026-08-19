@@ -46,8 +46,9 @@ insert into public.classes (id, academic_year_id, grade_level_id, display_name) 
 insert into public.class_staff_assignments (class_id, staff_profile_id, capacity, starts_on) values
   ('c6000000-0000-4000-8000-000000000001', 'c7000000-0000-4000-8000-000000000002', 'member', '2070-09-01');
 
+-- IMP-BULK-002: người nhập hàng loạt nay chỉ có thể là Super Admin.
 insert into public.role_assignments (profile_id, role) values
-  ('c1000000-0000-4000-8000-000000000001', 'secretary');
+  ('c1000000-0000-4000-8000-000000000001', 'super_admin');
 -- Vai trò LỚP đòi đủ phạm vi năm học + lớp (`validate_role_assignment_scope`).
 insert into public.role_assignments (profile_id, role, academic_year_id, class_id, starts_on) values
   ('c1000000-0000-4000-8000-000000000002', 'class_teacher',

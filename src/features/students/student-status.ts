@@ -32,7 +32,9 @@ export const GENDER_LABELS: Record<string, string> = {
   other: "Khác",
 };
 
-export function genderLabel(gender: string): string {
+/** IMP-BULK-002 — `null` là câu trả lời hợp lệ, và phải ĐỌC RA được như thế. */
+export function genderLabel(gender: string | null): string {
+  if (gender === null || gender === "") return "chưa rõ";
   return GENDER_LABELS[gender] ?? gender;
 }
 

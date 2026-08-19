@@ -39,7 +39,8 @@ export interface StudentListItem {
 export interface GuardianOption {
   id: string;
   fullName: string;
-  phone: string;
+  /** Null từ IMP-BULK-002 — `list_guardian_options` trả thẳng cột đã nới. */
+  phone: string | null;
 }
 
 export interface ClassOption {
@@ -408,7 +409,9 @@ export async function findStudentDuplicateCandidates(input: {
       id: string;
       student_code: string;
       full_name: string;
-      date_of_birth: string;
+      // IMP-BULK-002 — hình dạng gõ tay ở đây phải nói THẬT về cột đã nới, nếu
+      // không thì `tsc` im lặng đúng chỗ cần nó lên tiếng nhất.
+      date_of_birth: string | null;
       guardian_phone: string | null;
       class_name: string | null;
     };
@@ -434,7 +437,7 @@ export async function findStudentDuplicateCandidates(input: {
 export async function findGuardianDuplicateCandidates(input: {
   fullName: string;
   phone: string;
-}): Promise<Array<{ id: string; fullName: string; phone: string; reason: string }>> {
+}): Promise<Array<{ id: string; fullName: string; phone: string | null; reason: string }>> {
   const folded = foldVietnamese(input.fullName);
   const digits = input.phone.replace(/\D/g, "");
   if (folded === "" && digits === "") return [];
@@ -442,9 +445,13 @@ export async function findGuardianDuplicateCandidates(input: {
   const supabase = await createClient();
   const { data } = await supabase.rpc("list_guardian_options", {});
 
-  const suspects: Array<{ id: string; fullName: string; phone: string; reason: string }> = [];
+  const suspects: Array<{ id: string; fullName: string; phone: string | null; reason: string }> = [];
   for (const item of data ?? []) {
-    const samePhone = digits !== "" && item.phone.replace(/\D/g, "") === digits;
+    // 🔴 IMP-BULK-002 — `item.phone` có thể là null từ đợt nới ràng buộc, và
+    // `null.replace()` là một lượt ném lỗi giữa luồng tạo hồ sơ phụ huynh chứ
+    // không phải một cảnh báo hụt. Kiểu sinh từ RPC vẫn khai `string` nên trình
+    // biên dịch KHÔNG bắt được chỗ này — phải chặn bằng tay.
+    const samePhone = digits !== "" && (item.phone ?? "").replace(/\D/g, "") === digits;
     const sameName = folded !== "" && foldVietnamese(item.full_name) === folded;
     if (!samePhone && !sameName) continue;
     suspects.push({
@@ -476,15 +483,17 @@ export interface StudentDetail {
   studentCode: string;
   saintName: string;
   fullName: string;
-  gender: string;
-  dateOfBirth: string;
+  /** Null từ IMP-BULK-002 — sổ SYLL của giáo xứ không có cột giới tính. */
+  gender: string | null;
+  /** Null từ IMP-BULK-002 — sổ lên lớp nhiều em chỉ có tên. */
+  dateOfBirth: string | null;
   patronFeastDate: string | null;
   address: string | null;
   phone: string | null;
   hardshipFlag: boolean;
   status: string;
   generalNotes: string | null;
-  guardian: { id: string; fullName: string; phone: string; address: string | null } | null;
+  guardian: { id: string; fullName: string; phone: string | null; address: string | null } | null;
   health: {
     allergies: string | null;
     medicalConditions: string | null;
@@ -570,15 +579,16 @@ export async function getStudentDetail(studentId: string): Promise<{
     student_code: string;
     saint_name: string;
     full_name: string;
-    gender: string;
-    date_of_birth: string;
+    // IMP-BULK-002 — ba cột dưới đây nay có thể trống ở cơ sở dữ liệu.
+    gender: string | null;
+    date_of_birth: string | null;
     patron_feast_date: string | null;
     address: string | null;
     phone: string | null;
     hardship_flag: boolean;
     status: string;
     general_notes: string | null;
-    guardians: { id: string; full_name: string; phone: string; address: string | null } | null;
+    guardians: { id: string; full_name: string; phone: string | null; address: string | null } | null;
   };
 
   const { data: enrollmentRows } = await supabase

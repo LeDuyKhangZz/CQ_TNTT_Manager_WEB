@@ -9,7 +9,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { formatDateVi } from "@/lib/dates";
+import { formatOptionalDateVi } from "@/lib/dates";
 import { DUPLICATE_LEVEL_LABELS, duplicateWarningText } from "@/lib/students/duplicate";
 import { GENDER_LABELS } from "../student-status";
 import {
@@ -44,7 +44,7 @@ export function CreateStudentForm({
   classes,
   requiresClass,
 }: {
-  guardians: Array<{ id: string; fullName: string; phone: string }>;
+  guardians: Array<{ id: string; fullName: string; phone: string | null }>;
   classes: Array<{ id: string; displayName: string; sectorName: string | null }>;
   /** D-123 — Trưởng/Phó ngành bắt buộc chọn lớp; vai trò xứ đoàn thì tuỳ. */
   requiresClass: boolean;
@@ -89,7 +89,7 @@ export function CreateStudentForm({
                   {item.student.fullName}
                 </Link>{" "}
                 <span className="text-ink-muted">
-                  — {item.student.studentCode} · {formatDateVi(item.student.dateOfBirth)}
+                  — {item.student.studentCode} · {formatOptionalDateVi(item.student.dateOfBirth, "chưa có ngày sinh")}
                   {item.student.className ? ` · ${item.student.className}` : " · chưa xếp lớp"} ·{" "}
                   {DUPLICATE_LEVEL_LABELS[item.level]}
                 </span>
@@ -115,7 +115,7 @@ export function CreateStudentForm({
         >
           {guardians.map((guardian) => (
             <option key={guardian.id} value={guardian.id}>
-              {guardian.fullName} · {guardian.phone}
+              {guardian.fullName} · {guardian.phone ?? "chưa có SĐT"}
             </option>
           ))}
         </Select>

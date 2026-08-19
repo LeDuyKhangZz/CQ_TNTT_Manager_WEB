@@ -250,6 +250,38 @@ Có thể xóa raw import sau thời hạn ngắn; không cần giữ 5 năm.
 - Demo students/data.
 - Không chạy production.
 
+> 🔴 **Cập nhật IMP-BULK-002 (2026-08-19) — hai luật của module bị đảo, theo lệnh chủ dự án.**
+>
+> **(a) Quyền: chỉ Super Admin.** `/imports` và `/staff/bulk` trước đây mở cho bốn vai
+> trò ghi-toàn-xứ-đoàn (`app.can_global_write()`). Một lượt dán tạo hàng trăm hồ sơ và
+> ghi danh trong một cú bấm, nên quyền thu về **đúng một người**. Ba chỗ phải khớp nhau:
+> `ROUTE_RULES` (`route-map.ts`), `IMPORT_ROLES` (`imports/server/permissions.ts`) và
+> `app.is_super_admin()` trong policy của `import_batches`/`import_rows`
+> (migration `20260819000100`). Hai trang **không còn mục điều hướng**; lối vào duy nhất
+> là thẻ "Nhập liệu hàng loạt" ở `/admin`.
+>
+> ⚠️ Hệ quả kèm theo: D-117 cho Super Admin ghi vào **mọi** năm học, kể cả năm đã đóng.
+> Trước đợt này một Thư ký bị `YEAR_NOT_WRITABLE` chặn khi nhập vào năm đã đóng; nay
+> người nhập duy nhất lại là người được miễn luật đó. Hàng rào ở
+> `guard_import_row_update` giữ nguyên cho mọi vai trò khác (bài `054`).
+>
+> **(b) Thiếu dữ liệu KHÔNG còn chặn.** Sổ giấy của giáo xứ không bao giờ đủ: 229/593
+> thiếu nhi thiếu ngày sinh hoặc số điện thoại phụ huynh, 46/128 nhân sự thiếu số điện
+> thoại (cả Ban Trợ tá). Luật cũ nghĩa là những người ấy **không tồn tại trong hệ thống**
+> nên không điểm danh được. Năm cột NOT NULL được nới: `staff_profiles.phone`,
+> `guardians.phone`, `students.gender`, `students.date_of_birth`, `students.guardian_id`.
+>
+> Vẫn chặn: **thiếu họ tên** · **lớp không khớp** · **ngày sinh ở tương lai** · **dòng
+> nghi trùng chắc chắn chưa xác nhận** (D-133). Ba cái đầu là dữ liệu *hỏng* chứ không
+> phải dữ liệu *thiếu*; cái cuối là chỗ máy không được quyết thay người.
+>
+> Bù lại phải có đường bổ sung: `v_incomplete_student_profiles` nay soi cả ba cột mới,
+> và nhân sự tự điền SĐT/ngày sinh/địa chỉ/email của **chính mình** ở `/account`
+> (policy `staff_profiles_update_self` + trigger `app.guard_staff_self_update`, chỉ bốn
+> cột ấy). 🔴 Phụ huynh đăng nhập **bằng số điện thoại**, nên em nào chưa có số cha/mẹ
+> thì chưa cấp được tài khoản phụ huynh — nhân sự thì không vướng, vì họ đăng nhập bằng
+> `staff_code`.
+
 ## 9. Import acceptance criteria
 
 - Vietnamese không mojibake.

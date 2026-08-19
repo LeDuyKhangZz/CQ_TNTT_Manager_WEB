@@ -12,17 +12,19 @@ insert into auth.users (id, instance_id, aud, role, email, encrypted_password, e
   ('e1000000-0000-4000-8000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'teacher-im@test.local', crypt('x', gen_salt('bf')), now(), now(), now()),
   ('e1000000-0000-4000-8000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'guardian-im@test.local', crypt('x', gen_salt('bf')), now(), now(), now());
 insert into public.profiles (id, username, display_name) values
-  ('e1000000-0000-4000-8000-000000000001', 'SEC_IM', 'Thư ký Import'),
+  ('e1000000-0000-4000-8000-000000000001', 'ADMIN_IM', 'Quản trị viên Import'),
   ('e1000000-0000-4000-8000-000000000002', 'TEACHER_IM', 'GLV Import'),
   ('e1000000-0000-4000-8000-000000000003', 'GUARDIAN_IM', 'Phụ huynh Import');
 
 insert into public.staff_profiles (id, profile_id, title, full_name, phone) values
-  ('e7000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', 'anh', 'Thư ký Import', '0900000201'),
+  ('e7000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', 'anh', 'Quản trị viên Import', '0900000201'),
   ('e7000000-0000-4000-8000-000000000002', 'e1000000-0000-4000-8000-000000000002', 'anh', 'GLV Import', '0900000202');
 
--- secretary has global write (D-18); class teacher does not.
+-- IMP-BULK-002 (2026-08-19): vai trò nhập hàng loạt thu về ĐÚNG Super Admin.
+-- Hồ sơ này trước đây mang vai trò `secretary` — nay Thư ký bị chặn ngay ở
+-- policy, và bài kiểm chứng minh điều đó nằm ở `056_bulk_import_admin_only_test`.
 insert into public.role_assignments (profile_id, role) values
-  ('e1000000-0000-4000-8000-000000000001', 'secretary');
+  ('e1000000-0000-4000-8000-000000000001', 'super_admin');
 
 insert into public.academic_years (id, code, name, start_date, end_date, status, retention_until) values
   ('e0000000-0000-4000-8000-000000000001', '2060-2061', 'Năm import', '2060-09-01', '2061-05-31', 'current', '2066-05-31');
@@ -96,10 +98,10 @@ select throws_ok(
   '42501', null, 'guardian cannot create an import batch'
 );
 
--- Global-write role drives the real commit -----------------------------------
+-- Super Admin drives the real commit -----------------------------------------
 select set_config('request.jwt.claim.sub', 'e1000000-0000-4000-8000-000000000001', true);
-select is((select count(*)::integer from public.import_batches), 1, 'secretary sees the batch');
-select is((select count(*)::integer from public.import_rows), 4, 'secretary sees all rows');
+select is((select count(*)::integer from public.import_batches), 1, 'Quản trị viên thấy lần nhập');
+select is((select count(*)::integer from public.import_rows), 4, 'Quản trị viên thấy đủ 4 dòng');
 
 -- Dry-run state must not have touched business tables yet.
 select is((select count(*)::integer from public.students), 0, 'dry-run created no students');

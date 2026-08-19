@@ -29,7 +29,8 @@ export interface ExistingStudent {
   id: string;
   studentCode: string;
   fullName: string;
-  dateOfBirth: string;
+  /** `yyyy-MM-dd`, hoặc null từ IMP-BULK-002: hồ sơ nhập từ sổ chỉ có tên. */
+  dateOfBirth: string | null;
   guardianPhone: string | null;
   /** Lớp hiện tại, chỉ để người xem nhận ra em — có thể chưa xếp lớp. */
   className?: string | null;
@@ -106,6 +107,28 @@ function scoreOne(input: DuplicateInput, student: ExistingStudent): DuplicateMat
       level: "low",
       student,
       reason: `Tên gần giống và trùng SĐT phụ huynh với ${student.studentCode}.`,
+    };
+  }
+
+  // 🔴 IMP-BULK-002 — ca chỉ tồn tại từ khi hồ sơ được phép thiếu dữ liệu.
+  // Ba mức trên đều cần ngày sinh HOẶC số điện thoại làm điểm tựa; một em chỉ
+  // có mỗi cái tên thì **không mức nào bắt được**, nên dán lại đúng khối ấy lần
+  // thứ hai sẽ đẻ ra hồ sơ thứ hai mà không một lời cảnh báo — đúng thứ dò trùng
+  // sinh ra để chặn, và là đường đi thường gặp nhất khi sửa vài dòng rồi dán lại.
+  // Chỉ nổ khi CẢ HAI bên đều trống cả hai điểm tựa: có ngày sinh mà khác nhau
+  // thì đó là hai em thật sự khác, không được gọi là nghi trùng.
+  if (
+    sameName &&
+    input.dateOfBirth === null &&
+    input.guardianPhone === null &&
+    student.dateOfBirth === null &&
+    student.guardianPhone === null
+  ) {
+    return {
+      level: "low",
+      student,
+      reason:
+        `Trùng đúng họ tên với ${student.studentCode}, và cả hai hồ sơ đều chưa có ngày sinh lẫn SĐT phụ huynh nên không có gì để phân biệt.`,
     };
   }
   return null;

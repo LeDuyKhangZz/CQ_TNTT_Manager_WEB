@@ -33,8 +33,9 @@ insert into public.profiles (id, username, display_name) values
   ('f1000000-0000-4000-8000-000000000001', 'SEC_ENR', 'Thư ký Ghi danh');
 insert into public.staff_profiles (id, profile_id, title, full_name, phone) values
   ('f7000000-0000-4000-8000-000000000001', 'f1000000-0000-4000-8000-000000000001', 'anh', 'Thư ký Ghi danh', '0900000301');
+-- IMP-BULK-002: người nhập hàng loạt nay chỉ có thể là Super Admin.
 insert into public.role_assignments (profile_id, role) values
-  ('f1000000-0000-4000-8000-000000000001', 'secretary');
+  ('f1000000-0000-4000-8000-000000000001', 'super_admin');
 
 insert into public.academic_years (id, code, name, start_date, end_date, status, retention_until) values
   ('f0000000-0000-4000-8000-000000000001', '2070-2071', 'Năm ghi danh', '2070-09-01', '2071-05-31', 'current', '2076-05-31');

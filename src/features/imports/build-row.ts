@@ -164,9 +164,18 @@ export function buildRow(
     errors.push({ field: "fullName", message: "Thiếu họ và tên." });
   }
 
+  // IMP-BULK-002 — ngày sinh trống là **cảnh báo**, không còn là lỗi: sổ lên lớp
+  // của giáo xứ có hàng trăm em chỉ có tên. Ngày sinh **sai** thì vẫn là lỗi —
+  // một ngày ở tương lai không phải dữ liệu thiếu mà là dữ liệu hỏng, và ghi nó
+  // vào hồ sơ còn tệ hơn để trống (`students_dob_not_future` cũng sẽ chặn).
   const dateOfBirth = parseDate(values.dateOfBirth);
   if (!dateOfBirth) {
-    errors.push({ field: "dateOfBirth", message: "Ngày sinh trống hoặc không hợp lệ." });
+    warnings.push({
+      field: "dateOfBirth",
+      message: normalizeText(values.dateOfBirth) === ""
+        ? "Chưa có ngày sinh. Hồ sơ vẫn được tạo; bổ sung sau ở trang Thiếu nhi."
+        : "Ngày sinh không đọc được nên để trống. Hồ sơ vẫn được tạo.",
+    });
   } else if (dateOfBirth > new Date().toISOString().slice(0, 10)) {
     errors.push({ field: "dateOfBirth", message: "Ngày sinh ở tương lai." });
   }
@@ -178,18 +187,29 @@ export function buildRow(
   if (!gender) {
     warnings.push({
       field: "gender",
-      message: "Chưa có giới tính. Vui lòng chọn Nam/Nữ trước khi ghi vào hệ thống.",
+      message: "Chưa có giới tính. Chọn Nam/Nữ ở màn hình duyệt nếu biết; không chọn thì hồ sơ vẫn được tạo.",
     });
   }
 
+  // IMP-BULK-002 — thiếu số điện thoại phụ huynh không còn chặn dòng. Ba mức,
+  // và câu chữ phải nói ĐÚNG hệ quả của từng mức, vì hệ quả khác nhau thật:
+  //   · có số            ⇒ phụ huynh cấp được tài khoản (username = số điện thoại);
+  //   · chỉ có tên       ⇒ có hồ sơ phụ huynh, chưa cấp được tài khoản;
+  //   · không có gì cả   ⇒ em chưa gắn phụ huynh nào.
   const guardian = pickGuardian(values);
-  if (!guardian.phone) {
-    errors.push({
+  if (!guardian.phone && !guardian.name) {
+    warnings.push({
       field: "guardianPhone",
-      message: "Thiếu số điện thoại phụ huynh hợp lệ (cha, mẹ hoặc người giám hộ).",
+      message:
+        "Chưa có thông tin cha/mẹ. Hồ sơ em vẫn được tạo nhưng chưa gắn phụ huynh nào, và chưa cấp được tài khoản phụ huynh.",
     });
-  }
-  if (guardian.phone && !guardian.name) {
+  } else if (!guardian.phone) {
+    warnings.push({
+      field: "guardianPhone",
+      message:
+        "Có tên cha/mẹ nhưng chưa có số điện thoại. Hồ sơ phụ huynh vẫn được tạo; chưa cấp được tài khoản cho tới khi có số.",
+    });
+  } else if (!guardian.name) {
     warnings.push({ field: "guardianName", message: "Có số điện thoại nhưng thiếu tên phụ huynh." });
   }
 

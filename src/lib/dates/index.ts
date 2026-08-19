@@ -10,6 +10,21 @@ export function formatDateVi(value: DateInput): string {
   return formatInTimeZone(new Date(value), APP_TIME_ZONE, "dd/MM/yyyy");
 }
 
+/**
+ * Ngày **có thể chưa biết** — IMP-BULK-002 cho phép hồ sơ thiếu ngày sinh.
+ *
+ * 🔴 Không gộp vào `formatDateVi` bằng cách nới kiểu tham số: `new Date(null)`
+ * ra 01/01/1970 chứ không ném lỗi, nên một chỗ gọi quên kiểm null sẽ in một ngày
+ * **sai mà trông đúng** lên hồ sơ của một em thật. Tách hai hàm để trình biên
+ * dịch bắt đúng chỗ nào đang cầm một ngày có thể trống.
+ */
+export function formatOptionalDateVi(
+  value: DateInput | null | undefined,
+  fallback = "chưa có",
+): string {
+  return value === null || value === undefined ? fallback : formatDateVi(value);
+}
+
 /** Định dạng ngày giờ: dd/MM/yyyy HH:mm theo giờ Asia/Ho_Chi_Minh. */
 export function formatDateTimeVi(value: DateInput): string {
   return formatInTimeZone(new Date(value), APP_TIME_ZONE, "dd/MM/yyyy HH:mm");

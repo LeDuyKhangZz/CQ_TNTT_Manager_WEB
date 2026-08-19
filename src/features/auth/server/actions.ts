@@ -281,6 +281,16 @@ export async function adminProvisionAccount(input: ProvisionAccountInput): Promi
       if (error || !guardian || guardian.profile_id) {
         throw new AppError("CONFLICT", "Hồ sơ phụ huynh đã có tài khoản hoặc không tồn tại.");
       }
+      // 🔴 IMP-BULK-002 — tên đăng nhập của phụ huynh CHÍNH LÀ số điện thoại, nên
+      // hồ sơ nhập từ sổ mà không có số thì không có gì để đăng nhập. Nói thẳng
+      // ra ở đây; để `deriveLoginAlias` từ chối thì người thao tác nhận đúng câu
+      // "Tên đăng nhập không đúng định dạng" và không hiểu phải sửa cái gì.
+      if (!guardian.phone) {
+        throw new AppError(
+          "VALIDATION_ERROR",
+          `Phụ huynh ${guardian.full_name} chưa có số điện thoại, mà tên đăng nhập của phụ huynh chính là số điện thoại. Hãy bổ sung số ở hồ sơ thiếu nhi rồi cấp lại.`,
+        );
+      }
       username = guardian.phone;
       displayName = guardian.full_name;
       saintName = null;

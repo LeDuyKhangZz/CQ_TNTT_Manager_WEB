@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormMessage } from "@/components/ui/form-message";
 import { Select } from "@/components/ui/select";
-import { formatDateVi } from "@/lib/dates";
+import { formatOptionalDateVi } from "@/lib/dates";
 import { studentStatusLabel } from "@/features/students/student-status";
 import {
   BULK_GENDER_FIELD,
@@ -396,7 +396,7 @@ export function BatchRowEditor({
                               <p className="font-medium">Hồ sơ đã có trong hệ thống</p>
                               <p className="text-ink-muted">
                                 {matched.studentCode} · {matched.fullName} · sinh{" "}
-                                {formatDateVi(matched.dateOfBirth)}
+                                {formatOptionalDateVi(matched.dateOfBirth, "chưa rõ")}
                                 {matched.guardianPhone
                                   ? ` · SĐT phụ huynh ${matched.guardianPhone}`
                                   : ""}

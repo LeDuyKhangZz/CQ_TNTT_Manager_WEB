@@ -13,6 +13,7 @@ import {
   type AppRole,
 } from "@/lib/permissions/roles";
 import { grantableRolesForStaff } from "../grantable-roles";
+import type { StaffContact } from "../profile-completeness";
 import {
   paginateStaff,
   selectStaff,
@@ -61,7 +62,7 @@ export async function getStaffPageData(criteria: StaffDirectoryCriteria, page: n
 
   const rows = (staffResult.data ?? []) as unknown as Array<{
     id: string; staff_code: string; title: string; saint_name: string | null; full_name: string;
-    phone: string; formation_level: string; service_status: string; profile_id: string | null;
+    phone: string | null; formation_level: string; service_status: string; profile_id: string | null;
     class_staff_assignments: Array<{
       id: string; capacity: string; starts_on: string; is_active: boolean; class_id: string;
       classes: { display_name: string } | null;
@@ -157,7 +158,8 @@ export interface StaffDetail {
   saintName: string | null;
   fullName: string;
   formationLevel: string;
-  phone: string;
+  /** Null từ IMP-BULK-002 — xem `StaffDirectoryItem.phone`. */
+  phone: string | null;
   serviceStatus: string;
   /** Chỉ có khi người xem đạt `can_global_read` (AC-01.7) — nếu không thì null. */
   sensitive: null | { dateOfBirth: string | null; address: string | null; email: string | null };
@@ -355,5 +357,38 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
     classes: ((classesResult.data ?? []) as Array<{ id: string; display_name: string; academic_year_id: string }>)
       .filter((item) => !yearResult.data || item.academic_year_id === yearResult.data.id)
       .map((item) => ({ id: item.id, name: item.display_name })),
+  };
+}
+
+/**
+ * Hồ sơ nhân sự **của chính người đang đăng nhập** — IMP-BULK-002.
+ *
+ * Trả `null` cho tài khoản không gắn hồ sơ nhân sự nào (phụ huynh, thiếu nhi,
+ * hoặc một tài khoản nhân sự chưa được liên kết): trang Tài khoản dùng đúng
+ * `null` đó để **không hiện khối tự bổ sung**, thay vì hiện một biểu mẫu trống
+ * không lưu được vào đâu.
+ *
+ * Không có hàng rào vai trò nào ở đây, và đó là chủ ý: câu truy vấn lọc theo
+ * `profile_id` của chính phiên đăng nhập, còn `staff_profiles_select_scope` đã
+ * cho mọi người đọc hàng của chính mình từ Phase 1 (`app.can_access_staff`).
+ */
+export async function getOwnStaffContact(): Promise<
+  { id: string; fullName: string } & StaffContact | null
+> {
+  const context = await requireRouteAccess("/account");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("staff_profiles")
+    .select("id, full_name, phone, date_of_birth, address, email")
+    .eq("profile_id", context.profileId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    id: data.id,
+    fullName: data.full_name,
+    phone: data.phone,
+    dateOfBirth: data.date_of_birth,
+    address: data.address,
+    email: data.email,
   };
 }

@@ -53,14 +53,11 @@ export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/access-denied", public: false },
   { path: "/students", public: false, roles: STAFF_ROLES },
   { path: "/classes", public: false, roles: STAFF_ROLES },
-  // IMP-BULK-001 — nhập hàng loạt nhân sự tạo hồ sơ + phân công lớp theo lô,
-  // nên hẹp hơn `/staff` đúng bằng nhóm ghi toàn xứ đoàn, khớp `/imports`.
+  // IMP-BULK-002 — chủ dự án thu quyền nhập hàng loạt về **đúng một người**
+  // (2026-08-19). Một lượt dán tạo hàng trăm hồ sơ và phân công lớp trong một cú
+  // bấm, nên nó không còn đứng chung nhóm với việc sửa từng hồ sơ ở `/staff`.
   // `getRouteRule` chọn luật có `path` dài nhất nên luật này thắng `/staff`.
-  {
-    path: "/staff/bulk",
-    public: false,
-    roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"],
-  },
+  { path: "/staff/bulk", public: false, roles: ["super_admin"] },
   { path: "/staff", public: false, roles: STAFF_ROLES },
   { path: "/attendance", public: false, roles: ATTENDANCE_VIEW_ROLES },
   { path: "/teaching-plan", public: false },
@@ -73,13 +70,11 @@ export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/student", public: false, roles: ["student"] },
   { path: "/committees", public: false, roles: STAFF_ROLES },
   { path: "/reports", public: false, roles: STAFF_ROLES },
-  // Import creates students/guardians/enrollments in bulk: global-write only,
-  // matching app.can_global_write() on the import tables (docs/09 §9).
-  {
-    path: "/imports",
-    public: false,
-    roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"],
-  },
+  // IMP-BULK-002 — cùng một quyết định với `/staff/bulk`: nhập hàng loạt là
+  // việc của riêng Super Admin, và cả hai chỉ còn lối vào từ trang `/admin`
+  // (`platformNavigation` không còn mục nào cho chúng). RLS của
+  // `import_batches`/`import_rows` đã siết theo ở 20260819000100.
+  { path: "/imports", public: false, roles: ["super_admin"] },
   { path: "/admin", public: false, roles: ["super_admin"] },
 ];
 

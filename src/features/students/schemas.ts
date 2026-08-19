@@ -82,11 +82,26 @@ export const createStudentSchema = z.object({
  *
  * Đổi trạng thái nay đi qua `setStudentStatusSchema` + `public.set_student_status`.
  */
+/**
+ * 🔴 IMP-BULK-002 — `gender` và `dateOfBirth` nới thành **có thể trống ở đây,
+ * nhưng KHÔNG ở `createStudentSchema`**. Cùng lý do với `updateStaffSchema`:
+ * gõ tay một em mới thì người nhập đang cầm tờ sơ yếu lý lịch trong tay, còn
+ * màn hình sửa mở thường xuyên trên hồ sơ **vừa nhập hàng loạt từ sổ**, nơi hai
+ * ô ấy vốn đã trống. Bắt buộc ở đó nghĩa là không sửa nổi địa chỉ của một em
+ * cho tới khi tra ra ngày sinh của em.
+ *
+ * 🔴 Và ô giới tính phải có lựa chọn "chưa rõ" thật (`""` ⇒ null). Một
+ * `<select>` không có lựa chọn trống thì trình duyệt hiện sẵn "Nam", nên chỉ
+ * cần ai đó bấm Lưu để sửa số điện thoại là một em chưa rõ giới tính **bị ghi
+ * thành Nam** mà không ai chọn gì cả.
+ */
 export const updateStudentSchema = createStudentSchema
   .omit({ classId: true, confirmDuplicate: true, status: true })
   .partial()
   .extend({
     id: z.string().uuid("Thiếu nhi không hợp lệ."),
+    gender: z.enum(["male", "female", "other"]).nullable().optional(),
+    dateOfBirth: nullableIsoDate.optional(),
   });
 
 export const healthProfileSchema = z.object({

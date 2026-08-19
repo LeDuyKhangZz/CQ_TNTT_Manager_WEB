@@ -7,7 +7,6 @@ import {
   ChartNoAxesCombined,
   CircleUserRound,
   ClipboardCheck,
-  FileSpreadsheet,
   GraduationCap,
   LayoutDashboard,
   PanelsTopLeft,
@@ -79,11 +78,12 @@ export const platformNavigation: readonly NavigationItem[] = [
   { href: "/committees", label: "Ban", icon: PanelsTopLeft, group: "Điều hành", audiences: staffOnly, scopes: allStaffScopes },
   { href: "/notifications", label: "Thông báo", icon: Bell, group: "Chung", audiences: ["staff", "guardian", "student"], scopes: ["global", "sector", "class", "ownership"] },
   { href: "/reports", label: "Báo cáo", icon: ChartNoAxesCombined, group: "Điều hành", audiences: staffOnly, scopes: allStaffScopes },
-  { href: "/imports", label: "Nhập dữ liệu Excel", icon: FileSpreadsheet, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"] },
-  // IMP-BULK-001 — `roles` khớp ĐÚNG `ROUTE_RULES` của `/staff/bulk`, cùng bài học
-  // M14 A-11 ghi ngay trên: bỏ trống thì Giáo lý viên lớp thấy mục này rồi bấm vào
-  // và bị chặn. Nằm cạnh `/imports` vì cùng là việc nhập hàng loạt.
-  { href: "/staff/bulk", label: "Nhập hàng loạt nhân sự", icon: UserRoundCog, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin", "group_leader", "deputy_group_leader", "secretary"] },
+  // 🔴 IMP-BULK-002 — `/imports` và `/staff/bulk` KHÔNG còn mục điều hướng nào.
+  // Chủ dự án chốt 2026-08-19: *"module nhập hàng loạt chỉ xuất hiện ở trang
+  // admin"*. Hai trang vẫn sống ở đường dẫn cũ (deep-link, `/imports/<id>` của
+  // lần nhập cũ, và ba bài E2E đi thẳng URL vẫn chạy), nhưng lối vào duy nhất là
+  // thẻ "Nhập liệu hàng loạt" trong `/admin`. Thêm lại một mục ở đây là đi ngược
+  // quyết định đó — quyền thật vẫn nằm ở `ROUTE_RULES` + RLS, menu chỉ là trưng bày.
   { href: "/admin", label: "Quản trị hệ thống", icon: Settings, group: "Điều hành", audiences: staffOnly, scopes: ["global"], roles: ["super_admin"] },
 ];
 
@@ -242,12 +242,33 @@ const STANDALONE_PAGE_LABELS: readonly (readonly [string, string])[] = [
   ["/access-denied", "Không có quyền truy cập"],
 ];
 
+/**
+ * Hai trang nhập hàng loạt — IMP-BULK-002.
+ *
+ * 🔴 Chúng KHÔNG còn mục điều hướng (chủ dự án: *"chỉ xuất hiện ở trang admin"*),
+ * nên nếu chỉ tra `platformNavigation` thì `/imports` rơi về **tên ứng dụng** và
+ * `/staff/bulk` mượn nhầm nhãn của `/staff` — đúng hai triệu chứng mà M14 A-14
+ * sinh ra bảng tra này để diệt.
+ *
+ * Khác `STANDALONE_PAGE_LABELS` ở chỗ chúng có **cha**: breadcrumb đọc
+ * *Trang chủ › Quản trị hệ thống › Nhập dữ liệu Excel*, tức nói ra luôn đường
+ * quay lại lối vào duy nhất của hai trang này.
+ */
+const ADMIN_SUBPAGE_LABELS: readonly (readonly [string, string])[] = [
+  ["/imports", "Nhập dữ liệu Excel"],
+  ["/staff/bulk", "Nhập hàng loạt nhân sự"],
+];
+
 function matchPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
 function standaloneLabel(pathname: string): string | null {
   return STANDALONE_PAGE_LABELS.find(([prefix]) => matchPrefix(pathname, prefix))?.[1] ?? null;
+}
+
+function adminSubpageLabel(pathname: string): string | null {
+  return ADMIN_SUBPAGE_LABELS.find(([prefix]) => matchPrefix(pathname, prefix))?.[1] ?? null;
 }
 
 /**
@@ -260,6 +281,10 @@ function standaloneLabel(pathname: string): string | null {
  */
 export function getPageTitle(pathname: string): string {
   if (matchPrefix(pathname, accountNavigationItem.href)) return accountNavigationItem.label;
+  // Tra bảng HẸP trước bảng rộng: `/staff/bulk` khớp cả tiền tố `/staff`, nên
+  // hỏi `platformNavigation` trước là nhận nhãn của trang cha.
+  const admin = adminSubpageLabel(pathname);
+  if (admin) return admin;
   const item = platformNavigation.find(({ href }) => matchPrefix(pathname, href));
   return item?.label ?? standaloneLabel(pathname) ?? APP_NAME;
 }
@@ -287,7 +312,7 @@ const DETAIL_CRUMB_LABELS: Readonly<Record<string, string>> = {
   "/results": "Bảng điểm lớp",
   "/teaching-plan": "Giáo án lớp",
   "/committees": "Chi tiết ban",
-  "/imports": "Lần nhập",
+  // `/imports` không còn ở đây: nó đi đường `ADMIN_SUBPAGE_LABELS` từ IMP-BULK-002.
   "/parent/children": "Hồ sơ con",
 };
 
@@ -304,6 +329,18 @@ export function buildBreadcrumbTrail(pathname: string): readonly BreadcrumbCrumb
   if (pathname === "/dashboard") return [{ label: "Trang chủ" }];
 
   const home: BreadcrumbCrumb = { label: "Trang chủ", href: "/dashboard" };
+
+  // IMP-BULK-002 — hai trang nhập hàng loạt treo dưới Quản trị hệ thống. Phải
+  // xét TRƯỚC `platformNavigation`, nếu không `/staff/bulk` bám vào `/staff`.
+  const adminChild = adminSubpageLabel(pathname);
+  if (adminChild) {
+    const adminItem = platformNavigation.find(({ href }) => href === "/admin");
+    return [
+      home,
+      { label: adminItem?.label ?? "Quản trị hệ thống", href: "/admin" },
+      { label: adminChild },
+    ];
+  }
 
   const section =
     platformNavigation.find(({ href }) => isNavigationItemActive(pathname, href)) ??

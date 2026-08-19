@@ -1,6 +1,6 @@
 begin;
 
-select plan(32);
+select plan(33);
 
 -- M12 Phase 3: exercise the database boundary as a real authenticated global
 -- writer.  Fixtures are inserted as the migration owner, then every attack or
@@ -16,15 +16,19 @@ insert into auth.users (
 );
 
 insert into public.profiles (id, username, display_name) values
-  ('d1100000-0000-4000-8000-000000000001', 'M12_STATE', 'Thư ký M12 state');
+  ('d1100000-0000-4000-8000-000000000001', 'M12_STATE', 'Quản trị viên M12 state');
 
 insert into public.staff_profiles (id, profile_id, title, full_name, phone) values
   ('d1700000-0000-4000-8000-000000000001',
    'd1100000-0000-4000-8000-000000000001',
-   'anh', 'Thư ký M12 state', '0900005401');
+   'anh', 'Quản trị viên M12 state', '0900005401');
 
+-- 🔴 IMP-BULK-002 (2026-08-19): nhập hàng loạt thu về đúng Super Admin, nên
+-- "người ghi toàn xứ đoàn" của bài này KHÔNG còn là Thư ký. Hệ quả kéo theo ở
+-- hai bài cuối file: Super Admin ghi được vào **mọi** năm học (D-117), nên hàng
+-- rào năm đã đóng không còn áp cho đường nhập nữa — xem ghi chú tại chỗ.
 insert into public.role_assignments (profile_id, role) values
-  ('d1100000-0000-4000-8000-000000000001', 'secretary');
+  ('d1100000-0000-4000-8000-000000000001', 'super_admin');
 
 insert into public.academic_years (
   id, code, name, start_date, end_date, status, retention_until
@@ -201,13 +205,27 @@ select is(
   'reviewed commit creates exactly one student'
 );
 
-select throws_ok(
-  $$select * from public.commit_import_rows(
-       'd1400000-0000-4000-8000-000000000005',
-       array['d1500000-0000-4000-8000-000000000005']::uuid[]
-     )$$,
-  '23514', 'IMPORT_GENDER_REQUIRED',
-  'direct RPC also enforces gender for create rows'
+-- 🔴 IMP-BULK-002 ĐẢO NGƯỢC bài này (trước là `IMPORT_GENDER_REQUIRED`). Sổ
+-- SYLL của giáo xứ không có cột giới tính; chặn ở đây nghĩa là 83% số em phải
+-- chờ người ngồi tick từng dòng mới vào được hệ thống. Cột `students.gender` nay
+-- cho phép trống, nên hàng rào ở wrapper cũng đã gỡ — và hồ sơ ghi ra phải
+-- **thật sự** mang giới tính trống, không phải một giá trị đoán.
+select lives_ok(
+  $$create temporary table gender_optional_result as
+    select * from public.commit_import_rows(
+      'd1400000-0000-4000-8000-000000000005',
+      array['d1500000-0000-4000-8000-000000000005']::uuid[]
+    )$$,
+  'IMP-BULK-002: dòng chưa có giới tính vẫn ghi được'
+);
+
+select ok(
+  (select out_committed from gender_optional_result)
+  and (
+    select gender is null and date_of_birth = '2016-07-07'::date
+      from public.students where full_name = 'Em Thiếu Giới Tính'
+  ),
+  'hồ sơ ghi ra để trống giới tính chứ không đoán'
 );
 
 select lives_ok(
@@ -325,7 +343,13 @@ select throws_ok(
   'cancelled rows cannot be edited back into a reviewable shape'
 );
 
-select throws_ok(
+-- 🔴 IMP-BULK-002 — hệ quả PHẢI ghi lại: bài này trước đây chứng minh một Thư ký
+-- không dựng được lần nhập trong năm đã đóng. Người nhập duy nhất nay là Super
+-- Admin, mà D-117 cho Super Admin ghi vào **mọi** năm học, nên hàng rào năm đã
+-- đóng không còn chặn đường nhập nữa. Không phải lỗ hổng mới (luật D-117 có từ
+-- 20260726000200), nhưng là một tấm lưới đã mất, nên nó được ghi thành một bài
+-- kiểm nói đúng hành vi hiện tại thay vì bị xoá đi trong im lặng.
+select lives_ok(
   $$insert into public.import_batches (
        filename, academic_year_id, uploaded_by, status, total_rows
      ) values (
@@ -333,8 +357,7 @@ select throws_ok(
        'd1000000-0000-4000-8000-000000000002',
        auth.uid(), 'dry_run', 1
      )$$,
-  '42501', null,
-  'non-SA cannot stage a new import directly in a closed year'
+  'D-117: Super Admin dựng được lần nhập cả trong năm đã đóng'
 );
 
 select throws_ok(
@@ -367,23 +390,26 @@ select * from public.commit_import_rows(
   array['d1500000-0000-4000-8000-000000000003']::uuid[]
 );
 
+-- Cùng hệ quả D-117 với bài ngay trên: lượt ghi vào năm đã đóng nay THÀNH CÔNG
+-- vì người gọi là Super Admin. `guard_import_row_update` vẫn giữ nguyên nhánh
+-- `YEAR_NOT_WRITABLE` cho mọi vai trò khác — nó chỉ không còn đường nào để chạy
+-- qua module nhập nữa, và sẽ sống lại ngay nếu quyền nhập được mở rộng lần nữa.
 select ok(
-  (select not out_committed and out_error_message = 'YEAR_NOT_WRITABLE'
-     from closed_commit_result),
-  'commit RPC reports YEAR_NOT_WRITABLE for a non-SA closed-year batch'
+  (select out_committed from closed_commit_result),
+  'D-117: Super Admin ghi được lần nhập của năm đã đóng'
 );
 
 select is(
   (select count(*)::integer from public.students where full_name = 'Em Năm Đã Đóng'),
-  0,
-  'closed-year rejection rolls back the student/business writes for that row'
+  1,
+  'hồ sơ của lượt ghi năm đã đóng thật sự được tạo'
 );
 
 select is(
   (select status::text from public.import_rows
     where id = 'd1500000-0000-4000-8000-000000000003'),
-  'error',
-  'rejected closed-year row is retained with an explicit error state'
+  'committed',
+  'dòng của năm đã đóng được đánh dấu đã ghi'
 );
 
 select throws_ok(

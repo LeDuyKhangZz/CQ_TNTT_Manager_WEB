@@ -134,7 +134,7 @@ export async function updateGuardian(
     const { id, ...changes } = parsed;
     const payload = {
       ...(changes.fullName !== undefined ? { full_name: changes.fullName } : {}),
-      ...(changes.phone !== undefined ? { phone: changes.phone } : {}),
+      ...(changes.phone !== undefined ? { phone: changes.phone || null } : {}),
       ...(changes.address !== undefined ? { address: changes.address } : {}),
       ...(changes.status !== undefined ? { status: changes.status } : {}),
       updated_by: actor.profileId,
@@ -287,7 +287,7 @@ export async function guardianPanelFormAction(
   const result = await updateGuardian({
     id: String(formData.get("guardianId") ?? ""),
     fullName: String(formData.get("fullName") ?? ""),
-    phone: String(formData.get("phone") ?? ""),
+    phone: String(formData.get("phone") ?? "") || null,
     address: String(formData.get("address") ?? ""),
     status: String(formData.get("status") ?? "active"),
   } as unknown as UpdateGuardianInput);

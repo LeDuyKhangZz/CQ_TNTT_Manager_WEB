@@ -95,7 +95,8 @@ export function createStudentValuesFromForm(formData: FormData): CreateStudentFo
 export interface GuardianDuplicate {
   id: string;
   fullName: string;
-  phone: string;
+  /** Null từ IMP-BULK-002 — hồ sơ phụ huynh có thể chưa có số. */
+  phone: string | null;
   reason: string;
 }
 

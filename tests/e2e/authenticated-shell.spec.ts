@@ -55,7 +55,7 @@ async function expectNoHorizontalOverflow(page: Page, where: string) {
 }
 
 test.describe("Xứ đoàn trưởng đi hết các trang Phase 2", () => {
-  test("students, class, staff, imports đều dùng được", async ({ page }) => {
+  test("students, class, staff đều dùng được", async ({ page }) => {
     await login(page, "GLV901");
 
     // ── Danh sách thiếu nhi ────────────────────────────────────────────────
@@ -105,9 +105,32 @@ test.describe("Xứ đoàn trưởng đi hết các trang Phase 2", () => {
     await expect(page.locator('a[href^="/staff/"]').first()).toBeVisible();
     await expectNoHorizontalOverflow(page, "/staff");
 
+    // 🔴 IMP-BULK-002 — Xứ đoàn trưởng KHÔNG còn nhập hàng loạt được (chủ dự án,
+    // 2026-08-19). Bài này trước đây bấm "Kiểm tra file" ở đây; nay chính lượt đi
+    // ấy là hàng rào cần canh, và nó phải dẫn tới /access-denied chứ không phải
+    // một trang trắng hay một trang lỗi.
+    await page.goto("/imports");
+    await expect(page).toHaveURL(/\/access-denied$/);
+    await page.goto("/staff/bulk");
+    await expect(page).toHaveURL(/\/access-denied$/);
+  });
+
+  test("IMP-BULK-002: chỉ Quản trị viên vào được hai trang nhập hàng loạt", async ({ page }) => {
+    await login(page, "Khang.Nho");
+
     await page.goto("/imports");
     await expect(page.getByRole("button", { name: "Kiểm tra file" })).toBeVisible();
     await expectNoHorizontalOverflow(page, "/imports");
+
+    await page.goto("/staff/bulk");
+    await expect(page.getByRole("main").getByRole("heading", { name: "Nhập hàng loạt nhân sự" })).toBeVisible();
+
+    // Lối vào duy nhất: trang Quản trị. Menu bên đã bỏ hẳn hai mục này, nên nếu
+    // hai đường dẫn dưới đây biến mất thì không còn cách nào tìm ra chúng.
+    await page.goto("/admin");
+    const admin = page.getByRole("main");
+    await expect(admin.getByRole("link", { name: "Nhập hàng loạt nhân sự" })).toBeVisible();
+    await expect(admin.getByRole("link", { name: "Nhập dữ liệu thiếu nhi" })).toBeVisible();
   });
 });
 

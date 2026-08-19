@@ -24,7 +24,8 @@ export interface AccountAdminOptions {
    * trò người thao tác, không phải danh sách cứng ở giao diện.
    */
   provisionableRoles: AppRole[];
-  guardians: Array<{ id: string; username: string; displayName: string; label: string }>;
+  /** `username` null = phụ huynh chưa có SĐT ⇒ chưa cấp được tài khoản (IMP-BULK-002). */
+  guardians: Array<{ id: string; username: string | null; displayName: string; label: string }>;
   students: Array<{ id: string; username: string; displayName: string; saintName: string; label: string }>;
 }
 
@@ -60,11 +61,16 @@ export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
       mustChangePassword: profile.must_change_password,
     })),
     provisionableRoles: adminProvisionableRoles(context.role),
+    // IMP-BULK-002 — phụ huynh không có số điện thoại vẫn hiện trong danh sách,
+    // nhưng `username = null` để ô chọn khoá chúng lại. Lọc bỏ hẳn thì người
+    // thao tác đi tìm một cái tên không có ở đâu cả và không ai nói vì sao.
     guardians: (guardiansResult.data ?? []).map((guardian) => ({
       id: guardian.id,
       username: guardian.phone,
       displayName: guardian.full_name,
-      label: `${guardian.full_name} · ${guardian.phone}`,
+      label: guardian.phone
+        ? `${guardian.full_name} · ${guardian.phone}`
+        : `${guardian.full_name} · chưa có SĐT nên chưa cấp được tài khoản`,
     })),
     students: (studentsResult.data ?? []).map((student) => ({
       id: student.id,

@@ -214,7 +214,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
               <div className="space-y-2">
                 <Label htmlFor="account-guardian">Hồ sơ phụ huynh</Label>
                 <Select id="account-guardian" name="guardianId" required defaultValue="" placeholder="Chọn hồ sơ chưa có tài khoản">
-                  {options.guardians.map((guardian) => <option key={guardian.id} value={guardian.id}>{guardian.label}</option>)}
+                  {options.guardians.map((guardian) => <option key={guardian.id} value={guardian.id} disabled={!guardian.username}>{guardian.label}</option>)}
                 </Select>
               </div>
             ) : null}

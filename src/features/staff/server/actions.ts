@@ -3,12 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AppError, type AppErrorCode } from "@/lib/errors";
-import { requireRouteAccess } from "@/lib/auth/guards";
+import { requireAuthContext, requireRouteAccess } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import type { AuthContext } from "@/lib/auth/types";
 import type { AppRole } from "@/lib/permissions/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assignmentErrorMessage } from "../assignment-messages";
+import {
+  missingStaffContactFields,
+  type StaffContactField,
+} from "../profile-completeness";
 import type { CreateStaffFormState, CreateStaffFormValues } from "../create-form-state";
 import {
   findDuplicateSuspects,
@@ -20,11 +24,13 @@ import {
   createStaffSchema,
   deleteStaffSchema,
   endStaffAssignmentSchema,
+  ownStaffContactSchema,
   transferClassStaffSchema,
   updateStaffSchema,
   type AssignStaffInput,
   type CreateStaffInput,
   type DeleteStaffInput,
+  type OwnStaffContactInput,
   type TransferClassStaffInput,
   type UpdateStaffInput,
 } from "../schemas";
@@ -154,7 +160,7 @@ export async function updateStaff(input: UpdateStaffInput): Promise<StaffActionR
       ...(changes.saintName !== undefined ? { saint_name: changes.saintName || null } : {}),
       ...(changes.fullName !== undefined ? { full_name: changes.fullName } : {}),
       ...(changes.dateOfBirth !== undefined ? { date_of_birth: changes.dateOfBirth || null } : {}),
-      ...(changes.phone !== undefined ? { phone: changes.phone } : {}),
+      ...(changes.phone !== undefined ? { phone: changes.phone || null } : {}),
       ...(changes.email !== undefined ? { email: changes.email || null } : {}),
       ...(changes.address !== undefined ? { address: changes.address || null } : {}),
       ...(changes.formationLevel !== undefined ? { formation_level: changes.formationLevel } : {}),
@@ -482,4 +488,67 @@ export async function endStaffAssignmentFromForm(formData: FormData): Promise<vo
   const result = await endClassStaffAssignment(String(formData.get("assignmentId") ?? ""), String(formData.get("endsOn") ?? ""));
   if (!result.ok) redirect(`/staff?error=end`);
   redirect(`/staff?ok=end`);
+}
+
+/**
+ * Nửa sau của IMP-BULK-002 — **người dùng tự bổ sung hồ sơ của chính mình.**
+ *
+ * 🔴 Vì sao action này phải tồn tại. Nhập hàng loạt nay nhận cả người thiếu số
+ * điện thoại, đổi lại chủ dự án chốt: *"khi họ có tài khoản cá nhân thì hệ thống
+ * báo và họ tự nhập lại đầy đủ"*. Trước đợt này **không có đường nào** để làm
+ * việc đó: `updateStaff` đòi `assertStaffWrite`, tức một Giáo lý viên lớp muốn
+ * điền số của chính mình cũng phải đi nhờ Thư ký — đúng cái vòng mà việc nới
+ * ràng buộc sinh ra để cắt.
+ *
+ * Ba hàng rào, không có cái nào thừa:
+ *   1. `requireAuthContext` — phải đang đăng nhập (ngoài `try`, D-96);
+ *   2. `eq("profile_id", context.profileId)` — chỉ chạm được hàng của chính
+ *      mình, và id **không** đi qua biểu mẫu;
+ *   3. `staff_profiles_update_self` + `app.guard_staff_self_update()` ở cơ sở
+ *      dữ liệu — hàng rào thật cho đường gọi thẳng Data API, và là thứ chặn
+ *      người dùng tự nâng `formation_level` hay `service_status` của mình.
+ */
+export async function updateOwnStaffContact(
+  input: OwnStaffContactInput,
+): Promise<StaffActionResult<{ missing: StaffContactField[] }>> {
+  const context = await requireAuthContext("/account");
+  try {
+    const parsed = ownStaffContactSchema.parse(input);
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("staff_profiles")
+      .update({
+        phone: parsed.phone || null,
+        date_of_birth: parsed.dateOfBirth || null,
+        address: parsed.address || null,
+        email: parsed.email || null,
+        updated_by: context.profileId,
+      })
+      .eq("profile_id", context.profileId)
+      .select("phone, date_of_birth, address, email")
+      .maybeSingle();
+    if (error) throw new AppError("VALIDATION_ERROR");
+    // SW-04 — RLS từ chối bằng **0 dòng**, không bằng ngoại lệ. Tài khoản không
+    // gắn hồ sơ nhân sự nào rơi vào đúng nhánh này.
+    if (!data) {
+      throw new AppError(
+        "RESOURCE_NOT_FOUND",
+        "Tài khoản của bạn chưa gắn với hồ sơ nhân sự nào nên chưa lưu được. Hãy báo Quản trị viên.",
+      );
+    }
+    revalidatePath("/account");
+    return {
+      ok: true,
+      data: {
+        missing: missingStaffContactFields({
+          phone: data.phone,
+          dateOfBirth: data.date_of_birth,
+          address: data.address,
+          email: data.email,
+        }),
+      },
+    };
+  } catch (error) {
+    return fail(error);
+  }
 }

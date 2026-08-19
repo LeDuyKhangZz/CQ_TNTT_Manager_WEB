@@ -192,7 +192,7 @@ export default async function StaffPage({
                             {staffDisplayName(item)}
                           </Link>
                           <p className="text-sm text-ink-muted">
-                            {item.staffCode} · {item.phone} · Huấn luyện {formationLabel(item.formationLevel)}
+                            {item.staffCode} · {item.phone ?? "chưa có SĐT"} · Huấn luyện {formationLabel(item.formationLevel)}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">

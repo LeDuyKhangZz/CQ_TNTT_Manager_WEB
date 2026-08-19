@@ -55,10 +55,17 @@ select matches(
 );
 
 -- Constraints ----------------------------------------------------------------
-select throws_ok(
-  $$insert into public.students (guardian_id, saint_name, full_name, gender, date_of_birth) values (null, 'X', 'No Guardian', 'other', '2015-01-01')$$,
-  '23502', null, 'student requires a guardian'
+-- 🔴 IMP-BULK-002 (2026-08-19) ĐẢO NGƯỢC luật cũ ở đây. Bài này trước là
+-- `throws_ok(... '23502' ... 'student requires a guardian')`. Chủ dự án chốt:
+-- sổ giấy của giáo xứ không bao giờ đủ, và chặn nghĩa là 229/593 em **không tồn
+-- tại trong hệ thống** nên không điểm danh được. Ba cột cùng nới một lượt, nên
+-- bài kiểm cũng nhận cả ba trong một dòng.
+-- Xoá ngay sau khi ghi: các bài đếm phía dưới dựa trên đúng ba hồ sơ cố định.
+select lives_ok(
+  $$insert into public.students (id, guardian_id, saint_name, full_name, gender, date_of_birth) values ('a3000000-0000-4000-8000-0000000000ff', null, 'X', 'No Guardian', null, null)$$,
+  'IMP-BULK-002: hồ sơ thiếu phụ huynh, giới tính và ngày sinh vẫn ghi được'
 );
+delete from public.students where id = 'a3000000-0000-4000-8000-0000000000ff';
 select throws_ok(
   $$insert into public.students (guardian_id, saint_name, full_name, gender, date_of_birth) values ('a2000000-0000-4000-8000-000000000001', 'X', 'Future Child', 'other', (current_date + 1))$$,
   '23514', null, 'date of birth cannot be in the future'

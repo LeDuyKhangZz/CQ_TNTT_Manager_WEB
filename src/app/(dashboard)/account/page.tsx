@@ -7,6 +7,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentAcademicYear } from "@/features/academic-years/server/queries";
 import { getAccountScopeLabel } from "@/features/auth/server/queries";
+import { getOwnStaffContact } from "@/features/staff/server/queries";
+import { OwnContactForm } from "@/features/staff/components/own-contact-form";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { cn } from "@/lib/utils";
@@ -41,9 +43,13 @@ function Field({ label, value }: { label: string; value: string }) {
 
 export default async function AccountPage() {
   const context = await requireRouteAccess("/account");
-  const [academicYear, scopeLabel] = await Promise.all([
+  const [academicYear, scopeLabel, ownContact] = await Promise.all([
     getCurrentAcademicYear(),
     getAccountScopeLabel(context),
+    // IMP-BULK-002 — `null` cho tài khoản không gắn hồ sơ nhân sự (phụ huynh,
+    // thiếu nhi): khối bổ sung bên dưới biến mất hẳn thay vì hiện một biểu mẫu
+    // không lưu được vào đâu.
+    getOwnStaffContact(),
   ]);
 
   return (
@@ -85,6 +91,21 @@ export default async function AccountPage() {
             </dl>
           </CardContent>
         </Card>
+
+        {ownContact ? (
+          <Card>
+            <CardHeader>
+              <CardTitle as="h2">Thông tin liên lạc của bạn</CardTitle>
+              <CardDescription>
+                Đây là phần bạn tự sửa được. Hồ sơ nhập từ sổ của xứ đoàn thường còn trống một
+                vài ô — điền vào đây là đủ, không cần nhờ ai.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <OwnContactForm contact={ownContact} />
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader>

@@ -143,7 +143,11 @@
 - Reset password.
 - Gán role/scope.
 - Mở khóa điểm danh/bảng điểm.
-- Import.
+- **Nhập hàng loạt (`/imports` + `/staff/bulk`) — RIÊNG Super Admin từ 2026-08-19
+  (IMP-BULK-002).** Trước đó mở cho cả Xứ đoàn trưởng · Phó · Thư ký; ba vai trò ấy vẫn
+  tạo/sửa **từng** hồ sơ ở `/staff` và `/students`, chỉ không ghi theo lô nữa. Hàng rào
+  thứ hai ở cơ sở dữ liệu: `app.is_super_admin()` trong policy của `import_batches` và
+  `import_rows` (`20260819000100`).
 - Cấu hình hệ số mặc định theo năm học; sửa hệ số ở mọi lớp.
 - Bật Top 5.
 - Sửa mọi scope.

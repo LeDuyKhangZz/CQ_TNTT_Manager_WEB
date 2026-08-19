@@ -87,7 +87,8 @@ export interface StaffDirectoryItem {
   title: string;
   saintName: string | null;
   fullName: string;
-  phone: string;
+  /** Null từ IMP-BULK-002 — hồ sơ nhập hàng loạt có thể chưa có số. */
+  phone: string | null;
   formationLevel: string;
   serviceStatus: string;
   assignment: null | { id: string; capacity: string; classId: string; className: string };
@@ -114,7 +115,7 @@ function matchesClass(item: StaffDirectoryItem, filter: ClassFilter): boolean {
 function matchesSearch(item: StaffDirectoryItem, needle: string): boolean {
   if (!needle) return true;
   const haystack = foldVietnamese(
-    `${item.fullName} ${item.saintName ?? ""} ${item.staffCode} ${item.phone}`,
+    `${item.fullName} ${item.saintName ?? ""} ${item.staffCode} ${item.phone ?? ""}`,
   );
   return haystack.includes(needle);
 }

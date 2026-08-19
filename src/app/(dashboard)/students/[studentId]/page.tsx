@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
-import { formatDateVi } from "@/lib/dates";
+import { formatDateVi, formatOptionalDateVi } from "@/lib/dates";
 import {
   enrollmentStatusBadgeVariant,
   enrollmentStatusLabel,
@@ -137,7 +137,7 @@ export default async function StudentDetailPage({
               <p><span className="text-ink-muted">Tên thánh: </span>{student.saintName}</p>
               <p><span className="text-ink-muted">Họ tên: </span>{student.fullName}</p>
               <p><span className="text-ink-muted">Giới tính: </span>{genderLabel(student.gender)}</p>
-              <p><span className="text-ink-muted">Ngày sinh: </span>{formatDateVi(student.dateOfBirth)}</p>
+              <p><span className="text-ink-muted">Ngày sinh: </span>{formatOptionalDateVi(student.dateOfBirth, "chưa có")}</p>
               <p>
                 <span className="text-ink-muted">Bổn mạng: </span>
                 {student.patronFeastDate ? formatDateVi(student.patronFeastDate) : "—"}

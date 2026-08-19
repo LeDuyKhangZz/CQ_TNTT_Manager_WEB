@@ -96,7 +96,8 @@ interface ExistingStaff {
   id: string;
   staffCode: string;
   fullName: string;
-  phone: string;
+  /** Null từ IMP-BULK-002 — hồ sơ nhập từ sổ chưa có số điện thoại. */
+  phone: string | null;
 }
 
 /**
@@ -106,6 +107,13 @@ interface ExistingStaff {
  * làm một — danh sách của xứ đoàn có đúng trường hợp ấy (hai "Maria Nguyễn Thị
  * Thanh Hằng", một Huynh trưởng một Nữ tu). Chỉ theo số điện thoại thì cả một
  * gia đình dùng chung một số sẽ gộp thành một người.
+ *
+ * ⚠️ **IMP-BULK-002 — người KHÔNG có số điện thoại khoá theo mỗi cái tên**, tức
+ * đúng cái rủi ro đoạn trên vừa nói. Đây là lựa chọn có ý thức giữa hai cái dở:
+ * dán lại một khối đã dán (đường đi thường gặp nhất khi sửa vài dòng) sẽ đẻ ra
+ * hồ sơ thứ hai cho **mọi** người thiếu số, còn gộp nhầm hai người trùng tên thì
+ * hiếm hơn nhiều **và có người nhìn thấy trước**: màn hình xem trước in
+ * *"Đã có hồ sơ GLVxxx — dùng lại"* trên đúng dòng đó, trước khi ghi.
  */
 async function getExistingStaff(): Promise<Map<string, ExistingStaff>> {
   const supabase = await createClient();
@@ -175,9 +183,10 @@ export async function previewStaffBulk(
     const existing = await getExistingStaff();
 
     const previewRows = rows.map<StaffBulkPreviewRow>((row) => {
-      const match = row.normalized.phone
-        ? existing.get(matchKey(row.normalized.fullName, row.normalized.phone))
-        : undefined;
+      // IMP-BULK-002 — dòng thiếu số cũng phải được dò: `matchKey` đã có sẵn
+      // nhánh `phone ?? ""`, nên bỏ điều kiện là đủ. Không dò thì người thiếu số
+      // luôn hiện ra như hồ sơ mới, kể cả khi họ đã có hồ sơ từ lượt dán trước.
+      const match = existing.get(matchKey(row.normalized.fullName, row.normalized.phone));
       return {
         rowNumber: row.rowNumber,
         fullName: row.normalized.fullName,
@@ -251,10 +260,11 @@ export async function commitStaffBulk(
 
     for (const row of rows) {
       const { normalized } = row;
-      // `phone` được kiểm lại ở đây chứ không chỉ tin vào `row.errors`: cột
-      // `staff_profiles.phone` là `not null`, nên một dòng lọt qua mà thiếu số
-      // sẽ hỏng ở tận lệnh `insert` với một câu lỗi không ai đọc được.
-      if (row.errors.length > 0 || !normalized.phone) {
+      // IMP-BULK-002 — bỏ lượt kiểm `phone` thứ hai ở đây. Nó có mặt vì cột
+      // `staff_profiles.phone` từng là `not null`; cột nay cho phép trống
+      // (migration 20260819000100), nên dòng thiếu số phải đi tiếp chứ không
+      // bị đếm vào `skipped`. `row.errors` vẫn là hàng rào duy nhất còn lại.
+      if (row.errors.length > 0) {
         summary.skipped += 1;
         continue;
       }

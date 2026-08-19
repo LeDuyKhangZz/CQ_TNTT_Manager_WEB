@@ -21,8 +21,33 @@ export const createStaffSchema = z.object({
   confirmDuplicate: z.boolean().default(false),
 });
 
+/**
+ * 🔴 IMP-BULK-002 — `phone` ở đây nới thành **có thể trống**, còn
+ * `createStaffSchema` thì KHÔNG. Hai ô trông giống nhau nhưng đứng trước hai
+ * tình huống khác nhau: gõ tay một người mới thì phải có số để liên lạc, còn
+ * màn hình sửa lại thường xuyên mở trên hồ sơ **vừa nhập hàng loạt từ sổ**, nơi
+ * ô số điện thoại vốn đã trống. Bắt buộc ở đó nghĩa là không ai sửa nổi tên
+ * thánh của một người cho tới khi xin được số của họ.
+ */
 export const updateStaffSchema = createStaffSchema.partial().extend({
   id: z.string().uuid("Nhân sự không hợp lệ."),
+  phone: z.string().trim().max(20).nullable().optional(),
+});
+
+/**
+ * IMP-BULK-002 — người dùng tự sửa **hồ sơ của chính mình**. Bốn ô, không có
+ * `id`: id lấy từ phiên đăng nhập ở máy chủ, không nhận từ biểu mẫu. Nhận một
+ * `id` ở đây là mở đúng cánh cửa mà policy `staff_profiles_update_self` vừa
+ * đóng — client sửa một chữ trong DOM là sửa hồ sơ người khác.
+ *
+ * Cả bốn ô đều được phép trống: đây là biểu mẫu để **điền dần**, không phải một
+ * cổng nghiệm thu. Trống thì hồ sơ vẫn nằm trong danh sách còn thiếu.
+ */
+export const ownStaffContactSchema = z.object({
+  phone: z.string().trim().max(20).nullable(),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày sinh không hợp lệ.").nullable(),
+  address: nullableText(500),
+  email: z.string().trim().email("Email không hợp lệ.").nullable(),
 });
 
 export const assignStaffSchema = z.object({
@@ -58,6 +83,7 @@ export const deleteStaffSchema = z.object({
   confirmName: z.string().trim().min(1, "Vui lòng gõ lại họ tên để xác nhận."),
 });
 
+export type OwnStaffContactInput = z.infer<typeof ownStaffContactSchema>;
 export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 export type DeleteStaffInput = z.infer<typeof deleteStaffSchema>;
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;

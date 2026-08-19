@@ -27,7 +27,7 @@ export type StaffProfileEditorProps = {
   title: string;
   saintName: string | null;
   fullName: string;
-  phone: string;
+  phone: string | null;
   formationLevel: string;
   serviceStatus: string;
   dateOfBirth: string | null;
@@ -54,7 +54,7 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
         saintName: String(formData.get("saintName") ?? "") || null,
         fullName: String(formData.get("fullName") ?? ""),
         dateOfBirth: String(formData.get("dateOfBirth") ?? "") || null,
-        phone: String(formData.get("phone") ?? ""),
+        phone: String(formData.get("phone") ?? "") || null,
         email: String(formData.get("email") ?? "") || null,
         address: String(formData.get("address") ?? "") || null,
         formationLevel: String(formData.get("formationLevel")) as never,
@@ -100,7 +100,9 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="edit-phone">Điện thoại</Label>
-          <Input id="edit-phone" name="phone" inputMode="tel" defaultValue={props.phone} required />
+          {/* IMP-BULK-002 — bỏ `required`: hồ sơ nhập từ sổ có thể chưa có số,
+              và bắt điền ở đây là khoá luôn mọi ô khác của biểu mẫu. */}
+          <Input id="edit-phone" name="phone" inputMode="tel" defaultValue={props.phone ?? ""} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="edit-birth">Ngày sinh</Label>

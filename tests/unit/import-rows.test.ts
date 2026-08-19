@@ -116,12 +116,58 @@ describe("buildRow", () => {
     }
   });
 
-  it("errors when no usable guardian phone exists", () => {
-    const built = buildRow(
+  /**
+   * 🔴 IMP-BULK-002 — ĐẢO NGƯỢC luật cũ (bài này trước đây tên là *"errors when no
+   * usable guardian phone exists"*). Chủ dự án chốt 2026-08-19: 229/593 em trong sổ
+   * lên lớp thiếu ngày sinh hoặc số phụ huynh, chặn nghĩa là các em ấy không tồn tại
+   * trong hệ thống nên không điểm danh được. Ba mức cảnh báo phải phân biệt được ba
+   * hệ quả khác nhau, vì chúng khác nhau thật ở chỗ có cấp được tài khoản phụ huynh
+   * hay không.
+   */
+  it("chỉ CẢNH BÁO khi không có số điện thoại phụ huynh, và câu chữ nói đúng hệ quả", () => {
+    const noPhoneWithName = buildRow(
       rawRow({ ...completeRow, fatherPhone: undefined, motherPhone: undefined }),
       classes,
     );
-    expect(built.errors.map((issue) => issue.field)).toContain("guardianPhone");
+    expect(noPhoneWithName.errors.map((issue) => issue.field)).not.toContain("guardianPhone");
+    const withName = noPhoneWithName.warnings.find((issue) => issue.field === "guardianPhone");
+    expect(withName?.message).toContain("Hồ sơ phụ huynh vẫn được tạo");
+    expect(noPhoneWithName.normalized.guardian_name).not.toBeNull();
+
+    const nothing = buildRow(
+      rawRow({
+        ...completeRow,
+        fatherName: undefined, fatherPhone: undefined,
+        motherName: undefined, motherPhone: undefined,
+      }),
+      classes,
+    );
+    expect(nothing.errors).toHaveLength(0);
+    const none = nothing.warnings.find((issue) => issue.field === "guardianPhone");
+    expect(none?.message).toContain("chưa gắn phụ huynh nào");
+  });
+
+  /**
+   * Ngày sinh TRỐNG là cảnh báo; ngày sinh Ở TƯƠNG LAI vẫn là lỗi. Dữ liệu thiếu
+   * và dữ liệu hỏng là hai chuyện, và ghi một ngày sinh sai vào hồ sơ một em còn
+   * tệ hơn để trống nó.
+   */
+  it("ngày sinh trống chỉ cảnh báo, ngày sinh ở tương lai vẫn là lỗi", () => {
+    const blank = buildRow(rawRow({ ...completeRow, dateOfBirth: undefined }), classes);
+    expect(blank.errors).toHaveLength(0);
+    expect(blank.warnings.map((issue) => issue.field)).toContain("dateOfBirth");
+    expect(blank.normalized.date_of_birth).toBeNull();
+
+    const future = buildRow(rawRow({ ...completeRow, dateOfBirth: "20/10/2099" }), classes);
+    expect(future.errors.map((issue) => issue.field)).toContain("dateOfBirth");
+  });
+
+  /** Giới tính trống cũng không còn chặn — nút "Áp dụng Nam/Nữ" là tuỳ chọn. */
+  it("giới tính trống chỉ cảnh báo", () => {
+    const built = buildRow(rawRow({ ...completeRow, gender: undefined }), classes);
+    expect(built.errors).toHaveLength(0);
+    expect(built.warnings.map((issue) => issue.field)).toContain("gender");
+    expect(built.normalized.gender).toBeNull();
   });
 
   it("warns rather than errors when the saint name is 'Chưa'", () => {
@@ -232,5 +278,33 @@ describe("findInFileDuplicates", () => {
       buildRow(rawRow({ ...completeRow, fullName: "Nguyễn Văn Vinh" }), classes).normalized,
     ];
     expect(findInFileDuplicates(rows).size).toBe(0);
+  });
+});
+
+/**
+ * IMP-BULK-002 — trùng **bên trong chính khối dán**, ca không có ngày sinh.
+ *
+ * Bản cũ `return` sớm với mọi dòng trống ngày sinh, hồi mà dòng như thế không
+ * nhập được nên bỏ qua cũng không mất gì. Nay nó nhập được, và hai dòng cùng tên
+ * không ngày sinh trong cùng một khối gần như chắc chắn là một em bị chép hai lần.
+ */
+describe("findInFileDuplicates — dòng trống ngày sinh", () => {
+  const row = (fullName: string, dateOfBirth: string | null) =>
+    ({ full_name: fullName, date_of_birth: dateOfBirth }) as unknown as ReturnType<
+      typeof buildRow
+    >["normalized"];
+
+  it("bắt hai dòng cùng tên khi cả hai đều trống ngày sinh", () => {
+    const conflicts = findInFileDuplicates([row("Lê Nhật Anh", null), row("LÊ NHẬT ANH", null)]);
+    expect(conflicts.get(1)).toContain("chưa có ngày sinh");
+    expect(conflicts.has(0)).toBe(false);
+  });
+
+  it("không đụng tới hai em cùng tên khác ngày sinh", () => {
+    const conflicts = findInFileDuplicates([
+      row("Lê Nhật Anh", "2015-01-01"),
+      row("Lê Nhật Anh", "2016-01-01"),
+    ]);
+    expect(conflicts.size).toBe(0);
   });
 });

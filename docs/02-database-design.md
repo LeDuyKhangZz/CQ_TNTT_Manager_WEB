@@ -320,7 +320,7 @@ Check:
 | saint_name | text |
 | full_name | text |
 | date_of_birth | date nullable |
-| phone | text |
+| phone | text, **nullable** từ IMP-BULK-002; có thì không được rỗng |
 | email | text nullable |
 | address | text nullable |
 | avatar_path | text nullable |
@@ -329,6 +329,14 @@ Check:
 | created_at/updated_at/updated_by | metadata |
 
 Không lưu chứng chỉ GLV hoặc ngày bắt đầu phục vụ.
+
+> 🔴 **`phone` cho phép trống từ 2026-08-19 (IMP-BULK-002)** — sổ của xứ đoàn thiếu số
+> của 46 người, trong đó **cả Ban Trợ tá**. Không như phụ huynh, nhân sự đăng nhập bằng
+> `staff_code` nên người chưa có số **vẫn cấp được tài khoản**, rồi tự điền lấy ở
+> `/account`: policy `staff_profiles_update_self` cho họ ghi **đúng bốn cột**
+> `phone` · `email` · `address` · `date_of_birth` trên hàng của chính mình, còn
+> `app.guard_staff_self_update()` chặn mọi cột khác (cấp huấn luyện và tình trạng phục
+> vụ là quyết định của Ban Điều hành, không phải của đương sự).
 
 ### 5.2 `class_staff_assignments`
 
@@ -360,12 +368,18 @@ Ràng buộc:
 | id | uuid PK |
 | profile_id | unique nullable FK profiles |
 | full_name | not null |
-| phone | not null, normalized |
+| phone | **nullable** từ IMP-BULK-002, normalized; có thì không được rỗng |
 | address | nullable |
 | status | active/inactive |
 | created_at/updated_at/updated_by | |
 
 Một guardian có nhiều students.
+
+> 🔴 **`guardians.phone` cho phép trống từ 2026-08-19 (IMP-BULK-002)** — sổ giấy có tên
+> cha/mẹ mà không có số. Hệ quả phải nhớ: **tên đăng nhập của phụ huynh CHÍNH LÀ số điện
+> thoại**, nên hồ sơ không số thì `adminProvisionAccount` từ chối cấp tài khoản kèm câu
+> giải thích. Ghép phụ huynh khi nhập hàng loạt vẫn **chỉ ghép theo số**: hai hồ sơ
+> "Chưa rõ" không số thì không có gì để biết chúng là một người.
 
 ### 6.2 `students`
 
@@ -374,11 +388,11 @@ Một guardian có nhiều students.
 | id | uuid PK |
 | profile_id | unique nullable FK profiles; chỉ tạo account từ Ấu Nhi |
 | student_code | unique, tự sinh `CQ0001` |
-| guardian_id | not null FK guardians |
-| saint_name | not null |
-| full_name | not null |
-| gender | male/female/other |
-| date_of_birth | date |
+| guardian_id | **nullable** từ IMP-BULK-002, FK guardians |
+| saint_name | not null (ghi `'Chưa'` khi sổ ghi chưa Rửa Tội) |
+| full_name | not null — **cột duy nhất còn bắt buộc của một con người** |
+| gender | male/female/other, **nullable** từ IMP-BULK-002 |
+| date_of_birth | date, **nullable** từ IMP-BULK-002 |
 | patron_feast_date | date nullable |
 | address | text nullable |
 | phone | text nullable |
@@ -390,6 +404,18 @@ Một guardian có nhiều students.
 Không có cột ảnh.
 
 Duplicate warning import dựa trên normalized name + birth date + guardian phone, không unique cứng.
+
+> 🔴 **Ba cột nới NOT NULL ngày 2026-08-19 (IMP-BULK-002)** — `gender`, `date_of_birth`,
+> `guardian_id`. Lý do: sổ lên lớp của giáo xứ có 229/593 em chỉ có tên, và luật cũ
+> nghĩa là các em ấy **không tồn tại trong hệ thống** nên không điểm danh được.
+> `students_dob_not_future` giữ nguyên (CHECK bỏ qua NULL), `students_dedup_idx` giữ
+> nguyên. **0 backfill** — mọi hồ sơ đang có vẫn đủ ba trường đó.
+>
+> Kéo theo: mức dò trùng thứ tư ở `lib/students/duplicate.ts` — trùng khít họ tên **khi
+> cả hai bên đều trống ngày sinh lẫn SĐT phụ huynh**. Không có nó thì dán lại một khối
+> đã dán sẽ đẻ ra hồ sơ thứ hai cho mọi em chỉ có tên, không một lời cảnh báo.
+> Chỗ nhắc bổ sung: `v_incomplete_student_profiles` (thêm `missing_gender`,
+> `missing_date_of_birth`, `missing_guardian`).
 
 ### 6.3 `student_health_profiles`
 

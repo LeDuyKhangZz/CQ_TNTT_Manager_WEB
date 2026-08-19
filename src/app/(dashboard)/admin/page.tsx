@@ -1,8 +1,12 @@
+import Link from "next/link";
+import { FileSpreadsheet, UsersRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { formatDateTimeVi, formatDateVi, todayVi } from "@/lib/dates";
 import {
@@ -68,6 +72,42 @@ export default async function AdminPage() {
           </FormMessage>
         </div>
       ) : null}
+
+      {/*
+        🔴 IMP-BULK-002 — LỐI VÀO DUY NHẤT của hai trang nhập hàng loạt.
+        Chủ dự án chốt 2026-08-19: *"module nhập hàng loạt chỉ xuất hiện ở trang
+        admin"*, nên `platformNavigation` đã bỏ hẳn hai mục menu. Hai trang vẫn
+        giữ đường dẫn cũ (`/imports/<id>` của lần nhập cũ phải mở lại được), và
+        `ROUTE_RULES` + RLS mới là hàng rào thật — khối này chỉ là chỗ đứng.
+        Đặt TRƯỚC lưới cấu hình vì đây là việc theo mùa: đầu năm học dùng liên
+        tục vài ngày rồi cả năm không đụng tới, tìm mãi không ra thì tệ hơn.
+      */}
+      <Card className="mb-5">
+        <CardHeader>
+          <CardTitle>Nhập liệu hàng loạt</CardTitle>
+          <CardDescription>
+            Dán hoặc tải sổ của giáo xứ để tạo hồ sơ theo lô. Chỉ Quản trị viên hệ thống làm
+            được việc này. Thứ tự bắt buộc: tạo năm học và sinh lớp ở khối bên dưới → nhập nhân
+            sự → nhập thiếu nhi.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/staff/bulk"
+            className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+          >
+            <UsersRound className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            Nhập hàng loạt nhân sự
+          </Link>
+          <Link
+            href="/imports"
+            className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+          >
+            <FileSpreadsheet className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            Nhập dữ liệu thiếu nhi
+          </Link>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]">
         <Card>

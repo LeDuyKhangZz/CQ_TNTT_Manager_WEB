@@ -57,22 +57,32 @@ describe("parseStaffText", () => {
   });
 
   /**
-   * 🔴 `staff_profiles.phone` là `not null`. Thiếu số điện thoại phải là **lỗi
-   * chặn ghi**, không phải cảnh báo: để dòng ấy đi tiếp thì nó hỏng ở tận lệnh
-   * `insert` với một câu lỗi Postgres không ai đọc được.
+   * 🔴 IMP-BULK-002 — ĐẢO NGƯỢC luật cũ (bài này trước đây tên là *"thiếu số điện
+   * thoại là LỖI"*). `staff_profiles.phone` nay cho phép trống, và chủ dự án chốt
+   * 2026-08-19: sổ thiếu số của 48/117 người, chặn nghĩa là cả Ban Trợ tá không
+   * tồn tại trong hệ thống. Vẫn phải là **cảnh báo**, không được im lặng: người
+   * nhập cần biết mình vừa tạo một hồ sơ không có cách nào liên lạc.
    */
-  it("thiếu số điện thoại là LỖI, không phải cảnh báo", () => {
+  it("thiếu số điện thoại là CẢNH BÁO, không chặn dòng", () => {
     const [row] = parseStaffText(block("Anh | Giuse | Trần Văn B | | | 1 | Ấu 1A | GLV lớp"), CLASSES);
-    expect(row.errors.map((issue) => issue.field)).toContain("phone");
-    expect(row.warnings.map((issue) => issue.field)).not.toContain("phone");
+    expect(row.errors.map((issue) => issue.field)).not.toContain("phone");
+    expect(row.warnings.map((issue) => issue.field)).toContain("phone");
+    expect(row.normalized.phone).toBeNull();
   });
 
-  it("số điện thoại không đúng dạng cũng bị chặn", () => {
+  /**
+   * Số GÕ SAI khác số KHÔNG CÓ, và câu cảnh báo phải phân biệt được hai chuyện
+   * ấy: bỏ đi một số gõ nhầm mà không nói gì thì người nhập tưởng đã có số liên lạc.
+   */
+  it("số điện thoại sai định dạng bị bỏ, kèm cảnh báo nói rõ là sai dạng", () => {
     const [row] = parseStaffText(
       block("Anh | Giuse | Trần Văn B | 12345 | | 1 | Ấu 1A | GLV lớp"),
       CLASSES,
     );
-    expect(row.errors.map((issue) => issue.field)).toContain("phone");
+    expect(row.errors.map((issue) => issue.field)).not.toContain("phone");
+    expect(row.normalized.phone).toBeNull();
+    const warning = row.warnings.find((issue) => issue.field === "phone");
+    expect(warning?.message).toContain("không đúng dạng");
   });
 
   it("tên lớp không khớp năm học đã chọn là lỗi, và câu lỗi nhắc đúng chữ người dùng gõ", () => {

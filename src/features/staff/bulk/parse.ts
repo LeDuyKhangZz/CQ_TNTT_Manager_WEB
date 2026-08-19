@@ -199,12 +199,21 @@ export function buildStaffRow(
   const fullName = normalizeName(values.fullName);
   if (fullName === "") errors.push({ field: "fullName", message: "Thiếu họ và tên." });
 
+  // 🔴 IMP-BULK-002 — thiếu số điện thoại KHÔNG còn chặn dòng (chủ dự án,
+  // 2026-08-19). Sổ của xứ đoàn thiếu số của 48/117 người, trong đó cả 16 người
+  // Ban Trợ tá — luật cũ nghĩa là **cả một ban không tồn tại trong hệ thống**.
+  // Tài khoản nhân sự đăng nhập bằng `staff_code` chứ không bằng số điện thoại,
+  // nên người thiếu số vẫn được cấp tài khoản và tự điền lấy ở trang Tài khoản.
+  // Số **sai định dạng** thì vẫn phải nói ra: bỏ đi một số gõ nhầm mà im lặng
+  // là để người nhập tưởng đã có số liên lạc trong khi không có.
   const phone = normalizePhone(values.phone);
   if (!phone) {
-    errors.push({
+    warnings.push({
       field: "phone",
       message:
-        "Thiếu số điện thoại hợp lệ. Hồ sơ nhân sự bắt buộc có số điện thoại (dạng 0xxxxxxxxx).",
+        normalizeText(values.phone) === ""
+          ? "Chưa có số điện thoại. Hồ sơ vẫn được tạo; người này tự bổ sung được ở trang Tài khoản sau khi có tài khoản."
+          : "Số điện thoại không đúng dạng 0xxxxxxxxx nên để trống. Hồ sơ vẫn được tạo.",
     });
   }
 

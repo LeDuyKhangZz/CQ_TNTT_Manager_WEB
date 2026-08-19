@@ -37,7 +37,7 @@ export interface ImportFeedback {
 }
 
 export const IMPORT_FORBIDDEN_TEXT =
-  "Bạn không có quyền nhập dữ liệu Excel. Việc này dành cho Xứ đoàn trưởng, Phó Xứ đoàn, Thư ký và Quản trị viên hệ thống.";
+  "Bạn không có quyền nhập dữ liệu hàng loạt. Từ 19/08/2026 việc này chỉ dành cho Quản trị viên hệ thống — hãy nhờ Quản trị viên nhập giúp.";
 
 /** Ghi 0 dòng vẫn báo thành công là lỗi kinh điển của mô hình RLS (SW-04). */
 export const IMPORT_NO_CHANGE_TEXT =

@@ -16,7 +16,8 @@ import { cn } from "@/lib/utils";
 export interface GuardianOption {
   id: string;
   fullName: string;
-  phone: string;
+  /** Null từ IMP-BULK-002 — sổ có tên cha/mẹ mà không có số. */
+  phone: string | null;
 }
 
 /**
@@ -48,7 +49,7 @@ export function GuardianPanel({
 }: {
   studentId: string;
   studentName: string;
-  guardian: { id: string; fullName: string; phone: string; address: string | null } | null;
+  guardian: { id: string; fullName: string; phone: string | null; address: string | null } | null;
   /** Cửa sổ hẹp `list_guardian_options` (D-124): chỉ tên + số điện thoại. */
   options: GuardianOption[];
   canWrite: boolean;
@@ -93,7 +94,7 @@ export function GuardianPanel({
     return (
       <div className="space-y-1 text-sm">
         <p className="font-medium">{guardian.fullName}</p>
-        <p className="text-ink-muted">Điện thoại: {guardian.phone}</p>
+        <p className="text-ink-muted">Điện thoại: {guardian.phone ?? "chưa có"}</p>
         <p className="text-ink-muted">Địa chỉ: {guardian.address ?? "—"}</p>
       </div>
     );
@@ -124,12 +125,13 @@ export function GuardianPanel({
           </div>
           <div className="space-y-2">
             <Label htmlFor="guardian-phone">Điện thoại</Label>
+            {/* IMP-BULK-002 — bỏ `required`. Đây là ô người ta mở biểu mẫu ra
+                để điền, nên nó không được là thứ chặn biểu mẫu lại. */}
             <Input
               id="guardian-phone"
               name="phone"
-              defaultValue={guardian.phone}
+              defaultValue={guardian.phone ?? ""}
               maxLength={20}
-              required
             />
           </div>
         </div>
@@ -180,7 +182,7 @@ export function GuardianPanel({
             <Select id="guardian-change" name="guardianId" defaultValue={others[0].id}>
               {others.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.fullName} · {item.phone}
+                  {item.fullName} · {item.phone ?? "chưa có SĐT"}
                 </option>
               ))}
             </Select>

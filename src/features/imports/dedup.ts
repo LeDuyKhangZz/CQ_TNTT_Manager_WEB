@@ -53,8 +53,14 @@ export function findInFileDuplicates(rows: readonly NormalizedRow[]): Map<number
   const conflicts = new Map<number, string>();
 
   rows.forEach((row, index) => {
-    if (row.date_of_birth === null) return;
-    const key = `${normalizeForMatch(row.full_name)}|${row.date_of_birth}`;
+    const name = normalizeForMatch(row.full_name);
+    if (name === "") return;
+    // IMP-BULK-002 — dòng KHÔNG có ngày sinh trước đây bị bỏ qua ở đây, hồi mà
+    // dòng như thế không nhập được nên bỏ qua cũng không mất gì. Nay nó nhập
+    // được, và hai dòng cùng tên không ngày sinh trong **cùng một khối dán**
+    // gần như chắc chắn là một em bị chép hai lần. Khoá theo tên khi trống ngày
+    // sinh; em cùng tên khác ngày sinh vẫn có khoá khác nhau như cũ.
+    const key = `${name}|${row.date_of_birth ?? ""}`;
     const firstIndex = seen.get(key);
     if (firstIndex === undefined) {
       seen.set(key, index);
@@ -62,7 +68,9 @@ export function findInFileDuplicates(rows: readonly NormalizedRow[]): Map<number
     }
     conflicts.set(
       index,
-      `Trùng với một dòng khác trong cùng file (dòng thứ ${firstIndex + 1} của danh sách).`,
+      row.date_of_birth === null
+        ? `Trùng đúng họ tên với dòng thứ ${firstIndex + 1} của danh sách, và cả hai đều chưa có ngày sinh.`
+        : `Trùng với một dòng khác trong cùng file (dòng thứ ${firstIndex + 1} của danh sách).`,
     );
   });
 

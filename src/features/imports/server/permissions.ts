@@ -27,20 +27,18 @@ export async function importRouteContext(nextPath = "/imports") {
 }
 
 export function assertImportAccess(context: { role: AppRole | null }) {
-  // Câu từ chối phải kể ĐÚNG bốn vai trò được phép — người bị từ chối cần biết
-  // đi nhờ ai, không phải đọc một câu chung chung rồi đi hỏi vòng quanh.
+  // Câu từ chối phải kể ĐÚNG vai trò được phép — người bị từ chối cần biết đi
+  // nhờ ai, không phải đọc một câu chung chung rồi đi hỏi vòng quanh.
   if (!canImport(context.role)) throw new AppError("FORBIDDEN", IMPORT_FORBIDDEN_TEXT);
 }
 
-// Importing creates students, guardians and enrollments in bulk, so it is
-// restricted to the global-write roles — the same set the DB enforces through
-// app.can_global_write() on import_batches/import_rows (docs/09 §9).
-export const IMPORT_ROLES: readonly AppRole[] = [
-  "super_admin",
-  "group_leader",
-  "deputy_group_leader",
-  "secretary",
-];
+// IMP-BULK-002 (chủ dự án, 2026-08-19): một lượt nhập tạo hàng trăm hồ sơ,
+// phụ huynh và ghi danh trong một cú bấm ⇒ quyền thu về đúng Super Admin.
+// Danh sách này phải khớp ba chỗ khác, và cái ngày chúng lệch nhau là ngày mở
+// lại một cánh cửa tưởng đã khoá: `ROUTE_RULES` của `/imports` + `/staff/bulk`
+// (`route-map.ts`) và `app.is_super_admin()` trong policy của
+// `import_batches`/`import_rows` (migration 20260819000100).
+export const IMPORT_ROLES: readonly AppRole[] = ["super_admin"];
 
 export function canImport(role: AppRole | null): boolean {
   return role !== null && IMPORT_ROLES.includes(role);

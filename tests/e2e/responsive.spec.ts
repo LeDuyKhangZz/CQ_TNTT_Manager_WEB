@@ -116,7 +116,9 @@ const GLOBAL_WRITE_ROUTES = [
   "/promotions",
   "/committees",
   "/reports",
-  "/imports",
+  // IMP-BULK-002 — `/imports` rời khỏi danh sách này: Xứ đoàn trưởng không còn
+  // vào được. Hai trang nhập hàng loạt nay đi cùng `/admin` ở bài Super Admin
+  // ngay dưới, nơi chúng thật sự thuộc về.
 ];
 
 test.describe("Responsive QA toàn hệ thống", () => {
@@ -133,9 +135,14 @@ test.describe("Responsive QA toàn hệ thống", () => {
 
   test("trang quản trị của Super Admin vừa khung và bấm được", async ({ page }) => {
     await login(page, "Khang.Nho");
-    await page.goto("/admin");
-    await expectNoHorizontalOverflow(page, "/admin");
-    await expectTapTargets(page, "/admin");
+    // IMP-BULK-002 — ba trang đi liền một mạch: `/admin` là lối vào duy nhất của
+    // hai trang nhập hàng loạt, nên chúng phải cùng vừa khung ở mọi viewport.
+    for (const route of ["/admin", "/staff/bulk", "/imports"]) {
+      await page.goto(route);
+      await expect(page).toHaveURL(new RegExp(`${route}$`));
+      await expectNoHorizontalOverflow(page, route);
+      await expectTapTargets(page, route);
+    }
   });
 
   /**

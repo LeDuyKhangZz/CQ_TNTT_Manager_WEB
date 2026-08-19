@@ -20,25 +20,28 @@ function context(role: AuthContext["role"]): AuthContext {
   };
 }
 
-describe("IMP-BULK-001 · /staff/bulk hẹp hơn /staff", () => {
+describe("IMP-BULK-002 · nhập hàng loạt chỉ còn Quản trị viên", () => {
   /**
    * 🔴 Luật của route dài hơn phải THẮNG luật của route ngắn hơn. `/staff` mở cho
-   * cả 12 vai trò nhân sự, nhưng nhập hàng loạt tạo hồ sơ + phân công lớp theo lô
-   * nên chỉ mở cho nhóm ghi toàn xứ đoàn — đúng bằng `/imports`. Nếu `getRouteRule`
-   * đổi cách chọn luật (hiện là "path dài nhất thắng"), bài này đỏ ngay, thay vì để
-   * Giáo lý viên lớp lặng lẽ nhập được hàng loạt.
+   * cả 12 vai trò nhân sự; nhập hàng loạt thì chủ dự án thu về **đúng một người**
+   * ngày 2026-08-19. Nếu `getRouteRule` đổi cách chọn luật (hiện là "path dài nhất
+   * thắng"), bài này đỏ ngay, thay vì để Giáo lý viên lớp lặng lẽ nhập được hàng loạt.
+   *
+   * Ba vai trò `group_leader` · `deputy_group_leader` · `secretary` nằm trong danh
+   * sách bị TỪ CHỐI là cố ý: họ vẫn ghi được từng hồ sơ ở `/staff`, chỉ không còn
+   * ghi được theo lô. Đó chính là ranh giới đợt này dựng lên.
    */
-  it("chỉ bốn vai trò ghi toàn xứ đoàn vào được", () => {
-    for (const role of ["super_admin", "group_leader", "deputy_group_leader", "secretary"] as const) {
-      expect(canAccessRoute(context(role), "/staff/bulk"), role).toBe(true);
-    }
+  it("chỉ Super Admin vào được", () => {
+    expect(canAccessRoute(context("super_admin"), "/staff/bulk")).toBe(true);
     for (const role of [
+      "group_leader", "deputy_group_leader", "secretary",
       "parish_priest", "chaplain", "treasurer", "sector_leader", "sector_deputy",
       "class_representative", "class_teacher", "trainee_assistant", "guardian", "student",
     ] as const) {
       expect(canAccessRoute(context(role), "/staff/bulk"), role).toBe(false);
-      // ...trong khi trang Nhân sự thường vẫn mở cho các vai trò nhân sự.
+      expect(canAccessRoute(context(role), "/imports"), role).toBe(false);
     }
+    // ...trong khi trang Nhân sự thường vẫn mở cho các vai trò nhân sự.
     expect(canAccessRoute(context("class_teacher"), "/staff")).toBe(true);
   });
 

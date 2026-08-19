@@ -585,8 +585,11 @@ export async function updateStudentFormAction(
     id: String(formData.get("id") ?? ""),
     saintName: String(formData.get("saintName") ?? ""),
     fullName: String(formData.get("fullName") ?? ""),
-    gender: String(formData.get("gender") ?? "male"),
-    dateOfBirth: String(formData.get("dateOfBirth") ?? ""),
+    // 🔴 IMP-BULK-002 — `?? "male"` cũ là đúng thứ bẫy mà ghi chú `status` bên
+    // dưới kể lại: một ô không chọn gì mà lại có mặc định thì nó ghi đè dữ liệu
+    // thật. Nay ô có lựa chọn "chưa rõ" và chuỗi rỗng đi thẳng thành null.
+    gender: String(formData.get("gender") ?? "") || null,
+    dateOfBirth: String(formData.get("dateOfBirth") ?? "") || null,
     patronFeastDate: String(formData.get("patronFeastDate") ?? ""),
     address: String(formData.get("address") ?? ""),
     phone: String(formData.get("phone") ?? ""),

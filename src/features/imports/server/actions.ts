@@ -586,29 +586,19 @@ export async function commitBatch(batchId: string): Promise<ImportActionResult<C
       throw new AppError("VALIDATION_ERROR", "Không còn dòng nào hợp lệ để ghi vào hệ thống.");
     }
 
-    // students.gender is NOT NULL. Catch it here with a readable message rather
-    // than letting every such row fail inside the RPC with a constraint error.
-    const missingGender = (pending ?? []).filter((row) => {
-      if (row.action !== "create") return false;
-      const normalized = (row.normalized_json ?? {}) as Record<string, unknown>;
-      return !normalized.gender;
-    });
-    if (missingGender.length > 0) {
-      const sample = missingGender
-        .slice(0, 5)
-        .map((row) => `#${row.row_number}`)
-        .join(", ");
-      throw new AppError(
-        "VALIDATION_ERROR",
-        `Còn ${missingGender.length} dòng chưa chọn giới tính (${sample}${
-          missingGender.length > 5 ? "…" : ""
-        }). Vui lòng chọn Nam/Nữ cho các dòng này trước khi ghi.`,
-      );
-    }
+    // 🔴 IMP-BULK-002 — chỗ này TỪNG chặn lượt ghi khi còn dòng chưa chọn giới
+    // tính, vì `students.gender` là NOT NULL. Chủ dự án bỏ luật đó ngày
+    // 2026-08-19: sổ SYLL của giáo xứ không có cột giới tính, và chặn ở đây
+    // nghĩa là 83% số em **không vào được hệ thống** cho tới khi có người ngồi
+    // tick từng dòng. Cột nay cho phép trống (migration 20260819000100), nút
+    // "Áp dụng Nam/Nữ" vẫn còn nguyên cho người muốn điền ngay, và
+    // `v_incomplete_student_profiles` là chỗ nhắc phần còn thiếu về sau.
+    // Đừng dựng lại hàng rào này — hàng rào tương ứng ở DB cũng đã gỡ.
 
-    // 🔴 BR-M12-32 / AC-19 / D-133 — cùng khuôn chặn với dòng thiếu giới tính:
-    // một mặc định an toàn vẫn là máy quyết thay người, nên dòng trùng chắc chắn
-    // phải có người nhìn tận mắt rồi bấm Lưu.
+    // 🔴 BR-M12-32 / AC-19 / D-133 — hàng rào NÀY thì giữ, và nó là hàng rào
+    // cuối cùng còn lại ở bước ghi. Thiếu dữ liệu chỉ làm hồ sơ nghèo đi, còn
+    // ghép nhầm hai em thành một là **mất một em** khỏi hệ thống: dòng trùng
+    // chắc chắn phải có người nhìn tận mắt rồi bấm Lưu.
     const undecided = (pending ?? []).filter((row) =>
       hasPendingDuplicate((row.warnings_json ?? []) as unknown as RowIssue[]),
     );

@@ -38,8 +38,9 @@ export function UpdateStudentForm({
     id: string;
     saintName: string;
     fullName: string;
-    gender: string;
-    dateOfBirth: string;
+    /** Null từ IMP-BULK-002 — hồ sơ nhập từ sổ có thể chưa có hai ô này. */
+    gender: string | null;
+    dateOfBirth: string | null;
     patronFeastDate: string | null;
     phone: string | null;
     address: string | null;
@@ -64,7 +65,11 @@ export function UpdateStudentForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="edit-gender">Giới tính</Label>
-          <Select id="edit-gender" name="gender" defaultValue={student.gender}>
+          {/* 🔴 IMP-BULK-002 — lựa chọn trống phải CÓ THẬT và phải đứng đầu.
+              Không có nó thì hồ sơ chưa rõ giới tính hiện sẵn "Nam", và người
+              vào sửa địa chỉ sẽ ghi "Nam" vào hồ sơ mà không hề chọn gì. */}
+          <Select id="edit-gender" name="gender" defaultValue={student.gender ?? ""}>
+            <option value="">— chưa rõ —</option>
             {Object.entries(GENDER_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -80,11 +85,13 @@ export function UpdateStudentForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="edit-dob">Ngày sinh</Label>
+          {/* IMP-BULK-002 — bỏ `required`: hồ sơ nhập từ sổ có thể chưa có
+              ngày sinh, và biểu mẫu này là chỗ điền nó vào chứ không phải chỗ
+              chặn mọi sửa đổi khác lại. */}
           <DateField
             id="edit-dob"
             name="dateOfBirth"
-            defaultValue={student.dateOfBirth}
-            required
+            defaultValue={student.dateOfBirth ?? ""}
           />
         </div>
         <div className="space-y-2">

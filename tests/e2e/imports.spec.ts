@@ -23,8 +23,15 @@ import ExcelJS from "exceljs";
  * sau làm theo).
  */
 const DEV_PASSWORD = "123456";
-/** Thư ký — một trong bốn vai trò ghi toàn xứ đoàn được nhập Excel. */
-const SECRETARY = "GLV901";
+/**
+ * 🔴 IMP-BULK-002 (2026-08-19) — người nhập là **Quản trị viên hệ thống**, không
+ * còn là Thư ký. Hằng số này trước đây là `GLV901`; đổi nó là đổi luôn ý nghĩa
+ * của cả file, nên hai đối chứng âm tính bên dưới cũng đổi theo: Xứ đoàn trưởng
+ * (vẫn `can_global_write`) nay đứng chung phía bị từ chối với Giáo lý viên lớp.
+ */
+const ADMIN = "Khang.Nho";
+/** Xứ đoàn trưởng — ghi được hồ sơ từng người, KHÔNG nhập được hàng loạt. */
+const GROUP_LEADER = "GLV901";
 /** Giáo lý viên lớp Ấu 1A của `seed:dev` — đối chứng âm tính của SEC-01. */
 const CLASS_TEACHER = "GLV910";
 /** `seed:dev` tạo đủ 19 lớp chuẩn cho năm hiện hành. */
@@ -170,13 +177,17 @@ test.describe("M12-A · nhập Excel", () => {
   test.describe.configure({ timeout: 90_000 });
 
   test.beforeEach(async ({ page }) => {
-    await login(page, SECRETARY);
+    await login(page, ADMIN);
   });
 
-  test("SEC-01: Giáo lý viên lớp không vào được trang nhập dữ liệu", async ({ page }) => {
-    await login(page, CLASS_TEACHER);
-    await page.goto("/imports");
-    await expect(page).toHaveURL(/\/access-denied$/);
+  test("SEC-01: chỉ Quản trị viên vào được trang nhập dữ liệu", async ({ page }) => {
+    for (const username of [CLASS_TEACHER, GROUP_LEADER]) {
+      await login(page, username);
+      await page.goto("/imports");
+      await expect(page, username).toHaveURL(/\/access-denied$/);
+      await page.goto("/staff/bulk");
+      await expect(page, username).toHaveURL(/\/access-denied$/);
+    }
   });
 
   test("🔴 AC-13: file hỏng phải nói ra LÝ DO, không im lặng", async ({ page }) => {
@@ -514,7 +525,7 @@ test.describe("M12-A · nhập Excel", () => {
  *
  * 🔴 Bộ này tách riêng khỏi bộ trên vì **một bài trong đây đăng nhập bằng vai
  * trò khác** (SEC-04b dùng Giáo lý viên lớp), mà `beforeEach` của bộ trên đăng
- * nhập sẵn bằng Thư ký. Trộn hai thứ vào một bộ là cách nhanh nhất để một bài
+ * nhập sẵn bằng Quản trị viên. Trộn hai thứ vào một bộ là cách nhanh nhất để một bài
  * chạy dưới đúng phiên mà nó sinh ra để chứng minh là **không** được phép có.
  */
 test.describe("M12-C · file lỗi/kết quả và giới hạn file", () => {
@@ -523,7 +534,7 @@ test.describe("M12-C · file lỗi/kết quả và giới hạn file", () => {
   test("TO-BE 8: biểu mẫu nói ra CẢ HAI giới hạn trước khi người dùng chọn file", async ({
     page,
   }) => {
-    await login(page, SECRETARY);
+    await login(page, ADMIN);
     await page.goto("/imports");
     // Nói trước, không nói sau: mạng phòng học chậm, và chờ hết một lượt tải để
     // biết là vô ích chính là thứ TO-BE 8 sinh ra để bỏ.
@@ -541,7 +552,7 @@ test.describe("M12-C · file lỗi/kết quả và giới hạn file", () => {
   test("🔴 SEC-12: file vượt trần 1.000 dòng bị từ chối bằng câu tiếng Việt", async ({
     page,
   }, testInfo) => {
-    await login(page, SECRETARY);
+    await login(page, ADMIN);
     const suffix = testInfo.project.name.replace(/[^a-z0-9]/gi, "");
     const rows = Array.from({ length: 1001 }, (_, index) => ({
       name: `Test Qua Dong ${suffix} ${index}`,
@@ -570,7 +581,7 @@ test.describe("M12-C · file lỗi/kết quả và giới hạn file", () => {
   test("🔴 AC-22 · AC-23: tải được file hai sheet, và ô độc bị vô hiệu", async ({
     page,
   }, testInfo) => {
-    await login(page, SECRETARY);
+    await login(page, ADMIN);
     const filename = `M12C-bao-cao-${testInfo.project.name}.xlsx`;
     const suffix = testInfo.project.name.replace(/[^a-z0-9]/gi, "");
     const content = await buildWorkbook([
@@ -587,7 +598,7 @@ test.describe("M12-C · file lỗi/kết quả và giới hạn file", () => {
       await expect(download).toBeVisible();
       await expect(download).toHaveAttribute("href", `/imports/${batchId}/errors`);
 
-      // `page.request` dùng chung kho cookie của context ⇒ vẫn là phiên Thư ký.
+      // `page.request` dùng chung kho cookie của context ⇒ vẫn là phiên Quản trị viên.
       const response = await page.request.get(`/imports/${batchId}/errors`);
       expect(response.status()).toBe(200);
       expect(response.headers()["content-type"]).toContain("spreadsheetml.sheet");
@@ -618,7 +629,7 @@ test.describe("M12-C · file lỗi/kết quả và giới hạn file", () => {
    * (RLS trả 0 dòng) và tưởng lần nhập không có dòng nào.
    */
   test("🔴 SEC-04b: Giáo lý viên lớp không tải được file kết quả", async ({ page }, testInfo) => {
-    await login(page, SECRETARY);
+    await login(page, ADMIN);
     const filename = `M12C-sec-${testInfo.project.name}.xlsx`;
     const suffix = testInfo.project.name.replace(/[^a-z0-9]/gi, "");
     const content = await buildWorkbook([
@@ -637,6 +648,6 @@ test.describe("M12-C · file lỗi/kết quả và giới hạn file", () => {
     await login(page, CLASS_TEACHER);
     const response = await page.request.get(`/imports/${batchId}/errors`);
     expect(response.status()).toBe(403);
-    expect(await response.text()).toContain("không có quyền nhập dữ liệu Excel");
+    expect(await response.text()).toContain("không có quyền nhập dữ liệu hàng loạt");
   });
 });

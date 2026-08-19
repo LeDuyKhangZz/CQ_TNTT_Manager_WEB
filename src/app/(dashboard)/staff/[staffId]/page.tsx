@@ -87,7 +87,9 @@ export default async function StaffDetailPage({
             <CardHeader><CardTitle>Hồ sơ</CardTitle><CardDescription>Thông tin nhân sự và trạng thái phục vụ.</CardDescription></CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p><span className="text-ink-muted">Danh xưng:</span> {TITLE_LABELS[staff.title] ?? staff.title}</p>
-              <p><span className="text-ink-muted">Số điện thoại:</span> {staff.phone}</p>
+              {/* IMP-BULK-002 — nói thẳng "chưa có" thay vì để trống sau dấu hai
+                  chấm: một ô trống trông y hệt một lỗi hiển thị. */}
+              <p><span className="text-ink-muted">Số điện thoại:</span> {staff.phone ?? "chưa có"}</p>
               <p className="flex items-center gap-2"><span className="text-ink-muted">Trạng thái phục vụ:</span> <Badge variant={staff.serviceStatus === "active" ? "success" : "secondary"}>{SERVICE_LABELS[staff.serviceStatus] ?? staff.serviceStatus}</Badge></p>
               {staff.sensitive ? (
                 <>

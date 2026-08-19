@@ -1765,7 +1765,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
-          phone: string
+          phone: string | null
           profile_id: string | null
           status: Database["public"]["Enums"]["guardian_status"]
           updated_at: string
@@ -1776,7 +1776,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
-          phone: string
+          phone?: string | null
           profile_id?: string | null
           status?: Database["public"]["Enums"]["guardian_status"]
           updated_at?: string
@@ -1787,7 +1787,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
-          phone?: string
+          phone?: string | null
           profile_id?: string | null
           status?: Database["public"]["Enums"]["guardian_status"]
           updated_at?: string
@@ -3042,7 +3042,7 @@ export type Database = {
           formation_level: Database["public"]["Enums"]["formation_level"]
           full_name: string
           id: string
-          phone: string
+          phone: string | null
           profile_id: string | null
           saint_name: string | null
           service_status: Database["public"]["Enums"]["staff_service_status"]
@@ -3060,7 +3060,7 @@ export type Database = {
           formation_level?: Database["public"]["Enums"]["formation_level"]
           full_name: string
           id?: string
-          phone: string
+          phone?: string | null
           profile_id?: string | null
           saint_name?: string | null
           service_status?: Database["public"]["Enums"]["staff_service_status"]
@@ -3078,7 +3078,7 @@ export type Database = {
           formation_level?: Database["public"]["Enums"]["formation_level"]
           full_name?: string
           id?: string
-          phone?: string
+          phone?: string | null
           profile_id?: string | null
           saint_name?: string | null
           service_status?: Database["public"]["Enums"]["staff_service_status"]
@@ -3473,11 +3473,11 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
-          date_of_birth: string
+          date_of_birth: string | null
           full_name: string
-          gender: Database["public"]["Enums"]["gender"]
+          gender: Database["public"]["Enums"]["gender"] | null
           general_notes: string | null
-          guardian_id: string
+          guardian_id: string | null
           hardship_flag: boolean
           id: string
           normalized_full_name: string | null
@@ -3494,11 +3494,11 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
-          date_of_birth: string
+          date_of_birth?: string | null
           full_name: string
-          gender: Database["public"]["Enums"]["gender"]
+          gender?: Database["public"]["Enums"]["gender"] | null
           general_notes?: string | null
-          guardian_id: string
+          guardian_id?: string | null
           hardship_flag?: boolean
           id?: string
           normalized_full_name?: string | null
@@ -3515,11 +3515,11 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
-          date_of_birth?: string
+          date_of_birth?: string | null
           full_name?: string
-          gender?: Database["public"]["Enums"]["gender"]
+          gender?: Database["public"]["Enums"]["gender"] | null
           general_notes?: string | null
-          guardian_id?: string
+          guardian_id?: string | null
           hardship_flag?: boolean
           id?: string
           normalized_full_name?: string | null
@@ -3837,6 +3837,9 @@ export type Database = {
         Row: {
           full_name: string | null
           missing_address: boolean | null
+          missing_date_of_birth: boolean | null
+          missing_gender: boolean | null
+          missing_guardian: boolean | null
           missing_guardian_phone: boolean | null
           missing_patron_feast: boolean | null
           saint_name: string | null
@@ -4231,6 +4234,7 @@ export type Database = {
           out_student_id: string
         }[]
       }
+      complete_password_change: { Args: never; Returns: undefined }
       confirm_import_duplicate: {
         Args: {
           p_action: Database["public"]["Enums"]["import_row_action"]
@@ -4238,11 +4242,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      purge_import_raw_data: {
-        Args: { p_batch_id: string }
-        Returns: number
-      }
-      complete_password_change: { Args: never; Returns: undefined }
       count_notification_audience: {
         Args: {
           p_target_id?: string
@@ -4440,6 +4439,7 @@ export type Database = {
         }
         Returns: string
       }
+      purge_import_raw_data: { Args: { p_batch_id: string }; Returns: number }
       receive_equipment: {
         Args: {
           p_condition?: Database["public"]["Enums"]["equipment_condition"]
@@ -4976,3 +4976,4 @@ export const Constants = {
     },
   },
 } as const
+
