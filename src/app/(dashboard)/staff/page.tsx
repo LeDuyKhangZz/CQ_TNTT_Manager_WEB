@@ -22,6 +22,8 @@ import {
   SERVICE_FILTER_LABELS,
   SERVICE_FILTERS,
   STAFF_PAGE_SIZE,
+  componentBadgeVariant,
+  componentLabel,
   formationLabel,
   parsePage,
   parseServiceFilter,
@@ -196,6 +198,14 @@ export default async function StaffPage({
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                          {/* STAFF-COMP-001 — thẻ ĐẦU TIÊN, trước cả trạng thái
+                              phục vụ. Ban Trợ tá không dạy học nhưng vẫn nằm
+                              trong danh sách này; trước đợt này dấu hiệu duy
+                              nhất để nhận ra họ là thẻ "Chưa phân lớp" — mà
+                              huynh trưởng mới cũng mang đúng thẻ ấy. */}
+                          <Badge variant={componentBadgeVariant(item.component)} icon={false}>
+                            {componentLabel(item.component)}
+                          </Badge>
                           <Badge variant={item.serviceStatus === "active" ? "success" : "secondary"}>
                             {serviceLabel(item.serviceStatus)}
                           </Badge>

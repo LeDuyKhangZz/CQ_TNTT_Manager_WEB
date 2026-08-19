@@ -12,11 +12,17 @@ import { Select } from "@/components/ui/select";
 import { createStaffFormAction } from "@/features/staff/server/actions";
 import { CREATE_STAFF_INITIAL_STATE } from "@/features/staff/create-form-state";
 import { duplicateReasonLabel, duplicateWarningText } from "@/features/staff/staff-duplicates";
-import { FORMATION_LABELS, SERVICE_LABELS, TITLE_LABELS } from "@/features/staff/staff-directory";
+import {
+  COMPONENT_LABELS,
+  FORMATION_LABELS,
+  SERVICE_LABELS,
+  TITLE_LABELS,
+} from "@/features/staff/staff-directory";
 import { useGlobalPending } from "@/components/loading/loading-provider";
 
 const TITLE_OPTIONS = Object.entries(TITLE_LABELS);
 const FORMATION_OPTIONS = Object.entries(FORMATION_LABELS);
+const COMPONENT_OPTIONS = Object.entries(COMPONENT_LABELS);
 
 /**
  * Nút gửi tự khoá khi đang chạy — TB-M04-03 ("chặn bấm đúp"). Phải là component
@@ -129,6 +135,27 @@ export function StaffCreateForm() {
               <option key={value} value={value}>{label}</option>
             ))}
           </Select>
+        </div>
+        {/* STAFF-COMP-001 — ô này quyết MÃ HỒ SƠ, nên nó phải nằm ở form tạo chứ
+            không đợi sửa sau: chọn "Trợ tá" thì hồ sơ nhận mã TTxxx, còn lại
+            nhận GLVxxx, và mã đã cấp thì không đổi lại được. */}
+        <div className="space-y-2">
+          <Label htmlFor="staff-component">Thành phần</Label>
+          <Select
+            id="staff-component"
+            name="component"
+            key={`component-${state.values.component}`}
+            defaultValue={state.values.component}
+            aria-describedby="staff-component-hint"
+          >
+            {COMPONENT_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </Select>
+          <p id="staff-component-hint" className="text-2xs text-ink-muted">
+            Trợ tá là người hỗ trợ hậu cần, không dạy học — hồ sơ nhận mã TT thay
+            vì GLV. Mã cấp một lần, đổi thành phần sau không đánh lại mã.
+          </p>
         </div>
       </div>
       <div className="space-y-2">

@@ -15,6 +15,8 @@ import {
   CAPACITY_LABELS,
   SERVICE_LABELS,
   TITLE_LABELS,
+  componentBadgeVariant,
+  componentLabel,
   formationLabel,
   staffDisplayName,
 } from "@/features/staff/staff-directory";
@@ -87,6 +89,16 @@ export default async function StaffDetailPage({
             <CardHeader><CardTitle>Hồ sơ</CardTitle><CardDescription>Thông tin nhân sự và trạng thái phục vụ.</CardDescription></CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p><span className="text-ink-muted">Danh xưng:</span> {TITLE_LABELS[staff.title] ?? staff.title}</p>
+              {/* STAFF-COMP-001 — thành phần đứng ngay dưới danh xưng vì nó trả
+                  lời câu người đọc hỏi trước tiên: người này LÀ GÌ. Không phải
+                  quyền (quyền ở khối Tài khoản) và không phải tư cách trong lớp
+                  (ở khối Phân công). */}
+              <p className="flex items-center gap-2">
+                <span className="text-ink-muted">Thành phần:</span>
+                <Badge variant={componentBadgeVariant(staff.component)} icon={false}>
+                  {componentLabel(staff.component)}
+                </Badge>
+              </p>
               {/* IMP-BULK-002 — nói thẳng "chưa có" thay vì để trống sau dấu hai
                   chấm: một ô trống trông y hệt một lỗi hiển thị. */}
               <p><span className="text-ink-muted">Số điện thoại:</span> {staff.phone ?? "chưa có"}</p>
@@ -181,6 +193,7 @@ export default async function StaffDetailPage({
                   phone={staff.phone}
                   formationLevel={staff.formationLevel}
                   serviceStatus={staff.serviceStatus}
+                  component={staff.component}
                   dateOfBirth={staff.sensitive?.dateOfBirth ?? null}
                   address={staff.sensitive?.address ?? null}
                   email={staff.sensitive?.email ?? null}

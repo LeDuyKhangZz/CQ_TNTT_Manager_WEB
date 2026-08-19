@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SERVICE_FILTER,
   STAFF_PAGE_SIZE,
+  componentBadgeVariant,
+  componentLabel,
   formationLabel,
   paginateStaff,
   parsePage,
@@ -34,6 +36,7 @@ function staff(overrides: Partial<StaffDirectoryItem> & { id: string }): StaffDi
     phone: "0900000000",
     formationLevel: "none",
     serviceStatus: "active",
+    component: "huynh_truong",
     assignment: null,
     ...overrides,
   };
@@ -205,5 +208,43 @@ describe("D-110 — ba mức hiển thị tài khoản", () => {
     for (const level of ["full", "warning", "basic"] as const) {
       expect(staffAccountBadge(none, level).text, level).toBe("Chưa có tài khoản");
     }
+  });
+});
+
+/**
+ * STAFF-COMP-001 — "Thành phần" trên danh sách `/staff`.
+ *
+ * Màn hình này KHÔNG có ô lọc theo thành phần: bộ lọc chỉ có lớp và trạng thái
+ * phục vụ. Nên đường duy nhất để gọi ra cả Ban Trợ tá là gõ vào ô tìm kiếm —
+ * và đó là lý do nhãn thành phần phải nằm trong chuỗi tìm kiếm, không chỉ trên
+ * cái thẻ. Bài dưới là đặc tả của điều đó.
+ */
+describe("thành phần nhân sự", () => {
+  it("gõ 'trợ tá' — có dấu hay không — đều ra đúng người trợ tá", () => {
+    const items = [
+      staff({ id: "a", fullName: "Nguyễn Huynh Trưởng", component: "huynh_truong" }),
+      staff({ id: "b", fullName: "Phan Thị Kim Hạnh", component: "tro_ta" }),
+    ];
+    for (const needle of ["trợ tá", "tro ta", "TRỢ TÁ"]) {
+      const { matched } = selectStaff(items, {
+        search: needle,
+        classId: "all",
+        service: DEFAULT_SERVICE_FILTER,
+      });
+      expect(matched.map((item) => item.id), needle).toEqual(["b"]);
+    }
+  });
+
+  it("'khac' đọc là 'Chưa phân loại' — một chỗ trống, không phải một nhóm người", () => {
+    expect(componentLabel("khac")).toBe("Chưa phân loại");
+    expect(componentLabel("tro_ta")).toBe("Trợ tá");
+    // Giá trị lạ thì in nguyên văn, không nuốt mất.
+    expect(componentLabel("chưa từng có")).toBe("chưa từng có");
+  });
+
+  it("thẻ Trợ tá nổi lên, thẻ 'Chưa phân loại' chìm xuống", () => {
+    expect(componentBadgeVariant("tro_ta")).toBe("info");
+    expect(componentBadgeVariant("khac")).toBe("secondary");
+    expect(componentBadgeVariant("nu_tu")).toBe("outline");
   });
 });

@@ -45,7 +45,7 @@ export async function getStaffPageData(criteria: StaffDirectoryCriteria, page: n
     supabase
       .from("staff_profiles")
       .select(
-        "id, staff_code, title, saint_name, full_name, phone, formation_level, service_status, profile_id, class_staff_assignments(id, capacity, starts_on, is_active, class_id, classes(display_name))",
+        "id, staff_code, title, saint_name, full_name, phone, formation_level, service_status, component, profile_id, class_staff_assignments(id, capacity, starts_on, is_active, class_id, classes(display_name))",
       )
       .order("full_name"),
     supabase.from("academic_years").select("id, name").eq("status", "current").maybeSingle(),
@@ -62,7 +62,8 @@ export async function getStaffPageData(criteria: StaffDirectoryCriteria, page: n
 
   const rows = (staffResult.data ?? []) as unknown as Array<{
     id: string; staff_code: string; title: string; saint_name: string | null; full_name: string;
-    phone: string | null; formation_level: string; service_status: string; profile_id: string | null;
+    phone: string | null; formation_level: string; service_status: string; component: string;
+    profile_id: string | null;
     class_staff_assignments: Array<{
       id: string; capacity: string; starts_on: string; is_active: boolean; class_id: string;
       classes: { display_name: string } | null;
@@ -98,6 +99,7 @@ export async function getStaffPageData(criteria: StaffDirectoryCriteria, page: n
       phone: row.phone,
       formationLevel: row.formation_level,
       serviceStatus: row.service_status,
+      component: row.component,
       assignment: assignment
         ? {
             id: assignment.id,
@@ -161,6 +163,8 @@ export interface StaffDetail {
   /** Null từ IMP-BULK-002 — xem `StaffDirectoryItem.phone`. */
   phone: string | null;
   serviceStatus: string;
+  /** STAFF-COMP-001 — thành phần (Huynh trưởng · Trợ tá · Nữ tu…), không phải quyền. */
+  component: string;
   /** Chỉ có khi người xem đạt `can_global_read` (AC-01.7) — nếu không thì null. */
   sensitive: null | { dateOfBirth: string | null; address: string | null; email: string | null };
   /**
@@ -244,7 +248,7 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
   const { data: row } = await supabase
     .from("staff_profiles")
     .select(
-      "id, staff_code, title, saint_name, full_name, formation_level, phone, service_status, date_of_birth, address, email, profile_id, class_staff_assignments(id, class_id, capacity, starts_on, ends_on, is_active, classes(display_name, academic_year_id))",
+      "id, staff_code, title, saint_name, full_name, formation_level, phone, service_status, component, date_of_birth, address, email, profile_id, class_staff_assignments(id, class_id, capacity, starts_on, ends_on, is_active, classes(display_name, academic_year_id))",
     )
     .eq("id", staffIdInput)
     .maybeSingle();
@@ -329,6 +333,7 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
     formationLevel: row.formation_level,
     phone: row.phone,
     serviceStatus: row.service_status,
+    component: row.component,
     sensitive: canSensitive
       ? { dateOfBirth: row.date_of_birth, address: row.address, email: row.email }
       : null,

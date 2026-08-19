@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { updateStaff } from "@/features/staff/server/actions";
 import {
+  COMPONENT_LABELS,
   FORMATION_LABELS,
   SERVICE_LABELS,
   TITLE_LABELS,
@@ -21,6 +22,7 @@ import { useGlobalPending } from "@/components/loading/loading-provider";
 const TITLE_OPTIONS = Object.entries(TITLE_LABELS);
 const FORMATION_OPTIONS = Object.entries(FORMATION_LABELS);
 const SERVICE_OPTIONS = Object.entries(SERVICE_LABELS);
+const COMPONENT_OPTIONS = Object.entries(COMPONENT_LABELS);
 
 export type StaffProfileEditorProps = {
   id: string;
@@ -30,6 +32,7 @@ export type StaffProfileEditorProps = {
   phone: string | null;
   formationLevel: string;
   serviceStatus: string;
+  component: string;
   dateOfBirth: string | null;
   address: string | null;
   email: string | null;
@@ -58,6 +61,7 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
         email: String(formData.get("email") ?? "") || null,
         address: String(formData.get("address") ?? "") || null,
         formationLevel: String(formData.get("formationLevel")) as never,
+        component: String(formData.get("component")) as never,
         serviceStatus: String(formData.get("serviceStatus")) as never,
       });
       if (!result.ok) {
@@ -87,6 +91,18 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
           <Select id="edit-formation" name="formationLevel" defaultValue={props.formationLevel}>
             {FORMATION_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="edit-component">Thành phần</Label>
+          <Select id="edit-component" name="component" defaultValue={props.component} aria-describedby="edit-component-hint">
+            {COMPONENT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </Select>
+          {/* STAFF-COMP-001 — nói trước cái mà người sửa chắc chắn sẽ tưởng: mã
+              hồ sơ KHÔNG chạy theo ô này. Mã nhân sự cũng là tên đăng nhập, đổi
+              mã của người đang dùng là khoá họ khỏi hệ thống. */}
+          <p id="edit-component-hint" className="text-2xs text-ink-muted">
+            Sửa được bất cứ lúc nào, nhưng mã hồ sơ giữ nguyên như lúc tạo.
+          </p>
         </div>
       </div>
       <div className="space-y-1">

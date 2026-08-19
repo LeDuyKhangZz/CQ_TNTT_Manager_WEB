@@ -36,6 +36,7 @@ const DUPLICATE_STATE: CreateStaffFormState = {
     email: "trung@example.com",
     address: "12 Trần Bình Trọng",
     formationLevel: "ii",
+    component: "huynh_truong",
   },
 };
 

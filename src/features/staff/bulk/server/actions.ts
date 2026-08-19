@@ -60,6 +60,8 @@ export interface StaffBulkPreviewRow {
   className: string | null;
   capacity: string;
   formationLevel: string;
+  /** STAFF-COMP-001 — thành phần đã quy về enum; quyết định tiền tố mã hồ sơ. */
+  component: string;
   errors: { field: string; message: string }[];
   warnings: { field: string; message: string }[];
   /** Hồ sơ đã có trông giống người này — cảnh báo mềm, đúng khuôn TB-M04-03. */
@@ -98,6 +100,8 @@ interface ExistingStaff {
   fullName: string;
   /** Null từ IMP-BULK-002 — hồ sơ nhập từ sổ chưa có số điện thoại. */
   phone: string | null;
+  /** STAFF-COMP-001 — `khac` nghĩa là chưa ai phân loại, lượt dán sau nâng được. */
+  component: string;
 }
 
 /**
@@ -117,7 +121,9 @@ interface ExistingStaff {
  */
 async function getExistingStaff(): Promise<Map<string, ExistingStaff>> {
   const supabase = await createClient();
-  const { data } = await supabase.from("staff_profiles").select("id, staff_code, full_name, phone");
+  const { data } = await supabase
+    .from("staff_profiles")
+    .select("id, staff_code, full_name, phone, component");
   const map = new Map<string, ExistingStaff>();
   for (const row of data ?? []) {
     map.set(matchKey(row.full_name, row.phone), {
@@ -125,6 +131,7 @@ async function getExistingStaff(): Promise<Map<string, ExistingStaff>> {
       staffCode: row.staff_code,
       fullName: row.full_name,
       phone: row.phone,
+      component: row.component,
     });
   }
   return map;
@@ -196,6 +203,7 @@ export async function previewStaffBulk(
         className: row.normalized.classLabel,
         capacity: row.normalized.capacity,
         formationLevel: row.normalized.formationLevel,
+        component: row.normalized.component,
         errors: row.errors,
         warnings: row.warnings,
         existingStaffCode: match?.staffCode ?? null,
@@ -222,6 +230,12 @@ export interface StaffBulkCommitSummary {
   reused: number;
   assigned: number;
   skipped: number;
+  /**
+   * STAFF-COMP-001 — hồ sơ đã có đang để "Chưa phân loại" và lượt dán này nói ra
+   * được thành phần thật. Đếm riêng vì nó SỬA dữ liệu của hồ sơ cũ: một lượt dán
+   * mà lặng lẽ đổi hồ sơ người khác là thứ phải hiện lên màn hình.
+   */
+  componentUpdated: number;
   /** Hồ sơ vào được nhưng KHÔNG phân công được lớp — không phải lỗi, xem đầu file. */
   assignFailures: { rowNumber: number; fullName: string; message: string }[];
   failures: { rowNumber: number; fullName: string; message: string }[];
@@ -254,6 +268,7 @@ export async function commitStaffBulk(
       reused: 0,
       assigned: 0,
       skipped: 0,
+      componentUpdated: 0,
       assignFailures: [],
       failures: [],
     };
@@ -275,6 +290,21 @@ export async function commitStaffBulk(
 
       if (staffId) {
         summary.reused += 1;
+        // STAFF-COMP-001 — nâng "Chưa phân loại" lên giá trị thật, và CHỈ hướng
+        // đó. Ghi đè một thành phần đã có nghĩa là mỗi lượt dán lại khối cũ sẽ
+        // xoá tay sửa của quản trị viên; còn `khac` thì không phải câu trả lời
+        // của ai cả, nên thay được mà không mất gì.
+        const current = existing.get(key);
+        if (current && current.component === "khac" && normalized.component !== "khac") {
+          const { error: componentError } = await supabase
+            .from("staff_profiles")
+            .update({ component: normalized.component, updated_by: context.profileId })
+            .eq("id", staffId);
+          if (!componentError) {
+            summary.componentUpdated += 1;
+            existing.set(key, { ...current, component: normalized.component });
+          }
+        }
       } else {
         const { data, error } = await supabase
           .from("staff_profiles")
@@ -286,6 +316,9 @@ export async function commitStaffBulk(
             phone,
             address: normalized.address,
             formation_level: normalized.formationLevel,
+            // STAFF-COMP-001 — cột này quyết tiền tố mã hồ sơ ở trigger
+            // `staff_profiles_assign_code`: `tro_ta` ⇒ TTxxx, còn lại ⇒ GLVxxx.
+            component: normalized.component,
             service_status: "active",
             updated_by: context.profileId,
           })
@@ -308,6 +341,7 @@ export async function commitStaffBulk(
           staffCode: data.staff_code,
           fullName: normalized.fullName,
           phone,
+          component: normalized.component,
         });
       }
 

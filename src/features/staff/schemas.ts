@@ -11,6 +11,18 @@ export const createStaffSchema = z.object({
   email: z.string().trim().email().nullable(),
   address: nullableText(500),
   formationLevel: z.enum(["none", "i", "ii", "iii", "special"]),
+  /**
+   * STAFF-COMP-001 — người này LÀ GÌ trong xứ đoàn. Mặc định `khac`
+   * ("Chưa phân loại") chứ không phải `huynh_truong`: đoán bừa ở đây là ghi sai
+   * về một người thật vào đúng cột sinh ra để nói đúng về họ.
+   *
+   * 🔴 Chỉ có tác dụng lúc TẠO. Cột này quyết tiền tố mã hồ sơ ở trigger
+   * `staff_profiles_assign_code`, mà mã thì cấp một lần và không đổi — sửa thành
+   * phần của hồ sơ đã có KHÔNG đánh lại mã, vì mã nhân sự cũng là tên đăng nhập.
+   */
+  component: z
+    .enum(["huynh_truong", "du_truong", "nu_tu", "chung_sinh", "linh_muc", "tro_ta", "khac"])
+    .default("khac"),
   serviceStatus: z.enum(["active", "paused", "inactive"]).default("active"),
   /**
    * TB-M04-03 — "Vẫn tạo hồ sơ mới". Cảnh báo trùng là MỀM: pha một trả về danh

@@ -32,6 +32,31 @@ export const FORMATION_LABELS: Readonly<Record<string, string>> = {
   none: "Chưa qua huấn luyện", i: "Cấp I", ii: "Cấp II", iii: "Cấp III", special: "Đặc biệt",
 };
 
+/**
+ * STAFF-COMP-001 — "Thành phần": người này LÀ GÌ trong xứ đoàn.
+ *
+ * Khác hẳn `CAPACITY_LABELS` bên dưới, và hai cái hay bị lẫn: `capacity` là tư
+ * cách **trong một lớp** (ai đại diện, ai phụ tá) và chỉ tồn tại khi có phân
+ * công; `component` là con người, tồn tại kể cả khi không đứng lớp nào.
+ *
+ * 🔴 `tro_ta` — Trợ tá **không dạy học**. Họ thường là phụ huynh của các em
+ * trong xứ đoàn, đến lo hậu cần (nấu ăn sáng cho thiếu nhi…). Trước đợt này họ
+ * nằm lẫn giữa huynh trưởng trong danh sách và mang mã `GLVxxx` như người đứng
+ * lớp — chủ dự án nêu ra ngày 2026-08-19 và đó là lý do cả đợt này tồn tại.
+ *
+ * `khac` cố ý đọc là "Chưa phân loại", không phải "Khác": nó là chỗ TRỐNG chờ
+ * người điền, không phải một nhóm người.
+ */
+export const COMPONENT_LABELS: Readonly<Record<string, string>> = {
+  huynh_truong: "Huynh trưởng",
+  du_truong: "Dự trưởng",
+  nu_tu: "Nữ tu",
+  chung_sinh: "Chủng sinh",
+  linh_muc: "Linh mục",
+  tro_ta: "Trợ tá",
+  khac: "Chưa phân loại",
+};
+
 export const SERVICE_LABELS: Readonly<Record<string, string>> = {
   active: "Đang phục vụ", paused: "Tạm nghỉ", inactive: "Đã nghỉ",
 };
@@ -44,6 +69,27 @@ export const CAPACITY_LABELS: Readonly<Record<string, string>> = {
 export const CAPACITY_SHORT_LABELS: Readonly<Record<string, string>> = {
   representative: "Đại diện", member: "Giáo lý viên", trainee: "Dự trưởng",
 };
+
+export function componentLabel(value: string): string {
+  return COMPONENT_LABELS[value] ?? value;
+}
+
+/**
+ * Sắc thái của thẻ "Thành phần". KHÔNG phải màu trạng thái: đây là nhãn nói
+ * người ta là ai, nên mọi nhóm dùng `outline` (viền, không nền màu) và gọi kèm
+ * `icon={false}` — một icon dấu chấm than cạnh chữ "Nữ tu" là nói sai.
+ *
+ * Hai ngoại lệ có lý do:
+ *   · `tro_ta`  — nổi lên bằng `info`, vì đây chính là nhóm mà trước đợt này
+ *     không ai nhìn danh sách mà tách ra được;
+ *   · `khac`    — chìm xuống `secondary`, vì "Chưa phân loại" là chỗ trống chờ
+ *     điền chứ không phải một nhóm người.
+ */
+export function componentBadgeVariant(value: string): "info" | "outline" | "secondary" {
+  if (value === "tro_ta") return "info";
+  if (value === "khac") return "secondary";
+  return "outline";
+}
 
 export function formationLabel(value: string): string {
   return FORMATION_LABELS[value] ?? value;
@@ -91,6 +137,8 @@ export interface StaffDirectoryItem {
   phone: string | null;
   formationLevel: string;
   serviceStatus: string;
+  /** STAFF-COMP-001 — một trong bảy giá trị của `COMPONENT_LABELS`. */
+  component: string;
   assignment: null | { id: string; capacity: string; classId: string; className: string };
 }
 
@@ -114,8 +162,12 @@ function matchesClass(item: StaffDirectoryItem, filter: ClassFilter): boolean {
 
 function matchesSearch(item: StaffDirectoryItem, needle: string): boolean {
   if (!needle) return true;
+  // STAFF-COMP-001 — gõ "trợ tá" (hay "tro ta") phải ra được cả ban. Đây là
+  // đường DUY NHẤT để lọc theo thành phần: ô lọc trên màn hình chỉ có lớp và
+  // trạng thái phục vụ, nên nhãn thành phần phải nằm trong chuỗi tìm kiếm.
   const haystack = foldVietnamese(
-    `${item.fullName} ${item.saintName ?? ""} ${item.staffCode} ${item.phone ?? ""}`,
+    `${item.fullName} ${item.saintName ?? ""} ${item.staffCode} ${item.phone ?? ""} ` +
+      `${componentLabel(item.component)}`,
   );
   return haystack.includes(needle);
 }

@@ -24,6 +24,7 @@ export interface CreateStaffFormValues {
   email: string;
   address: string;
   formationLevel: string;
+  component: string;
 }
 
 export interface CreateStaffFormState {
@@ -46,5 +47,6 @@ export const CREATE_STAFF_INITIAL_STATE: CreateStaffFormState = {
     email: "",
     address: "",
     formationLevel: "none",
+    component: "khac",
   },
 };

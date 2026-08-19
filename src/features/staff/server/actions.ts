@@ -140,6 +140,9 @@ export async function createStaff(input: CreateStaffInput): Promise<StaffActionR
       email: parsed.email || null,
       address: parsed.address || null,
       formation_level: parsed.formationLevel,
+      // STAFF-COMP-001 — cột này quyết tiền tố mã ở trigger
+      // `staff_profiles_assign_code`: `tro_ta` ⇒ TTxxx, còn lại ⇒ GLVxxx.
+      component: parsed.component,
       service_status: parsed.serviceStatus,
       updated_by: context.profileId,
     }).select("id, staff_code").single();
@@ -164,6 +167,9 @@ export async function updateStaff(input: UpdateStaffInput): Promise<StaffActionR
       ...(changes.email !== undefined ? { email: changes.email || null } : {}),
       ...(changes.address !== undefined ? { address: changes.address || null } : {}),
       ...(changes.formationLevel !== undefined ? { formation_level: changes.formationLevel } : {}),
+      // Sửa được thành phần, nhưng mã hồ sơ KHÔNG đổi theo — xem chú thích ở
+      // `createStaffSchema.component` và trigger trong migration.
+      ...(changes.component !== undefined ? { component: changes.component } : {}),
       ...(changes.serviceStatus !== undefined ? { service_status: changes.serviceStatus } : {}),
       updated_by: context.profileId,
     };
@@ -448,6 +454,7 @@ export async function createStaffFormAction(
     email: String(formData.get("email") ?? ""),
     address: String(formData.get("address") ?? ""),
     formationLevel: String(formData.get("formationLevel") ?? "none"),
+    component: String(formData.get("component") ?? "khac"),
   };
 
   const result = await createStaff({
@@ -459,6 +466,7 @@ export async function createStaffFormAction(
     email: values.email || null,
     address: values.address || null,
     formationLevel: values.formationLevel,
+    component: values.component,
     serviceStatus: "active",
     confirmDuplicate: formData.get("confirmDuplicate") === "1",
   } as CreateStaffInput);

@@ -3036,6 +3036,7 @@ export type Database = {
         Row: {
           address: string | null
           avatar_path: string | null
+          component: Database["public"]["Enums"]["staff_component"]
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -3054,6 +3055,7 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_path?: string | null
+          component?: Database["public"]["Enums"]["staff_component"]
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -3072,6 +3074,7 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_path?: string | null
+          component?: Database["public"]["Enums"]["staff_component"]
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -4710,6 +4713,14 @@ export type Database = {
         | "present"
         | "excused_absence"
         | "unexcused_absence"
+      staff_component:
+        | "huynh_truong"
+        | "du_truong"
+        | "nu_tu"
+        | "chung_sinh"
+        | "linh_muc"
+        | "tro_ta"
+        | "khac"
       staff_service_status: "active" | "paused" | "inactive"
       staff_title: "anh" | "chi" | "di" | "so" | "cha" | "thay" | "other"
       student_status:
@@ -4962,6 +4973,15 @@ export const Constants = {
         "present",
         "excused_absence",
         "unexcused_absence",
+      ],
+      staff_component: [
+        "huynh_truong",
+        "du_truong",
+        "nu_tu",
+        "chung_sinh",
+        "linh_muc",
+        "tro_ta",
+        "khac",
       ],
       staff_service_status: ["active", "paused", "inactive"],
       staff_title: ["anh", "chi", "di", "so", "cha", "thay", "other"],

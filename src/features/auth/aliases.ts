@@ -22,7 +22,11 @@ export function deriveLoginAlias(username: string, domain: string): LoginAlias |
   if (/^CQ[0-9]{4,}$/.test(upper)) {
     return { normalizedUsername: upper, email: `${upper.toLowerCase()}@students.${safeDomain}`, kind: "student" };
   }
-  if (/^GLV[0-9]{3,}$/.test(upper)) {
+  // STAFF-COMP-001 — `TT` là mã của Ban Trợ tá. Họ hiện KHÔNG được cấp tài khoản
+  // (chốt 2026-08-19), nên nhánh này chưa chạy trong thực tế — nó có mặt để nếu
+  // mai kia cấp thì mã ấy vào đúng miền `@staff.`, thay vì rơi xuống nhánh tài
+  // khoản thường ở cuối hàm và lặng lẽ nhận `@accounts.`.
+  if (/^(GLV|TT)[0-9]{3,}$/.test(upper)) {
     return { normalizedUsername: upper, email: `${upper.toLowerCase()}@staff.${safeDomain}`, kind: "staff" };
   }
 

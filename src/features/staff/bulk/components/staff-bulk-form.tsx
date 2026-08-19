@@ -38,6 +38,21 @@ const CAPACITY_LABELS: Record<string, string> = {
   trainee: "Dự trưởng",
 };
 
+/**
+ * STAFF-COMP-001 — nhãn "Thành phần" cho bảng xem trước. Cột này quyết TIỀN TỐ
+ * MÃ HỒ SƠ (`tro_ta` ⇒ TTxxx), nên nó phải hiện ra ở đúng màn hình cuối cùng mà
+ * người dùng còn sửa được khối dán, không phải để đến lúc mở hồ sơ mới thấy.
+ */
+const COMPONENT_LABELS: Record<string, string> = {
+  huynh_truong: "Huynh trưởng",
+  du_truong: "Dự trưởng",
+  nu_tu: "Nữ tu",
+  chung_sinh: "Chủng sinh",
+  linh_muc: "Linh mục",
+  tro_ta: "Trợ tá",
+  khac: "Chưa phân loại",
+};
+
 const LEVEL_LABELS: Record<string, string> = {
   none: "—",
   i: "Cấp I",
@@ -144,14 +159,19 @@ export function StaffBulkForm({
           spellCheck={false}
           className="font-mono text-xs"
           placeholder={
-            "Danh xưng | Tên Thánh | Họ và tên | SĐT | Ngày sinh | Cấp | Lớp | Vai trò\n" +
-            "Chị | Maria | Trần Bình An | 0931342624 | 07/10/2004 | 2 | Chiên Con 1 | GLV đại diện"
+            "Danh xưng | Tên Thánh | Họ và tên | SĐT | Ngày sinh | Cấp | Lớp | Vai trò | Thành phần\n" +
+            "Chị | Maria | Trần Bình An | 0931342624 | 07/10/2004 | 2 | Chiên Con 1 | GLV đại diện | Huynh trưởng"
           }
         />
         <p className="text-xs text-ink-muted">
-          Dòng đầu là tiêu đề cột. Cột <strong>Họ và tên</strong> và <strong>SĐT</strong> là bắt buộc.
+          Dòng đầu là tiêu đề cột. Chỉ <strong>Họ và tên</strong> là bắt buộc — thiếu số điện
+          thoại, ngày sinh hay lớp thì dòng vẫn ghi được (IMP-BULK-002).
           Vai trò nhận: <em>GLV đại diện · GLV lớp · Dự trưởng</em> — mỗi lớp chỉ được một GLV đại
-          diện, nên hệ thống không bao giờ tự đoán vai trò này.
+          diện, nên hệ thống không bao giờ tự đoán vai trò này.{" "}
+          Cột <strong>Thành phần</strong> nhận: <em>Huynh trưởng · Dự trưởng · Nữ tu · Chủng sinh ·
+          Linh mục · Trợ tá</em>. Bỏ trống thì hồ sơ để &ldquo;Chưa phân loại&rdquo; — hệ thống
+          không đoán. 🔴 <strong>Trợ tá</strong> nhận mã hồ sơ <strong>TTxxx</strong> thay vì
+          GLVxxx, và mã đã cấp thì không đổi lại được.
         </p>
       </div>
 
@@ -172,6 +192,12 @@ export function StaffBulkForm({
         <FormMessage tone={summary.failures.length > 0 ? "danger" : "success"}>
           {`Đã tạo ${summary.created} hồ sơ mới · dùng lại ${summary.reused} hồ sơ đã có · phân công ${summary.assigned} lượt vào lớp` +
             (summary.skipped > 0 ? ` · bỏ qua ${summary.skipped} dòng lỗi` : "") +
+            // STAFF-COMP-001 — lượt dán này SỬA hồ sơ đã có (điền thành phần cho
+            // hồ sơ đang để "Chưa phân loại"). Sửa dữ liệu người khác mà không
+            // nói ra thì lần sau không ai truy được vì sao nó đổi.
+            (summary.componentUpdated > 0
+              ? ` · điền thành phần cho ${summary.componentUpdated} hồ sơ đang để "Chưa phân loại"`
+              : "") +
             "."}
           {summary.assignFailures.length > 0 ? (
             <>
@@ -218,6 +244,7 @@ export function StaffBulkForm({
                   <th className="p-2 font-medium">Cấp</th>
                   <th className="p-2 font-medium">Lớp</th>
                   <th className="p-2 font-medium">Vai trò</th>
+                  <th className="p-2 font-medium">Thành phần</th>
                   <th className="p-2 font-medium">Ghi nhận</th>
                 </tr>
               </thead>
@@ -234,6 +261,13 @@ export function StaffBulkForm({
                     <td className="p-2">{LEVEL_LABELS[row.formationLevel] ?? row.formationLevel}</td>
                     <td className="p-2">{row.className ?? "—"}</td>
                     <td className="p-2">{CAPACITY_LABELS[row.capacity] ?? row.capacity}</td>
+                    <td className="p-2">
+                      {row.component === "tro_ta" ? (
+                        <Badge variant="info" icon={false}>Trợ tá · mã TT</Badge>
+                      ) : (
+                        (COMPONENT_LABELS[row.component] ?? row.component)
+                      )}
+                    </td>
                     <td className="p-2">
                       {row.errors.length > 0 ? (
                         <Badge variant="danger">{row.errors.map((issue) => issue.message).join(" ")}</Badge>

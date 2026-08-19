@@ -21,6 +21,14 @@ import {
 export type StaffTitle = "anh" | "chi" | "di" | "so" | "cha" | "thay" | "other";
 export type FormationLevel = "none" | "i" | "ii" | "iii" | "special";
 export type StaffCapacity = "representative" | "member" | "trainee";
+export type StaffComponent =
+  | "huynh_truong"
+  | "du_truong"
+  | "nu_tu"
+  | "chung_sinh"
+  | "linh_muc"
+  | "tro_ta"
+  | "khac";
 
 export interface StaffRowIssue {
   field: string;
@@ -39,8 +47,13 @@ export interface NormalizedStaffRow {
   classLabel: string | null;
   classId: string | null;
   capacity: StaffCapacity;
-  /** "Thành phần" gốc (Huynh trưởng, Dự trưởng, Nữ tu…) — ghi vào ghi chú đối chiếu. */
-  component: string | null;
+  /**
+   * STAFF-COMP-001 — "Thành phần" đã quy về enum, GHI THẲNG vào
+   * `staff_profiles.component`. Trước đợt này trường này được đọc rồi vứt đi.
+   */
+  component: StaffComponent;
+  /** Nguyên văn ô "Thành phần" trong sổ — hiện ở bảng xem trước để đối chiếu. */
+  componentLabel: string | null;
 }
 
 export interface BuiltStaffRow {
@@ -164,6 +177,40 @@ export function parseStaffCapacity(rawCapacity: unknown, rawComponent: unknown):
   return "member";
 }
 
+/**
+ * STAFF-COMP-001 — quy ô "Thành phần" của sổ Excel về một trong bảy giá trị.
+ *
+ * Ô ấy là văn bản gõ tay, không phải danh mục: sổ của xứ đoàn có "Huynh trưởng/
+ * Phó ngành Ấu", "Huynh trưởng Trưởng ngành Thiếu", "Sổ DỰ TRƯỞNG 1", "Dự trưởng
+ * mới". Nên khớp theo **chứa chữ**, không khớp bằng nhau.
+ *
+ * 🔴 Thứ tự các nhánh là có chủ ý: `tro ta` đứng trước tất cả. Trợ tá là giá trị
+ * DUY NHẤT đổi tiền tố mã hồ sơ (`TTxxx`), nên xếp nhầm họ vào nhóm khác là cấp
+ * cho một người không dạy học đúng cái mã nói rằng họ có dạy.
+ *
+ * Không nhận ra thì trả `khac` — **không đoán "huynh trưởng" làm mặc định**. Cột
+ * này sinh ra để nói đúng người ta là gì; một mặc định đoán bừa biến nó thành
+ * chỗ nói sai có hệ thống. "Chưa phân loại" thì quản trị viên còn sửa được.
+ */
+export function parseStaffComponent(
+  rawComponent: unknown,
+  rawCapacity?: unknown,
+): StaffComponent {
+  const text = normalizeForMatch(String(rawComponent ?? ""));
+  if (text.includes("tro ta")) return "tro_ta";
+  if (text.includes("du truong")) return "du_truong";
+  if (text.includes("nu tu") || text.includes("soeur")) return "nu_tu";
+  if (text.includes("chung sinh")) return "chung_sinh";
+  if (text.includes("linh muc") || text.includes("lm.")) return "linh_muc";
+  if (text.includes("huynh truong")) return "huynh_truong";
+  // Cột "Thành phần" trống thì cột "Vai trò" vẫn còn nói được một chuyện: khối
+  // Dự trưởng ở §4.2 của sổ ghi vai trò mà bỏ trống thành phần.
+  if (text === "" && normalizeForMatch(String(rawCapacity ?? "")).includes("du truong")) {
+    return "du_truong";
+  }
+  return "khac";
+}
+
 function isRuleLine(line: string): boolean {
   return /^[\s|:-]+$/.test(line) && line.includes("-");
 }
@@ -260,7 +307,8 @@ export function buildStaffRow(
       classLabel,
       classId,
       capacity: parseStaffCapacity(values.capacity, values.component),
-      component: optionalText(values.component),
+      component: parseStaffComponent(values.component, values.capacity),
+      componentLabel: optionalText(values.component),
     },
     errors,
     warnings,
