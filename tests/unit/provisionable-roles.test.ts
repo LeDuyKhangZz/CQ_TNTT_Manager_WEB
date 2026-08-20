@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { adminProvisionableRoles } from "@/features/auth/account-directory";
-import { classRoleForCapacity, grantableRolesForStaff } from "@/features/staff/grantable-roles";
+import {
+  classRoleForCapacity,
+  grantableRolesForStaff,
+  isAppointableRole,
+} from "@/features/staff/grantable-roles";
 import { CLASS_ROLES, STAFF_PROFILE_ROLES } from "@/lib/permissions/roles";
 
 /**
@@ -98,5 +102,78 @@ describe("grantableRolesForStaff (/staff/[staffId])", () => {
       const classRole = classRoleForCapacity(capacity);
       expect(grantableRolesForStaff("super_admin", capacity).roles).toContain(classRole);
     }
+  });
+});
+
+/**
+ * BDH-2025-002 — sổ Ban Điều Hành thắng phân công lớp.
+ *
+ * Bài kiểm đầu tiên là hình dạng CHÍNH XÁC của lỗi đã xảy ra trên production:
+ * anh Lê Trí Dũng là Xứ đoàn phó Nội vụ mà vẫn đang dạy Nghĩa 2, hộp thoại chọn
+ * sẵn "Giáo lý viên lớp" theo phân công, người cấp bấm Xác nhận, và anh đăng
+ * nhập với quyền của một Giáo lý viên lớp. 14/20 người của Ban Điều Hành
+ * 2025-2026 đứng trước đúng cái bẫy ấy.
+ */
+describe("isAppointableRole", () => {
+  it("nhận sáu chức vụ của sổ Ban Điều Hành", () => {
+    for (const role of [
+      "group_leader",
+      "deputy_group_leader",
+      "secretary",
+      "treasurer",
+      "sector_leader",
+      "sector_deputy",
+    ] as const) {
+      expect(isAppointableRole(role)).toBe(true);
+    }
+  });
+
+  it("từ chối vai trò lớp, super_admin và các vai trò ngoài hồ sơ nhân sự", () => {
+    for (const role of [...CLASS_ROLES, "super_admin", "parish_priest", "guardian", "student"] as const) {
+      expect(isAppointableRole(role)).toBe(false);
+    }
+    expect(isAppointableRole(null)).toBe(false);
+  });
+});
+
+describe("grantableRolesForStaff — chức vụ bổ nhiệm (BDH-2025-002)", () => {
+  it("Xứ đoàn phó đang đứng lớp: chọn sẵn CHỨC VỤ, không phải vai trò lớp", () => {
+    const result = grantableRolesForStaff("super_admin", "member", "deputy_group_leader");
+    expect(result.recommended).toBe("deputy_group_leader");
+    expect(result.roles[0]).toBe("deputy_group_leader");
+  });
+
+  it("vai trò lớp vẫn còn trong danh sách để đổi lại được", () => {
+    const result = grantableRolesForStaff("super_admin", "member", "sector_leader");
+    expect(result.roles).toContain("class_teacher");
+    expect(new Set(result.roles).size).toBe(result.roles.length);
+  });
+
+  it("không có chức vụ trong sổ ⇒ giữ nguyên hành vi D-111 cũ", () => {
+    const withoutBook = grantableRolesForStaff("super_admin", "member");
+    const withNullBook = grantableRolesForStaff("super_admin", "member", null);
+    expect(withNullBook).toEqual(withoutBook);
+    expect(withoutBook.recommended).toBe("class_teacher");
+  });
+
+  it("chức vụ trong sổ vẫn phải qua trần vai trò D-102", () => {
+    // Thư ký (rank 70) không cấp được vai trò Xứ đoàn trưởng (rank 80).
+    const result = grantableRolesForStaff("secretary", "member", "group_leader");
+    expect(result.roles).not.toContain("group_leader");
+    expect(result.recommended).toBe("class_teacher");
+  });
+
+  it("một vai trò LỚP lọt vào cột chức vụ thì bị bỏ qua, không chọn sẵn", () => {
+    // Ràng buộc `staff_profiles_appointment_shape` chặn ở DB; đây là lưới thứ
+    // hai cho dữ liệu cũ hoặc một lượt ghi thẳng. Chọn sẵn vai trò lớp mà không
+    // kèm classId là đẩy người dùng vào một lượt chèn chắc chắn bị trigger chặn.
+    const result = grantableRolesForStaff("super_admin", null, "class_teacher");
+    expect(result.recommended).toBeNull();
+    expect(result.roles).not.toContain("class_teacher");
+  });
+
+  it("hồ sơ chưa có phân công nhưng CÓ chức vụ: vẫn cấp được tài khoản", () => {
+    const result = grantableRolesForStaff("super_admin", null, "treasurer");
+    expect(result.recommended).toBe("treasurer");
   });
 });

@@ -12,7 +12,7 @@ import {
   SECTOR_ROLES,
   type AppRole,
 } from "@/lib/permissions/roles";
-import { grantableRolesForStaff } from "../grantable-roles";
+import { grantableRolesForStaff, isAppointableRole } from "../grantable-roles";
 import type { StaffContact } from "../profile-completeness";
 import {
   paginateStaff,
@@ -165,6 +165,16 @@ export interface StaffDetail {
   serviceStatus: string;
   /** STAFF-COMP-001 — thành phần (Huynh trưởng · Trợ tá · Nữ tu…), không phải quyền. */
   component: string;
+  /**
+   * BDH-2025-002 — chức vụ theo **sổ Ban Điều Hành**, không phải quyền đang có.
+   * `null` với tuyệt đại đa số hồ sơ: chỉ Ban Thường Vụ và Trưởng/Phó ngành mới
+   * có. Sáu Trưởng Ban của sổ cũng `null` — "Trưởng ban" không phải `app_role`
+   * (D-15) mà là `committee_memberships.position`.
+   *
+   * Đây là thứ trang này dùng để nói "vai trò tài khoản đang lệch khỏi chức vụ",
+   * và là thứ `grantableRolesForStaff` dùng để chọn sẵn đúng ô.
+   */
+  appointment: null | { role: AppRole; sectorId: string | null; sectorName: string | null };
   /** Chỉ có khi người xem đạt `can_global_read` (AC-01.7) — nếu không thì null. */
   sensitive: null | { dateOfBirth: string | null; address: string | null; email: string | null };
   /**
@@ -222,8 +232,17 @@ export interface StaffDetailData {
   deleteBlockers: string[] | null;
   /** Vai trò người xem được cấp/đổi cho hồ sơ này, đã lọc theo trần + phân công. */
   grantableRoles: AppRole[];
-  /** Vai trò chọn sẵn trong ô chọn (thường là vai trò lớp của phân công đang hoạt động). */
+  /**
+   * Vai trò chọn sẵn trong ô chọn — chức vụ bổ nhiệm nếu sổ có ghi, nếu không
+   * thì vai trò lớp của phân công đang hoạt động (BDH-2025-002).
+   */
   recommendedRole: AppRole | null;
+  /**
+   * Ngành điền sẵn khi `recommendedRole` là vai trò ngành. `null` với mọi vai
+   * trò khác — hộp thoại không được gửi `sectorId` kèm một vai trò toàn cục,
+   * `role_assignments_scope_matches_role` sẽ chặn.
+   */
+  recommendedSectorId: string | null;
   currentAcademicYear: { id: string; name: string } | null;
   sectors: Array<{ id: string; name: string }>;
   classes: Array<{ id: string; name: string }>;
@@ -248,7 +267,7 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
   const { data: row } = await supabase
     .from("staff_profiles")
     .select(
-      "id, staff_code, title, saint_name, full_name, formation_level, phone, service_status, component, date_of_birth, address, email, profile_id, class_staff_assignments(id, class_id, capacity, starts_on, ends_on, is_active, classes(display_name, academic_year_id))",
+      "id, staff_code, title, saint_name, full_name, formation_level, phone, service_status, component, appointed_role, appointed_sector_id, date_of_birth, address, email, profile_id, class_staff_assignments(id, class_id, capacity, starts_on, ends_on, is_active, classes(display_name, academic_year_id))",
     )
     .eq("id", staffIdInput)
     .maybeSingle();
@@ -306,14 +325,26 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
   // Vai trò cấp/đổi được (TB-01.3 + D-111): vai trò lớp theo capacity của phân
   // công đang hoạt động, CỘNG các vai trò toàn xứ đoàn/ngành. Luật ở hàm thuần
   // `grantableRolesForStaff` (có unit test), đã lọc qua trần vai trò D-102.
+  //
+  // BDH-2025-002 — sổ bổ nhiệm được ưu tiên hơn phân công lớp. `isAppointableRole`
+  // lọc lại giá trị đọc từ DB thay vì tin nó: ràng buộc `staff_profiles_appointment_shape`
+  // đã canh, nhưng cột này nullable và dữ liệu cũ/ghi thẳng vẫn có thể lọt một
+  // vai trò lớp vào — chọn sẵn một vai trò lớp mà không kèm `classId` là đẩy
+  // người dùng vào một lượt chèn chắc chắn bị trigger chặn.
+  const appointedRole = isAppointableRole(row.appointed_role as AppRole | null)
+    ? (row.appointed_role as AppRole)
+    : null;
   const grantable = canManageAccount
-    ? grantableRolesForStaff(context.role, activeAssignment?.capacity ?? null)
+    ? grantableRolesForStaff(context.role, activeAssignment?.capacity ?? null, appointedRole)
     : { roles: [] as AppRole[], recommended: null };
   const grantableRoles = grantable.roles;
 
   const [yearResult, sectorsResult, classesResult, blockersResult] = await Promise.all([
     supabase.from("academic_years").select("id, name").eq("status", "current").maybeSingle(),
-    grantableRoles.some((role) => SECTOR_ROLES.includes(role))
+    // Nạp thêm khi hồ sơ CÓ ngành bổ nhiệm, kể cả khi người xem không cấp được
+    // vai trò ngành: khối "Hồ sơ" vẫn phải in ra tên ngành ấy, và in một id thô
+    // hoặc một dấu gạch ngang thì dòng chức vụ nói dối về chính nó.
+    canWrite || grantableRoles.some((role) => SECTOR_ROLES.includes(role)) || row.appointed_sector_id
       ? supabase.from("sectors").select("id, name").eq("is_active", true).order("sort_order")
       : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
     canWrite || canTransfer
@@ -323,6 +354,8 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
       ? supabase.rpc("staff_profile_delete_blockers", { p_staff_id: staffIdInput })
       : Promise.resolve({ data: null }),
   ]);
+
+  const sectorList = (sectorsResult.data ?? []) as Array<{ id: string; name: string }>;
 
   const staff: StaffDetail = {
     id: row.id,
@@ -334,6 +367,14 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
     phone: row.phone,
     serviceStatus: row.service_status,
     component: row.component,
+    appointment: appointedRole
+      ? {
+          role: appointedRole,
+          sectorId: row.appointed_sector_id,
+          sectorName:
+            sectorList.find((item) => item.id === row.appointed_sector_id)?.name ?? null,
+        }
+      : null,
     sensitive: canSensitive
       ? { dateOfBirth: row.date_of_birth, address: row.address, email: row.email }
       : null,
@@ -353,8 +394,12 @@ export async function getStaffDetail(staffIdInput: string): Promise<StaffDetailD
     deleteBlockers: canWrite ? ((blockersResult.data as string[] | null) ?? []) : null,
     grantableRoles,
     recommendedRole: grantable.recommended,
+    recommendedSectorId:
+      grantable.recommended && SECTOR_ROLES.includes(grantable.recommended)
+        ? row.appointed_sector_id
+        : null,
     currentAcademicYear: yearResult.data ? { id: yearResult.data.id, name: yearResult.data.name } : null,
-    sectors: (sectorsResult.data ?? []) as Array<{ id: string; name: string }>,
+    sectors: sectorList,
     // Chỉ lớp của NĂM HỌC HIỆN HÀNH (TB-M04-04). Ô chọn gộp mọi năm là cách chắc
     // chắn để ai đó phân công vào một lớp của năm đã qua rồi không hiểu vì sao
     // người ấy vẫn "chưa có lớp" trên mọi màn hình khác. Lọc trong bộ nhớ vì

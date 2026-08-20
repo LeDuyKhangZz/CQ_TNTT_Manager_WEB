@@ -3035,6 +3035,8 @@ export type Database = {
       staff_profiles: {
         Row: {
           address: string | null
+          appointed_role: Database["public"]["Enums"]["app_role"] | null
+          appointed_sector_id: string | null
           avatar_path: string | null
           component: Database["public"]["Enums"]["staff_component"]
           created_at: string
@@ -3054,6 +3056,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          appointed_role?: Database["public"]["Enums"]["app_role"] | null
+          appointed_sector_id?: string | null
           avatar_path?: string | null
           component?: Database["public"]["Enums"]["staff_component"]
           created_at?: string
@@ -3073,6 +3077,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          appointed_role?: Database["public"]["Enums"]["app_role"] | null
+          appointed_sector_id?: string | null
           avatar_path?: string | null
           component?: Database["public"]["Enums"]["staff_component"]
           created_at?: string
@@ -3091,6 +3097,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "staff_profiles_appointed_sector_id_fkey"
+            columns: ["appointed_sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "staff_profiles_profile_id_fkey"
             columns: ["profile_id"]

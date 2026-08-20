@@ -170,6 +170,16 @@ export async function updateStaff(input: UpdateStaffInput): Promise<StaffActionR
       // Sửa được thành phần, nhưng mã hồ sơ KHÔNG đổi theo — xem chú thích ở
       // `createStaffSchema.component` và trigger trong migration.
       ...(changes.component !== undefined ? { component: changes.component } : {}),
+      // BDH-2025-002 — chức vụ bổ nhiệm. Hai cột đi THÀNH CẶP: gửi một mình
+      // `appointed_role` mà bỏ `appointed_sector_id` là để lại ngành cũ của một
+      // chức vụ đã đổi, và `staff_profiles_appointment_shape` sẽ chặn cả lượt
+      // ghi. `superRefine` của schema đã canh cặp này trước khi tới đây.
+      ...(changes.appointedRole !== undefined
+        ? {
+            appointed_role: changes.appointedRole,
+            appointed_sector_id: changes.appointedSectorId ?? null,
+          }
+        : {}),
       ...(changes.serviceStatus !== undefined ? { service_status: changes.serviceStatus } : {}),
       updated_by: context.profileId,
     };

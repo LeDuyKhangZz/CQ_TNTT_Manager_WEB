@@ -5,6 +5,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { getStaffDetail } from "@/features/staff/server/queries";
+import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { StaffAccountPanel } from "@/features/staff/components/staff-account-panel";
 import { StaffAssignmentPanel } from "@/features/staff/components/staff-assignment-panel";
 import { StaffDeletePanel } from "@/features/staff/components/staff-delete-panel";
@@ -99,6 +100,19 @@ export default async function StaffDetailPage({
                   {componentLabel(staff.component)}
                 </Badge>
               </p>
+              {/* BDH-2025-002 — chức vụ theo SỔ, đứng ngay dưới thành phần vì nó
+                  là câu hỏi kế tiếp: người này giữ chức gì trong xứ đoàn. Chỉ
+                  hiện khi sổ có ghi; hồ sơ không nằm trong Ban Điều Hành thì
+                  thêm một dòng "—" chỉ làm loãng khối. Đây KHÔNG phải quyền —
+                  quyền nằm ở khối "Tài khoản đăng nhập", và chính khối ấy cảnh
+                  báo khi hai bên lệch nhau. */}
+              {staff.appointment ? (
+                <p>
+                  <span className="text-ink-muted">Chức vụ bổ nhiệm:</span>{" "}
+                  {ROLE_LABELS[staff.appointment.role]}
+                  {staff.appointment.sectorName ? ` · ${staff.appointment.sectorName}` : ""}
+                </p>
+              ) : null}
               {/* IMP-BULK-002 — nói thẳng "chưa có" thay vì để trống sau dấu hai
                   chấm: một ô trống trông y hệt một lỗi hiển thị. */}
               <p><span className="text-ink-muted">Số điện thoại:</span> {staff.phone ?? "chưa có"}</p>
@@ -165,6 +179,12 @@ export default async function StaffDetailPage({
               account={staff.account}
               grantableRoles={detail.grantableRoles}
               recommendedRole={detail.recommendedRole}
+              recommendedSectorId={detail.recommendedSectorId}
+              appointment={
+                staff.appointment
+                  ? { role: staff.appointment.role, sectorName: staff.appointment.sectorName }
+                  : null
+              }
               activeAssignment={
                 staff.activeAssignment
                   ? {
@@ -197,6 +217,9 @@ export default async function StaffDetailPage({
                   dateOfBirth={staff.sensitive?.dateOfBirth ?? null}
                   address={staff.sensitive?.address ?? null}
                   email={staff.sensitive?.email ?? null}
+                  appointedRole={staff.appointment?.role ?? null}
+                  appointedSectorId={staff.appointment?.sectorId ?? null}
+                  sectors={detail.sectors}
                 />
               </CardContent>
             </Card>

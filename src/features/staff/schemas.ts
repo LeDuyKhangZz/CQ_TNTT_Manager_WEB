@@ -44,7 +44,48 @@ export const createStaffSchema = z.object({
 export const updateStaffSchema = createStaffSchema.partial().extend({
   id: z.string().uuid("Nhân sự không hợp lệ."),
   phone: z.string().trim().max(20).nullable().optional(),
-});
+  /**
+   * BDH-2025-002 — chức vụ theo sổ Ban Điều Hành. KHÔNG có ở `createStaffSchema`:
+   * lúc gõ một hồ sơ mới thì chưa ai bổ nhiệm người đó, và ép chọn ở đó chỉ tạo
+   * thêm một ô để bỏ trống.
+   *
+   * Danh sách enum ở đây là bản sao TypeScript của ràng buộc
+   * `staff_profiles_appointment_shape`: sáu chức vụ, không có vai trò lớp (đã suy
+   * được từ phân công), không có `super_admin` (trần tuyệt đối D-102). Cột này
+   * KHÔNG cấp quyền — nó chỉ điền sẵn ô chọn ở khối Tài khoản.
+   */
+  appointedRole: z
+    .enum(["group_leader", "deputy_group_leader", "secretary", "treasurer", "sector_leader", "sector_deputy"])
+    .nullable()
+    .optional(),
+  appointedSectorId: z.string().uuid("Ngành không hợp lệ.").nullable().optional(),
+})
+  /**
+   * Cặp chức vụ ↔ ngành phải khớp NGAY Ở ĐÂY, không để cơ sở dữ liệu trả lời hộ:
+   * ràng buộc CHECK ném một `23514` trần và `updateStaff` sẽ đổi nó thành
+   * "Không cập nhật được hồ sơ", tức người dùng không bao giờ biết mình quên
+   * chọn ngành. Chỉ kiểm khi `appointedRole` thực sự được gửi lên — biểu mẫu này
+   * là `partial()`, mọi lượt gọi khác không đụng tới hai ô này.
+   */
+  .superRefine((value, ctx) => {
+    if (value.appointedRole === undefined) return;
+    const needsSector =
+      value.appointedRole === "sector_leader" || value.appointedRole === "sector_deputy";
+    if (needsSector && !value.appointedSectorId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["appointedSectorId"],
+        message: "Chức vụ Trưởng/Phó ngành phải kèm ngành.",
+      });
+    }
+    if (!needsSector && value.appointedSectorId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["appointedSectorId"],
+        message: "Chức vụ toàn xứ đoàn không nhận phạm vi ngành.",
+      });
+    }
+  });
 
 /**
  * IMP-BULK-002 — người dùng tự sửa **hồ sơ của chính mình**. Bốn ô, không có

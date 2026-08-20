@@ -16,6 +16,7 @@ import {
   TITLE_LABELS,
 } from "@/features/staff/staff-directory";
 import { useGlobalPending } from "@/components/loading/loading-provider";
+import { ROLE_LABELS } from "@/lib/permissions/roles";
 
 // Cùng một bảng nhãn với danh sách và trang chi tiết (M04-B). Ba bản sao trước
 // đây đã lệch thật: ô này ghi "Chưa có" trong khi danh sách in `NONE`.
@@ -36,7 +37,31 @@ export type StaffProfileEditorProps = {
   dateOfBirth: string | null;
   address: string | null;
   email: string | null;
+  /** BDH-2025-002 — chức vụ theo sổ Ban Điều Hành; `null` với đại đa số hồ sơ. */
+  appointedRole: string | null;
+  appointedSectorId: string | null;
+  sectors: Array<{ id: string; name: string }>;
 };
+
+/**
+ * BDH-2025-002 — sáu chức vụ ghi được vào sổ bổ nhiệm, đúng bằng enum của
+ * `updateStaffSchema.appointedRole` và của ràng buộc `staff_profiles_appointment_shape`.
+ * Nhãn lấy từ `ROLE_LABELS` để ô này và khối Tài khoản không bao giờ gọi cùng
+ * một vai trò bằng hai cái tên.
+ */
+const APPOINTED_ROLE_OPTIONS: ReadonlyArray<{ value: AppointedRole; label: string }> = (
+  ["group_leader", "deputy_group_leader", "secretary", "treasurer", "sector_leader", "sector_deputy"] as const
+).map((role) => ({ value: role, label: ROLE_LABELS[role] }));
+
+type AppointedRole =
+  | "group_leader"
+  | "deputy_group_leader"
+  | "secretary"
+  | "treasurer"
+  | "sector_leader"
+  | "sector_deputy";
+
+const SECTOR_SCOPED_ROLES: readonly string[] = ["sector_leader", "sector_deputy"];
 
 /** Khối "Sửa hồ sơ" — kích hoạt `updateStaff` (trước M01-B là action chết). */
 export function StaffProfileEditor(props: StaffProfileEditorProps) {
@@ -45,6 +70,10 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
   useGlobalPending(pending);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Ô "Ngành" chỉ hiện với chức vụ ngành, nên trạng thái phải theo dõi được —
+  // `defaultValue` một mình không đủ để ẩn/hiện.
+  const [appointedRole, setAppointedRole] = useState(props.appointedRole ?? "");
+  const needsSector = SECTOR_SCOPED_ROLES.includes(appointedRole);
 
   async function onSubmit(formData: FormData) {
     setPending(true);
@@ -63,6 +92,13 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
         formationLevel: String(formData.get("formationLevel")) as never,
         component: String(formData.get("component")) as never,
         serviceStatus: String(formData.get("serviceStatus")) as never,
+        // BDH-2025-002 — ô trống nghĩa là "không có trong sổ bổ nhiệm", tức
+        // `null`, chứ không phải "bỏ qua trường này". Ngành chỉ gửi kèm khi
+        // chức vụ thật sự cần, để không đâm vào ràng buộc hình dạng ở DB.
+        appointedRole: (String(formData.get("appointedRole") ?? "") || null) as never,
+        appointedSectorId: needsSector
+          ? String(formData.get("appointedSectorId") ?? "") || null
+          : null,
       });
       if (!result.ok) {
         setError(result.message);
@@ -139,6 +175,44 @@ export function StaffProfileEditor(props: StaffProfileEditorProps) {
           {SERVICE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </Select>
       </div>
+      {/* BDH-2025-002 — sổ bổ nhiệm. Đặt CUỐI biểu mẫu và tách khỏi lưới thông
+          tin cá nhân vì nó không phải thông tin về con người mà là một quyết
+          định của Ban Điều Hành, và nó đổi mỗi năm học chứ không phải mỗi lần
+          sửa hồ sơ. */}
+      <div className="space-y-1">
+        <Label htmlFor="edit-appointed-role">Chức vụ bổ nhiệm</Label>
+        <Select
+          id="edit-appointed-role"
+          name="appointedRole"
+          value={appointedRole}
+          placeholder="Không giữ chức vụ nào"
+          onChange={(event) => setAppointedRole(event.target.value)}
+          aria-describedby="edit-appointed-hint"
+        >
+          {APPOINTED_ROLE_OPTIONS.map((item) => (
+            <option key={item.value} value={item.value}>{item.label}</option>
+          ))}
+        </Select>
+        <p id="edit-appointed-hint" className="text-2xs text-ink-muted">
+          Chức vụ theo sổ Ban Điều Hành. Ô này <strong>không cấp quyền</strong> — nó chỉ chọn sẵn
+          đúng vai trò khi cấp tài khoản, và cảnh báo nếu tài khoản đang mang vai trò khác.
+        </p>
+      </div>
+      {needsSector ? (
+        <div className="space-y-1">
+          <Label htmlFor="edit-appointed-sector">Ngành phụ trách</Label>
+          <Select
+            id="edit-appointed-sector"
+            name="appointedSectorId"
+            defaultValue={props.appointedSectorId ?? ""}
+            placeholder="Chọn ngành"
+          >
+            {props.sectors.map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
       <Button type="submit" pending={pending}>Lưu hồ sơ</Button>
     </form>
   );

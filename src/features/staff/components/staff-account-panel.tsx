@@ -40,11 +40,20 @@ export type StaffAccountPanelProps = {
   account: Account;
   grantableRoles: AppRole[];
   /**
-   * Vai trò chọn sẵn (D-111). Hồ sơ đang đứng lớp thì ô chọn nay có cả vai trò
-   * ngành/toàn xứ đoàn, nên nếu không chọn sẵn vai trò lớp thì trường hợp áp đảo
-   * lại tốn thêm một thao tác. `null` ⇒ để trống, bắt người dùng chọn.
+   * Vai trò chọn sẵn (D-111 + BDH-2025-002). Ưu tiên **chức vụ bổ nhiệm**; không
+   * có thì mới tới vai trò lớp của phân công đang hoạt động, vì hồ sơ đang đứng
+   * lớp thì ô chọn nay có cả vai trò ngành/toàn xứ đoàn và trường hợp áp đảo lại
+   * tốn thêm một thao tác. `null` ⇒ để trống, bắt người dùng chọn.
    */
   recommendedRole: AppRole | null;
+  /** Ngành điền sẵn khi `recommendedRole` là vai trò ngành; `null` với mọi vai trò khác. */
+  recommendedSectorId: string | null;
+  /**
+   * BDH-2025-002 — chức vụ theo sổ Ban Điều Hành. Dùng cho hai việc: nói ra
+   * NGUỒN của lựa chọn được điền sẵn, và cảnh báo khi tài khoản đang mang một
+   * vai trò khác chức vụ. `null` với hồ sơ không có trong sổ.
+   */
+  appointment: { role: AppRole; sectorName: string | null } | null;
   activeAssignment: ActiveAssignment;
   currentAcademicYear: { id: string; name: string } | null;
   sectors: Array<{ id: string; name: string }>;
@@ -68,11 +77,11 @@ function todayIso(): string {
  */
 export function StaffAccountPanel(props: StaffAccountPanelProps) {
   const router = useRouter();
-  const { account, grantableRoles, recommendedRole, activeAssignment } = props;
+  const { account, grantableRoles, recommendedRole, recommendedSectorId, appointment, activeAssignment } = props;
 
   const [dialog, setDialog] = useState<null | "grant" | "assign">(null);
   const [role, setRole] = useState<AppRole | "">(recommendedRole ?? "");
-  const [sectorId, setSectorId] = useState("");
+  const [sectorId, setSectorId] = useState(recommendedSectorId ?? "");
   const [startsOn, setStartsOn] = useState(activeAssignment?.startsOn ?? todayIso());
   const [pending, setPending] = useState(false);
   useGlobalPending(pending);
@@ -86,12 +95,23 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
   const isClassRole = selectedRole !== null && CLASS_ROLES.includes(selectedRole);
   const isSectorRole = selectedRole !== null && SECTOR_ROLES.includes(selectedRole);
 
+  const appointmentLabel = appointment
+    ? `${ROLE_LABELS[appointment.role]}${appointment.sectorName ? ` · ${appointment.sectorName}` : ""}`
+    : null;
+  /**
+   * BDH-2025-002 — tài khoản đang mang một vai trò KHÁC chức vụ trong sổ. Đây
+   * chính là hình dạng của lỗi đã xảy ra với `GLV040`: hộp thoại chọn sẵn vai
+   * trò lớp, người cấp bấm Xác nhận, và không có màn hình nào nói ra rằng Xứ
+   * đoàn phó đang đăng nhập với quyền của một Giáo lý viên lớp.
+   */
+  const roleMismatch = appointment !== null && account !== null && account.role !== appointment.role;
+
   function openDialog(which: "grant" | "assign") {
     setError(null);
     setTemporaryPassword(null);
     setNotice(null);
     setRole(recommendedRole ?? "");
-    setSectorId("");
+    setSectorId(recommendedSectorId ?? "");
     setStartsOn(activeAssignment?.startsOn ?? todayIso());
     setDialog(which);
   }
@@ -240,6 +260,12 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
         {account === null ? (
           <div className="space-y-3">
             <Badge variant="secondary">Chưa có tài khoản</Badge>
+            {appointmentLabel ? (
+              <p className="text-sm text-ink-muted">
+                Sổ Ban Điều Hành ghi chức vụ <strong className="text-ink">{appointmentLabel}</strong> —
+                ô vai trò sẽ được chọn sẵn đúng chức vụ này.
+              </p>
+            ) : null}
             {grantableRoles.length > 0 ? (
               <Button type="button" onClick={() => openDialog("grant")}>Cấp tài khoản</Button>
             ) : (
@@ -259,6 +285,23 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
               Vai trò: {account.role ? ROLE_LABELS[account.role] : "Chưa gán"}
               {account.roleScopeLabel ? ` · ${account.roleScopeLabel}` : ""}
             </p>
+            {/* Cùng khuôn cảnh báo với ô mật khẩu tạm bên trên, KHÔNG dùng
+                `FormMessage tone="danger"`: đây là một trạng thái đứng yên chứ
+                không phải lỗi vừa xảy ra, mà `tone="danger"` mang `role="alert"`
+                nên trình đọc màn hình sẽ đọc "Lỗi:" ngay khi vừa tải trang. */}
+            {roleMismatch ? (
+              <div className="space-y-1 rounded-md border border-warning bg-warning-subtle p-3 text-sm">
+                <p className="font-medium text-ink">Vai trò không khớp chức vụ bổ nhiệm</p>
+                <p className="text-ink-muted">
+                  Sổ Ban Điều Hành ghi <strong className="text-ink">{appointmentLabel}</strong>, nhưng
+                  tài khoản đang mang vai trò{" "}
+                  <strong className="text-ink">
+                    {account.role ? ROLE_LABELS[account.role] : "chưa gán"}
+                  </strong>
+                  . Bấm “Đổi vai trò” để sửa — người dùng không phải đổi mật khẩu lại.
+                </p>
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {grantableRoles.length > 0 ? (
                 <Button type="button" variant="outline" size="sm" onClick={() => openDialog("assign")}>Đổi vai trò</Button>
@@ -300,6 +343,14 @@ export function StaffAccountPanel(props: StaffAccountPanelProps) {
                 <option key={item} value={item}>{ROLE_LABELS[item]}</option>
               ))}
             </Select>
+            {/* Nói ra NGUỒN của lựa chọn điền sẵn. Bản trước im lặng chọn vai
+                trò lớp, nên người cấp không có cách nào biết rằng cái đang hiện
+                là một phỏng đoán chứ không phải một quyết định đã ghi ở đâu đó. */}
+            {appointmentLabel ? (
+              <p className="text-2xs text-ink-muted">
+                Theo sổ Ban Điều Hành: {appointmentLabel}.
+              </p>
+            ) : null}
           </div>
           {isClassRole && activeAssignment ? (
             <p className="text-sm text-ink-muted">Lớp: {activeAssignment.className} (theo phân công đang hoạt động).</p>
