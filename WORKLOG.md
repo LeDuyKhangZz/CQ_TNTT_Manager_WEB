@@ -54,6 +54,38 @@
 > verification không xác nhận Giai đoạn 2 hoàn tất vì còn blocker quyết định/AC, bảo mật, toàn vẹn
 > và browser gate.
 
+- **`2C-R2.2 — XONG — Claude — 2026-08-21`** — Phase R2 task **Toolbar + FacetFilter** (N2+N3 của
+  `11_DESIGN_SYSTEM`, khung trang danh sách `07` §2). Thêm `src/components/ui/toolbar.tsx` —
+  `Toolbar` (**không** `"use client"`: là `<form method="get">` thật một hàng ~48px, ô tìm kiếm +
+  facet + nút "Lọc"; `keepParams` giữ `sort`/`dir` vì form GET xoá sạch query cũ; **cố ý không giữ
+  `page`**; slot `trailing` cho menu "Cột" dựng **NGOÀI** thẻ `<form>` — menu Cột là lựa chọn hiển
+  thị, để trong form thì ô tick của nó đi chung `FormData` với bộ lọc) + `ToolbarSummary` (dòng
+  "747 hồ sơ · đang lọc X" + "Xoá lọc"). Thêm `src/components/ui/facet-filter.tsx` (**client**):
+  nút mở bảng tick dựng trên `<details>`, ô tick là `<input type=checkbox name value>` THẬT, nút
+  "Áp dụng" là `type=submit` ⇒ **lọc được khi JS chưa tải**; JS chỉ thêm `Escape` (huỷ + trả focus)
+  và bấm-ra-ngoài-thì-đóng. Huy hiệu trên nút đếm **số ĐANG ÁP DỤNG** (đọc `searchParams` ở máy
+  chủ), trạng thái "đang lọc" báo bằng **viền đứt → liền** chứ không bằng màu (09 §10 điều 5).
+  🔴 **Phát hiện lớn khi đối chiếu code thật — nợ mới UX-40, đã sửa luôn:** `app-shell.tsx` mang
+  `overflow-x-hidden`; CSS Overflow §3.5 quy định một trục `hidden` thì trục kia đang `visible`
+  **tự tính thành `auto`**, tức vỏ ứng dụng là **vùng cuộn**, và `position: sticky` bên trong neo
+  vào vỏ chứ không neo vào màn hình. Đo bằng Chromium trên bản sao DOM/CSS của vỏ (1366×768, cuộn
+  1200px): header `sticky top-0` rơi tới `top = -1200`; bỏ `overflow-x` hoặc đổi sang `clip` thì
+  `top = 0`. **Thanh đầu trang "dính" của 2B chưa bao giờ dính**, và không cửa kiểm nào bắt được vì
+  không cửa nào tính layout. Sửa: utility `.clip-x { overflow-x: hidden; overflow-x: clip }` trong
+  `globals.css` (khai `hidden` trước làm đường lùi cho Safari < 16) + đổi một lớp ở `app-shell.tsx`.
+  🔴 **Một lỗi tự bắt được trước khi commit:** bản trước cho "đóng popover nào cũng hoàn tác ô tick"
+  — nó **ăn mất cú tick** khi người dùng tick xong bấm thẳng nút "Lọc", vì `mousedown` chạy trước
+  `click`: bảng đóng + hoàn tác xong rồi form mới gửi, người dùng bấm Lọc mà không có gì xảy ra và
+  không có lỗi nào để lần ra. Luật cuối: **chỉ `Escape` mới huỷ**; bấm ra ngoài chỉ đóng.
+  **0 đổi nghiệp vụ/RLS/migration.** **Đã test thật:** lint ✔ 0/0 · typecheck ✔ · unit **125 file /
+  1826 pass / 24 skip** (trước: 124/1789/24 — +1 file, +37 bài) · build ✔ exit 0 **30/30 trang**;
+  grep `.next/static/css` xác nhận `.clip-x` và `.md\:top-\[68px\]` có trong CSS xuất ra.
+  **E2E KHÔNG chạy** — Docker Desktop tắt nên Supabase local không lên (nợ #10). ⚠️ **Rủi ro phải
+  soi đầu tiên khi E2E chạy lại:** header nay dính THẬT trên mọi trang; nếu bài nào bấm phần tử sát
+  mép trên có thể báo "element intercepts pointer events". Lùi lại chỉ là một dòng (`clip-x` →
+  `overflow-x-hidden`). **Next:** R2.4 Drawer (Opus) hoặc R2.12/R2.13 nếu chủ dự án muốn trả nợ
+  chức năng trước.
+
 - **`2C-R2.1 — XONG — Claude — 2026-08-21`** — mở **Phase R2** của chiến dịch 2C (Design System 2.0;
   phase này chạy bằng Opus 5 theo D-R14). Task R2.1 **DataTable v2** — component nền của R4.1/R5.2/
   R7.1/R9.1, **0 đổi nghiệp vụ/RLS/migration, 0 trang nào đổi giao diện** (mọi prop mới đều tuỳ chọn,

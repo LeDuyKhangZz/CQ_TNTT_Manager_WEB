@@ -196,6 +196,23 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  /* Kẹp tràn ngang mà KHÔNG biến phần tử thành vùng cuộn — REDESIGN 2C R2.2.
+     🔴 `overflow-x: hidden` giết `position: sticky` của MỌI thứ bên trong.
+     CSS Overflow §3.5: một trục là `hidden` thì trục kia đang `visible` **tự
+     tính thành `auto`**, tức phần tử thành vùng cuộn; mà sticky neo vào vùng
+     cuộn gần nhất chứ không neo vào màn hình. Vỏ ứng dụng mang
+     `overflow-x-hidden` từ M14, nên `sticky top-0` của `AppHeader` **chưa bao
+     giờ dính** — đo bằng Chromium: cuộn 1200px thì header đi theo tới
+     `top = -1200`; bỏ lớp ấy ra thì `top = 0`.
+     `clip` kẹp y hệt `hidden` nhưng KHÔNG tạo vùng cuộn. Khai `hidden` trước
+     làm đường lùi cho trình duyệt cũ chưa biết `clip` (Safari < 16): ở đó
+     header lại hết dính, nhưng trang vẫn không tràn ngang — mất tiện, không
+     mất chức năng. */
+  .clip-x {
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
   /* Chuyển mềm khi đổi ngữ cảnh ngành (10 §6). Chỉ đặt trên phần tử accent,
      không đặt toàn cục — sẽ làm chậm cảm giác của cả trang. */
   .theme-transition {

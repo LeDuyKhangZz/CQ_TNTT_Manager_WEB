@@ -44,7 +44,14 @@ export function AppShell({
   useEffect(() => setDrawerOpen(false), [pathname]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-page">
+    /* 🔴 `clip-x`, KHÔNG phải `overflow-x-hidden` (REDESIGN 2C R2.2). Lớp cũ
+       biến vỏ này thành **vùng cuộn** (CSS Overflow §3.5: trục kia đang
+       `visible` tự tính thành `auto`), và `position: sticky` bên trong neo vào
+       vùng cuộn gần nhất — nên `sticky top-0` của `AppHeader` ngay bên dưới
+       **không hề dính**: đo bằng Chromium, cuộn 1200px thì header đi theo tới
+       `top = -1200`. `overflow-x: clip` kẹp tràn ngang y hệt mà không tạo vùng
+       cuộn. Định nghĩa + đường lùi cho Safari cũ nằm ở `globals.css`. */
+    <div className="min-h-screen clip-x bg-page">
       {/* Skip link — M14 D3.b. Người dùng bàn phím trước đây phải `Tab` qua tối
           đa 15 mục sidebar mới tới nội dung. Chỉ nhìn thấy khi được focus. */}
       <a
