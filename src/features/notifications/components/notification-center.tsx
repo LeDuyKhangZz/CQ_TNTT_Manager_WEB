@@ -462,7 +462,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                 className={cn(
                   "grid min-h-control place-items-center rounded-md border px-4 text-sm",
                   data.filter === value
-                    ? "border-theme-accent bg-theme-tint font-semibold text-theme-accent-text"
+                    ? "border-theme-primary bg-theme-tint font-semibold text-theme-accent-text"
                     : "border-line text-ink-muted hover:bg-surface-muted",
                 )}
               >
@@ -480,7 +480,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
             // gì" là hai tình huống khác hẳn nhau với người dùng.
             <EmptyState
               variant="no-data"
-              className="border-0 shadow-none"
+              bare
               title={data.filter === "unread" ? "Bạn đã đọc hết thông báo" : "Hộp thư còn trống"}
               description={
                 data.filter === "unread"

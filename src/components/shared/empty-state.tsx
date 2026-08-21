@@ -96,6 +96,7 @@ export function EmptyState({
   description,
   action,
   className,
+  bare = false,
 }: {
   variant?: EmptyStateVariant;
   title: string;
@@ -103,9 +104,16 @@ export function EmptyState({
   description: string;
   action?: React.ReactNode;
   className?: string;
+  /**
+   * R1.5 (redesign 2C, UX-10) — khi trạng thái rỗng nằm BÊN TRONG một Card
+   * (hộp thư, tab của workspace), vỏ Card thứ hai là card-lồng-card. `bare`
+   * bỏ vỏ, giữ nguyên minh hoạ + câu chữ. Đứng một mình thì vẫn dùng Card.
+   */
+  bare?: boolean;
 }) {
+  const Shell = bare ? "div" : Card;
   return (
-    <Card
+    <Shell
       className={cn(
         "flex min-h-64 flex-col items-center justify-center px-5 py-10 text-center",
         className,
@@ -115,6 +123,6 @@ export function EmptyState({
       <h3 className="mt-4 text-base font-semibold text-ink">{title}</h3>
       <p className="mt-2 max-w-lg text-sm text-ink-muted">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
-    </Card>
+    </Shell>
   );
 }

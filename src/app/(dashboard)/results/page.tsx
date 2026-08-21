@@ -34,7 +34,7 @@ export default async function ResultsPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-semibold">Bảng điểm phụ trách</h2>
             {data.classes.length === 0 ? <Card><CardContent className="pt-6 text-sm text-ink-muted">Bạn chưa có lớp nào trong phạm vi kết quả.</CardContent></Card> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{data.classes.map((item) => (
-            <Link key={item.id} href={`/results/${item.id}`} className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <Link key={item.id} href={`/results/${item.id}`} className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring focus-visible:ring-offset-2">
               <Card className="h-full transition-colors hover:border-theme-primary">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3"><CardTitle>{item.displayName}</CardTitle><Badge variant={item.isLocked ? "warning" : "success"}>{item.isLocked ? "Đã khóa" : "Đang mở"}</Badge></div>

@@ -285,7 +285,7 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
               <p className="text-ink-muted">
                 Hồ sơ còn thiếu số điện thoại phụ huynh, bổn mạng hoặc địa chỉ.
               </p>
-              <Link href="/students" className="text-accent-text hover:underline">Mở danh sách thiếu nhi</Link>
+              <Link href="/students" className="text-theme-accent-text hover:underline">Mở danh sách thiếu nhi</Link>
             </CardContent>
           </Card>
         ) : null}
@@ -297,7 +297,7 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
             <CardHeader><CardTitle as="h2">Điểm danh của tôi</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p className="text-ink-muted">Xem lại từng buổi Thánh lễ và Giáo lý đã được chốt.</p>
-              <Link href="/student/attendance" className="text-accent-text hover:underline">
+              <Link href="/student/attendance" className="text-theme-accent-text hover:underline">
                 Mở trang điểm danh của tôi
               </Link>
             </CardContent>

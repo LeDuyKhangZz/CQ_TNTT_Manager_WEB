@@ -1358,8 +1358,10 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
       ) : (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Nhập điểm</h2>
-          <div className="hidden space-y-4 md:block">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
-          <div className="space-y-4 md:hidden">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
+          {/* R1.6 (redesign 2C): trước đây danh sách này render HAI lần
+              (`hidden md:block` + `md:hidden`) với nội dung y hệt — di tích của
+              một hướng responsive đã bỏ, chỉ còn tác dụng nhân đôi DOM. */}
+          <div className="space-y-4">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
         </section>
       )}
 

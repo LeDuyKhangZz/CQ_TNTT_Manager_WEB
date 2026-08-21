@@ -62,7 +62,7 @@ export default async function TeachingPlanPage() {
           <h2 className="text-xl font-semibold">Giáo án theo lớp</h2>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {data.classes.map((item) => (
-              <Link key={item.id} href={`/teaching-plan/${item.id}`} className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              <Link key={item.id} href={`/teaching-plan/${item.id}`} className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring focus-visible:ring-offset-2">
                 <Card className="h-full transition-colors hover:border-theme-primary">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3"><CardTitle>{item.displayName}</CardTitle><Badge variant={item.planId ? "success" : "secondary"}>{item.planId ? `${item.itemCount} mục` : "Chưa tạo"}</Badge></div>
