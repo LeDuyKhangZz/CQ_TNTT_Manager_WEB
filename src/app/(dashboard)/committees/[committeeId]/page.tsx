@@ -5,8 +5,7 @@ import { CommitteeWorkspace } from "@/features/committees/components/committee-w
 import { getCommitteeDetail } from "@/features/committees/server/queries";
 import { EquipmentBoard } from "@/features/equipment/components/equipment-board";
 import { getEquipmentBoard } from "@/features/equipment/server/queries";
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 export default async function CommitteeDetailPage({
   params,

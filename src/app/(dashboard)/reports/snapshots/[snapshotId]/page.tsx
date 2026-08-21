@@ -8,8 +8,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { formatDateTimeVi, formatDateVi } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { getReportSnapshotForView, reportsRouteContext } from "@/features/reports/server/queries";
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 /**
  * TB-06 bước 3 — xem lại một bản chốt **trên trình duyệt** (AC-B12).

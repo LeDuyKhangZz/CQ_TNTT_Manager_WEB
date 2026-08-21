@@ -2,11 +2,10 @@ import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { getReportSnapshot, reportsRouteContext } from "@/features/reports/server/queries";
 import { asciiFilename, excelResponse, pdfResponse } from "@/lib/exports/http";
+import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Tải lại bản đã chốt. Dữ liệu lấy từ `payload_json` chứ không tính lại, nên

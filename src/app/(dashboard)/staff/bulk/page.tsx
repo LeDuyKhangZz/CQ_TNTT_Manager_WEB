@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/layout/page-container";
@@ -43,7 +44,7 @@ export default async function StaffBulkPage() {
           action={
             <Link
               href="/admin"
-              className="inline-flex h-control min-h-control items-center justify-center rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+              className={buttonVariants({ variant: "outline" })}
             >
               Mở trang Quản trị
             </Link>

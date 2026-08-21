@@ -22,6 +22,7 @@
 
 import { foldVietnamese } from "@/lib/text/fold-vietnamese";
 import type { PromotionFinalStatus } from "./constants";
+import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 // ---------------------------------------------------------------------------
 // A. Bộ lọc trạng thái
@@ -87,8 +88,6 @@ export interface PromotionBoardCriteria {
   search: string;
   page: number;
 }
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Chỉ nhận `all` hoặc một UUID thật.

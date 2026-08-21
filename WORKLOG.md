@@ -54,6 +54,23 @@
 > verification không xác nhận Giai đoạn 2 hoàn tất vì còn blocker quyết định/AC, bảo mật, toàn vẹn
 > và browser gate.
 
+- **`2C-R1 — XONG — Claude — 2026-08-21`** — mở màn **chiến dịch redesign 2C** (nguồn sự thật:
+  `../REDESIGN/` — README/STATE/DECISIONS/12_REDESIGN_ROADMAP; chủ dự án duyệt toàn bộ roadmap
+  13 phase/47 task ngày 2026-08-21, D-R12). Phase R1 "quick wins", **0 đổi nghiệp vụ/RLS/migration**:
+  (R1.1) sửa 3 lớp CSS chết — 2 tile-link `/results` `/teaching-plan` mất focus ring, 2 link CTA
+  dashboard mất màu nhấn, pill lọc hộp thư không phân biệt được khi chọn; (R1.2) 5 trang chi tiết
+  về một kiểu back duy nhất `PageHeader backHref` (imports/[batchId] trước đây không có back ở
+  header), cập nhật 4 locator E2E theo tên truy cập mới; (R1.3) 6 chỗ chuỗi "link giả nút outline"
+  → `buttonVariants({variant:"outline"})`; (R1.4) `UUID_PATTERN` trùng ở **8 file** (plan đếm 3 —
+  đếm thiếu) gom về `src/lib/validation/uuid.ts`, xoá 2 placeholder mồ côi; (R1.5) vá 2 trang
+  sibling-card-0-gap + `EmptyState bare` thay hack `border-0 shadow-none`; (R1.6) xoá DOM render
+  đôi danh sách Nhập điểm trong `gradebook-editor`; (R1.7) nhãn nav `/staff` → **"Huynh trưởng ·
+  GLV"** (D-R13 — nhãn cũ gãy 2 dòng sidebar; `<h1>` trang giữ tên đầy đủ).
+  **Đã test thật:** lint ✔ 0/0 · typecheck ✔ · unit **123 file / 1749 pass / 24 skip** · build ✔.
+  E2E chưa chạy (nợ #10 suite chưa gate-worthy) — rủi ro còn lại: locator bám text cũ ngoài 4 chỗ
+  đã grep. **Next:** Phase R2 (Design System 2.0 + 2 nợ chức năng nền — DataTable v2, Toolbar,
+  bug điều hướng #15, year switcher N-3) theo `12_REDESIGN_ROADMAP.md`.
+
 - **`BDH-2025-001/002 — XONG — Claude — 2026-08-20`** — yêu cầu trực tiếp của chủ dự án (ngoài 2B),
   kèm ảnh màn hình `/account` của `GLV040`: *"anh lê trí dũng là Xứ Đoàn Phó Nội Vụ… nhưng khi tạo
   tài khoản ra thì vai trò chỉ là giáo lý viên bình thường"*. Không phải lỗi phân quyền — **ô chọn

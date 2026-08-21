@@ -61,7 +61,10 @@ export const platformNavigation: readonly NavigationItem[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard, group: "Chung", audiences: ["staff", "guardian", "student"], scopes: ["global", "sector", "class", "ownership"] },
   { href: "/students", label: "Thiếu nhi", icon: UsersRound, group: "Mục vụ", audiences: staffOnly, scopes: allStaffScopes },
   { href: "/classes", label: "Lớp học", icon: School, group: "Mục vụ", audiences: staffOnly, scopes: allStaffScopes },
-  { href: "/staff", label: "Huynh trưởng/Giáo lý viên", icon: UserRoundCog, group: "Mục vụ", audiences: staffOnly, scopes: ["global", "sector", "class"] },
+  // D-R13 (redesign 2C, 2026-08-21): nhãn cũ "Huynh trưởng/Giáo lý viên" dài
+  // 24 ký tự, gãy 2 dòng trong sidebar 264px. Nhãn nav/breadcrumb dùng bản
+  // ngắn; `<h1>` của trang /staff vẫn giữ tên đầy đủ.
+  { href: "/staff", label: "Huynh trưởng · GLV", icon: UserRoundCog, group: "Mục vụ", audiences: staffOnly, scopes: ["global", "sector", "class"] },
   // `roles` lấy thẳng từ `ROUTE_RULES` chứ không chép tay — M14 A-11. Bản cũ bỏ
   // trống, nên Cha sở, Cha phó và Thủ quỹ thấy mục này rồi bấm vào là bị chặn.
   // M05-A/D-139: Cha sở và Cha phó nay xem được (chỉ đọc); Thủ quỹ vẫn không.

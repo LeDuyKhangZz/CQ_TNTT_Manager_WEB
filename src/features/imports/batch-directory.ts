@@ -16,6 +16,7 @@
  */
 
 import type { RowAction } from "./row-decision";
+import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 // ---------------------------------------------------------------------------
 // A. Dòng trong một lần nhập
@@ -123,8 +124,6 @@ export interface BatchListCriteria {
 // ---------------------------------------------------------------------------
 // C. Dùng chung
 // ---------------------------------------------------------------------------
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Chỉ nhận một trong các từ khoá cho trước hoặc một UUID thật.

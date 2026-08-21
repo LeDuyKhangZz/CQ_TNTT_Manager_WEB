@@ -1,4 +1,5 @@
 import { foldVietnamese } from "@/lib/text/fold-vietnamese";
+import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 /**
  * Tham số của danh sách thiếu nhi — TB-F03 (đóng M03-F03, 59/75).
@@ -67,8 +68,6 @@ export interface StudentDirectoryCriteria {
   status: StudentStatusFilter;
   page: number;
 }
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Chỉ nhận `all`, `none`, hoặc một UUID thật. Chuỗi rác đi thẳng vào `eq()` cho

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { FileUpload } from "@/components/ui/file-upload";
 import { FormMessage } from "@/components/ui/form-message";
 import type { ImportFeedback } from "../import-feedback";
@@ -134,7 +134,7 @@ export function ImportUploadForm({ years, classOptionsByYear, defaultYearId }: I
         <a
           href="/imports/template"
           download
-          className="inline-flex h-control min-h-control items-center justify-center rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+          className={buttonVariants({ variant: "outline" })}
         >
           Tải file mẫu
         </a>

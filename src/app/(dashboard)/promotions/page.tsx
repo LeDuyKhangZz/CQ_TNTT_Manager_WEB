@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -66,7 +67,7 @@ export default async function PromotionsPage({
           action={
             <Link
               href="/admin"
-              className="inline-flex h-control min-h-control items-center justify-center rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+              className={buttonVariants({ variant: "outline" })}
             >
               Mở trang Quản trị
             </Link>
@@ -85,7 +86,7 @@ export default async function PromotionsPage({
           action={
             <Link
               href="/classes"
-              className="inline-flex h-control min-h-control items-center justify-center rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+              className={buttonVariants({ variant: "outline" })}
             >
               Mở trang Lớp
             </Link>

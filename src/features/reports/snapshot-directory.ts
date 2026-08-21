@@ -1,4 +1,5 @@
 import { REPORT_SCOPES, REPORT_TYPES, type ReportScope, type ReportType } from "./filters";
+import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 /**
  * TB-06 — kho bản chốt phải **khai thác được**, không chỉ tồn tại.
@@ -31,8 +32,6 @@ function readParam(
   const first = Array.isArray(value) ? value[0] : value;
   return first === undefined || first === "" || first === "all" ? undefined : first;
 }
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Tham số hỏng ở đây **không** cần một dải cảnh báo như `/reports`: bộ lọc kho
