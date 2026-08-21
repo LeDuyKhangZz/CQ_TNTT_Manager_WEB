@@ -222,6 +222,26 @@
       color var(--duration-slow) var(--ease-out);
   }
 
+  /* Drawer trượt vào — REDESIGN 2C R2.4 (`10` §3 "drawer/sheet 200ms ease-out").
+     Dưới `md` panel là sheet full-screen nên nó dâng từ ĐÁY; từ `md` nó là
+     panel phải nên trượt từ CẠNH PHẢI. Đổi hướng bằng `animation-name` trong
+     media query, KHÔNG bằng biến thể `md:` của Tailwind: hai tên keyframes rõ
+     ràng hơn, và không phụ thuộc vào việc Tailwind có sinh biến thể cho lớp
+     tuỳ biến hay không (R2.2 đã mất công grep CSS xuất ra vì chuyện này).
+
+     `prefers-reduced-motion` không cần nhánh riêng: `--duration-slow` đã bằng
+     0ms trong media query ở trên, nên hoạt ảnh vào thẳng trạng thái cuối.
+
+     KHÔNG có hoạt ảnh ĐÓNG — đóng drawer là một cú điều hướng, panel biến mất
+     cùng lúc trang mới về (xem `drawer.tsx` mục 5). */
+  .drawer-enter {
+    animation: drawer-enter-sheet var(--duration-slow) var(--ease-out);
+  }
+
+  .drawer-overlay-enter {
+    animation: drawer-enter-overlay var(--duration-base) var(--ease-out);
+  }
+
   /* ======================================================================
      Chuyển động LOẠI THỨ TƯ — "loading" (09 §12 A4, kế hoạch 17 §3.2).
      Đây là loại duy nhất chạy VÒNG LẶP, và nó chỉ tồn tại khi màn hình chờ
@@ -251,6 +271,40 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+/* REDESIGN 2C R2.4 — xem `.drawer-enter` ở `@layer utilities` bên trên. */
+@keyframes drawer-enter-sheet {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawer-enter-side {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-enter-overlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .drawer-enter {
+    animation-name: drawer-enter-side;
   }
 }
 

@@ -54,6 +54,54 @@
 > verification không xác nhận Giai đoạn 2 hoàn tất vì còn blocker quyết định/AC, bảo mật, toàn vẹn
 > và browser gate.
 
+- **`2C-R2.4 — XONG — Claude — 2026-08-21`** — Phase R2 task **Drawer / SideSheet** (N6 của
+  `11_DESIGN_SYSTEM`, `07` §6, `08` §4). Thêm `src/components/ui/drawer.tsx` (**không**
+  `"use client"`) + `src/components/ui/drawer-behavior.tsx` (**client**) + hai utility hoạt ảnh
+  trong `globals.css`. **0 đổi nghiệp vụ/RLS/migration; 0 trang nào đổi giao diện** (chưa có
+  consumer — consumer đầu là R4.2, đúng lý do R2.1/R2.2: preview route mới sẽ phá invariant
+  `nav ⊆ route`).
+  🔴 **Quyết định kiến trúc: drawer mở bằng THAM SỐ URL, panel do MÁY CHỦ dựng** — không phải
+  `useState`. Kế hoạch (`11` N6, `07` §6) ghi đường lùi không-JS là "`?new=1` render **trang form
+  riêng**"; thi công **bỏ hẳn tầng ấy** vì nếu chính drawer do máy chủ dựng khi URL có `?new=1` thì
+  lúc JS chưa tải người dùng đã có nguyên cái form ngay trên trang danh sách — không cần trang thứ
+  hai, không phải nuôi hai bản của cùng một form. Lý do nặng hơn nằm ở consumer thật: R4.2 (wizard
+  2 bước), R5.4 (ghi danh tìm-chọn), R7.3 (onboard 3 bước) đều cần dữ liệu dựng ở máy chủ + Server
+  Action, mà **bước đang đứng của wizard phải sống trong URL** thì mới sống qua được một vòng
+  Server Action, mới share và Back được. **Không đảo quyết định nào** trong `../REDESIGN/DECISIONS.md`
+  (D-R7, D-R8 giữ nguyên). Ranh giới với `Dialog` ghi thẳng vào JSDoc: `Dialog` = state client cho
+  xác nhận/form ≤3 field (5 + 25 chỗ đang dùng, **không đụng**); `Drawer` = URL, form một thực thể /
+  wizard / panel cần share + Back.
+  Chi tiết thi công: ba đường đóng (nút ✕ · lớp phủ · `Escape`) **cùng một luật `replace`** — nếu
+  `push` thì bấm Back sau khi đóng lại mở drawer ra; lớp phủ là `<a aria-hidden tabIndex={-1}>` nên
+  đóng được **khi JS chưa tải** mà trình đọc màn hình vẫn không gặp "nút khổng lồ"; phần hành vi
+  **dùng lại `useModalBehavior` sẵn có** (không cài lại — có bài kiểm canh tệp ấy không chứa
+  `addEventListener`/`document.body.style`, để không sinh bản luật thứ ba lệch khỏi `Dialog`/
+  `NavDrawer`); `z-drawer` (50) chứ không `z-dialog` (60) để `ConfirmDialog` mở **đè lên** được;
+  `drawerHref()` giữ nguyên mọi tham số khác **kể cả tham số lặp** của FacetFilter (`?sector=au&sector=thieu`)
+  — mở drawer từ danh sách đang lọc không được làm mất bộ lọc. **Cố ý KHÔNG có slot `footer`**
+  (bài học R2.2 lật ngược: nút "Lưu" do khung dựng sẽ nằm ngoài `<form>` của consumer và thành
+  **nút chết** — bấm không có gì xảy ra, không lỗi nào để lần ra).
+  **Đã test thật:** lint ✔ 0/0 · typecheck ✔ · unit **126 file / 1870 pass / 24 skip** (trước:
+  125/1826/24 — +1 file, **+44 bài**) · build ✔ exit 0 **30/30 trang**; grep `.next/static/css` xác
+  nhận `.md\:w-\[400px\]`, `.lg\:w-\[520px\]`, `.z-drawer`, `.drawer-enter` + 3 `@keyframes` có
+  trong CSS xuất ra và nhánh `@media` đứng **sau** `.drawer-enter` nên ghi đè đúng chiều.
+  **Đo thật bằng Chromium** (bản sao DOM/CSS, không cần DB): 360 → sheet **360×800**; 768 → panel
+  **400×1024**; 1366 → panel **520×768**, đều sát mép phải, lớp phủ kín màn hình, nút đóng
+  **44×44px**, chỉ **thân** panel cuộn (header đứng yên khi cuộn 900px), **không tràn ngang** ở cả
+  ba viewport. Thêm: `.clip-x` của vỏ ứng dụng (R2.2) **không** kẹp mất drawer `fixed` — cuộn trang
+  1500px panel vẫn neo đúng; hit-test ở dải `z-header` (20) và `z-bottom-nav` (30) đều trúng panel;
+  `prefers-reduced-motion` → `animation-duration` **0s**. ⚠️ Bẫy của chính phép đo: headless
+  Chromium **đóng băng hoạt ảnh ở `currentTime = 0`** khi trang không được composite, lượt đo đầu
+  vì thế báo panel nằm ngoài màn hình và suýt bị đọc thành lỗi sản phẩm — phải
+  `document.getAnimations().forEach(a => a.finish())` rồi mới đo.
+  **E2E KHÔNG chạy** — Docker Desktop tắt nên Supabase local không lên (nợ #10). Rủi ro rất thấp:
+  chưa trang nào dùng `Drawer`, `globals.css` chỉ THÊM chứ không đổi quy tắc nào đang có.
+  ⚠️ **Rủi ro thật cần biết:** drawer mở bằng URL nên **thừa hưởng nợ #15** (điều hướng bị nuốt
+  ~11-14% ⇒ 1/8 lần bấm "Thêm thiếu nhi" không có gì xảy ra). Đã hỏi chủ dự án trước khi làm; chủ
+  dự án chọn R2.4 trước. **R2.12 sửa xong thì Drawer tự lành, không phải viết lại gì.**
+  **Next:** đề xuất R2.12 (bug điều hướng) trước R4; hoặc R2.13 year switcher / R2.9 Wizard (Opus),
+  hoặc R2.3/R2.5-R2.8/R2.11 (Fable).
+
 - **`2C-R2.2 — XONG — Claude — 2026-08-21`** — Phase R2 task **Toolbar + FacetFilter** (N2+N3 của
   `11_DESIGN_SYSTEM`, khung trang danh sách `07` §2). Thêm `src/components/ui/toolbar.tsx` —
   `Toolbar` (**không** `"use client"`: là `<form method="get">` thật một hàng ~48px, ô tìm kiếm +
