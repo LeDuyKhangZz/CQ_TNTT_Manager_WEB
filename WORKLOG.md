@@ -54,6 +54,30 @@
 > verification không xác nhận Giai đoạn 2 hoàn tất vì còn blocker quyết định/AC, bảo mật, toàn vẹn
 > và browser gate.
 
+- **`2C-R2.1 — XONG — Claude — 2026-08-21`** — mở **Phase R2** của chiến dịch 2C (Design System 2.0;
+  phase này chạy bằng Opus 5 theo D-R14). Task R2.1 **DataTable v2** — component nền của R4.1/R5.2/
+  R7.1/R9.1, **0 đổi nghiệp vụ/RLS/migration, 0 trang nào đổi giao diện** (mọi prop mới đều tuỳ chọn,
+  9 consumer hiện có render y hệt cũ). Thêm vào `src/components/ui/data-table.tsx` (188 → 570 dòng):
+  sắp xếp 1 cột bằng **LINK + `aria-sort`** (không phải state — bảng có phân trang máy chủ mà sort
+  bằng state thì chỉ xếp lại trang đang xem), `data-table-id`/`data-column` để ẩn/hiện cột, sticky
+  header (kèm trần chiều cao — `overflow-x:auto` biến khung thành vùng cuộn cả hai trục nên không có
+  trần thì `sticky top-0` im lặng không chạy), density **compact 44px** (đúng sàn vùng chạm, không
+  thấp hơn), `rowHref` (cả hàng là link, ô sau được nâng lên trên tấm phủ để nút trong hàng vẫn bấm
+  được), `selection` (ô tick THẬT có `name`/`value` ⇒ form chạy không cần JS), `mobileRow` (dưới `md`
+  mỗi hàng thành card-row **dùng lại đúng `cell` của cột desktop** — hết cảnh sửa cột desktop mà quên
+  nhánh mobile), slot `footer`. Thêm `data-table-column-toggle.tsx` (**client**, nhớ cột đã ẩn ở
+  `localStorage`, bơm quy tắc CSS trỏ đúng bảng) — tách tệp vì `data-table.tsx` **không được** mang
+  `"use client"`: `cell` là hàm, Server Component không truyền hàm qua ranh giới client (`/reports/
+  snapshots` sẽ chết). Bài kiểm mới canh luôn cả `checkbox.tsx` — v2 mở thêm một đường cho `"use
+  client"` lẻn vào.
+  **Đã test thật:** lint ✔ 0/0 · typecheck ✔ · unit **124 file / 1789 pass / 24 skip** (trước: 123 /
+  1749 / 24 — +1 file, +40 bài) · build ✔ exit 0. E2E chưa chạy (nợ #10).
+  **Lệch plan (ghi ở `../REDESIGN/CHANGELOG.md`):** consumer thật dời sang R4.1 — preview route mới sẽ
+  phá invariant `nav ⊆ route`, còn chuyển `/reports/snapshots` thì E2E của nó bám `getByRole("row")`
+  ở cả 3 viewport mà phiên này không chạy được E2E; footer pagination để R2.11; density làm bằng
+  class chứ chưa thêm token (token `[data-density="compact"]` là R2.10, **đang chờ chủ dự án duyệt**
+  phụ lục 09 §13-14). **Next:** R2.2 Toolbar + FacetFilter (Opus 5).
+
 - **`2C-R1 — XONG — Claude — 2026-08-21`** — mở màn **chiến dịch redesign 2C** (nguồn sự thật:
   `../REDESIGN/` — README/STATE/DECISIONS/12_REDESIGN_ROADMAP; chủ dự án duyệt toàn bộ roadmap
   13 phase/47 task ngày 2026-08-21, D-R12). Phase R1 "quick wins", **0 đổi nghiệp vụ/RLS/migration**:
