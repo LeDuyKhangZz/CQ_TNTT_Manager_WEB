@@ -291,7 +291,8 @@ test.describe("Kết quả và chuyển lớp Phase 5", () => {
     // Nợ #20 (M07-A) — **chỗ cuối cùng** của món nợ vùng chạm 44px. Đo
     // `boundingBox()`, tức **chiều cao thật đã dựng**: bài kiểm tên lớp CSS sẽ
     // xanh giả khi một lớp khác đè lên `min-h-11`.
-    const backLink = page.getByRole("link", { name: "← Danh sách lớp" });
+    // R1.2 (redesign 2C): link quay lại nay là nút chuẩn `backHref` của PageHeader.
+    const backLink = page.getByRole("link", { name: "Danh sách lớp" });
     const backBox = await backLink.boundingBox();
     expect(backBox, "link quay lại phải dựng được để đo").not.toBeNull();
     expect(backBox!.height, "vùng chạm link quay lại ≥ 44px (11 §5)").toBeGreaterThanOrEqual(44);

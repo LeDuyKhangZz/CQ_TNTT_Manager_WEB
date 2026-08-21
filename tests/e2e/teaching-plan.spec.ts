@@ -429,11 +429,12 @@ test.describe("Giáo án Phase 4", () => {
     await page.goto(`/teaching-plan/${classId}`);
     await expectNoHorizontalOverflow(page, "trang giáo án lớp");
 
-    const backLink = page.getByRole("link", { name: "← Danh sách lớp" });
+    // R1.2 (redesign 2C): link quay lại nay là nút chuẩn `backHref` của PageHeader.
+    const backLink = page.getByRole("link", { name: "Danh sách lớp" });
     await expect(backLink).toBeVisible();
     const box = await backLink.boundingBox();
     expect(box, "link quay lại phải đo được").not.toBeNull();
-    expect(box!.height, "link ← Danh sách lớp phải cao ≥44px").toBeGreaterThanOrEqual(44);
+    expect(box!.height, "link Danh sách lớp phải cao ≥44px").toBeGreaterThanOrEqual(44);
 
     // UI-04 — mục đang xem phải nói ra bằng thuộc tính, không chỉ bằng màu nút.
     const toggle = page.getByRole("group", { name: "Kiểu hiển thị" });

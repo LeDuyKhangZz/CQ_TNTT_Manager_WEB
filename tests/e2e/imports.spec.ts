@@ -506,8 +506,8 @@ test.describe("M12-A · nhập Excel", () => {
         page.getByLabel("Giới tính của dòng 2"),
         page.getByLabel("Cách xử lý dòng 2"),
         page.getByRole("button", { name: "Lưu tất cả thay đổi" }),
-        page.getByRole("link", { name: "← Danh sách lần nhập" }),
-        // M12-C — nút tải file lỗi/kết quả nằm cùng hàng với liên kết quay lại.
+        // R1.2 (redesign 2C): liên kết quay lại chuyển lên PageHeader backHref.
+        page.getByRole("link", { name: "Danh sách lần nhập" }),
         page.getByRole("link", { name: "Tải file lỗi / kết quả" }),
       ]) {
         const box = await control.boundingBox();

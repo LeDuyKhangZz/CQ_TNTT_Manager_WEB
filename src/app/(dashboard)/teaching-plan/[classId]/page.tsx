@@ -24,21 +24,8 @@ export default async function TeachingPlanDetailPage({
       <PageHeader
         title={`Giáo án ${detail.className}`}
         description={`Năm học ${detail.academicYearCode} · ${detail.canManage ? "Có quyền chỉnh sửa" : "Chỉ xem"}`}
-        action={
-          /*
-            Nợ #20 — link cũ cao **18px**, chưa bằng nửa ngưỡng chạm 44px của
-            `11` §5. `inline-flex min-h-11` + margin âm để không đẩy phần đầu
-            trang cao thêm, đúng khuôn `students/[studentId]` và
-            `attendance/[sessionId]`. Có bài E2E **đo bằng `boundingBox()`** —
-            đo chiều cao ĐÃ DỰNG, không kiểm tên lớp CSS.
-          */
-          <Link
-            href="/teaching-plan"
-            className="-my-3 inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
-          >
-            ← Danh sách lớp
-          </Link>
-        }
+        backHref="/teaching-plan"
+        backLabel="Danh sách lớp"
       />
       {/*
         UI-04 — `aria-label` trên một `<div>` trần không được trình đọc màn hình

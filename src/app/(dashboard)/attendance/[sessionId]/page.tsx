@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,18 +29,13 @@ export default async function AttendanceSessionPage({
       <PageHeader
         title={`${detail.className} — ${MEETING_TYPE_LABELS[detail.meetingType]}`}
         description={`Ngày ${formatDateVi(detail.attendanceDate)}`}
-        action={
-          // Nợ #20: ô bấm cao 18px trên một trang mà người dùng chạm bằng ngón
-          // tay. Margin âm giữ chiều cao header như cũ (khuôn của M03-C).
-          <Link
-            href="/attendance"
-            className="-my-3 inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
-          >
-            ← Danh sách buổi
-          </Link>
-        }
+        backHref="/attendance"
+        backLabel="Danh sách buổi"
       />
 
+      {/* R1.5 (redesign 2C, UX-09): các khối anh em từng đứng sát nhau 0px —
+          `space-y-5` cho cả trang một nhịp dọc thống nhất. */}
+      <div className="space-y-5">
       <FormMessage>{error}</FormMessage>
       {/* TB-08 — người mở buổi mà không nhận được quyền sửa phải được nói ngay,
           không phải tự suy ra từ việc thanh nút không xuất hiện. */}
@@ -110,6 +104,7 @@ export default async function AttendanceSessionPage({
         leaseExpiresAt={detail.leaseExpiresAt}
         isFinalized={detail.finalizedAt !== null}
       />
+      </div>
     </PageContainer>
   );
 }

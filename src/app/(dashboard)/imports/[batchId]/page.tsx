@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { Pagination } from "@/components/ui/pagination";
@@ -67,6 +68,8 @@ export default async function ImportBatchPage({
       <PageHeader
         title={batch.filename}
         description={`${batch.totalRows} dòng · hợp lệ ${batch.validRows} · cảnh báo ${batch.warningRows} · lỗi ${batch.errorRows}`}
+        backHref="/imports"
+        backLabel="Danh sách lần nhập"
       />
 
       <div className="space-y-6">
@@ -138,17 +141,10 @@ export default async function ImportBatchPage({
               <a
                 href={`/imports/${batch.id}/errors`}
                 download
-                className="inline-flex h-control min-h-control items-center justify-center rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+                className={buttonVariants({ variant: "outline" })}
               >
                 Tải file lỗi / kết quả
               </a>
-
-              <Link
-                href="/imports"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-ink underline underline-offset-4"
-              >
-                ← Danh sách lần nhập
-              </Link>
             </div>
 
             <p className="text-xs text-ink-muted">

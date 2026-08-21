@@ -681,11 +681,13 @@ test.describe("Điểm danh Phase 3", () => {
     await page.goto(sessionUrl);
     await expectNoHorizontalOverflow(page, "trang buổi điểm danh");
 
-    const backLink = page.getByRole("link", { name: "← Danh sách buổi" });
+    // R1.2 (redesign 2C): link quay lại nay là nút chuẩn `backHref` của
+    // PageHeader — mũi tên là icon aria-hidden nên tên truy cập không còn "←".
+    const backLink = page.getByRole("link", { name: "Danh sách buổi" });
     await expect(backLink).toBeVisible();
     const box = await backLink.boundingBox();
     expect(box, "link quay lại phải đo được").not.toBeNull();
-    expect(box!.height, "link ← Danh sách buổi phải cao ≥44px").toBeGreaterThanOrEqual(44);
+    expect(box!.height, "link Danh sách buổi phải cao ≥44px").toBeGreaterThanOrEqual(44);
 
     // M05-C: điều khiển của roster nay là NÚT BẤM (D-142) và hàng danh sách
     // nay là một nút gấp/mở (D-143) — cả ba đều phải đạt ngưỡng chạm. Đo

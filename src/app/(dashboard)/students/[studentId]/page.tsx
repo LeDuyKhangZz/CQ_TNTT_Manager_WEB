@@ -65,24 +65,12 @@ export default async function StudentDetailPage({
       <PageHeader
         title={`${student.saintName} ${student.fullName}`}
         description={`Mã thiếu nhi ${student.studentCode}`}
-        action={
-          /*
-            `min-h-11` + `inline-flex items-center` — vùng chạm 44px (`11` §5).
-            Lỗi này CÓ TỪ TRƯỚC M03-C và chưa ai từng đo: `responsive.spec.ts`
-            quét 13 địa chỉ cấp một nhưng **không có** `/students/[studentId]`,
-            nên một link cao **18px** đứng đây suốt từ Phase 2. Bài đo mới của
-            đợt này (`student-lifecycle.spec.ts`) bắt được ngay lượt đầu.
-          */
-          <Link
-            href="/students"
-            className="inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
-          >
-            ← Danh sách thiếu nhi
-          </Link>
-        }
+        backHref="/students"
+        backLabel="Danh sách thiếu nhi"
       />
 
-      <Card>
+      {/* R1.5 (redesign 2C, UX-09): thẻ tóm tắt và thanh tab từng dính sát 0px. */}
+      <Card className="mb-4">
         <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
           <div>
             <p className="text-sm text-ink-muted">Người giám hộ</p>
@@ -109,7 +97,7 @@ export default async function StudentDetailPage({
         </CardContent>
       </Card>
 
-      <nav className="flex flex-wrap gap-1 border-b border-line">
+      <nav className="mb-5 flex flex-wrap gap-1 border-b border-line">
         {tabs
           .filter((item) => item.visible)
           .map((item) => (
