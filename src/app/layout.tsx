@@ -45,6 +45,9 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Whole-page loading.tsx Suspense hides completed HTML until JavaScript
+  // reveals it. Keep native forms usable without JS: await the page for SSR,
+  // use LoadingProvider for client navigation and skeletons for local data.
   return (
     <html lang="vi" className={beVietnamPro.variable}>
       <body>
