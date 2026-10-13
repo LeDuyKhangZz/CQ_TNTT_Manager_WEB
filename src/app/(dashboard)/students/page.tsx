@@ -89,7 +89,7 @@ export default async function StudentsPage({ searchParams }: {
       <PageHeader title="Thiếu nhi" className="flex-row items-center justify-between" action={canWrite ?
         <Link href={createHref} className={buttonVariants()}><Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" /><span className="sr-only sm:not-sr-only">Thêm thiếu nhi</span></Link> : undefined} />
       {feeScope ? <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-sm text-ink-muted">
-        Chế độ chỉ xem theo quyền Thủ quỹ: tên em, lớp, ngành và liên lạc phụ huynh. Hồ sơ chi tiết, ngày sinh, địa chỉ, sức khoẻ và bí tích không thuộc phạm vi Thủ quỹ.
+        Chế độ chỉ xem theo quyền Thủ quỹ: tên em, lớp, ngành và liên lạc phụ huynh. Liên hệ Thư ký khi cần chỉnh sửa.
       </p> : null}
       <StudentMobileFilters data={data} open={params.filters === "1" && !creating && !creatingGuardian} defaultStatus={defaultStatus} />
       <Toolbar label="Lọc danh sách thiếu nhi" action="/students" className="relative hidden md:sticky md:flex md:py-0"

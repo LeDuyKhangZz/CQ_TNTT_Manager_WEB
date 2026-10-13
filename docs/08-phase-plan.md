@@ -1,5 +1,13 @@
 # 08 — Phase Plan
 
+> **13/10/2026 — R4 DONE 5/5:** danh sách, wizard giám hộ → thiếu nhi, hồ sơ 6 tab, mobile filter sheet và chế độ Thủ quỹ. UX-41 đã xử lý. Unit **2.000 pass /24 skip**, R4 E2E **105/105**, pgTAP audit **1.512/1.512**, lint/typecheck/build đạt. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Production đã backup và migration khớp70/70; Git/Vercel đang chờ push/redeploy. UX-42/R13.3 và giới hạn tablet vẫn mở. [Báo cáo R4](system-workflow-redesign/redesign-2c/R4_COMPLETION_2026-10-13.md). Các mốc bên dưới giữ nguyên lịch sử.
+
+> **13/10/2026 — Redesign 2C / R4.1 DONE (R4 1/5):** Toolbar + DataTable v2 + phân trang20/50 + drawer URL. Giữ quyền, RPC Thủ quỹ và năm lịch sử. Sửa compact CSS, popup tràn và margin drawer; reviewer độc lập kiểm lại. Unit **1.978 pass /24 skip**, lint/typecheck/build đạt, E2E danh sách/vòng đời thiếu nhi **90/90** ba viewport. Không migration/RLS/deploy. R4.2–R4.5, UX-41 detail, UX-42 và R13.3 vẫn mở. Các mốc bên dưới là lịch sử. [Báo cáo R4.1](../../REDESIGN/19_R4_1_COMPLETION_2026-10-13.md).
+
+> **12/10/2026 — cập nhật cuối Redesign 2C / R3:** **R3 hoàn thành 5/5**: menu theo vai trò, Lớp của tôi, rail nhớ theo tài khoản, badge đúng scope, Menu/map/coachmark. Sửa QA-01–06, query/focus được reviewer độc lập kiểm theo AGENTS §9. Unit **1.967 pass / 24 skip**; lint/typecheck/build đạt; R3 E2E **54/54**, walkthrough **644/644**, badge dương **52/52**, rail **13/13**, NextLink **32/32**. Full E2E **645 pass / 6 fail**, rerun **18/18 đạt**, không cộng thành lượt gốc xanh. UX-41 giao R4, UX-42/R13.3 giữ mở. Không migration/RLS mới, chưa deploy; fixture badge audit cleanup đủ 16 dòng/4 bảng. R4 chưa bắt đầu. Các mốc cũ dưới đây giữ làm lịch sử. [Báo cáo R3 và nghiệm thu](../../REDESIGN/17_R3_COMPLETION_2026-10-12.md) · [Rà 14 vai trò/14 module và CT_NOIBO](../../REDESIGN/18_ROLE_WORKFLOW_REVIEW_2026-10-12.md).
+
+> **Redesign 2C, 12/10/2026:** R2 ☑ — hoàn thành 13/13 task, đã kiểm chứng; E2E cuối 593 pass / 4 lỗi proxy fixture, chạy lại 9/9 đạt. R13.3 vẫn mở. Lộ trình đang hiệu lực ở [REDESIGN/12](../../REDESIGN/12_REDESIGN_ROADMAP.md); [báo cáo R2](../../REDESIGN/16_R2_COMPLETION_2026-10-12.md) ghi kết quả thật. Các phase xây dựng ban đầu bên dưới giữ nguyên lịch sử.
+
 ## Cách dùng
 
 - Mỗi task có ID.
