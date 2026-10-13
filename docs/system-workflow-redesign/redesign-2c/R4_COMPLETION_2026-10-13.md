@@ -1,6 +1,6 @@
 # R4 — hoàn tất module Thiếu nhi — 13/10/2026
 
-R4 hoàn tất **5/5 task** theo roadmap đã duyệt. Chủ dự án yêu cầu hoàn tất R4, push Git và redeploy. Hồ sơ này bao gồm các phụ thuộc R2/R3 đang nằm trong working tree; lịch sử kiểm định trước sửa được giữ nguyên.
+R4 hoàn tất **5/5 task** theo roadmap đã duyệt. Chủ dự án yêu cầu hoàn tất R4, push Git và redeploy. Hồ sơ này bao gồm các phụ thuộc R2/R3 đã kiểm thử và commit theo từng task; lịch sử kiểm định trước sửa được giữ nguyên.
 
 | Task | Kết quả |
 |---|---|
@@ -40,7 +40,7 @@ Các lượt lỗi trước sửa được giữ: R4 round 1: 63 pass / 27 fail;
 - Supabase production `hvcfhlaubnukeoutxiuq` được xác nhận ACTIVE_HEALTHY trước triển khai; không gửi lệnh resume.
 - Backup schema/data trước migration: `backups/2026-10-13-before-r4/` ở workspace ngoài Git. Không đưa dữ liệu cá nhân/secret vào repo.
 - Đã áp migration R2.13 `20261012000100_academic_year_history_directory.sql`: view security_invoker và RPC đọc lịch sử cho Thủ quỹ. Migration list sau áp: **70/70 khớp, 0 pending**. Không đổi policy RLS, không backfill hồ sơ.
-- Git/Vercel: đang chuẩn bị push và redeploy; chưa ghi deployed trước khi smoke URL production.
+- Git/Vercel: **đã push/redeploy và smoke production** source `e4dcf89`; chi tiết và phạm vi xác minh ở cuối báo cáo.
 
 ## Bằng chứng
 
@@ -60,3 +60,12 @@ Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass
 - Một ca Escape trong lượt dài không đóng kịp, reviewer không tái hiện8/8 lần. Test nay chờ animation thật/body khóa rồi phát một Escape vào drawer; không sleep cố định, không retry phím. Browser kiểm Tab/Shift+Tab vẫn trong modal.
 - Ba ca results.spec dùng lại fixture đã duyệt từ lượt trước: trạng thái Đã duyệt không có form Đề xuất, nên timeout trước bước đề xuất. Đã chạy lại toàn bộ luồng bảng điểm/công bố/khóa/xuất/Top5/portal/duyệt lên lớp trên DB audit54621 với fixture mới: **3/3 PASS**. Không xóa lịch sử lên lớp trong DB chính. Tính lặp lại fixture thuộc R13.3 còn mở; không có lượt E2E toàn hệ thống xanh trên bản cuối để tuyên bố.
 - Lint/typecheck/build cuối đạt; backport React guarded installer3/3. Production trước deploy: login/redirect trình duyệt/tài nguyên desktop-mobile đạt; REST view student_year_directory trảHTTP200 khi chọn0dòng. Chưa chạy luồng ghi bằng tài khoản production, không gửi form production.
+
+## Production đã triển khai — 13/10/2026
+
+- Source commit: `e4dcf8975846c51d6e2d8e4b29e05953ecf40960` trên `main`; Vercel Production báo success đúng SHA sau push.
+- URL chính: [https://cq-tntt-manager-web.vercel.app](https://cq-tntt-manager-web.vercel.app); deployment do GitHub/Vercel báo thành công: [https://cq-tntt-manager-pfqkclbuu-khanglebomba.vercel.app](https://cq-tntt-manager-pfqkclbuu-khanglebomba.vercel.app). URL riêng trả302 sang Vercel Authentication; không vượt lớp bảo vệ này.
+- Smoke URL chính tại `2026-10-13T08:10:01.975Z`: login desktop/mobile, redirect bảo vệ `/`, `/dashboard`, `/students`, `/students?new=1` giữ deep link; JS/CSS tải thành công, không pageerror/tràn ngang. SHA được xác minh bằng trạng thái Production của Vercel; không tuyên bố đã so sánh asset với URL riêng bị bảo vệ.
+- Supabase REST `student_year_directory` và `students` trảHTTP200 khi lấy0dòng; không xuất PII. Backup schema/data và migration70/70 đã ghi ở trên.
+- Không dùng mật khẩu production, không gửi form ghi production. Các luồng có đăng nhập/ghi dữ liệu đã kiểm ở local/audit; không mô tả smoke này là kiểm toàn bộ nghiệp vụ production.
+- Bằng chứng ngoài Git: `deployment-release.json`, `production-release-protection.json`, `production-stable.json`, ảnh desktop/mobile cùng tên và `production-db-smoke.json`. Commit tài liệu theo sau chỉ cập nhật hồ sơ nghiệm thu.

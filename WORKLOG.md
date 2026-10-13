@@ -49,19 +49,19 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **R4 release — đóng gói R4-QA-01 — Codex — 2026-10-13.** R4 đủ5/5; kiểm thử thật đã chạy trước commit. R4-QA-01 đã sửa, đang hoàn tất E2E/redeploy.
+- **R4 DONE5/5, DEPLOYED — Codex — 2026-10-13.** Source `e4dcf89` đã push main; Vercel Production success và smoke URL thật đạt.
 - Kiểm thử: **2.000 unit pass /24 skip; R4 E2E105/105; pgTAP audit1.512/1.512**; lint/typecheck/build đạt. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh.
 - Reviewer độc lập kiểm browser/query/quyền; desktop y287, mobile hàng63px; tablet768×1024 thấy12 hàng, cột điện thoại/trạng thái cần cuộn ngang.
-- Production đã backup và áp migration lịch sử;70/70 khớp. Chuẩn bị commit/push/redeploy theo yêu cầu; chưa ghi deployed.
+- Production đã backup và áp migration lịch sử;70/70 khớp. Đã push/redeploy `e4dcf89`; [production](https://cq-tntt-manager-web.vercel.app) smoke đạt; URL riêng có Vercel Authentication.
 - R2 13/13, R3 5/5 giữ hoàn tất; UX-42/R13.3 và R5–R13 còn mở. [Hồ sơ R4](docs/system-workflow-redesign/redesign-2c/R4_COMPLETION_2026-10-13.md).
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Đang làm: commit/push và redeploy R4**, kiểm tra deployment đúng SHA và smoke URL production. Sau bàn giao, task roadmap kế tiếp là R5.1; chưa claim R5.
+**Task kế tiếp: R5.1 — khung workspace lớp học.** R4 đã bàn giao và redeploy; chưa claim R5. R13.3 tiếp tục theo dõi gate toàn hệ thống/fixture.
 
 ## ⛔ BLOCKERS
 
-Không còn blocker chức năng R4. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Git/Vercel chưa hoàn tất. UX-42/R13.3 giữ mở. Giới hạn tablet và bản nháp wizard ghi rõ trong báo cáo; không reset DB local để xử lý xung đột pgTAP fixture.
+Không còn blocker chức năng R4. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Git/Vercel đã hoàn tất và smoke production đạt. UX-42/R13.3 giữ mở. Giới hạn tablet và bản nháp wizard ghi rõ trong báo cáo; không reset DB local để xử lý xung đột pgTAP fixture.
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi)
 
@@ -166,7 +166,7 @@ Không còn blocker chức năng R4. Full E2E trước sửa cuối: **677 pass 
 - **Migration/data impact:** backup production schema/data ngoài Git; áp migration lịch sử R2.13,70/70 khớp; không policy RLS mới/backfill. E2E ghi fixture local và cleanup theo ID; pgTAP chạy DB audit mới từ70 migration.
 - **Đã test:** lint/typecheck/build đạt; Vitest2.000 pass/24 skip; nhóm component cuối29/29; R4 E2E105/105,3,9 phút; pgTAP1.512/1.512. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Reviewer độc lập16 unit/boundary và JWT thật xác nhận D75.
 - **Giới hạn:** tablet768×1024 có12 hàng nhưng điện thoại/trạng thái cần cuộn ngang;768×800 khoảng7 hàng. Không có live fixture ghi chú khác rỗng. UX-42/R13.3 chưa đóng.
-- **Next:** commit theo task, push main, chờ Vercel đúng SHA và smoke production rồi mới ghi deployed.
+- **Deployment:** `e4dcf89` đã push main và Vercel Production success. Smoke alias `https://cq-tntt-manager-web.vercel.app` đạt; URL riêng có Vercel Authentication; không gửi form production. **Next:** R5.1 chưa claim; UX-42/R13.3 giữ mở.
 
 ### [2026-10-13] Codex — R4.1 — danh sách thiếu nhi
 
