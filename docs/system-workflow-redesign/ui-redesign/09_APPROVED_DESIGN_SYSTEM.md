@@ -419,3 +419,22 @@ dùng `--theme-*`** §4.4 · typography §2 · mười điều cấm §10 · dan
 Riêng LoadingOverlay: ba chấm nhún dùng `--theme-primary` — đó là **điểm #8 "chuỗi biểu đồ"**?
 **Không.** Nó là một tín hiệu tiến trình, và tiến trình đã có `Progress` ở §8 nhóm 2 dùng
 `--theme-primary` từ trước; overlay dùng lại đúng token của `Progress`, không mở điểm thứ mười ba.
+
+## 13. Density — R2.10, 12/10/2026
+
+Triển khai theo yêu cầu chủ dự án **hoàn thành toàn bộ R2**. Chỉ áp compact tại vùng dữ liệu nhân sự có khai báo `data-density="compact"`; không áp lên toàn bộ shell hoặc portal.
+
+| Token | Mặc định | Compact |
+|---|---|---|
+| `--control-height` | 44px | 44px |
+| `--text-base` | 16px | 14px |
+| `--row-height` | 48px | 44px |
+| `--cell-pad` | 12px 16px | 0 12px |
+
+Padding dọc compact là 0 vì label/nút đã cao 44px; thêm 8px hai phía sẽ tạo hàng 61px như QA-07. Nội dung nhiều dòng được phép tăng chiều cao. Ô chọn có label ít nhất 44×44px. Portal comfortable tiếp tục 48px và chữ 16px. Không đổi font, bảng màu, bán kính hay thang bóng.
+
+## 14. Surface và khoảng cách — R2.10, 12/10/2026
+
+- `--surface-section: transparent`, ánh xạ `bg-section`; Section phẳng dùng divider và tiêu đề thay card lồng card.
+- PageContainer sở hữu khoảng cách dọc 24px giữa các khối trực tiếp. PageHeader bỏ margin ngoài để không cộng đôi khoảng cách; toolbar slot là sibling để sticky chạy hết chiều cao trang.
+- Các thành phần tự quản khoảng cách nội bộ. Đường viền, nền kem và token ngành hiện hành giữ nguyên.

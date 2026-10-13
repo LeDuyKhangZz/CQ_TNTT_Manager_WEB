@@ -16,6 +16,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        section: "var(--surface-section)",
         // ---- Token ngành (bơm động bởi ThemeScope) --------------------
         theme: {
           DEFAULT: "var(--theme-primary)",
