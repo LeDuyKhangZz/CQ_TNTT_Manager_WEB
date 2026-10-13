@@ -4,6 +4,8 @@ import {
   buildBreadcrumbTrail,
   classStaffMobileNavigation,
   getDesktopNavigation,
+  getAllFeaturesNavigation,
+  getNavigationVariant,
   getMobileNavigation,
   getPageTitle,
   isNavigationItemActive,
@@ -333,5 +335,41 @@ describe("buildBreadcrumbTrail — Mốc 0B mục 0.7", () => {
 
   it("không nhầm /student/attendance với danh sách /students", () => {
     expect(labels("/student/attendance")).toEqual(["Trang chủ", "Điểm danh của em"]);
+  });
+});
+
+
+describe("R3 role-aware sidebar and complete feature discovery", () => {
+  const viewerFor = (role: AppRole) => ({ role, audience: getAudienceForRole(role), scopeKind: getScopeKindForRole(role) });
+  it.each(APP_ROLES)("%s retains accessible full catalogue after primary navigation is shortened", (role) => {
+    const viewer = viewerFor(role);
+    const items = getAllFeaturesNavigation(viewer);
+    for (const item of items) expect(canAccessRoute({ role, accountStatus: "active" }, item.href)).toBe(true);
+    expect(new Set(items.map(item => item.href)).size).toBe(items.length);
+    expect(items.some(item => item.href === "/imports" || item.href === "/staff/bulk")).toBe(false);
+    for (const item of getMobileNavigation(viewer)) expect(items.map(entry => entry.href)).toContain(item.href);
+  });
+  it.each(["class_representative", "class_teacher", "trainee_assistant"] as const)("%s has seven primary destinations and direct own class", (role) => {
+    const viewer = viewerFor(role);
+    const own = { href: "/classes/10000000-0000-4000-8000-000000000001", label: "Ấu 1A" };
+    const primary = getDesktopNavigation(viewer, own);
+    expect(primary).toHaveLength(7);
+    expect(primary.find(item => item.label === "Lớp của tôi")).toMatchObject({ href: own.href, description: "Ấu 1A" });
+    expect(getAllFeaturesNavigation(viewer).map(item => item.href)).toEqual(expect.arrayContaining(["/teaching-plan", "/results", "/staff", "/committees", "/reports"]));
+    expect(getDesktopNavigation(viewer).find(item => item.label === "Lớp của tôi")?.href).toBe("/classes");
+  });
+  it("five variants order work by role without changing the mobile presets", () => {
+    expect(getNavigationVariant(viewerFor("class_teacher"))).toBe("class");
+    expect(getNavigationVariant(viewerFor("sector_deputy"))).toBe("sector");
+    expect(getNavigationVariant(viewerFor("secretary"))).toBe("global");
+    expect(getNavigationVariant(viewerFor("treasurer"))).toBe("read-only");
+    expect(getNavigationVariant(viewerFor("guardian"))).toBe("portal");
+    expect(getDesktopNavigation(viewerFor("secretary")).slice(1, 4).map(item => item.href)).toEqual(["/students", "/staff", "/classes"]);
+    expect(getDesktopNavigation(viewerFor("sector_leader")).slice(1, 4).map(item => item.href)).toEqual(["/classes", "/attendance", "/promotions"]);
+    expect(getDesktopNavigation(viewerFor("treasurer")).filter(item => item.group === "Theo dõi").map(item => item.href)).not.toContain("/attendance");
+  });
+  it("D-25 staff-parent keeps both family destinations in a separate group", () => {
+    const items = getDesktopNavigation({ ...viewerFor("class_teacher"), hasGuardianProfile: true });
+    expect(items.filter(item => item.group === "Gia đình").map(item => item.href)).toEqual(["/parent/children", "/parent/absence-requests"]);
   });
 });

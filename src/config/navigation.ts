@@ -17,7 +17,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { ATTENDANCE_VIEW_ROLES } from "@/lib/permissions/route-map";
-import type { AppAudience, AppRole } from "@/lib/permissions/roles";
+import { CLASS_ROLES, SECTOR_ROLES, type AppAudience, type AppRole } from "@/lib/permissions/roles";
 
 export type NavigationAudience = AppAudience;
 export type NavigationScope = "global" | "sector" | "class" | "ownership" | "none";
@@ -43,7 +43,10 @@ export interface NavigationItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  group: "Chung" | "Mục vụ" | "Điều hành";
+  group: "Chung" | "Mục vụ" | "Học tập" | "Theo dõi" | "Điều hành" | "Gia đình";
+  description?: string;
+  /** Canonical module for badges when a destination points at a class detail. */
+  moduleHref?: string;
   audiences: readonly NavigationAudience[];
   scopes: readonly NavigationScope[];
   roles?: readonly AppRole[];
@@ -202,10 +205,52 @@ function isItemVisible(item: NavigationItem, viewer: NavigationViewer): boolean 
   return item.scopes.includes(viewer.scopeKind) || item.scopes.includes("none");
 }
 
-export function getDesktopNavigation(viewer: NavigationViewer): readonly NavigationItem[] {
-  // `Tài khoản` có mặt ở cả thanh bên lẫn thanh dưới (AC-B3). Bản cũ chỉ có ở
-  // thanh dưới, nên hai nền tảng hiện hai tập mục khác nhau cho cùng một người.
+export type NavigationVariant = "class" | "sector" | "global" | "read-only" | "portal";
+export interface MyClassDestination { href: string; label: string }
+
+export function getNavigationVariant(viewer: NavigationViewer): NavigationVariant {
+  if (viewer.audience !== "staff") return "portal";
+  if (viewer.role && READ_ONLY_STAFF_ROLES.includes(viewer.role)) return "read-only";
+  if (viewer.role && CLASS_ROLES.includes(viewer.role)) return "class";
+  if (viewer.role && SECTOR_ROLES.includes(viewer.role)) return "sector";
+  return "global";
+}
+
+/** Full catalogue, including modules omitted from the frequent-use sidebar.
+ * No imports/bulk links: their only entry remains /admin (IMP-BULK-002). */
+export function getAllFeaturesNavigation(viewer: NavigationViewer): readonly NavigationItem[] {
   return [...platformNavigation, accountNavigationItem].filter((item) => isItemVisible(item, viewer));
+}
+
+export function getDesktopNavigation(
+  viewer: NavigationViewer,
+  myClass?: MyClassDestination | null,
+): readonly NavigationItem[] {
+  const available = getAllFeaturesNavigation(viewer);
+  const variant = getNavigationVariant(viewer);
+  const order = variant === "class"
+    ? ["/dashboard", "/classes", "/attendance", "/students", "/promotions", "/notifications", "/parent/children", "/parent/absence-requests", "/account"]
+    : variant === "sector"
+      ? ["/dashboard", "/classes", "/attendance", "/promotions", "/students", "/staff", "/teaching-plan", "/results", "/committees", "/reports", "/notifications", "/parent/children", "/parent/absence-requests", "/account"]
+      : variant === "global"
+        ? ["/dashboard", "/students", "/staff", "/classes", "/attendance", "/promotions", "/teaching-plan", "/results", "/committees", "/reports", "/admin", "/notifications", "/parent/children", "/parent/absence-requests", "/account"]
+        : variant === "read-only"
+          ? ["/dashboard", "/students", "/classes", "/results", "/reports", "/attendance", "/staff", "/committees", "/notifications", "/parent/children", "/parent/absence-requests", "/account"]
+          : available.map((item) => item.href);
+
+  return order.flatMap((href): NavigationItem[] => {
+    const item = available.find((entry) => entry.href === href);
+    if (!item) return [];
+    if (variant === "class" && href === "/classes") {
+      return [{ ...item, href: myClass?.href ?? "/classes", label: "Lớp của tôi",
+        moduleHref: "/classes", description: myClass?.label ?? "Xem lớp được phân công" }];
+    }
+    const group = href.startsWith("/parent/") && viewer.audience === "staff" ? "Gia đình"
+      : variant === "read-only" && item.group !== "Chung" ? "Theo dõi"
+      : (variant === "global" || variant === "sector") && ["/teaching-plan", "/results"].includes(href) ? "Học tập"
+      : item.group;
+    return [{ ...item, group }];
+  });
 }
 
 /** Preset thô theo vai trò, TRƯỚC khi lọc lại bằng quyền thật. */
