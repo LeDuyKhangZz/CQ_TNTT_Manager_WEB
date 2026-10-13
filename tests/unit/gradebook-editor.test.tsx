@@ -514,7 +514,7 @@ describe("gradebook editor · M07-C · hiện lại cột đã ẩn", () => {
 
   it("nợ #21 — mục 'Cột đã ẩn' gập sẵn, mở ra rồi hiện lại được", async () => {
     const user = userEvent.setup();
-    render(<GradebookEditor detail={HIDDEN} />);
+    const { rerender } = render(<GradebookEditor detail={HIDDEN} />);
 
     expect(screen.getByRole("heading", { name: "Cột đã ẩn" })).toBeInTheDocument();
     // Gập sẵn: tên cột chưa chiếm chỗ trong một trang vốn đã rất dài.
@@ -530,6 +530,16 @@ describe("gradebook editor · M07-C · hiện lại cột đã ẩn", () => {
 
     expect(restoreAssessment).toHaveBeenCalledWith("asm-hidden");
     expect(await screen.findByText(/Đã hiện lại cột “Kiểm tra tháng 9”/)).toBeInTheDocument();
+
+    // A real RSC refresh removes the final hidden column. Confirmation must
+    // outlive its panel, including when the refresh is faster than the user.
+    rerender(<GradebookEditor detail={{
+      ...HIDDEN,
+      hiddenAssessments: [],
+      assessments: [...HIDDEN.assessments, HIDDEN.hiddenAssessments[0]],
+    }} />);
+    expect(screen.queryByRole("heading", { name: "Cột đã ẩn" })).toBeNull();
+    expect(screen.getByText(/Đã hiện lại cột “Kiểm tra tháng 9”/)).toBeInTheDocument();
   });
 
   it("nợ #21 — cột ẩn đang ở trạng thái ĐÃ CÔNG BỐ thì câu xác nhận nói ra hậu quả với phụ huynh", async () => {

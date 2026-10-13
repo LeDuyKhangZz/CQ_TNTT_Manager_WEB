@@ -2,6 +2,18 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Isolated E2E can build against its own local API without replacing the
+  // developer's production preview bundle. Normal builds keep .next.
+  distDir: process.env.CQ_E2E_DIST_DIR || ".next",
+  // Next treats node_modules as immutable. A renderer backport must invalidate
+  // restored webpack caches too, otherwise production silently serves old React.
+  // Remove alongside scripts/patch-next-react.mjs when upgrading Next.
+  webpack(config) {
+    if (config.cache && typeof config.cache === "object") {
+      config.cache.version = `${config.cache.version ?? ""}|cq-react-36134-v1`;
+    }
+    return config;
+  },
   // 🔴 P3-UI-001 — BẮT BUỘC cho màn hình chờ khi chạy trên Vercel.
   //
   // `src/lib/loading/assets.ts` đọc đĩa lúc chạy: `readdir("public/loading")` và

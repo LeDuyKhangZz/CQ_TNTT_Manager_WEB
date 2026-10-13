@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { Label } from "@/components/ui/label";
@@ -105,7 +105,7 @@ export function WeeklyPlanEditor({
         .filter((line) => line.length > 0),
       // Dấu thời gian của đúng bản đang hiển thị. Người dùng bấm Lưu là đang nói
       // "tôi muốn thay bản NÀY", không phải "thay bất cứ thứ gì đang nằm ở đó".
-      expectedUpdatedAt: existing?.updatedAt ?? null,
+      expectedUpdatedAt: String(data.get("expectedUpdatedAt") ?? "") || null,
     });
   }
 
@@ -125,39 +125,12 @@ export function WeeklyPlanEditor({
             />
           </div>
 
-          {/* Không dùng màu làm tín hiệu duy nhất: trạng thái nói bằng chữ, và
-              nhãn nút nói lại cùng điều đó ngay bên dưới. */}
-          <p className="text-xs text-ink-muted" role="status">
-            {existing
-              ? `Đang sửa công việc tuần ${formatDateVi(existing.weekStart)}. ${describeExistingPlan(existing)}`
-              : "Tuần này chưa có công việc nào. Nội dung bên dưới sẽ tạo bản mới."}
-          </p>
-
-          <div className="space-y-2">
-            <Label htmlFor="plan-content">Nội dung công việc</Label>
-            <Textarea
-              id="plan-content"
-              name="content"
-              ref={contentRef}
-              maxLength={5000}
-              key={`content-${weekStart}-${existing?.id ?? "new"}`}
-              defaultValue={existing?.content ?? ""}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="plan-checklist">Checklist (mỗi dòng một việc)</Label>
-            <Textarea
-              id="plan-checklist"
-              name="checklist"
-              key={`checklist-${weekStart}-${existing?.id ?? "new"}`}
-              defaultValue={existing?.checklist.join("\n") ?? ""}
-            />
-          </div>
-          <div>
-            <Button type="submit" pending={pending}>
-              {existing ? "Cập nhật công việc tuần" : "Tạo công việc tuần"}
-            </Button>
-          </div>
+          <WeeklyPlanFields
+            key={weekStart}
+            existing={existing}
+            contentRef={contentRef}
+            pending={pending}
+          />
         </form>
       ) : null}
 
@@ -209,4 +182,74 @@ export function WeeklyPlanEditor({
       )}
     </div>
   );
+}
+
+
+/** Keep the optimistic concurrency token tied to the fields actually loaded.
+ * An RSC refresh must never give an unsaved draft a newer server token.
+ */
+function WeeklyPlanFields({ existing, contentRef, pending }: {
+  existing: CommitteeWeeklyPlan | null;
+  contentRef: RefObject<HTMLTextAreaElement | null>;
+  pending: boolean;
+}) {
+  const [snapshot, setSnapshot] = useState(existing);
+  const checklistRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    if (existing?.id === snapshot?.id && existing?.updatedAt === snapshot?.updatedAt) return;
+    const content = contentRef.current;
+    const checklist = checklistRef.current;
+    if (!content || !checklist) return;
+    const draftContent = content.value.trim() || null;
+    const draftChecklist = checklist.value.split("\n").map(line => line.trim()).filter(Boolean);
+    const matches = (plan: CommitteeWeeklyPlan | null) =>
+      draftContent === (plan?.content?.trim() || null) &&
+      JSON.stringify(draftChecklist) === JSON.stringify(plan?.checklist ?? []);
+
+    // Pristine form: load the new version. A draft matching the returned server
+    // version also acknowledges our successful save. Otherwise retain both the
+    // user's fields and their old token; the server will reject a stale save.
+    if (matches(snapshot) || matches(existing)) {
+      content.value = existing?.content ?? "";
+      checklist.value = existing?.checklist.join("\n") ?? "";
+      setSnapshot(existing);
+    }
+  }, [existing, snapshot, contentRef]);
+
+  return <>
+    <input type="hidden" name="expectedUpdatedAt" value={snapshot?.updatedAt ?? ""} />
+    {/* Không dùng màu làm tín hiệu duy nhất: trạng thái nói bằng chữ, và
+        nhãn nút nói lại cùng điều đó ngay bên dưới. */}
+    <p className="text-xs text-ink-muted" role="status">
+      {snapshot
+        ? `Đang sửa công việc tuần ${formatDateVi(snapshot.weekStart)}. ${describeExistingPlan(snapshot)}`
+        : "Tuần này chưa có công việc nào. Nội dung bên dưới sẽ tạo bản mới."}
+    </p>
+
+    <div className="space-y-2">
+      <Label htmlFor="plan-content">Nội dung công việc</Label>
+      <Textarea
+        id="plan-content"
+        name="content"
+        ref={contentRef}
+        maxLength={5000}
+        defaultValue={snapshot?.content ?? ""}
+      />
+    </div>
+    <div className="space-y-2">
+      <Label htmlFor="plan-checklist">Checklist (mỗi dòng một việc)</Label>
+      <Textarea
+        id="plan-checklist"
+        name="checklist"
+        ref={checklistRef}
+        defaultValue={snapshot?.checklist.join("\n") ?? ""}
+      />
+    </div>
+    <div>
+      <Button type="submit" pending={pending}>
+        {snapshot ? "Cập nhật công việc tuần" : "Tạo công việc tuần"}
+      </Button>
+    </div>
+  </>;
 }

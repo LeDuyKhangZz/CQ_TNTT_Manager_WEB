@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -33,6 +33,13 @@ const PLAN_TRUNG_THU: CommitteeWeeklyPlan = {
   updatedAt: "2026-10-05T09:30:00.123456+00:00",
   savedByName: "Anh Trưởng Ban Sinh hoạt",
 };
+
+// The default week must not depend on when CI runs or overlap a fixture week.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-08-21T02:00:00Z"));
+});
+afterEach(() => vi.useRealTimers());
 
 const PLAN_SAU_TRUNG_THU: CommitteeWeeklyPlan = {
   id: "plan-2",
@@ -158,5 +165,78 @@ describe("WeeklyPlanEditor — chống ghi đè mù (F11)", () => {
     expect(screen.queryByLabelText("Tuần bắt đầu (thứ Hai)")).toBeNull();
     expect(screen.queryByRole("button", { name: "Sửa" })).toBeNull();
     expect(screen.getByText("Chuẩn bị Trung Thu")).toBeInTheDocument();
+  });
+});
+
+
+describe("WeeklyPlanEditor — version follows the loaded draft across RSC refresh", () => {
+  const newer: CommitteeWeeklyPlan = {
+    ...PLAN_TRUNG_THU,
+    content: "Bản người khác",
+    checklist: ["Việc người khác"],
+    updatedAt: "2026-10-05T10:30:00.123456+00:00",
+  };
+
+  function setup(plans: CommitteeWeeklyPlan[] = [PLAN_TRUNG_THU]) {
+    vi.setSystemTime(new Date("2026-10-05T02:00:00Z"));
+    const onSave = vi.fn<(draft: WeeklyPlanDraft) => void>();
+    const onDelete = vi.fn();
+    const draw = (nextPlans: CommitteeWeeklyPlan[]) => <WeeklyPlanEditor
+      plans={nextPlans} canWrite pending={false} onSave={onSave} onDelete={onDelete}
+    />;
+    const { rerender } = render(draw(plans));
+    return { onSave, refresh: (nextPlans: CommitteeWeeklyPlan[]) => rerender(draw(nextPlans)) };
+  }
+
+  it("dirty content keeps its original version when another version arrives", async () => {
+    const user = userEvent.setup();
+    const { onSave, refresh } = setup();
+    await user.clear(screen.getByLabelText("Nội dung công việc"));
+    await user.type(screen.getByLabelText("Nội dung công việc"), "Việc của tôi");
+    refresh([newer]);
+    expect(screen.getByLabelText("Nội dung công việc")).toHaveValue("Việc của tôi");
+    expect(screen.getByLabelText("Checklist (mỗi dòng một việc)")).toHaveValue("Mua đèn\nTập múa");
+    await user.click(screen.getByRole("button", { name: "Cập nhật công việc tuần" }));
+    expect(onSave.mock.calls[0][0]).toMatchObject({ content: "Việc của tôi", expectedUpdatedAt: PLAN_TRUNG_THU.updatedAt });
+  });
+
+  it("pristine fields load the new content, checklist and version together", async () => {
+    const user = userEvent.setup();
+    const { onSave, refresh } = setup();
+    refresh([newer]);
+    expect(screen.getByLabelText("Nội dung công việc")).toHaveValue(newer.content);
+    expect(screen.getByLabelText("Checklist (mỗi dòng một việc)")).toHaveValue("Việc người khác");
+    await user.click(screen.getByRole("button", { name: "Cập nhật công việc tuần" }));
+    expect(onSave.mock.calls[0][0].expectedUpdatedAt).toBe(newer.updatedAt);
+  });
+
+  it("a saved draft matching the server acknowledges the returned version", async () => {
+    const user = userEvent.setup();
+    const { onSave, refresh } = setup();
+    await user.clear(screen.getByLabelText("Nội dung công việc"));
+    await user.type(screen.getByLabelText("Nội dung công việc"), "  Đã lưu  ");
+    refresh([{ ...PLAN_TRUNG_THU, content: "Đã lưu", updatedAt: newer.updatedAt }]);
+    await user.click(screen.getByRole("button", { name: "Cập nhật công việc tuần" }));
+    expect(onSave.mock.calls[0][0]).toMatchObject({ content: "Đã lưu", expectedUpdatedAt: newer.updatedAt });
+  });
+
+  it("a plan created by someone else cannot replace a dirty new draft or its null token", async () => {
+    const user = userEvent.setup();
+    const { onSave, refresh } = setup([]);
+    await user.type(screen.getByLabelText("Nội dung công việc"), "Bản mới của tôi");
+    refresh([newer]);
+    expect(screen.getByLabelText("Nội dung công việc")).toHaveValue("Bản mới của tôi");
+    await user.click(screen.getByRole("button", { name: "Tạo công việc tuần" }));
+    expect(onSave.mock.calls[0][0]).toMatchObject({ content: "Bản mới của tôi", expectedUpdatedAt: null });
+  });
+
+  it("a deleted plan cannot erase a dirty checklist or convert its token into create", async () => {
+    const user = userEvent.setup();
+    const { onSave, refresh } = setup();
+    await user.type(screen.getByLabelText("Checklist (mỗi dòng một việc)"), "\nViệc của tôi");
+    refresh([]);
+    expect(screen.getByLabelText("Checklist (mỗi dòng một việc)")).toHaveValue("Mua đèn\nTập múa\nViệc của tôi");
+    await user.click(screen.getByRole("button", { name: "Cập nhật công việc tuần" }));
+    expect(onSave.mock.calls[0][0].expectedUpdatedAt).toBe(PLAN_TRUNG_THU.updatedAt);
   });
 });

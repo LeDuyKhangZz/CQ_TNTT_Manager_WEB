@@ -83,6 +83,22 @@ async function prepareFixture(testInfo: TestInfo) {
     .select("id, grade_level_id").eq("academic_year_id", year.id).eq("display_name", fixture.sourceClass).single();
   if (classError || !sourceClass) throw new Error(`Đọc lớp nguồn: ${classError?.message}`);
 
+  // A failed previous run can leave this exact fixture's gradebook locked.
+  // Restore its precondition through the real Super Admin RPC before grading.
+  const { data: previousLock } = await admin.from("gradebook_locks").select("is_locked").eq("class_id", sourceClass.id).maybeSingle();
+  if (previousLock?.is_locked) {
+    const { data: profile } = await admin.from("profiles").select("id").eq("username", "KHANG.NHO").single();
+    if (!profile) throw new Error("Missing local fixture administrator");
+    const { data: account } = await admin.auth.admin.getUserById(profile.id);
+    if (!account.user?.email) throw new Error("Missing local fixture administrator email");
+    const actor = createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { error: loginError } = await actor.auth.signInWithPassword({ email: account.user.email, password: DEV_PASSWORD });
+    if (loginError) throw new Error("Cannot authenticate local fixture administrator");
+    const { error: unlockError } = await actor.rpc("unlock_gradebook", { p_class_id: sourceClass.id });
+    await actor.auth.signOut();
+    if (unlockError) throw new Error(`Restore gradebook fixture: ${unlockError.message}`);
+  }
+
   const { error: futureError } = await admin.from("academic_years").upsert({
     id: FUTURE_YEAR_ID, code: "2027-2028", name: "Năm đích E2E Phase 5",
     start_date: "2027-09-01", end_date: "2028-05-31", retention_until: "2033-05-31", status: "draft",

@@ -88,12 +88,13 @@ async function selectWeekWithContent(page: Page, weekStart: string, content: str
 /**
  * M09-C: trang chi tiết Ban nay là bộ tab (Tổng quan / Thành viên / Thông báo /
  * Lịch họp / Công việc tuần / Thiết bị). Chỉ panel đang chọn nằm trong DOM, nên
- * phải mở đúng tab trước khi thao tác — và sau mỗi `reload()` tab quay về mặc
- * định (Tổng quan), phải mở lại.
+ * phải mở đúng tab trước khi thao tác. R2 giữ tab trong URL qua reload;
+ * không click lại tab đang mở để tránh tạo request thừa trong test cạnh tranh.
  */
 async function openTab(page: Page, name: string) {
-  await page.getByRole("tab", { name }).click();
-  await expect(page.getByRole("tab", { name })).toHaveAttribute("aria-selected", "true");
+  const link = page.getByRole("navigation", { name: /^Nội dung / }).getByRole("link", { name });
+  if (await link.getAttribute("aria-current") !== "page") await link.click();
+  await expect(link).toHaveAttribute("aria-current", "page");
 }
 
 /**
@@ -265,11 +266,15 @@ test.describe("Phase 6 — Ban và thiết bị", () => {
     await selectWeekWithContent(page, weekStart, "Chuẩn bị Trung Thu");
 
     // Dùng service role vì đây là "người thứ hai", không phải thao tác đang kiểm.
-    await admin
+    const { data: concurrentUpdate, error: concurrentUpdateError } = await admin
       .from("committee_weekly_plans")
       .update({ content: `Bản của người khác ${index}` })
       .eq("committee_id", COMMITTEE_SINH_HOAT)
-      .eq("week_start", weekStart);
+      .eq("week_start", weekStart)
+      .select("content, updated_at")
+      .single();
+    expect(concurrentUpdateError, "fixture người thứ hai phải lưu thành công").toBeNull();
+    expect(concurrentUpdate?.content).toBe(`Bản của người khác ${index}`);
     await page.getByLabel("Nội dung công việc").fill("Bản của tôi, lẽ ra không được ghi đè");
     await page.getByRole("button", { name: "Cập nhật công việc tuần" }).click();
     await expect(page.getByText("vừa được người khác cập nhật", { exact: false })).toBeVisible();
@@ -436,18 +441,21 @@ test.describe("Phase 6 — Báo cáo và snapshot", () => {
 
     // Buổi điểm danh đã chốt để báo cáo có số liệu. Dùng service role vì đây là
     // dữ liệu nền, không phải thao tác đang được kiểm.
-    await admin
+    const { data: existingSession } = await admin
       .from("attendance_sessions")
-      .delete()
+      .select("id")
       .eq("class_id", classId)
-      .eq("attendance_date", attendanceDate);
+      .eq("attendance_date", attendanceDate)
+      .eq("meeting_type", "thursday")
+      .maybeSingle();
     const { data: finalizer } = await admin
       .from("profiles")
       .select("id")
       .eq("username", "GLV909")
       .single();
-    const { data: session, error: sessionError } = await admin
-      .from("attendance_sessions")
+    const { data: session, error: sessionError } = existingSession
+      ? { data: existingSession, error: null }
+      : await admin.from("attendance_sessions")
       .insert({
         class_id: classId,
         academic_year_id: year.id,
@@ -466,10 +474,18 @@ test.describe("Phase 6 — Báo cáo và snapshot", () => {
       .from("enrollments")
       .select("id, student_id")
       .eq("class_id", classId)
-      .eq("status", "active");
+      .eq("academic_year_id", year.id)
+      .eq("status", "active")
+      .lte("enrolled_on", attendanceDate);
     expect((enrollments ?? []).length, "lớp Ấu 1A phải có ghi danh từ seed:dev").toBeGreaterThan(0);
-    const { error: recordError } = await admin.from("student_attendance_records").insert(
-      (enrollments ?? []).map((enrollment, position) => ({
+    const { data: existingRecords } = await admin.from("student_attendance_records")
+      .select("enrollment_id").eq("attendance_session_id", session!.id);
+    const recorded = new Set((existingRecords ?? []).map((row) => row.enrollment_id));
+    // Reuse finalized fixture data on rerun; never delete attendance history.
+    const missingRecords = (enrollments ?? []).filter((row) => !recorded.has(row.id));
+    const { error: recordError } = missingRecords.length === 0 ? { error: null }
+      : await admin.from("student_attendance_records").insert(
+      missingRecords.map((enrollment, position) => ({
         attendance_session_id: session!.id,
         enrollment_id: enrollment.id,
         class_id: classId,

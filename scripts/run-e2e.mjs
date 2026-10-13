@@ -125,6 +125,8 @@ async function assertPortFree() {
 
 assertLocalSupabase();
 await assertPortFree();
+// This runner calls next directly, so npm's prebuild hook does not run here.
+await run([join(projectRoot, "scripts", "patch-next-react.mjs")], "React renderer backport");
 
 // Bỏ qua build khi người chạy đã tự build với đúng env (ví dụ trên CI).
 if (!process.env.E2E_SKIP_BUILD) {

@@ -34,7 +34,8 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <noscript><p className="text-sm text-ink-muted">Vui lòng bật JavaScript để đăng nhập.</p></noscript>
       <div className="space-y-2">
         <Label htmlFor="username">Tên đăng nhập</Label>
         <Input id="username" autoComplete="username" placeholder="Ví dụ: GLV023" aria-invalid={!!errors.username} aria-describedby={errors.username ? "username-error" : undefined} {...register("username")} />

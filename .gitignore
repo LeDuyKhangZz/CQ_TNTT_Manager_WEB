@@ -6,6 +6,8 @@
 
 # Next.js
 /.next/
+/.next-r2-e2e/
+/.next-r4*/
 /out/
 next-env.d.ts
 

@@ -372,7 +372,10 @@ function AssessmentSettings({
  * trạng thái *"Đã công bố"*, hiện lại là **phụ huynh thấy lại ngay** — một hậu
  * quả ra ngoài tổ chức, và câu xác nhận nói thẳng điều đó.
  */
-function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
+function HiddenAssessmentsPanel({ detail, onRestored }: {
+  detail: GradebookDetail;
+  onRestored: (text: string) => void;
+}) {
   const refreshAfterAction = useDeferredRefresh(detail.classId);
   const [pending, startTransition] = useTransition();
   useGlobalPending(pending);
@@ -386,10 +389,15 @@ function HiddenAssessmentsPanel({ detail }: { detail: GradebookDetail }) {
     setConfirming(null);
     startTransition(async () => {
       const result = await restoreAssessment(assessment.id);
-      setMessage(result.ok
-        ? { tone: "success", text: `Đã hiện lại cột “${assessment.title}”.` }
-        : { tone: "error", text: result.message });
-      if (result.ok) refreshAfterAction();
+      if (result.ok) {
+        // The last restored column removes this panel after the refresh.
+        // Keep confirmation in the editor's persistent status region.
+        setMessage(null);
+        onRestored(`Đã hiện lại cột “${assessment.title}”.`);
+        refreshAfterAction();
+      } else {
+        setMessage({ tone: "error", text: result.message });
+      }
     });
   }
 
@@ -1301,6 +1309,7 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
             {detail.isLocked && detail.canUnlock ? <Button size="sm" variant="outline" disabled={lockPending} onClick={() => setConfirmingLock(false)}>Mở khóa</Button> : null}
           </div>
         </CardContent>
+        {detail.restrictedStudentsCount ? <CardContent className="pt-0 text-sm text-ink-muted">{detail.restrictedStudentsCount} lượt ghi danh có hồ sơ nằm ngoài quyền đọc hiện tại của bạn.</CardContent> : null}
         {lockMessage ? <CardContent className="pt-0"><FormMessage tone={MESSAGE_TONES[lockMessage.tone]}>{lockMessage.text}</FormMessage></CardContent> : null}
         {columnMessage ? <CardContent className="pt-0"><FormMessage tone={MESSAGE_TONES[columnMessage.tone]}>{columnMessage.text}</FormMessage></CardContent> : null}
         <ConfirmDialog
@@ -1351,7 +1360,12 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
         </section>
       ) : null}
 
-      {detail.canGrade ? <HiddenAssessmentsPanel detail={detail} /> : null}
+      {detail.canGrade ? (
+        <HiddenAssessmentsPanel
+          detail={detail}
+          onRestored={(text) => setColumnMessage({ tone: "success", text })}
+        />
+      ) : null}
 
       {detail.assessments.length === 0 ? (
         <Card><CardContent className="pt-6 text-sm text-ink-muted">Lớp chưa tạo cột điểm. Đây là trạng thái hợp lệ; không có cột bắt buộc.</CardContent></Card>

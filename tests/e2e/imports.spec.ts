@@ -382,8 +382,8 @@ test.describe("M12-A · nhập Excel", () => {
     const content = await buildWorkbook([
       { name: `Test Loc Mot ${suffix}`, dob: "04/04/2016", phone: "0900223351" },
       { name: `Test Loc Hai ${suffix}`, dob: "05/04/2016", phone: "0900223352" },
-      // Thiếu ngày sinh ⇒ dòng lỗi. Một lần nhập thật luôn có cả hai loại dòng.
-      { name: `Test Loc Ba ${suffix}`, dob: "", phone: "0900223353" },
+      // IMP-BULK-002: thiếu ngày sinh chỉ cảnh báo; ngày sinh tương lai là lỗi.
+      { name: `Test Loc Ba ${suffix}`, dob: `01/01/${new Date().getUTCFullYear() + 1}`, phone: "0900223353" },
     ]);
 
     try {
@@ -442,7 +442,7 @@ test.describe("M12-A · nhập Excel", () => {
       // D-135 — mặc định là năm học hiện hành, và màn hình nói ra phạm vi ấy.
       await expect(page.getByText(/Đang xem năm học/)).toBeVisible();
 
-      await page.getByLabel("Năm học").selectOption("all");
+      await page.locator("#filter-batch-year").selectOption("all");
       await page.getByRole("button", { name: "Lọc" }).click();
       await expect(page).toHaveURL(/year=all/);
       await expect(page.getByText(/Đang xem mọi năm học/)).toBeVisible();
