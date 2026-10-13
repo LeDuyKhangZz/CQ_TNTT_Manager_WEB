@@ -1,3 +1,4 @@
+import { openStudentPanel } from "./helpers/student-ui";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -94,17 +95,22 @@ test.describe("TB-F06 · trạng thái hồ sơ tách khỏi biểu mẫu thông
     // nằm ngay cạnh ô "Điện thoại", chung một nút "Lưu thay đổi" — lưu trữ một
     // em là một cú chọn nhầm trong `<select>`, không hỏi gì.
     await openStudent(page, STUDENT);
+    await openStudentPanel(page,"profile");
     await expect(page.getByRole("heading", { name: "Cập nhật hồ sơ" })).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByLabel("Trạng thái", { exact: true })).toHaveCount(0);
-    await expect(page.getByLabel("Trạng thái hồ sơ", { exact: true })).toBeVisible();
+    await expect(page.getByRole("combobox", {name:"Trạng thái hồ sơ", exact:true})).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await openStudentPanel(page,"status");
+    await expect(page.getByRole("combobox", {name:"Trạng thái hồ sơ", exact:true})).toBeVisible();
   });
 
   test("AC-F06-01: lưu trữ em còn lớp thì cảnh báo nêu TÊN LỚP, và hộp xác nhận nêu TÊN EM", async ({
     page,
   }) => {
     await openStudent(page, STUDENT);
+    await openStudentPanel(page,"status");
     const statusForm = page.getByRole("form", { name: new RegExp(`Trạng thái hồ sơ của`) });
     await statusForm.getByLabel("Trạng thái hồ sơ").selectOption("archived");
 
@@ -122,7 +128,7 @@ test.describe("TB-F06 · trạng thái hồ sơ tách khỏi biểu mẫu thông
     await expect(closeBox).not.toBeChecked();
 
     await statusForm.getByRole("button", { name: "Đổi trạng thái hồ sơ" }).click();
-    const dialog = page.getByRole("dialog");
+    const dialog = page.getByRole("dialog").last();
     await expect(dialog).toBeVisible({ timeout: 20_000 });
     await expect(dialog).toContainText(STUDENT);
     await expect(dialog).toContainText(STUDENT_CLASS);
@@ -152,6 +158,7 @@ test.describe("TB-F06 · trạng thái hồ sơ tách khỏi biểu mẫu thông
     // Bài ĐI VÀ VỀ trong cùng một bài — ba viewport chạy nối tiếp trên cùng một
     // database, nên bài nào để lại dấu vết là bài ấy phá lượt sau của chính nó.
     await openStudent(page, STUDENT);
+    await openStudentPanel(page,"status");
     const studentPath = new URL(page.url()).pathname;
 
     /*
@@ -172,7 +179,7 @@ test.describe("TB-F06 · trạng thái hồ sơ tách khỏi biểu mẫu thông
       const statusForm = page.getByRole("form", { name: new RegExp("Trạng thái hồ sơ của") });
       await statusForm.getByLabel("Trạng thái hồ sơ").selectOption("temporarily_inactive");
       await statusForm.getByRole("button", { name: "Đổi trạng thái hồ sơ" }).click();
-      const pauseDialog = page.getByRole("dialog");
+      const pauseDialog = page.getByRole("dialog",{name:/Đổi trạng thái hồ sơ của/});
       await expect(pauseDialog).toContainText("giữ nguyên chỗ");
       await pauseDialog.getByRole("button", { name: "Đổi trạng thái" }).click();
 
@@ -187,11 +194,11 @@ test.describe("TB-F06 · trạng thái hồ sơ tách khỏi biểu mẫu thông
       await expect(page.getByText("Tạm nghỉ").first()).toBeVisible();
     } finally {
       // ── Về ──────────────────────────────────────────────────────────────
-      await page.goto(studentPath);
+      await page.goto(`${studentPath}?panel=status`);
       const backForm = page.getByRole("form", { name: new RegExp("Trạng thái hồ sơ của") });
       await backForm.getByLabel("Trạng thái hồ sơ").selectOption("active");
       await backForm.getByRole("button", { name: "Đổi trạng thái hồ sơ" }).click();
-      await page.getByRole("dialog").getByRole("button", { name: "Đổi trạng thái" }).click();
+      await page.getByRole("dialog",{name:/Đổi trạng thái hồ sơ của/}).getByRole("button", { name: "Đổi trạng thái" }).click();
       await expect(page.getByText(/Đã khôi phục ghi danh ở lớp/)).toBeVisible({ timeout: 75_000 });
       await page.reload();
       await expect(
@@ -263,7 +270,7 @@ test.describe("TB-F08 · sửa và xoá bản ghi bí tích", () => {
 
       // D-128 — xoá phải hỏi, và hỏi bằng tên riêng.
       await page.getByRole("button", { name: "Xoá" }).click();
-      const dialog = page.getByRole("dialog");
+      const dialog = page.getByRole("dialog").last();
       await expect(dialog).toContainText("Rửa tội");
       await expect(dialog).toContainText(STUDENT);
       await expect(dialog).toContainText("không có thùng rác");
@@ -307,6 +314,7 @@ test.describe("TB-F08 · sửa và xoá bản ghi bí tích", () => {
     // dữ liệu sức khoẻ mà `seed:dev` dựng sẵn.
     await login(page, CLASS_TEACHER);
     await openStudent(page, READ_ONLY_STUDENT, "health");
+    await openStudentPanel(page,"health");
     await expect(page.getByLabel("Dị ứng")).toBeVisible({ timeout: 20_000 });
   });
 });
@@ -322,6 +330,7 @@ test.describe("TB-F12 · quản lý người giám hộ", () => {
     // chạy được — `students-directory.spec` tra cứu theo số của phụ huynh khác,
     // nhưng để số rác lại vẫn là làm bẩn fixture.
     await openStudent(page, "Trần Bảo Châu");
+    await openStudentPanel(page,"guardian");
     const form = page.getByRole("form", { name: new RegExp("Sửa thông tin người giám hộ của") });
     await expect(form.getByLabel("Điện thoại")).toHaveValue(GUARDIAN_PHONE, { timeout: 20_000 });
 
@@ -355,11 +364,12 @@ test.describe("TB-F12 · quản lý người giám hộ", () => {
     // (`app.own_student_ids()` nối theo `guardians.profile_id`). Bài chỉ mở hộp
     // thoại rồi Huỷ ⇒ không ghi gì.
     await openStudent(page, "Trần Bảo Châu");
+    await openStudentPanel(page,"guardian");
     const form = page.getByRole("form", { name: new RegExp("Đổi người giám hộ của") });
     await expect(form).toBeVisible({ timeout: 20_000 });
     await form.getByRole("button", { name: "Đổi người giám hộ" }).click();
 
-    const dialog = page.getByRole("dialog");
+    const dialog = page.getByRole("dialog",{name:/Đổi người giám hộ của/});
     await expect(dialog).toBeVisible({ timeout: 20_000 });
     await expect(dialog).toContainText("Trần Bảo Châu");
     await expect(dialog).toContainText("KHÔNG còn xem được");
@@ -424,31 +434,31 @@ test.describe("D-67 · mức đọc riêng của Thủ quỹ", () => {
     page,
   }) => {
     await page.goto("/students");
-    const rows = page.getByRole("list", { name: "Danh sách thiếu nhi" }).getByRole("listitem");
+    const rows = page.getByRole("table", { name: "Danh sách thiếu nhi" }).locator("tbody tr");
     await expect(rows.first()).toBeVisible({ timeout: 20_000 });
-    await expect(rows.first()).toContainText("Giám hộ:");
+    await expect(rows.first().locator('[data-column="guardian"]')).not.toBeEmpty();
   });
 
   test("trang NÓI RA phạm vi, không để người dùng đoán vì sao thiếu cột", async ({ page }) => {
     await page.goto("/students");
-    await expect(page.getByText(/Danh sách phục vụ việc thu phí/)).toBeVisible({
+    await expect(page.getByText(/Chế độ chỉ xem theo quyền Thủ quỹ/)).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText(/không thuộc phạm vi Thủ quỹ/)).toBeVisible();
+    await expect(page.getByText(/Liên hệ Thư ký khi cần chỉnh sửa/)).toBeVisible();
   });
 
   test("🔴 dòng KHÔNG phải liên kết — hồ sơ chi tiết ngoài phạm vi Thủ quỹ", async ({ page }) => {
     // Một liên kết luôn dẫn tới 404 còn tệ hơn không có liên kết: người dùng sẽ
     // báo "hệ thống mất hồ sơ của em".
     await page.goto("/students");
-    const list = page.getByRole("list", { name: "Danh sách thiếu nhi" });
-    await expect(list.getByRole("listitem").first()).toBeVisible({ timeout: 20_000 });
-    await expect(list.getByRole("link")).toHaveCount(0);
+    const list = page.getByRole("table", { name: "Danh sách thiếu nhi" });
+    await expect(list.locator("tbody tr").first()).toBeVisible({ timeout: 20_000 });
+    await expect(list.locator('a[href^="/students/"]')).toHaveCount(0);
   });
 
   test("D-67: Thủ quỹ KHÔNG ghi được gì — không có biểu mẫu tạo hồ sơ nào", async ({ page }) => {
     await page.goto("/students");
-    await expect(page.getByRole("list", { name: "Danh sách thiếu nhi" })).toBeVisible({
+    await expect(page.getByRole("table", { name: "Danh sách thiếu nhi" })).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByRole("form", { name: "Thêm thiếu nhi" })).toHaveCount(0);
@@ -457,7 +467,7 @@ test.describe("D-67 · mức đọc riêng của Thủ quỹ", () => {
 
   test("D-126: ô tìm không dấu của Thủ quỹ chạy đúng như của mọi người", async ({ page }) => {
     await page.goto("/students?status=all&q=nguyen+minh+khoa");
-    const rows = page.getByRole("list", { name: "Danh sách thiếu nhi" }).getByRole("listitem");
+    const rows = page.getByRole("table", { name: "Danh sách thiếu nhi" }).locator("tbody tr");
     await expect(rows).toHaveCount(1, { timeout: 20_000 });
     await expect(rows.first()).toContainText(STUDENT);
   });

@@ -570,6 +570,7 @@ export async function getStudentDetail(studentId: string): Promise<{
   viewedClassName?: string | null;
   /** **TB-F12/BR-M03-N16** — cửa sổ hẹp để chọn người giám hộ khác (D-124). */
   guardianOptions: GuardianOption[];
+  guardianOptionsError: boolean;
 }> {
   const context = await requireRouteAccess(`/students/${studentId}`);
   const supabase = await createClient();
@@ -596,6 +597,7 @@ export async function getStudentDetail(studentId: string): Promise<{
       enrollableClasses: [],
       openEnrollmentClassName: null,
       guardianOptions: [],
+      guardianOptionsError: false,
     };
   }
 
@@ -665,7 +667,8 @@ export async function getStudentDetail(studentId: string): Promise<{
   const openEnrollment = enrollmentSource.find(
     (item) => item.status === "active" || item.status === "paused",
   );
-  const guardianOptions = await loadGuardianOptions(canWrite);
+  let guardianOptionsError = false;
+  const guardianOptions = await loadGuardianOptions(canWrite, () => { guardianOptionsError = true; });
 
   const sensitive = canViewSensitive(context.role);
   let health: StudentDetail["health"] = null;
@@ -709,12 +712,15 @@ export async function getStudentDetail(studentId: string): Promise<{
     canWrite,
     canWriteSensitive: !view.readOnly && canWriteSensitive(context.role),
     canViewSensitive: sensitive,
-    viewedClassName: view.readOnly ? enrollmentSource.find(item => item.academic_year_id === view.year?.id)?.classes?.display_name ?? null : undefined,
+    viewedClassName: enrollmentSource.find(item => view.readOnly
+      ? item.academic_year_id === view.year?.id
+      : item.academic_years?.status === "current" && (item.status === "active" || item.status === "paused"))?.classes?.display_name ?? null,
     canDeleteSacrament: !view.readOnly && canDeleteSacrament(context.role),
     canArchive: !view.readOnly && canArchiveStudent(context.role),
     enrollableClasses,
     openEnrollmentClassName: openEnrollment?.classes?.display_name ?? null,
     guardianOptions,
+    guardianOptionsError,
     student: {
       id: row.id,
       studentCode: row.student_code,

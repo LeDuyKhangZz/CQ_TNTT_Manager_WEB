@@ -1,294 +1,131 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { TabNav } from "@/components/ui/tab-nav";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
+import { Dropdown, DropdownLink } from "@/components/ui/dropdown";
+import { Section } from "@/components/ui/section";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
-import { formatDateVi, formatOptionalDateVi } from "@/lib/dates";
-import {
-  enrollmentStatusBadgeVariant,
-  enrollmentStatusLabel,
-} from "@/features/enrollments/enrollment-status";
+import { EntityHeader } from "@/components/layout/entity-header";
+import { formatDateVi, formatOptionalDateVi, todayVi } from "@/lib/dates";
+import { enrollmentStatusBadgeVariant, enrollmentStatusLabel } from "@/features/enrollments/enrollment-status";
 import { HealthProfileForm } from "@/features/students/components/health-profile-form";
 import { SacramentPanel } from "@/features/students/components/sacrament-panel";
 import { GuardianPanel } from "@/features/students/components/guardian-panel";
 import { StudentStatusPanel } from "@/features/students/components/student-status-panel";
 import { EnrollStudentForm } from "@/features/students/components/enroll-student-form";
 import { UpdateStudentForm } from "@/features/students/components/update-student-form";
-import { todayVi } from "@/lib/dates";
+import { DetailLoadError, StudentFamilyMembers, StudentAttendanceSection, StudentAttendanceOverview } from "@/features/students/components/student-detail-sections";
 import { genderLabel, studentStatusLabel } from "@/features/students/student-status";
 import { getStudentDetail } from "@/features/students/server/queries";
 
-type TabKey = "overview" | "history" | "sacraments" | "health";
-
-function tabHref(studentId: string, tab: TabKey): string {
-  return tab === "overview" ? `/students/${studentId}` : `/students/${studentId}?tab=${tab}`;
-}
-
-export default async function StudentDetailPage({
-  params,
-  searchParams,
-}: {
+export default async function StudentDetailPage({ params, searchParams }: {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ tab?: string; edit?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string; panel?: string; noteSession?: string }>;
 }) {
   const { studentId } = await params;
-  const { tab, edit } = await searchParams;
-  const {
-    student,
-    canWrite,
-    canWriteSensitive,
-    canViewSensitive,
-    canDeleteSacrament,
-    canArchive,
-    enrollableClasses,
-    openEnrollmentClassName,
-    guardianOptions,
-  } = await getStudentDetail(studentId);
-
+  const { tab, edit, panel, noteSession } = await searchParams;
+  const data = await getStudentDetail(studentId);
+  const { student, canWrite, canWriteSensitive, canViewSensitive, canDeleteSacrament,
+    canArchive, enrollableClasses, openEnrollmentClassName, viewedClassName, guardianOptions, guardianOptionsError } = data;
   if (!student) notFound();
-
-  const studentName = `${student.saintName} ${student.fullName}`.trim();
-
-  const activeTab: TabKey =
-    tab === "sacraments" || tab === "health" || tab === "history" ? (tab as TabKey) : "overview";
-
-  const tabs: Array<{ key: TabKey; label: string; visible: boolean }> = [
-    { key: "overview", label: "Tổng quan", visible: true },
-    { key: "history", label: "Lịch sử lớp", visible: true },
-    { key: "sacraments", label: "Bí tích", visible: canViewSensitive },
-    { key: "health", label: "Sức khỏe", visible: canViewSensitive },
+  const studentName = (student.saintName + " " + student.fullName).trim();
+  const rootHref = "/students/" + studentId;
+  const tabHref = (key: string) => key === "overview" ? rootHref : rootHref + "?tab=" + key;
+  const tabs = [
+    {key:"overview",label:"Tổng quan"}, {key:"family",label:"Gia đình"},
+    {key:"history",label:"Lớp & Ghi danh"}, {key:"attendance",label:"Chuyên cần"},
+    ...(canViewSensitive ? [{key:"sacraments",label:"Bí tích"},{key:"health",label:"Sức khỏe"}] : []),
   ];
+  const activeTab = tabs.some(item => item.key === tab) ? tab! : "overview";
+  const closeHref = tabHref(activeTab);
+  const panelHref = (key: string) => closeHref + (closeHref.includes("?") ? "&" : "?") + "panel=" + key;
+  const className = viewedClassName === undefined ? openEnrollmentClassName : viewedClassName;
+  const guardian = student.guardian;
+  const phoneHref = guardian?.phone ? "tel:" + guardian.phone.replace(/[^+\d]/g,"") : undefined;
+  const openPanel = (panel === "profile" || panel === "guardian" || panel === "status" || panel === "enroll") && canWrite
+    ? panel : panel === "health" && canWriteSensitive ? panel : null;
+  const panelTitles: Record<string,string> = {
+    profile:"Cập nhật hồ sơ", guardian:"Người giám hộ", status:"Trạng thái hồ sơ", enroll:"Ghi danh vào lớp", health:"Sức khỏe",
+  };
 
-  return (
-    <PageContainer>
-      <PageHeader
-        title={`${student.saintName} ${student.fullName}`}
-        description={`Mã thiếu nhi ${student.studentCode}`}
-        backHref="/students"
-        backLabel="Danh sách thiếu nhi"
-      />
+  return <PageContainer className="space-y-5">
+    <EntityHeader title={studentName} description={"Mã thiếu nhi " + student.studentCode} backHref="/students" backLabel="Danh sách thiếu nhi"
+      chips={<>
+        <Badge variant="secondary">{className ? "Lớp " + className : "Chưa xếp lớp"}</Badge>
+        <Badge variant={student.status === "active" ? "success" : "secondary"}>{studentStatusLabel(student.status)}</Badge>
+        {student.hardshipFlag ? <Badge variant="warning">Hoàn cảnh khó khăn</Badge> : null}
+      </>}
+      facts={<p className="text-sm">Giám hộ: <span className="font-medium">{guardian?.fullName ?? "Chưa gán"}</span>
+        {phoneHref ? <> · <a href={phoneHref} className="inline-flex min-h-11 items-center text-theme-accent-text underline">{guardian!.phone}</a></> : null}
+      </p>}
+      actions={canWrite ? [
+        <Link key="edit" href={panelHref("profile")} className={buttonVariants()}>Sửa hồ sơ</Link>,
+        <Link key="enroll" href={enrollableClasses.length ? tabHref("history") + "&panel=enroll" : tabHref("history")} className={buttonVariants({variant:"outline"})}>Lớp & Ghi danh</Link>,
+      ] : []}
+      more={canWrite ? <Dropdown label="Thao tác khác" align="end">
+        <DropdownLink href={panelHref("status")}>Đổi trạng thái hồ sơ</DropdownLink>
+      </Dropdown> : undefined} />
+    <TabNav label="Thông tin thiếu nhi" activeKey={activeTab}
+      items={tabs.map(item => ({...item,href:tabHref(item.key)}))} />
 
-      {/* R1.5 (redesign 2C, UX-09): thẻ tóm tắt và thanh tab từng dính sát 0px. */}
-      <Card className="mb-4">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-          <div>
-            <p className="text-sm text-ink-muted">Người giám hộ</p>
-            <p className="font-medium">
-              {student.guardian ? `${student.guardian.fullName} · ${student.guardian.phone}` : "Chưa gán"}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {student.hardshipFlag ? <Badge variant="warning">Hoàn cảnh khó khăn</Badge> : null}
-            {/*
-              TB-F06 — lớp hiện tại hiện ngay trên thẻ đầu trang. `docs/06` §230-235
-              đòi nó từ đầu (điểm trừ C12 của luồng F04), và từ đợt này nó còn là
-              **thông tin quyết định**: đổi trạng thái hồ sơ sẽ đụng đúng lớp này.
-            */}
-            {openEnrollmentClassName ? (
-              <Badge variant="secondary">Lớp {openEnrollmentClassName}</Badge>
-            ) : (
-              <Badge variant="secondary">Chưa xếp lớp</Badge>
-            )}
-            <Badge variant={student.status === "active" ? "success" : "secondary"}>
-              {studentStatusLabel(student.status)}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+    {activeTab === "overview" ? <Section id="student-overview" title="Thông tin cá nhân">
+      <dl className="grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
+        {[
+          ["Tên thánh",student.saintName],["Họ tên",student.fullName],["Giới tính",genderLabel(student.gender)],
+          ["Ngày sinh",formatOptionalDateVi(student.dateOfBirth,"Chưa có")],
+          ["Bổn mạng",formatOptionalDateVi(student.patronFeastDate,"Chưa có")],
+          ["Điện thoại",student.phone ?? "Chưa có"],["Địa chỉ",student.address ?? "Chưa có"],["Ghi chú",student.generalNotes ?? "Chưa có"],
+        ].map(([label,value]) => <div key={label}><dt className="text-ink-muted">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words font-medium">{value}</dd></div>)}
+      </dl>
+      <StudentAttendanceOverview studentId={student.id} />
+      <Link href={tabHref("attendance")} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline">Xem chuyên cần và cảnh báo vắng</Link>
+    </Section> : null}
 
-      <nav className="mb-5 flex flex-wrap gap-1 border-b border-line">
-        {tabs
-          .filter((item) => item.visible)
-          .map((item) => (
-            <Link
-              key={item.key}
-              href={tabHref(studentId, item.key)}
-              className={`min-h-[44px] rounded-t-md px-4 py-2 text-sm font-medium ${
-                activeTab === item.key
-                  ? "border-b-2 border-theme-primary text-ink"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-      </nav>
+    {activeTab === "family" ? <div className="space-y-6">
+      <Section id="student-guardian" title="Người giám hộ" description="Liên lạc khi em cần giúp đỡ giữa buổi học."
+        action={canWrite ? <Link href={panelHref("guardian")} className={buttonVariants({variant:"outline"})}>Sửa / đổi người giám hộ</Link> : undefined}>
+        {guardian ? <dl className="grid gap-3 text-sm sm:grid-cols-2">
+          <div><dt className="text-ink-muted">Họ tên</dt><dd className="font-medium">{guardian.fullName}</dd></div>
+          <div><dt className="text-ink-muted">Điện thoại</dt><dd>{phoneHref ? <a href={phoneHref} className="inline-flex min-h-11 items-center text-theme-accent-text underline">{guardian.phone}</a> : "Chưa có"}</dd></div>
+          <div><dt className="text-ink-muted">Địa chỉ</dt><dd>{guardian.address ?? "Chưa có"}</dd></div>
+        </dl> : <p className="text-sm text-ink-muted">Chưa gán người giám hộ.</p>}
+      </Section>
+      {guardian ? <StudentFamilyMembers studentId={student.id} guardianId={guardian.id} /> : null}
+    </div> : null}
 
-      {activeTab === "overview" ? (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Thông tin</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p><span className="text-ink-muted">Tên thánh: </span>{student.saintName}</p>
-              <p><span className="text-ink-muted">Họ tên: </span>{student.fullName}</p>
-              <p><span className="text-ink-muted">Giới tính: </span>{genderLabel(student.gender)}</p>
-              <p><span className="text-ink-muted">Ngày sinh: </span>{formatOptionalDateVi(student.dateOfBirth, "chưa có")}</p>
-              <p>
-                <span className="text-ink-muted">Bổn mạng: </span>
-                {student.patronFeastDate ? formatDateVi(student.patronFeastDate) : "—"}
-              </p>
-              <p><span className="text-ink-muted">Điện thoại: </span>{student.phone ?? "—"}</p>
-              <p><span className="text-ink-muted">Địa chỉ: </span>{student.address ?? "—"}</p>
-              <p><span className="text-ink-muted">Ghi chú: </span>{student.generalNotes ?? "—"}</p>
-            </CardContent>
-          </Card>
+    {activeTab === "history" ? <Section id="student-enrollment" title="Lịch sử lớp" description="Ghi danh theo từng năm học."
+      action={enrollableClasses.length ? <Link href={panelHref("enroll")} className={buttonVariants()}>Ghi danh vào lớp</Link> : undefined}>
+      {!student.enrollments.length ? <p className="text-sm text-ink-muted">Chưa có ghi danh nào.</p> :
+        <ol className="divide-y divide-line">{student.enrollments.map(item => <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
+          <div><p className="font-medium">{item.className}</p><p className="text-ink-muted">Năm học {item.academicYearCode} · từ {formatDateVi(item.enrolledOn)}{item.endedOn ? " đến " + formatDateVi(item.endedOn) : ""}</p></div>
+          <Badge variant={enrollmentStatusBadgeVariant(item.status)}>{enrollmentStatusLabel(item.status)}</Badge>
+        </li>)}</ol>}
+    </Section> : null}
 
-          {canWrite ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Cập nhật hồ sơ</CardTitle>
-                <CardDescription>Chỉnh sửa thông tin cơ bản của thiếu nhi.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <UpdateStudentForm student={student} />
-              </CardContent>
-            </Card>
-          ) : null}
+    {activeTab === "attendance" ? <StudentAttendanceSection studentId={student.id} noteSession={noteSession} /> : null}
+    {activeTab === "sacraments" && canViewSensitive ? <SacramentPanel studentId={student.id} studentName={studentName}
+      sacraments={student.sacraments} editing={student.sacraments.find(item => item.id === edit) ?? null}
+      canWrite={canWriteSensitive} canDelete={canDeleteSacrament} backHref={tabHref("sacraments")} /> : null}
+    {activeTab === "health" && canViewSensitive ? <Section id="student-health" title="Sức khỏe" description="Thông tin nhạy cảm, chỉ nhân sự có quyền xem."
+      action={canWriteSensitive ? <Link href={panelHref("health")} className={buttonVariants({variant:"outline"})}>Sửa sức khỏe</Link> : undefined}>
+      <dl className="grid gap-4 text-sm sm:grid-cols-2">
+        {[["Dị ứng",student.health?.allergies],["Bệnh lý",student.health?.medicalConditions],["Thuốc",student.health?.medications],["Ghi chú khẩn cấp",student.health?.emergencyNotes]].map(([label,value]) =>
+          <div key={label}><dt className="text-ink-muted">{label}</dt><dd className="whitespace-pre-wrap break-words">{value || "Chưa có"}</dd></div>)}
+      </dl>
+    </Section> : null}
 
-          {/*
-            TB-F12 — khối người giám hộ. Phương án B của `04_TO_BE_FLOWS`: nhúng
-            vào trang chi tiết em thay vì dựng route `/guardians` riêng (phương
-            án A, để dành cho M13 Cổng phụ huynh — nơi mới thật sự cần "gia đình
-            này có mấy em").
-          */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Người giám hộ</CardTitle>
-              <CardDescription>
-                Số điện thoại ở đây là số gọi khi em cần giúp đỡ giữa buổi học.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <GuardianPanel
-                studentId={student.id}
-                studentName={studentName}
-                guardian={student.guardian}
-                options={guardianOptions}
-                canWrite={canWrite}
-              />
-            </CardContent>
-          </Card>
-
-          {/*
-            TB-F06 — khối trạng thái hồ sơ, TÁCH khỏi biểu mẫu "Cập nhật hồ sơ"
-            ngay bên cạnh. Trước M03-C nó là một ô `<select>` chung nút "Lưu
-            thay đổi" với số điện thoại (C5 = 2 trong biên bản audit).
-          */}
-          {canWrite ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Trạng thái hồ sơ</CardTitle>
-                <CardDescription>
-                  Đổi trạng thái hồ sơ cũng đổi chỗ của em trong lớp — hệ thống nói rõ hệ quả
-                  trước khi ghi.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <StudentStatusPanel
-                  studentId={student.id}
-                  studentName={studentName}
-                  currentStatus={student.status}
-                  openClassName={openEnrollmentClassName}
-                  canArchive={canArchive}
-                  today={todayVi()}
-                />
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
-      ) : null}
-
-      {/*
-        BR-M03-N19 / TB-F09 — mời ghi danh ngay khi em chưa có lớp trong năm hiện
-        hành. `enrollableClasses` rỗng nghĩa là em đã có lớp, hoặc người xem không
-        ghi được, hoặc chưa có năm học hiện hành — cả ba đều không có gì để mời.
-      */}
-      {activeTab === "history" && enrollableClasses.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ghi danh vào lớp</CardTitle>
-            <CardDescription>
-              Em chưa được xếp lớp trong năm học hiện hành.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EnrollStudentForm studentId={student.id} classes={enrollableClasses} />
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {activeTab === "history" ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Lịch sử lớp</CardTitle>
-            <CardDescription>Ghi danh theo từng năm học.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {student.enrollments.length === 0 ? (
-              <p className="text-sm text-ink-muted">Chưa có ghi danh nào.</p>
-            ) : (
-              student.enrollments.map((item) => (
-                <Panel key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                  <div>
-                    <p className="font-medium">{item.className}</p>
-                    <p className="text-ink-muted">
-                      Năm học {item.academicYearCode} · từ {formatDateVi(item.enrolledOn)}
-                      {item.endedOn ? ` đến ${formatDateVi(item.endedOn)}` : ""}
-                    </p>
-                  </div>
-                  <Badge variant={enrollmentStatusBadgeVariant(item.status)}>
-                    {enrollmentStatusLabel(item.status)}
-                  </Badge>
-                </Panel>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {/*
-        TB-F08 — danh sách và biểu mẫu nằm trong MỘT component để dùng chung một
-        `useActionState`: hai state riêng sẽ để câu "Đã lưu bí tích Rửa tội" đứng
-        nguyên sau khi người dùng vừa xoá đúng bản ghi ấy (bài học M03-A).
-
-        Bản ghi đang sửa chọn bằng `?edit=<id>` chứ không bằng state React, nên
-        nút "Sửa" vẫn chạy khi chưa có JavaScript (`09` §11).
-      */}
-      {activeTab === "sacraments" && canViewSensitive ? (
-        <SacramentPanel
-          studentId={student.id}
-          studentName={studentName}
-          sacraments={student.sacraments}
-          editing={student.sacraments.find((item) => item.id === edit) ?? null}
-          canWrite={canWriteSensitive}
-          canDelete={canDeleteSacrament}
-          backHref={`/students/${studentId}?tab=sacraments`}
-        />
-      ) : null}
-
-      {activeTab === "health" && canViewSensitive ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sức khỏe</CardTitle>
-            <CardDescription>Thông tin nhạy cảm, chỉ nhân sự có quyền xem.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {canWriteSensitive ? (
-              <HealthProfileForm studentId={student.id} health={student.health ?? null} />
-            ) : (
-              <div className="space-y-2 text-sm">
-                <p><span className="text-ink-muted">Dị ứng: </span>{student.health?.allergies ?? "—"}</p>
-                <p><span className="text-ink-muted">Bệnh lý: </span>{student.health?.medicalConditions ?? "—"}</p>
-                <p><span className="text-ink-muted">Thuốc: </span>{student.health?.medications ?? "—"}</p>
-                <p><span className="text-ink-muted">Ghi chú khẩn cấp: </span>{student.health?.emergencyNotes ?? "—"}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
-    </PageContainer>
-  );
+    <Drawer open={!!openPanel} title={panelTitles[openPanel ?? ""] ?? "Hồ sơ thiếu nhi"} closeHref={closeHref}>
+      {openPanel === "profile" ? <UpdateStudentForm student={student} /> : null}
+      {openPanel === "guardian" ? <div className="space-y-4">
+        {guardianOptionsError ? <DetailLoadError href={panelHref("guardian")} label="danh sách người giám hộ" /> : null}
+        <GuardianPanel studentId={student.id} studentName={studentName} guardian={guardian} options={guardianOptions} canWrite={canWrite} />
+      </div> : null}
+      {openPanel === "status" ? <StudentStatusPanel studentId={student.id} studentName={studentName} currentStatus={student.status}
+        openClassName={openEnrollmentClassName} canArchive={canArchive} today={todayVi()} /> : null}
+      {openPanel === "enroll" && enrollableClasses.length ? <EnrollStudentForm studentId={student.id} classes={enrollableClasses} /> : null}
+      {openPanel === "health" ? <HealthProfileForm studentId={student.id} health={student.health ?? null} /> : null}
+    </Drawer>
+  </PageContainer>;
 }

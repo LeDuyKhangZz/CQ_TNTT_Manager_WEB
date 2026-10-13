@@ -30,6 +30,7 @@ export interface PortalChildrenDirectory {
  * việc trang này bỏ in ra. Thêm lại trường đó là làm cả truy vấn hỏng `42501`.
  */
 export interface PortalAttendanceRow {
+  sessionId?: string;
   recordId: string;
   attendanceDate: string;
   meetingType: MeetingType;
@@ -132,7 +133,7 @@ export async function getChildrenPageData() {
   return { context, ...directory };
 }
 
-export async function getPortalAttendance(studentId: string): Promise<{
+export async function getPortalAttendance(studentId: string, selectedYear?: { id: string; code: string }): Promise<{
   status: Extract<PortalDataStatus, "no_enrollment" | "no_data" | "ok">;
   yearCode: string | null;
   summary: PortalAttendanceSummary | null;
@@ -140,7 +141,7 @@ export async function getPortalAttendance(studentId: string): Promise<{
 }> {
   const supabase = await createClient();
 
-  const { data: currentYear, error: yearError } = await supabase
+  const { data: currentYear, error: yearError } = selectedYear ? { data: selectedYear, error: null } : await supabase
     .from("academic_years")
     .select("id, code")
     .eq("status", "current")
@@ -179,12 +180,13 @@ export async function getPortalAttendance(studentId: string): Promise<{
     supabase
       .from("student_attendance_records")
       .select(
-        "id, mass_status, catechism_status, attendance_sessions!inner(attendance_date, meeting_type)",
+        "id, attendance_session_id, mass_status, catechism_status, attendance_sessions!inner(attendance_date, meeting_type)",
       )
       .eq("student_id", studentId)
       .eq("attendance_sessions.academic_year_id", currentYear.id)
       .not("session_finalized_at", "is", null)
-      .order("attendance_date", { referencedTable: "attendance_sessions", ascending: false })
+      .order("attendance_sessions(attendance_date)", { ascending: false })
+      .order("id")
       .limit(60),
   ]);
   if (summaryResult.error) throw summaryResult.error;
@@ -193,6 +195,7 @@ export async function getPortalAttendance(studentId: string): Promise<{
   const summaryRow = summaryResult.data;
   const rows = ((recordResult.data ?? []) as unknown as Array<{
     id: string;
+    attendance_session_id: string;
     mass_status: AttendanceStatus;
     catechism_status: AttendanceStatus;
     attendance_sessions: { attendance_date: string; meeting_type: MeetingType } | null;
@@ -200,6 +203,7 @@ export async function getPortalAttendance(studentId: string): Promise<{
     .filter((row) => row.attendance_sessions !== null)
     .map((row) => ({
       recordId: row.id,
+      sessionId: row.attendance_session_id,
       attendanceDate: row.attendance_sessions!.attendance_date,
       meetingType: row.attendance_sessions!.meeting_type,
       massStatus: row.mass_status,
