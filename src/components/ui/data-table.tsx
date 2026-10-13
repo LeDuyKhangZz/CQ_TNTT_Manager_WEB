@@ -180,12 +180,12 @@ export const tableScrollFrameClassName = "overflow-x-auto rounded-lg border bord
  */
 const CELL_PADDING = {
   comfortable: { plain: "px-4 py-3", card: "p-0 md:px-4 md:py-3" },
-  compact: { plain: "px-3 py-2", card: "p-0 md:px-3 md:py-2" },
+  compact: { plain: "p-[var(--cell-pad)]", card: "p-0 md:p-[var(--cell-pad)]" },
 } as const;
 
 const ROW_HEIGHT = {
   comfortable: { plain: "h-12", card: "md:h-12" },
-  compact: { plain: "h-11", card: "md:h-11" },
+  compact: { plain: "h-[var(--row-height)]", card: "md:h-[var(--row-height)]" },
 } as const;
 
 /**
@@ -198,7 +198,7 @@ const STICKY_LEFT = {
   afterSelection: { plain: "sticky left-12 z-sticky", card: "md:sticky md:left-12 md:z-sticky" },
 } as const;
 
-const SELECTION_CELL = "w-12 px-3 py-2";
+const SELECTION_CELL = "w-12 px-0 py-0";
 
 /** Card-row: 2 cột khi không có ô chọn, 3 cột khi có. */
 const CARD_ROW = {
@@ -313,15 +313,14 @@ export function DataTable<Row>({
     <div
       className={className}
       data-table-id={tableId}
-      // R2.10 sẽ gắn token thật cho `[data-density="compact"]`; tới lúc ấy bảng
-      // này đã khai báo sẵn nên không phải sửa lại consumer nào.
+      // R2.10: compact tokens inherit through the table and its controls.
       data-density={density === "compact" ? "compact" : undefined}
     >
       {/* `relative` bọc RIÊNG vùng cuộn: bóng mờ phải cao đúng bằng bảng. Đặt
           `relative` lên khung ngoài thì bóng kéo dài xuống phủ cả dòng chữ
           "Vuốt ngang…" bên dưới. Bóng cũng không được nằm TRONG vùng cuộn —
           nằm trong thì nó cuộn theo nội dung và biến mất khỏi mép phải. */}
-      <div className="relative">
+      <div className="relative isolate">
         <div
           className={cn(
             tableScrollFrameClassName,
@@ -341,7 +340,7 @@ export function DataTable<Row>({
 
             {/* Card-row không có hàng tiêu đề: nhãn đi kèm từng dòng phụ. Từ
                 `md` trở lên vẫn là `<thead>` thật, cấu trúc bảng không mất. */}
-            <thead className={cn(mobileRow && "hidden md:table-header-group")}>
+            <thead className={cn(stickyHeader && "relative z-20", mobileRow && "hidden md:table-header-group")}>
               <tr className="border-b border-line bg-surface-muted">
                 {selection ? (
                   <th
@@ -464,6 +463,7 @@ export function DataTable<Row>({
                           className={cn(
                             BODY_CELL,
                             SELECTION_CELL,
+                            "relative z-10",
                             mobileRow && "block md:table-cell",
                             mobileRow && placement.selection,
                             stickyFirstColumn &&
@@ -478,7 +478,7 @@ export function DataTable<Row>({
                               disabled={selection.disabled?.(row)}
                               // Nhãn nêu TÊN bản ghi — xem `getLabel`.
                               aria-label={selection.getLabel(row)}
-                              labelClassName="flex"
+                              labelClassName="flex min-w-11 justify-center"
                             />
                           )}
                         </td>
@@ -502,6 +502,7 @@ export function DataTable<Row>({
                               column.numeric && "text-right",
                               column.hideBelowSm && "hidden sm:table-cell",
                               column.hideBelowMd && "hidden md:table-cell",
+                              href && (mobileRow && isFirstData ? "md:relative" : "relative"),
                               stickyFirstColumn &&
                                 isFirstData &&
                                 STICKY_LEFT[selection ? "afterSelection" : "first"][cardMode] +
@@ -510,14 +511,9 @@ export function DataTable<Row>({
                               // hàng, nếu không bấm vào nút lại mở trang chi
                               // tiết. `relative` là đủ: hai bên cùng
                               // `z-index: auto`, thứ đứng sau trong DOM vẽ trên.
-                              href && !isFirstData && "relative",
                               column.className,
                             )}
                           >
-                            {mobileRow && role === "meta" && label ? (
-                              <span className="mr-1 md:hidden">{label}:</span>
-                            ) : null}
-
                             {href && isFirstData ? (
                               <Link
                                 href={href}
@@ -529,7 +525,15 @@ export function DataTable<Row>({
                                 {column.cell(row)}
                               </Link>
                             ) : (
-                              column.cell(row)
+                              <>
+                                {href ? <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0" /> : null}
+                                <div className={cn(href && "pointer-events-none relative [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_input]:pointer-events-auto [&_label]:pointer-events-auto [&_select]:pointer-events-auto [&_summary]:pointer-events-auto [&_textarea]:pointer-events-auto")}>
+                                  {mobileRow && role === "meta" && label ? (
+                                    <span className="mr-1 md:hidden">{label}:</span>
+                                  ) : null}
+                                  {column.cell(row)}
+                                </div>
+                              </>
                             )}
                           </td>
                         );

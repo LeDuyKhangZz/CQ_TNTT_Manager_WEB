@@ -160,9 +160,9 @@ describe("DataTable v2 — mật độ và header dính (07 §4, §5)", () => {
     const { container } = renderTable({ density: "compact" });
 
     const row = container.querySelector("tbody tr");
-    expect(row?.className).toMatch(/h-11/);
+    expect(row?.className).toContain("h-[var(--row-height)]");
     expect(row?.className).not.toMatch(/h-10/);
-    expect(container.querySelector("tbody td")?.className).toMatch(/px-3 py-2/);
+    expect(container.querySelector("tbody td")?.className).toContain("p-[var(--cell-pad)]");
     // Khai báo sẵn cho token của R2.10; hôm nay chưa có quy tắc CSS nào bắt nó.
     expect(container.firstElementChild).toHaveAttribute("data-density", "compact");
   });
@@ -212,7 +212,7 @@ describe("DataTable v2 — chọn hàng (07 §5: chỉ bật ở màn có bulk t
 
     const selectionHead = container.querySelector("thead th");
     expect(selectionHead?.className).toMatch(/w-12/);
-    expect(selectionHead?.className).toMatch(/px-3/);
+    expect(selectionHead?.className).toMatch(/px-0/);
     expect(selectionHead?.className).toMatch(/sticky left-0/);
 
     const firstDataCell = container.querySelector('tbody td[data-column="name"]');
@@ -442,7 +442,7 @@ describe("DataTableColumnToggle (14 §C: cột ẩn nhớ lại sau reload)", ()
     expect(container.querySelector("summary")).toHaveTextContent("Đang ẩn 1 cột");
   });
 
-  it("không cho ẩn HẾT cột — bảng rỗng không có đường quay lại", async () => {
+  it("cho ẩn tất cả cột tuỳ chọn; cột định danh không thuộc menu", async () => {
     const user = userEvent.setup();
     window.localStorage.setItem(columnToggleStorageKey("students"), '["absences"]');
     const { container } = renderToggle();
@@ -451,9 +451,9 @@ describe("DataTableColumnToggle (14 §C: cột ẩn nhớ lại sau reload)", ()
     await user.click(screen.getByRole("menuitemcheckbox", { name: "Lớp" }));
 
     expect(container.querySelector("style")?.textContent).toBe(
-      '[data-table-id="students"] [data-column="absences"]{display:none}',
+      '[data-table-id="students"] [data-column="absences"]{display:none}[data-table-id="students"] [data-column="class"]{display:none}',
     );
-    expect(window.localStorage.getItem(columnToggleStorageKey("students"))).toBe('["absences"]');
+    expect(window.localStorage.getItem(columnToggleStorageKey("students"))).toBe('["absences","class"]');
   });
 
   it("khoá lạ trong localStorage (cột đã đổi tên) bị bỏ qua, không sinh quy tắc chết", () => {

@@ -38,6 +38,8 @@ export type DataTableColumnToggleProps = {
   tableId: string;
   /** Các cột ĐƯỢC PHÉP ẩn. Cột định danh (tên em, tên nhân sự) không nên có ở đây. */
   columns: readonly DataTableColumnOption[];
+  /** Keep card-row metadata complete when the column menu is desktop-only. */
+  desktopOnly?: boolean;
   className?: string;
 };
 
@@ -68,6 +70,7 @@ export function readHiddenColumns(
 export function DataTableColumnToggle({
   tableId,
   columns,
+  desktopOnly = false,
   className,
 }: DataTableColumnToggleProps) {
   const [hidden, setHidden] = React.useState<readonly string[]>([]);
@@ -88,9 +91,7 @@ export function DataTableColumnToggle({
           ? previous
           : [...previous, key];
 
-      // Ẩn hết mọi cột thì còn lại một cái khung rỗng không có đường quay lại —
-      // giữ luôn ít nhất một cột hiện.
-      if (next.length >= allowedKeys.length) return previous;
+      // Only optional columns are passed here. Identity/action columns stay visible.
 
       try {
         window.localStorage.setItem(columnToggleStorageKey(tableId), JSON.stringify(next));
@@ -107,12 +108,12 @@ export function DataTableColumnToggle({
     <>
       {hiddenCount > 0 ? (
         <style>
-          {hidden
+          {`${desktopOnly ? "@media (min-width: 768px){" : ""}${hidden
             .map(
               (key) =>
                 `[data-table-id="${tableId}"] [data-column="${key}"]{display:none}`,
             )
-            .join("")}
+            .join("")}${desktopOnly ? "}" : ""}`}
         </style>
       ) : null}
 

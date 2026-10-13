@@ -95,7 +95,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     <label
       htmlFor={id}
       className={cn(
-        "inline-flex min-h-11 items-center gap-2 text-sm text-ink",
+        "inline-flex min-h-11 min-w-11 items-center gap-2 text-sm text-ink",
         disabled ? "cursor-not-allowed" : "cursor-pointer",
         labelClassName,
       )}
