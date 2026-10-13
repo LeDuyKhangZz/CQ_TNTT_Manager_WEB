@@ -41,6 +41,7 @@ export function NavDrawer({
 
       <div
         ref={panelRef}
+        id="mobile-navigation"
         role="dialog"
         aria-modal="true"
         aria-label={label}
