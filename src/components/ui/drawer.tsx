@@ -122,7 +122,7 @@ export function Drawer({
   const descriptionId = `${id}-description`;
 
   return (
-    <div className="fixed inset-0 z-drawer flex justify-end">
+    <div className="fixed inset-0 !m-0 z-drawer flex justify-end">
       {/* Mục 6. */}
       <Link
         href={closeHref}

@@ -1,6 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useDismissLayer } from "./dismiss-layer";
+
+let scrollLocks = 0;
+let savedOverflow = "";
 
 /**
  * Năm yêu cầu a11y của một lớp nổi kiểu modal (`05` §3.2) gom về một chỗ.
@@ -23,7 +27,8 @@ import * as React from "react";
 export const FOCUSABLE_SELECTOR = [
   "a[href]",
   "button:not([disabled])",
-  "input:not([disabled])",
+  'input:not([disabled]):not([type="hidden"])',
+  "summary",
   "select:not([disabled])",
   "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
@@ -62,6 +67,7 @@ export function useModalBehavior({
   panelRef: React.RefObject<HTMLElement | null>;
   initialFocus?: InitialFocus;
 }): void {
+  const isTopLayer = useDismissLayer(open, panelRef, true);
   // Yêu cầu 1 + 4 + 5.
   React.useEffect(() => {
     if (!open) return;
@@ -74,12 +80,14 @@ export function useModalBehavior({
       (target ?? panel).focus();
     }
 
-    const previousOverflow = document.body.style.overflow;
+    if (scrollLocks === 0) savedOverflow = document.body.style.overflow;
+    scrollLocks += 1;
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus();
+      scrollLocks -= 1;
+      if (scrollLocks === 0) document.body.style.overflow = savedOverflow;
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [open, panelRef, initialFocus]);
 
@@ -88,6 +96,7 @@ export function useModalBehavior({
     if (!open) return;
 
     function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || !isTopLayer(event.key === "Tab")) return;
       if (event.key === "Escape") {
         event.preventDefault();
         onClose();
@@ -122,5 +131,5 @@ export function useModalBehavior({
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, panelRef]);
+  }, [open, onClose, panelRef, isTopLayer]);
 }

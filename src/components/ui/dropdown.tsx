@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dropdownItemClassName } from "./dropdown-item";
+import { useDismissLayer } from "./dismiss-layer";
 
 /**
  * Menu thả xuống — 05 §3.3 #14 và §3.2. Dùng cho menu tài khoản và menu thao
@@ -51,6 +52,7 @@ export function Dropdown({
 }: DropdownProps) {
   const detailsRef = React.useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = React.useState(false);
+  const isTopLayer = useDismissLayer(open, detailsRef);
 
   const close = React.useCallback((returnFocus: boolean) => {
     const details = detailsRef.current;
@@ -71,6 +73,7 @@ export function Dropdown({
     }
 
     function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || !isTopLayer()) return;
       const details = detailsRef.current;
       if (!details) return;
 
@@ -105,11 +108,18 @@ export function Dropdown({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, close]);
+  }, [open, close, isTopLayer]);
 
   return (
     <details
       ref={detailsRef}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && detailsRef.current?.open && isTopLayer()) {
+          event.preventDefault();
+          event.stopPropagation();
+          close(true);
+        }
+      }}
       className={cn("relative", className)}
       onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}
     >
