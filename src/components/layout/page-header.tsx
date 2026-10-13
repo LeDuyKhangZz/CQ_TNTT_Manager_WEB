@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
  * Tiêu đề của một trang nghiệp vụ.
@@ -20,18 +21,23 @@ export function PageHeader({
   title,
   description,
   action,
+  toolbar,
   backHref,
   backLabel = "Quay lại",
+  className,
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  toolbar?: React.ReactNode;
   /** Địa chỉ trang cha. Bỏ trống ⇒ không hiện nút quay lại. */
   backHref?: string;
   backLabel?: string;
+  className?: string;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <>
+    <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between", className)}>
       <div className="min-w-0">
         {backHref ? (
           <Link
@@ -47,5 +53,7 @@ export function PageHeader({
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
+    {toolbar}
+    </>
   );
 }

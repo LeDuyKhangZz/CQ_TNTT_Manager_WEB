@@ -11,9 +11,8 @@ import { cn } from "@/lib/utils";
  *
  * Vùng bấm: `responsive.spec.ts` đo mọi `header a[href]` theo ngưỡng 44px, và
  * chữ 12px thì cao khoảng 20px. Nên link có `min-h-11 min-w-11` để đủ vùng bấm,
- * kèm margin âm để **ô bấm 44px không đẩy header cao thêm 24px** trên màn 360px.
- * Đừng gỡ margin âm "cho sạch" — gỡ là header phình ra ở đúng cỡ máy của giáo
- * lý viên đứng lớp.
+ * kèm margin âm để ô bấm không đẩy header cao thêm. Phần âm phía trên nhỏ hơn
+ * phía dưới để vùng bấm nằm trong header 68px; vòng focus vẽ vào trong ô.
  */
 
 export function Breadcrumb({
@@ -46,7 +45,7 @@ export function Breadcrumb({
               {item.href && !isCurrent ? (
                 <Link
                   href={item.href}
-                  className="-my-2.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-1 hover:text-ink hover:underline"
+                  className="-mb-3.5 -mt-1.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-1 hover:text-ink hover:underline focus-visible:-outline-offset-2"
                 >
                   <span className="min-w-0 truncate">{item.label}</span>
                 </Link>
