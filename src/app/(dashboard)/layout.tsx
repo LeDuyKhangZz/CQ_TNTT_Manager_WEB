@@ -1,12 +1,17 @@
 import { Suspense } from "react";
+import { ToastProvider } from "@/components/ui/toast";
 import { headers } from "next/headers";
 import { LoadingProvider } from "@/components/loading/loading-provider";
+import { getMyClassDestination, getShellPreferences } from "@/features/navigation/server/queries";
+import { NavigationBadge } from "@/components/layout/navigation-badge";
 import { AppShell } from "@/components/layout/app-shell";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { NotificationButton } from "@/components/layout/notification-button";
 import { ContextIndicator } from "@/components/theme/context-indicator";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { UnassignedBanner } from "@/components/theme/unassigned-banner";
+import { selectAcademicYear } from "@/features/academic-years/server/view-actions";
+import { getAcademicYearView } from "@/lib/academic-year/view";
 import { getCurrentAcademicYear } from "@/features/academic-years/server/queries";
 import { requireAuthContext } from "@/lib/auth/guards";
 import { DEFAULT_AFTER_LOGIN_PATH, REQUEST_PATH_HEADER } from "@/lib/auth/login-redirect";
@@ -40,23 +45,39 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // là biếu không một vòng đi–về Supabase cho **mọi** lần vào trang. Cả hai
   // cùng hỏi `academic_years` qua `getCurrentAcademicYearRow()`, mà hàm đó
   // `cache()` nên hai lượt gọi cùng lúc dùng chung **một** truy vấn.
-  const [academicYear, theme] = await Promise.all([
+  const [academicYear, theme, myClass, preferences] = await Promise.all([
     getCurrentAcademicYear(),
     resolveThemeContext({ scope: { kind: "PERSONAL" } }),
+    getMyClassDestination(),
+    getShellPreferences(authContext.profileId),
   ]);
 
   // Màn hình chờ toàn cục — `17` §3.2, `09` §12 A3/A4. Đặt TRONG `ThemeScope` để
   // ba chấm nhún ăn đúng màu ngành của người đang đăng nhập, và NGOÀI `AppShell`
   // để lớp phủ là anh em của cả cái vỏ chứ không nằm lọt trong `<main>` — nằm
   // trong `<main>` thì nó không che nổi sidebar và thanh dưới.
+  const view = authContext.audience === "staff" ? await getAcademicYearView() : null;
+  const presentYear = (year: NonNullable<typeof view>["year"]) => year ? {id:year.id,code:year.code,name:year.name} : null;
+  const yearView = view ? {year:presentYear(view.year), current:presentYear(view.current), years:view.years.map(year => ({id:year.id,code:year.code,name:year.name})), readOnly:view.readOnly} : undefined;
   const loadingAssets = getLoadingAssets();
 
   return (
     <ThemeScope theme={theme} className="min-h-screen">
       <LoadingProvider images={loadingAssets.images} verses={loadingAssets.verses}>
+        <ToastProvider>
         <AppShell
+          key={preferences.key}
+          myClass={myClass}
+          preferences={preferences}
+          navigationBadges={{
+            "/notifications": <Suspense fallback={null}><NavigationBadge kind="notifications" /></Suspense>,
+            "/attendance": <Suspense fallback={null}><NavigationBadge kind="attendance" /></Suspense>,
+            "/promotions": <Suspense fallback={null}><NavigationBadge kind="promotions" /></Suspense>,
+          }}
           viewer={toShellViewer(authContext)}
           academicYear={academicYear}
+          yearView={yearView}
+          selectYearAction={selectAcademicYear}
           // M14 A-16 — truy vấn đếm chưa đọc KHÔNG còn nằm trên đường tới hạn của
           // mọi điều hướng. Nút chuông đi ra cùng phần vỏ, con số chảy về sau.
           // `AppShell` là client component nhưng vẫn nhận được nút này vì nó được
@@ -68,13 +89,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }
           // Hai node dưới đây cũng dựng ở máy chủ vì cả hai đọc `ThemeContext` —
           // truyền nguyên đối tượng đó xuống client là đi ngược lại NC-5.
-          contextIndicator={<ContextIndicator theme={theme} />}
+          contextIndicator={<ContextIndicator theme={theme} showAcademicYear={false} />}
           unassignedBanner={
             <UnassignedBanner theme={theme} className="mx-4 mt-4 sm:mx-6 lg:mx-8" />
           }
         >
           {children}
         </AppShell>
+        </ToastProvider>
       </LoadingProvider>
     </ThemeScope>
   );

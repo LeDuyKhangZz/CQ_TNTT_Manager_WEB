@@ -236,7 +236,13 @@ test.describe("Trạng thái và lối thoát (M14 đợt B)", () => {
 
     // Đây là điểm phân biệt với `src/app/not-found.tsx`: trang 404 toàn màn hình
     // KHÔNG có breadcrumb, không có nút chuông, không có menu tài khoản.
-    await expect(page.getByRole("navigation", { name: "Đường dẫn trang" })).toBeVisible();
+    // R2: mobile header reserves space for year/account controls; the main
+    // heading and menu identify the screen. Breadcrumb is visible from sm.
+    if (page.viewportSize()!.width >= 640) {
+      await expect(page.getByRole("navigation", { name: "Đường dẫn trang" })).toBeVisible();
+    } else {
+      await expect(page.getByRole("button", { name: "Mở menu" })).toBeVisible();
+    }
     await expect(page.locator("summary[aria-label^='Menu tài khoản']")).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: "Không tìm thấy trang" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Về trang chủ" })).toBeVisible();
@@ -277,7 +283,12 @@ test.describe("Trạng thái và lối thoát (M14 đợt B)", () => {
     // Bấm vào mở đúng hồ sơ, và ở đó có đường đi tiếp.
     await page.locator('a[href^="/parent/children/"]').first().click();
     await page.waitForURL(/\/parent\/children\//);
-    await expect(page.getByRole("heading", { name: "Chuyên cần" })).toBeVisible();
+    // Hồ sơ mới chưa có buổi chốt vẫn hợp lệ; không phụ thuộc attendance.spec chạy trước.
+    await expect(
+      page.getByRole("main").getByRole("heading", {
+        name: /^(Chuyên cần|Chưa có buổi điểm danh nào được chốt)$/,
+      }),
+    ).toBeVisible();
     // Bó trong `main`: thanh bên desktop cũng có một mục "Đơn xin nghỉ", nên
     // tìm trên cả trang sẽ trúng hai phần tử ở viewport 1366.
     await expect(page.getByRole("main").getByRole("link", { name: "Đơn xin nghỉ" })).toBeVisible();
