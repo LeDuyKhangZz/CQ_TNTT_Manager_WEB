@@ -9,10 +9,13 @@ import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 export default async function CommitteeDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ committeeId: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { committeeId } = await params;
+  const { tab } = await searchParams;
   // UUID sai định dạng phải là 404, không phải lỗi 500 (AGENTS §5).
   if (!UUID_PATTERN.test(committeeId)) notFound();
 
@@ -35,6 +38,7 @@ export default async function CommitteeDetailPage({
       />
       <CommitteeWorkspace
         detail={detail}
+        activeTab={tab}
         equipmentSlot={
           equipment ? (
             <EquipmentBoard

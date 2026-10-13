@@ -13,7 +13,8 @@ import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Tabs, type TabItem } from "@/components/ui/tabs";
+import type { TabItem } from "@/components/ui/tabs";
+import { TabNav } from "@/components/ui/tab-nav";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeVi, formatDateVi, toDateTimeLocalVi } from "@/lib/dates";
 import {
@@ -64,10 +65,12 @@ interface PanelProps {
 export function CommitteeWorkspace({
   detail,
   equipmentSlot,
+  activeTab = "overview",
 }: {
   detail: CommitteeDetail;
   /** Bảng kho thiết bị dựng sẵn ở máy chủ; chỉ có với Ban giữ kho. */
   equipmentSlot?: ReactNode;
+  activeTab?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -109,6 +112,7 @@ export function CommitteeWorkspace({
   if (equipmentSlot) {
     items.push({ id: "equipment", label: "Thiết bị", content: equipmentSlot });
   }
+  const activeItem = items.find(item => item.id === activeTab) ?? items[0];
 
   return (
     <div className="space-y-4">
@@ -118,7 +122,9 @@ export function CommitteeWorkspace({
         {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
       </div>
 
-      <Tabs items={items} label={`Nội dung ${detail.committee.name}`} />
+      <TabNav label={`Nội dung ${detail.committee.name}`} activeKey={activeItem.id}
+        items={items.map(item => ({key:item.id, label:item.label, href:`/committees/${detail.committee.id}?tab=${item.id}`}))} />
+      <div>{activeItem.content}</div>
 
       <ConfirmDialog
         open={confirm !== null}

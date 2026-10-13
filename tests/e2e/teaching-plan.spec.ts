@@ -1,12 +1,13 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { formatInTimeZone } from "date-fns-tz";
 import type { Database } from "../../src/types/database";
 
 const DEV_PASSWORD = "123456";
-const PROJECT_DATE: Record<string, string> = {
-  "mobile-360": "2026-09-02",
-  "tablet-768": "2026-09-03",
-  "laptop-1366": "2026-09-04",
+const PROJECT_DAY_OFFSET: Record<string, number> = {
+  "mobile-360": 1,
+  "tablet-768": 2,
+  "laptop-1366": 3,
 };
 
 let adminClient: SupabaseClient<Database> | null = null;
@@ -63,8 +64,12 @@ async function expectNoHorizontalOverflow(page: Page, where: string) {
 
 async function setupPlan(testInfo: TestInfo) {
   const admin = getLocalAdmin();
-  const plannedDate = PROJECT_DATE[testInfo.project.name];
-  if (!plannedDate) throw new Error(`Thiếu ngày riêng cho project ${testInfo.project.name}`);
+  const dayOffset = PROJECT_DAY_OFFSET[testInfo.project.name];
+  if (!dayOffset) throw new Error(`Thiếu ngày riêng cho project ${testInfo.project.name}`);
+  // Portal chỉ hiện giáo án trong 7 ngày tới, theo múi giờ Việt Nam.
+  const plannedDate = formatInTimeZone(
+    new Date(Date.now() + dayOffset * 86_400_000), "Asia/Ho_Chi_Minh", "yyyy-MM-dd",
+  );
   const { data: year } = await admin.from("academic_years").select("id").eq("status", "current").single();
   const { data: classRow } = await admin.from("classes").select("id").eq("display_name", "Ấu 1A").eq("academic_year_id", year!.id).single();
   const { data: plan, error: planError } = await admin
@@ -437,7 +442,7 @@ test.describe("Giáo án Phase 4", () => {
     expect(box!.height, "link Danh sách lớp phải cao ≥44px").toBeGreaterThanOrEqual(44);
 
     // UI-04 — mục đang xem phải nói ra bằng thuộc tính, không chỉ bằng màu nút.
-    const toggle = page.getByRole("group", { name: "Kiểu hiển thị" });
+    const toggle = page.getByRole("navigation", { name: "Kiểu hiển thị" });
     await expect(toggle.getByRole("link", { name: "Danh sách" })).toHaveAttribute("aria-current", "page");
     await expect(toggle.getByRole("link", { name: "Theo tháng" })).not.toHaveAttribute("aria-current", "page");
 
@@ -451,7 +456,7 @@ test.describe("Giáo án Phase 4", () => {
     await page.goto(`/teaching-plan/${classId}?view=calendar`);
     await expectNoHorizontalOverflow(page, "trang giáo án lớp · xem theo tháng");
     await expect(
-      page.getByRole("group", { name: "Kiểu hiển thị" }).getByRole("link", { name: "Theo tháng" }),
+      page.getByRole("navigation", { name: "Kiểu hiển thị" }).getByRole("link", { name: "Theo tháng" }),
     ).toHaveAttribute("aria-current", "page");
 
     // Hub cũng đo, vì `responsive.spec.ts` quét nó nhưng không đo vùng chạm.

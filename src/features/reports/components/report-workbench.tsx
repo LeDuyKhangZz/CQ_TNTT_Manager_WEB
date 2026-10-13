@@ -116,6 +116,7 @@ export function ReportWorkbench({
   }
 
   const exportParams = reportFilterToSearchParams(data.filter);
+  if (data.academicYear) exportParams.set("academicYearId", data.academicYear.id);
   const periodRange = `${formatDateVi(data.from)} – ${formatDateVi(data.to)}`;
 
   const columns = data.headers.map((header, index) => ({

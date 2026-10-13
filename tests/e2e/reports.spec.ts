@@ -149,7 +149,8 @@ async function ensureFinalizedSession(projectName: string): Promise<Fixture> {
 
     const { data: enrollments } = await admin
       .from("enrollments").select("id, student_id")
-      .eq("class_id", klass.id).eq("academic_year_id", year.id).eq("status", "active");
+      .eq("class_id", klass.id).eq("academic_year_id", year.id).eq("status", "active")
+      .lte("enrolled_on", attendanceDate);
     if (!enrollments || enrollments.length === 0) {
       throw new Error("Lớp Ấu 1A không có ghi danh nào — seed:dev chưa chạy đủ.");
     }

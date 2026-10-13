@@ -92,22 +92,21 @@ describe("CommitteeWorkspace — tabs", () => {
   it("hiện đủ các tab nội dung; tab Thiết bị chỉ có khi Ban giữ kho", () => {
     const { rerender } = render(<CommitteeWorkspace detail={makeDetail()} />);
     for (const name of ["Tổng quan", "Thành viên (1)", "Thông báo", "Lịch họp", "Công việc tuần"]) {
-      expect(screen.getByRole("tab", { name })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name })).toBeInTheDocument();
     }
-    expect(screen.queryByRole("tab", { name: "Thiết bị" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Thiết bị" })).toBeNull();
 
     rerender(
       <CommitteeWorkspace detail={makeDetail()} equipmentSlot={<div>Bảng kho</div>} />,
     );
-    expect(screen.getByRole("tab", { name: "Thiết bị" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Thiết bị" })).toBeInTheDocument();
   });
 });
 
 describe("CommitteeWorkspace — chức vụ controlled (TB-M09-05)", () => {
   it("nút 'Lưu chức vụ' chỉ bật khi đã đổi, và lưu đúng chức vụ mới", async () => {
     const user = userEvent.setup();
-    render(<CommitteeWorkspace detail={makeDetail()} />);
-    await user.click(screen.getByRole("tab", { name: "Thành viên (1)" }));
+    render(<CommitteeWorkspace detail={makeDetail()} activeTab="members" />);
 
     const save = screen.getByRole("button", { name: "Lưu chức vụ" });
     // Chưa đổi gì: không được lưu (không có onChange tự lưu).
@@ -129,8 +128,7 @@ describe("CommitteeWorkspace — chức vụ controlled (TB-M09-05)", () => {
 describe("CommitteeWorkspace — ma sát cho thao tác phá huỷ (TB-M09-05)", () => {
   it("kết thúc nhiệm kỳ mở hộp xác nhận nêu tên người + tên Ban; chỉ chạy sau khi xác nhận", async () => {
     const user = userEvent.setup();
-    render(<CommitteeWorkspace detail={makeDetail()} />);
-    await user.click(screen.getByRole("tab", { name: "Thành viên (1)" }));
+    render(<CommitteeWorkspace detail={makeDetail()} activeTab="members" />);
 
     await user.click(screen.getByRole("button", { name: "Kết thúc" }));
 
@@ -149,8 +147,7 @@ describe("CommitteeWorkspace — ma sát cho thao tác phá huỷ (TB-M09-05)", 
 
   it("xoá thông báo cũng đi qua hộp xác nhận nêu tên thông báo", async () => {
     const user = userEvent.setup();
-    render(<CommitteeWorkspace detail={makeDetail()} />);
-    await user.click(screen.getByRole("tab", { name: "Thông báo" }));
+    render(<CommitteeWorkspace detail={makeDetail()} activeTab="announcements" />);
 
     await user.click(screen.getByRole("button", { name: "Xóa" }));
     const dialog = screen.getByRole("dialog");

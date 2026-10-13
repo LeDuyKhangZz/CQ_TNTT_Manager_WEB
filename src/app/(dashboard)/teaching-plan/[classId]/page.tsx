@@ -1,11 +1,9 @@
-import Link from "next/link";
+import { TabNav } from "@/components/ui/tab-nav";
 import { notFound } from "next/navigation";
-import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { TeachingPlanEditor } from "@/features/teaching-plans/components/teaching-plan-editor";
 import { getTeachingPlanDetail } from "@/features/teaching-plans/server/queries";
-import { cn } from "@/lib/utils";
 
 export default async function TeachingPlanDetailPage({
   params,
@@ -27,16 +25,10 @@ export default async function TeachingPlanDetailPage({
         backHref="/teaching-plan"
         backLabel="Danh sách lớp"
       />
-      {/*
-        UI-04 — `aria-label` trên một `<div>` trần không được trình đọc màn hình
-        công bố; và mục đang chọn chỉ khác nhau ở **màu nút**, tức màu là tín
-        hiệu duy nhất (điều cấm thứ 5 của `11` §5). Nay là `role="group"` có tên
-        và `aria-current="page"` trên mục đang xem.
-      */}
-      <div className="mb-5 flex gap-2" role="group" aria-label="Kiểu hiển thị">
-        <Link href={`/teaching-plan/${classId}?view=list`} aria-current={view === "list" ? "page" : undefined} className={cn(buttonVariants({ variant: view === "list" ? "primary" : "outline", size: "sm" }))}>Danh sách</Link>
-        <Link href={`/teaching-plan/${classId}?view=calendar`} aria-current={view === "calendar" ? "page" : undefined} className={cn(buttonVariants({ variant: view === "calendar" ? "primary" : "outline", size: "sm" }))}>Theo tháng</Link>
-      </div>
+      <TabNav label="Kiểu hiển thị" activeKey={view} className="mb-5" items={[
+        {key:"list", label:"Danh sách", href:`/teaching-plan/${classId}?view=list`},
+        {key:"calendar", label:"Theo tháng", href:`/teaching-plan/${classId}?view=calendar`},
+      ]} />
       <TeachingPlanEditor detail={detail} view={view} />
     </PageContainer>
   );

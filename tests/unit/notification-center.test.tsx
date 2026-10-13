@@ -322,12 +322,12 @@ describe("TB-M10-06 · hộp thư lọc được và không nuốt mất dòng",
     render(<NotificationCenter data={pageData({}, {
       inbox: [inboxItem], inboxTotal: 120, page: 1,
     })} />);
-    expect(screen.getByRole("navigation")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", {name:"Phân trang"})).toBeInTheDocument();
   });
 
   it("vừa đủ một trang thì không bày phân trang thừa", () => {
     render(<NotificationCenter data={pageData({}, { inbox: [inboxItem], inboxTotal: 1 })} />);
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", {name:"Phân trang"})).not.toBeInTheDocument();
   });
 
   it("`11` §5 — hai ca rỗng dùng trạng thái rỗng chuẩn và nói HAI câu khác nhau", () => {

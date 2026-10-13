@@ -1,5 +1,7 @@
 "use client";
 
+import { TabNav } from "@/components/ui/tab-nav";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -453,23 +455,8 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
             `docs/06` §14 đòi bộ lọc này từ đầu; trước M10-C thì chưa có. Dựng
             bằng `<Link>` để chép được đường dẫn và chạy được không cần JS.
           */}
-          <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Lọc hộp thư">
-            {INBOX_FILTERS.map((value) => (
-              <Link
-                key={value}
-                href={value === "all" ? "/notifications" : `/notifications?filter=${value}`}
-                aria-current={data.filter === value ? "page" : undefined}
-                className={cn(
-                  "grid min-h-control place-items-center rounded-md border px-4 text-sm",
-                  data.filter === value
-                    ? "border-theme-primary bg-theme-tint font-semibold text-theme-accent-text"
-                    : "border-line text-ink-muted hover:bg-surface-muted",
-                )}
-              >
-                {value === "all" ? "Tất cả" : "Chưa đọc"}
-              </Link>
-            ))}
-          </div>
+          <TabNav label="Lọc hộp thư" activeKey={data.filter} stickyMobile={false} className="mt-3"
+            items={INBOX_FILTERS.map(value => ({key:value, label:value === "all" ? "Tất cả" : "Chưa đọc", href:value === "all" ? "/notifications" : `/notifications?filter=${value}`}))} />
         </CardHeader>
         <CardContent>
           {data.inbox.length === 0 ? (
