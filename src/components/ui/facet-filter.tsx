@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
+import { useDismissLayer } from "./dismiss-layer";
 
 /**
  * Nút lọc mở bảng tick — REDESIGN 2C task **R2.2** (`11_DESIGN_SYSTEM` N3,
@@ -93,6 +94,8 @@ export type FacetFilterProps = {
   selected?: readonly string[];
   /** Cạnh canh của bảng tick. Mặc định canh trái vì nút nằm đầu hàng toolbar. */
   align?: "start" | "end";
+  /** Anchor narrow-screen popovers to a positioned toolbar instead of a wrapped trigger. */
+  fullWidthBelowXl?: boolean;
   applyLabel?: string;
   /** Câu hiện khi không có lựa chọn nào (ví dụ Giáo lý viên chỉ có 1 lớp). */
   emptyLabel?: string;
@@ -105,12 +108,16 @@ export function FacetFilter({
   options,
   selected = [],
   align = "start",
+  fullWidthBelowXl = false,
   applyLabel = "Áp dụng",
   emptyLabel = "Không có lựa chọn nào trong phạm vi của bạn.",
   className,
 }: FacetFilterProps) {
   const detailsRef = React.useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = React.useState(false);
+  const isTopLayer = useDismissLayer(open, detailsRef);
+  const appliedKey = JSON.stringify([...selected].sort());
+  const previousApplied = React.useRef(appliedKey);
 
   const appliedCount = React.useMemo(
     () => options.filter((option) => selected.includes(option.value)).length,
@@ -130,6 +137,15 @@ export function FacetFilter({
       input.checked = selected.includes(input.value);
     }
   }, [selected]);
+
+  React.useEffect(() => {
+    // Preserve edits made before hydration; only a new applied filter resets drafts.
+    if (previousApplied.current === appliedKey) return;
+    previousApplied.current = appliedKey;
+    revert();
+    if (detailsRef.current) detailsRef.current.open = false;
+    setOpen(false);
+  }, [appliedKey, revert]);
 
   const close = React.useCallback(
     ({ cancel }: { cancel: boolean }) => {
@@ -154,7 +170,7 @@ export function FacetFilter({
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented || !isTopLayer()) return;
       event.preventDefault();
       close({ cancel: true });
     }
@@ -165,13 +181,20 @@ export function FacetFilter({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, close]);
+  }, [open, close, isTopLayer]);
 
   return (
     <details
       ref={detailsRef}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && detailsRef.current?.open && isTopLayer()) {
+          event.preventDefault();
+          event.stopPropagation();
+          close({ cancel: true });
+        }
+      }}
       data-facet={name}
-      className={cn("relative", className)}
+      className={cn(fullWidthBelowXl ? "static xl:relative" : "relative", className)}
       onToggle={(event) => {
         // Chỉ theo dõi trạng thái mở để gắn/gỡ hai listener. Đóng bằng
         // `<summary>` KHÔNG hoàn tác: nó là cử chỉ nhập nhằng (mục 2).
@@ -208,7 +231,9 @@ export function FacetFilter({
       <div
         className={cn(
           "absolute z-dropdown mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-line bg-surface shadow-md",
-          align === "end" ? "right-0" : "left-0",
+          fullWidthBelowXl
+            ? ["left-0 right-0 w-full max-w-full xl:w-64 xl:max-w-[calc(100vw-2rem)]", align === "end" ? "xl:left-auto xl:right-0" : "xl:right-auto"]
+            : align === "end" ? "right-0" : "left-0",
         )}
       >
         <fieldset className="min-w-0 border-0 p-0">

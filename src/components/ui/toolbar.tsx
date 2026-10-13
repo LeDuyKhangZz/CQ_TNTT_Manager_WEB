@@ -144,6 +144,7 @@ export function Toolbar({
                   {search.label}
                 </label>
                 <SearchInputControl
+                  key={search.defaultValue ?? ""}
                   id={searchId}
                   name={searchName}
                   defaultValue={search.defaultValue}
