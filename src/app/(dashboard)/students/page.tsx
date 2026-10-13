@@ -15,8 +15,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { themeKeyFromSectorCode } from "@/lib/theme/sector-palette";
-import { CreateGuardianForm } from "@/features/students/components/create-guardian-form";
-import { CreateStudentForm } from "@/features/students/components/create-student-form";
+import { StudentCreationWizard } from "@/features/students/components/student-creation-wizard";
 import { studentStatusLabel } from "@/features/students/student-status";
 import {
   hasActiveStudentFilter, parseStudentCriteria, studentListHref,
@@ -35,14 +34,13 @@ export default async function StudentsPage({ searchParams }: {
     parseStudentCriteria(view.readOnly && params.status === undefined && params.statusMode !== "facet" ? { ...params, status: "all" } : params),
     { loadCreationOptions: creating },
   );
-  const { criteria, students, guardians, guardianOptionsError, classes, sectors, canWrite,
-    requiresClassOnCreate, page, pageSize, totalItems, feeScope, context } = data;
+  const { criteria, students, classes, sectors, canWrite,
+    page, pageSize, totalItems, feeScope, context } = data;
   const defaultStatus = view.readOnly ? "all" : "active";
   const filtered = hasActiveStudentFilter(criteria, defaultStatus);
   const listHref = studentListHref(criteria, page, defaultStatus);
   const listParams = new URLSearchParams(listHref.split("?")[1]);
   const createHref = drawerHref("/students", listParams, { new: "1" });
-  const guardianHref = drawerHref("/students", listParams, { new: "guardian" });
   // Shared machines: only column keys are persisted, separately for each account.
   const tableId = `students-${context.profileId}`;
   const columns: DataTableColumn<StudentListItem>[] = [
@@ -121,17 +119,9 @@ export default async function StudentsPage({ searchParams }: {
             buildHref={target => studentListHref(criteria, target, defaultStatus)} />} />
       </div>
       <Drawer open={canWrite && (creating || creatingGuardian)} title={creatingGuardian ? "Thêm người giám hộ" : "Thêm thiếu nhi"} closeHref={listHref}>
-        {creatingGuardian ? <div className="space-y-3">
-          <CreateGuardianForm />
-          <Link href={createHref} replace className={buttonVariants({ variant: "outline" })}>Tiếp tục thêm thiếu nhi</Link>
-        </div> : <div className="space-y-3">
-          <Link href={guardianHref} replace className={buttonVariants({ variant: "outline" })}>Thêm người giám hộ</Link>
-          {guardianOptionsError ? <div role="alert" className="space-y-2 text-sm">
-            <p>Không thể tải danh sách người giám hộ. Vui lòng thử lại.</p>
-            <a href={createHref} className={buttonVariants({ variant: "outline" })}>Thử lại</a>
-          </div> : guardians.length === 0 ? <p className="text-sm text-ink-muted">Vui lòng tạo người giám hộ trước.</p>
-            : <CreateStudentForm guardians={guardians} classes={classes} requiresClass={requiresClassOnCreate} />}
-        </div>}
+        <StudentCreationWizard data={data} listHref={listHref} createGuardian={creatingGuardian}
+          step={typeof params.step === "string" ? params.step : undefined}
+          guardianId={typeof params.guardian === "string" ? params.guardian : undefined} />
       </Drawer>
     </PageContainer>
   );

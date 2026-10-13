@@ -49,8 +49,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **R4 release — đóng gói R4.1 — Codex — 2026-10-13.** R4 đủ5/5; kiểm thử thật đã chạy trước commit. R4-QA-01 đã sửa, đang hoàn tất E2E/redeploy.
-- Kiểm thử: **2.000 unit pass /24 skip; R4 E2E105/105; pgTAP audit1.512/1.512**; lint/typecheck/build đạt. E2E toàn hệ thống cuối đang chạy.
+- **R4 release — đóng gói R4.2 — Codex — 2026-10-13.** R4 đủ5/5; kiểm thử thật đã chạy trước commit. R4-QA-01 đã sửa, đang hoàn tất E2E/redeploy.
+- Kiểm thử: **2.000 unit pass /24 skip; R4 E2E105/105; pgTAP audit1.512/1.512**; lint/typecheck/build đạt. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh.
 - Reviewer độc lập kiểm browser/query/quyền; desktop y287, mobile hàng63px; tablet768×1024 thấy12 hàng, cột điện thoại/trạng thái cần cuộn ngang.
 - Production đã backup và áp migration lịch sử;70/70 khớp. Chuẩn bị commit/push/redeploy theo yêu cầu; chưa ghi deployed.
 - R2 13/13, R3 5/5 giữ hoàn tất; UX-42/R13.3 và R5–R13 còn mở. [Hồ sơ R4](docs/system-workflow-redesign/redesign-2c/R4_COMPLETION_2026-10-13.md).
@@ -61,7 +61,7 @@
 
 ## ⛔ BLOCKERS
 
-Không còn blocker chức năng R4. E2E toàn hệ thống cuối đang chạy; Git/Vercel chưa hoàn tất. UX-42/R13.3 giữ mở. Giới hạn tablet và bản nháp wizard ghi rõ trong báo cáo; không reset DB local để xử lý xung đột pgTAP fixture.
+Không còn blocker chức năng R4. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Git/Vercel chưa hoàn tất. UX-42/R13.3 giữ mở. Giới hạn tablet và bản nháp wizard ghi rõ trong báo cáo; không reset DB local để xử lý xung đột pgTAP fixture.
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi)
 
@@ -164,7 +164,7 @@ Không còn blocker chức năng R4. E2E toàn hệ thống cuối đang chạy;
 - **Làm được:** R4.2 wizard lưu giám hộ rồi em (JS/no-JS); R4.3 EntityHeader/6 tab, family/attendance và lỗi/retry UX-41; R4.4 hàng mobile63px/filter sheet/chip; R4.5 banner Thủ quỹ. Tất cả R4.1–R4.5 DONE.
 - **File thay đổi:** students pages/components/actions/query, portal attendance query, TabNav/Wizard, E2E helper/spec và 18 unit mới; tài liệu tracking và hồ sơ R4 trong Git. Các phụ thuộc R2/R3 có sẵn được giữ và commit theo task ID.
 - **Migration/data impact:** backup production schema/data ngoài Git; áp migration lịch sử R2.13,70/70 khớp; không policy RLS mới/backfill. E2E ghi fixture local và cleanup theo ID; pgTAP chạy DB audit mới từ70 migration.
-- **Đã test:** lint/typecheck/build đạt; Vitest2.000 pass/24 skip; nhóm component cuối29/29; R4 E2E105/105,3,9 phút; pgTAP1.512/1.512. Full E2E đang chạy, chưa kết luận. Reviewer độc lập16 unit/boundary và JWT thật xác nhận D75.
+- **Đã test:** lint/typecheck/build đạt; Vitest2.000 pass/24 skip; nhóm component cuối29/29; R4 E2E105/105,3,9 phút; pgTAP1.512/1.512. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Reviewer độc lập16 unit/boundary và JWT thật xác nhận D75.
 - **Giới hạn:** tablet768×1024 có12 hàng nhưng điện thoại/trạng thái cần cuộn ngang;768×800 khoảng7 hàng. Không có live fixture ghi chú khác rỗng. UX-42/R13.3 chưa đóng.
 - **Next:** commit theo task, push main, chờ Vercel đúng SHA và smoke production rồi mới ghi deployed.
 

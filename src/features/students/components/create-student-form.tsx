@@ -43,19 +43,29 @@ export function CreateStudentForm({
   guardians,
   classes,
   requiresClass,
+  guardianId,
+  closeHref,
 }: {
   guardians: Array<{ id: string; fullName: string; phone: string | null }>;
   classes: Array<{ id: string; displayName: string; sectorName: string | null }>;
   /** D-123 — Trưởng/Phó ngành bắt buộc chọn lớp; vai trò xứ đoàn thì tuỳ. */
   requiresClass: boolean;
+  guardianId?: string;
+  closeHref?: string;
 }) {
   const [state, formAction, pending] = useActionState<CreateStudentFormState, FormData>(
     createStudentFormAction,
-    CREATE_STUDENT_INITIAL_STATE,
+    { ...CREATE_STUDENT_INITIAL_STATE, values: { ...CREATE_STUDENT_INITIAL_STATE.values, guardianId: guardianId ?? "" } },
   );
   useGlobalPending(pending);
   const { values, feedback, duplicates } = state;
   const showingDuplicates = duplicates.length > 0;
+
+  if (state.createdStudentId && closeHref) return <div className="space-y-4">
+    {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
+    <Link href={`/students/${state.createdStudentId}`} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline">Mở hồ sơ thiếu nhi</Link>
+    <Link href={closeHref} className="inline-flex min-h-11 items-center px-3 font-medium text-theme-accent-text underline">Hoàn tất</Link>
+  </div>;
 
   return (
     /*

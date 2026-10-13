@@ -263,6 +263,7 @@ export async function createGuardianFormAction(
   }
   return {
     feedback: guardianCreatedFeedback(result.data.guardianName),
+    createdGuardianId: result.data.id,
     duplicates: [],
     values: EMPTY_CREATE_GUARDIAN_VALUES,
   };

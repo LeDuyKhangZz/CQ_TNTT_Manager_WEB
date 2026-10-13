@@ -38,6 +38,7 @@ export interface CreateStudentFormValues {
 }
 
 export interface CreateStudentFormState {
+  createdStudentId?: string;
   feedback: StudentFeedback | null;
   /**
    * Rỗng ở pha một. Có phần tử nghĩa là **đang chờ người dùng quyết**: biểu mẫu
@@ -107,6 +108,7 @@ export interface CreateGuardianFormValues {
 }
 
 export interface CreateGuardianFormState {
+  createdGuardianId?: string;
   feedback: StudentFeedback | null;
   duplicates: GuardianDuplicate[];
   values: CreateGuardianFormValues;

@@ -1,3 +1,6 @@
+import { randomUUID, randomInt } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../../src/types/database";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -180,26 +183,31 @@ test.describe("M03-A · vòng đời ghi danh", () => {
   test("mọi thao tác ghi trên trang thiếu nhi nói ra kết quả (TB-F14 / AC-F14-01)", async ({ page }) => {
     test.setTimeout(90_000);
     await login(page, GROUP_LEADER);
-    await page.goto(`/students`);
-
-    // Sáu thao tác ghi của module trước đợt này đều trả `Promise<void>` — kết quả
-    // bị vứt bỏ ngay tại chỗ nhận (BR-M03-38). Bài này canh đường ngắn nhất:
-    // biểu mẫu tạo phụ huynh, thao tác rẻ nhất và không đụng dữ liệu thiếu nhi.
-    // 🔴 Neo vào ĐÚNG biểu mẫu. `/students` có hai ô mang nhãn bắt đầu bằng "Điện
-    // thoại" (phụ huynh, và "Điện thoại (nếu có)" của thiếu nhi) ⇒ `getByLabel`
-    // khớp hai phần tử. Cùng họ lỗi "nhãn trùng hai chỗ" đã gặp ở M02-A, M02-B và
-    // M04-C — trang nào đông biểu mẫu thì bài test phải neo phạm vi.
-    const suffix = `${Date.now()}`.slice(-6);
-    const form = page.locator("form").filter({ has: page.locator("#guardian-name") });
-    await form.getByLabel("Họ tên phụ huynh").fill(`Phụ huynh E2E ${suffix}`);
-    await form.locator("#guardian-phone").fill(`09${suffix}0000`.slice(0, 10));
-    await form.getByRole("button", { name: "Tạo phụ huynh" }).click();
-
-    const message = page.getByRole("status").first();
-    // 45 giây — cùng lý do với bài "Tạm nghỉ" ở trên (nợ #10 vế (a)).
-    await expect(message).toBeVisible({ timeout: 45_000 });
-    await expect(message).toContainText(`Phụ huynh E2E ${suffix}`);
-    // Câu thành công phải CHỈ ĐƯỜNG sang việc tiếp theo, không chỉ báo "đã lưu".
-    await expect(message).toContainText("Thêm thiếu nhi");
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    if (!/^http:\/\/(127\.0\.0\.1|localhost):/.test(url)) throw new Error("Local Supabase required");
+    const db = createClient<Database>(url, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+    const guardianName = `Giám hộ kiểm tra ${randomUUID().replace(/\d/g, digit => String.fromCharCode(103 + Number(digit)))}`;
+    const phone = `09${randomInt(10000000, 99999999)}`;
+    try {
+      // R4 moves creation into the native drawer wizard. Preserve the original
+      // feedback contract: name the saved guardian and show the next action.
+      await page.goto("/students?new=1");
+      await page.getByRole("link", { name: "Thêm người giám hộ", exact: true }).click();
+      const form = page.getByRole("form", { name: "Thêm người giám hộ", exact: true });
+      await form.getByLabel("Họ tên phụ huynh").fill(guardianName);
+      await form.locator("#guardian-phone").fill(phone);
+      await form.getByRole("button", { name: "Tạo phụ huynh", exact: true }).click();
+      await expect(page).toHaveURL(/step=student/);
+      const drawer = page.getByRole("dialog", { name: "Thêm thiếu nhi", exact: true });
+      await expect(drawer.getByText(guardianName, { exact: true }).first()).toBeVisible();
+      await expect(drawer.getByRole("navigation", { name: "Các bước Thêm thiếu nhi" }).locator('[aria-current="step"]')).toContainText("2.");
+      await expect(drawer.getByRole("button", { name: "Tạo hồ sơ thiếu nhi", exact: true })).toBeVisible();
+      const saved = await db.from("guardians").select("id").eq("full_name", guardianName).eq("phone", phone).single();
+      expect(saved.error).toBeNull();
+      await expect(drawer.getByLabel("Người giám hộ", { exact: true })).toHaveValue(saved.data!.id);
+    } finally {
+      // This test creates only an unassigned guardian; never remove old fixtures.
+      expect((await db.from("guardians").delete().eq("full_name", guardianName).eq("phone", phone).is("profile_id", null)).error).toBeNull();
+    }
   });
 });

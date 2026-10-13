@@ -28,9 +28,11 @@ import { useGlobalPending } from "@/components/loading/loading-provider";
  * Cảnh báo vẫn MỀM: cả một gia đình dùng chung một số điện thoại là chuyện
  * thường, nên không có ràng buộc `unique` nào được thêm.
  */
-export function CreateGuardianForm() {
+export function CreateGuardianForm({ action = createGuardianFormAction }: {
+  action?: (previous: CreateGuardianFormState, data: FormData) => Promise<CreateGuardianFormState>;
+}) {
   const [state, formAction, pending] = useActionState<CreateGuardianFormState, FormData>(
-    createGuardianFormAction,
+    action,
     CREATE_GUARDIAN_INITIAL_STATE,
   );
   useGlobalPending(pending);

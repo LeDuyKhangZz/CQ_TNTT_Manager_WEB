@@ -580,6 +580,7 @@ export async function createStudentFormAction(
     feedback: result.data.className
       ? studentCreatedFeedback(result.data.studentName, result.data.studentCode, result.data.className)
       : studentCreatedUnassignedFeedback(result.data.studentName, result.data.studentCode),
+    createdStudentId: result.data.id,
     duplicates: [],
     values: EMPTY_CREATE_STUDENT_VALUES,
   };
