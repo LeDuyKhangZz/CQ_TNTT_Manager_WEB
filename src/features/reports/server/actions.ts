@@ -1,5 +1,7 @@
 "use server";
 
+import { assertWritableYearView } from "@/lib/academic-year/view";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { AppError, type AppErrorCode } from "@/lib/errors";
@@ -48,6 +50,7 @@ export async function createReportSnapshot(
   // phải được thi hành ở cả tầng Server Action, không chỉ tầng trang.
   const context = await reportsRouteContext();
   try {
+    await assertWritableYearView();
     const filter = reportFilterSchema.parse(input);
     const report = await buildReport(filter, context);
     if (!report.academicYear) {

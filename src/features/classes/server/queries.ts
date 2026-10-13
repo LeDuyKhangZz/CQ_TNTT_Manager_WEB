@@ -1,4 +1,5 @@
 import "server-only";
+import { getAcademicYearView } from "@/lib/academic-year/view";
 
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
@@ -49,12 +50,12 @@ interface RawClassRow {
   class_kind: string;
   status: string;
   grade_levels: { sort_order: number; sectors: { id: string; code: string; name: string; short_name: string; sort_order: number } | null } | null;
-  class_staff_assignments: Array<{ capacity: string; is_active: boolean; staff_profiles: { full_name: string; saint_name: string | null } | null }>;
-  enrollments: Array<{ status: string }>;
+  class_staff_assignments: Array<{ capacity: string; starts_on: string; is_active: boolean; staff_profiles: { id: string; full_name: string; saint_name: string | null } | null }>;
+  enrollments: Array<{ student_id: string; status: string }>;
 }
 
-function toCard(row: RawClassRow): ClassCard {
-  const activeStaff = row.class_staff_assignments.filter((item) => item.is_active);
+function toCard(row: RawClassRow, historical = false): ClassCard {
+  const activeStaff = row.class_staff_assignments.filter((item) => historical || item.is_active).sort((a,b) => b.starts_on.localeCompare(a.starts_on));
   const representative = activeStaff.find((item) => item.capacity === "representative");
   const summary = rosterSummary(row.enrollments.map((item) => item.status));
   return {
@@ -63,10 +64,10 @@ function toCard(row: RawClassRow): ClassCard {
     sectionCode: row.section_code,
     classKind: row.class_kind,
     status: row.status,
-    studentCount: summary.total,
+    studentCount: historical ? new Set(row.enrollments.map(item => item.student_id)).size : summary.total,
     pausedCount: summary.paused,
     representative: representative ? staffLabel(representative.staff_profiles) : "Chưa có",
-    staffCount: activeStaff.length,
+    staffCount: new Set(activeStaff.map(item => item.staff_profiles?.id).filter(Boolean)).size,
   };
 }
 
@@ -74,13 +75,7 @@ export async function getClassesPageData() {
   const context = await requireRouteAccess("/classes");
   const supabase = await createClient();
 
-  const { data: year } = await supabase
-    .from("academic_years")
-    // `semester_1_end_date` (D-71) để trang biết đã qua mốc học kỳ 1 chưa mà cảnh
-    // báo cho lớp Dự trưởng (D-115 — chỉ cảnh báo, không tự đóng lớp).
-    .select("id, code, name, semester_1_end_date")
-    .eq("status", "current")
-    .maybeSingle();
+  const { year } = await getAcademicYearView();
 
   if (!year) {
     return { context, year: null, sectors: [] as SectorGroup[], trainees: [] as ClassCard[] };
@@ -89,7 +84,7 @@ export async function getClassesPageData() {
   const { data } = await supabase
     .from("classes")
     .select(
-      "id, display_name, section_code, class_kind, status, grade_levels(sort_order, sectors(id, code, name, short_name, sort_order)), class_staff_assignments(capacity, is_active, staff_profiles(full_name, saint_name)), enrollments(status)",
+      "id, display_name, section_code, class_kind, status, grade_levels(sort_order, sectors(id, code, name, short_name, sort_order)), class_staff_assignments(capacity, starts_on, is_active, staff_profiles(id, full_name, saint_name)), enrollments(student_id, status)",
     )
     .eq("academic_year_id", year.id)
     .order("display_name");
@@ -100,14 +95,14 @@ export async function getClassesPageData() {
 
   for (const row of rows) {
     if (row.class_kind === "trainee" || !row.grade_levels?.sectors) {
-      trainees.push(toCard(row));
+      trainees.push(toCard(row, year.status !== "current"));
       continue;
     }
     const sector = row.grade_levels.sectors;
     if (!sectorMap.has(sector.id)) {
       sectorMap.set(sector.id, { sectorId: sector.id, code: sector.code, name: sector.name, shortName: sector.short_name, sortOrder: sector.sort_order, classes: [] });
     }
-    sectorMap.get(sector.id)!.classes.push(toCard(row));
+    sectorMap.get(sector.id)!.classes.push(toCard(row, year.status !== "current"));
   }
 
   const sectors = [...sectorMap.values()]
@@ -139,6 +134,8 @@ export interface ClassDetail {
   academicYearStatus: string;
   /** D-71 — mốc kết thúc học kỳ 1; `null` là chưa khai báo (D-116). */
   semester1EndDate: string | null;
+  historicalRosterCount?: number;
+  restrictedRosterCount?: number;
   /**
    * `staffProfileId` là `null` khi RLS không cho người xem đọc hồ sơ đó
    * (`app.can_access_staff`) — lúc ấy tên cũng không đọc được, nên trang hiện chữ
@@ -244,12 +241,15 @@ export async function getClassDetail(
 
   // Năm học không đọc được (dữ liệu hỏng) coi như KHÔNG ghi được: mở khoá vì thiếu
   // thông tin là đúng hướng sai trong một chốt chặn.
-  const yearWritable = isAcademicYearWritable(row.academic_years?.status);
+  const yearView = await getAcademicYearView();
+  if (yearView.readOnly && row.academic_year_id !== yearView.year?.id) return {context,canManage:false,canManageClass:false,classDetail:null,availableStudentsTruncated:false};
+  const historical = row.academic_years?.status === "closed" || row.academic_years?.status === "archived";
+  const yearWritable = !yearView.readOnly && isAcademicYearWritable(row.academic_years?.status);
   const canManage = canManageEnrollments(context.role) && yearWritable;
   const canManageClass = canWriteClass(context.role) && yearWritable;
 
   const roster = row.enrollments
-    .filter((item) => isOpenEnrollmentStatus(item.status) && item.students)
+    .filter((item) => (historical || isOpenEnrollmentStatus(item.status)) && item.students)
     .map((item) => ({
       enrollmentId: item.id,
       studentId: item.students!.id,
@@ -330,8 +330,10 @@ export async function getClassDetail(
       academicYearName: row.academic_years?.name ?? "",
       academicYearStatus: row.academic_years?.status ?? "",
       semester1EndDate: row.academic_years?.semester_1_end_date ?? null,
+      historicalRosterCount: historical ? row.enrollments.length : undefined,
+      restrictedRosterCount: historical ? row.enrollments.filter(item => !item.students).length : undefined,
       team: row.class_staff_assignments
-        .filter((item) => item.is_active)
+        .filter((item) => historical || item.is_active)
         .map((item) => ({
           id: item.id,
           staffProfileId: item.staff_profiles?.id ?? null,

@@ -1,5 +1,7 @@
 "use server";
 
+import { assertWritableYearView } from "@/lib/academic-year/view";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { AppError, type AppErrorCode } from "@/lib/errors";
@@ -187,6 +189,7 @@ export async function createAssessment(
 ): Promise<AssessmentActionResult<{ id: string }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = assessmentInputSchema.parse(input);
     const { supabase } = await requireGradeClass(context, parsed.classId);
     const { data: classRow } = await supabase
@@ -213,6 +216,7 @@ export async function createAssessment(
 export async function updateAssessment(input: UpdateAssessmentInput): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = updateAssessmentSchema.parse(input);
     const { supabase, assessment } = await requireGradeAssessment(context, parsed.assessmentId);
     if (assessment.class_id !== parsed.classId) throw new AppError("VALIDATION_ERROR");
@@ -256,6 +260,7 @@ export async function deleteAssessment(
 ): Promise<AssessmentActionResult<{ removedEmptyScores: number }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = assessmentIdSchema.parse(assessmentId);
     const { supabase, assessment } = await requireGradeAssessment(context, parsed);
     const { data, error } = await supabase.rpc("delete_assessment", { p_assessment_id: parsed });
@@ -283,6 +288,7 @@ export async function deleteAssessment(
 export async function archiveAssessment(assessmentId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = assessmentIdSchema.parse(assessmentId);
     const { supabase, assessment } = await requireGradeAssessment(context, parsed);
     const { data: updated, error } = await supabase
@@ -302,6 +308,7 @@ export async function archiveAssessment(assessmentId: string): Promise<Assessmen
 export async function saveAssessmentScores(input: SaveAssessmentScoresInput): Promise<AssessmentActionResult<{ count: number }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = saveAssessmentScoresSchema.parse(input);
     const { supabase, assessment } = await requireGradeAssessment(context, parsed.assessmentId);
     const { data, error } = await supabase.rpc("save_assessment_scores", {
@@ -347,6 +354,7 @@ export async function setAssessmentPublished(
 ): Promise<AssessmentActionResult<{ changed: boolean }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = publishAssessmentSchema.parse(input);
     const { supabase, assessment } = await requireGradeAssessment(context, parsed.assessmentId);
     const { data, error } = await supabase.rpc("set_assessment_published", {
@@ -377,6 +385,7 @@ export async function setAssessmentPublished(
 export async function restoreAssessment(assessmentId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = assessmentIdSchema.parse(assessmentId);
     const { supabase, assessment } = await requireGradeAssessment(context, parsed);
     const { data: updated, error } = await supabase
@@ -410,6 +419,7 @@ export async function refreshAttendanceScores(
 ): Promise<AssessmentActionResult<{ refreshed: number; skippedManual: number }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const { assessmentId: parsed } = attendanceAssessmentActionSchema.parse({ assessmentId });
     const { supabase, assessment } = await requireGradeAssessment(context, parsed);
     const { data, error } = await supabase.rpc("refresh_attendance_assessment_scores", { p_assessment_id: parsed });
@@ -428,6 +438,7 @@ export async function refreshAttendanceScores(
 export async function resetAttendanceScoreOverride(input: ResetAttendanceOverrideInput): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = resetAttendanceOverrideSchema.parse(input);
     const { supabase, assessment } = await requireGradeAssessment(context, parsed.assessmentId);
     const { error } = await supabase.rpc("reset_attendance_score_override", {
@@ -445,6 +456,7 @@ export async function resetAttendanceScoreOverride(input: ResetAttendanceOverrid
 export async function createStudentComment(input: StudentCommentInput): Promise<AssessmentActionResult<{ id: string }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = studentCommentInputSchema.parse(input);
     const supabase = await createClient();
     const { data: enrollment } = await supabase
@@ -490,6 +502,7 @@ export async function createStudentComment(input: StudentCommentInput): Promise<
 export async function updateStudentComment(input: UpdateStudentCommentInput): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = updateStudentCommentSchema.parse(input);
     const supabase = await createClient();
     const { data: comment } = await supabase
@@ -521,6 +534,7 @@ export async function updateStudentComment(input: UpdateStudentCommentInput): Pr
 export async function deleteStudentComment(commentId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = studentCommentIdSchema.parse(commentId);
     const supabase = await createClient();
     const { data: comment } = await supabase
@@ -558,6 +572,7 @@ export async function deleteStudentComment(commentId: string): Promise<Assessmen
 export async function lockGradebook(classId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const { classId: parsed } = gradebookLockInputSchema.parse({ classId });
     if (!canLockGradebook(context, parsed)) {
       throw new AppError(
@@ -578,6 +593,7 @@ export async function lockGradebook(classId: string): Promise<AssessmentActionRe
 export async function unlockGradebook(classId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const { classId: parsed } = gradebookLockInputSchema.parse({ classId });
     if (context.role !== "super_admin") throw new AppError("FORBIDDEN");
     const supabase = await createClient();
@@ -593,6 +609,7 @@ export async function unlockGradebook(classId: string): Promise<AssessmentAction
 export async function createLeaderboard(input: LeaderboardInput): Promise<AssessmentActionResult<{ id: string }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = leaderboardInputSchema.parse(input);
     const supabase = await createClient();
     if (!(await canManageLeaderboard(context, supabase, parsed.classId))) throw new AppError("FORBIDDEN");
@@ -651,6 +668,7 @@ export async function previewLeaderboard(input: LeaderboardOperationInput): Prom
 export async function publishLeaderboard(input: LeaderboardOperationInput): Promise<AssessmentActionResult<{ count: number }>> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = leaderboardOperationSchema.parse(input);
     const { supabase } = await requireManageLeaderboard(context, parsed.leaderboardId);
     const { data, error } = await supabase.rpc("publish_leaderboard", {
@@ -667,6 +685,7 @@ export async function publishLeaderboard(input: LeaderboardOperationInput): Prom
 export async function unpublishLeaderboard(leaderboardId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = leaderboardIdSchema.parse(leaderboardId);
     const { supabase } = await requireManageLeaderboard(context, parsed);
     const { data: updated, error } = await supabase.from("leaderboards").update({
@@ -698,6 +717,7 @@ export async function unpublishLeaderboard(leaderboardId: string): Promise<Asses
 export async function republishLeaderboard(leaderboardId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = leaderboardIdSchema.parse(leaderboardId);
     const { supabase } = await requireManageLeaderboard(context, parsed);
     const { data: updated, error } = await supabase.from("leaderboards").update({
@@ -730,6 +750,7 @@ export async function republishLeaderboard(leaderboardId: string): Promise<Asses
 export async function deleteLeaderboard(leaderboardId: string): Promise<AssessmentActionResult> {
   const context = await assessmentsRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = leaderboardIdSchema.parse(leaderboardId);
     const { supabase } = await requireManageLeaderboard(context, parsed);
     const { data: row } = await supabase

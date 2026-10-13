@@ -1,4 +1,5 @@
 import "server-only";
+import { getAcademicYearView, getReadableAcademicYear } from "@/lib/academic-year/view";
 
 import { requireRouteAccess } from "@/lib/auth/guards";
 import type { AuthContext } from "@/lib/auth/types";
@@ -133,16 +134,12 @@ async function loadScopeOptions(context: AuthContext, academicYearId: string | n
   availableScopeTypes: ReportScope[];
 }> {
   const supabase = await createClient();
+  const view = await getAcademicYearView();
+  let scopeClasses = supabase.from("classes").select("id, display_name, grade_levels(sector_id)").eq("academic_year_id", academicYearId ?? "00000000-0000-0000-0000-000000000000");
+  if (academicYearId === view.current?.id) scopeClasses = scopeClasses.eq("status", "active");
   const [{ data: sectorData }, { data: classData }] = await Promise.all([
     supabase.from("sectors").select("id, name").order("sort_order"),
-    academicYearId
-      ? supabase
-        .from("classes")
-        .select("id, display_name, grade_levels(sector_id)")
-        .eq("academic_year_id", academicYearId)
-        .eq("status", "active")
-        .order("display_name")
-      : Promise.resolve({ data: [] as never[] }),
+    scopeClasses.order("display_name"),
   ]);
 
   const allSectors: ReportScopeOption[] = (sectorData ?? []).map((item) => ({ id: item.id, name: item.name }));
@@ -182,13 +179,9 @@ async function loadScopeOptions(context: AuthContext, academicYearId: string | n
  * `getReportsPageData` chạy `requireRouteAccess("/reports")` **hai lần** cho một
  * lượt dựng trang (N-1 / F06 của `07_IMPLEMENTATION_IMPACT`).
  */
-export async function buildReport(filter: ReportFilter, context: AuthContext): Promise<ReportResult> {
+export async function buildReport(filter: ReportFilter, context: AuthContext, requestedYearId?: string): Promise<ReportResult> {
   const supabase = await createClient();
-  const { data: year } = await supabase
-    .from("academic_years")
-    .select("id, code, start_date, end_date")
-    .eq("status", "current")
-    .maybeSingle();
+  const year = requestedYearId === undefined ? (await getAcademicYearView()).year : await getReadableAcademicYear(requestedYearId);
 
   const headers = filter.reportType === "attendance" ? ATTENDANCE_HEADERS : RESULTS_HEADERS;
 
@@ -364,6 +357,7 @@ export async function getReportsPageData(
     supabase
       .from("report_snapshots")
       .select("id, title, report_type, period_start, period_end, generated_at, checksum")
+      .eq("academic_year_id", report.academicYear?.id ?? "00000000-0000-0000-0000-000000000000")
       .order("generated_at", { ascending: false })
       .limit(20),
     // 🔴 Nút "Chốt báo cáo" HỎI luật thay vì chép lại nó (D-66). Bản cũ chỉ loại
@@ -410,8 +404,8 @@ export async function getReportsPageData(
       generatedAt: item.generated_at,
       checksum: item.checksum,
     })),
-    canSnapshot: canSnapshot === true,
-    canSnapshotAnyScope: canSnapshotAnyScope === true,
+    canSnapshot: !(await getAcademicYearView()).readOnly && canSnapshot === true,
+    canSnapshotAnyScope: !(await getAcademicYearView()).readOnly && canSnapshotAnyScope === true,
     duplicate: duplicateRow
       ? {
         id: duplicateRow.snapshot_id,

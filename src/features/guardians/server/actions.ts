@@ -1,5 +1,7 @@
 "use server";
 
+import { assertWritableYearView } from "@/lib/academic-year/view";
+
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { AppError, type AppErrorCode } from "@/lib/errors";
@@ -83,6 +85,7 @@ export type CreateGuardianResult =
 export async function createGuardian(input: CreateGuardianInput): Promise<CreateGuardianResult> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     assertStudentWrite(actor);
     const parsed = createGuardianSchema.parse(input);
 
@@ -129,6 +132,7 @@ export async function updateGuardian(
 ): Promise<GuardianActionResult<{ guardianName: string }>> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     assertStudentWrite(actor);
     const parsed = updateGuardianSchema.parse(input);
     const { id, ...changes } = parsed;
@@ -195,6 +199,7 @@ export async function changeStudentGuardian(
 ): Promise<GuardianActionResult<{ studentName: string; guardianName: string }>> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     assertStudentWrite(actor);
     const parsed = changeGuardianSchema.parse(input);
     const supabase = await createClient();

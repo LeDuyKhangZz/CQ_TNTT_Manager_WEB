@@ -253,7 +253,7 @@ describe("ArchivedYearBanner (10 §10 · 15 §6)", () => {
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Đang xem dữ liệu năm học 2025-2026 (đã lưu trữ). Không thể chỉnh sửa.",
+      "Đang xem dữ liệu năm học 2025-2026 (chỉ xem). Không thể chỉnh sửa.",
     );
   });
 

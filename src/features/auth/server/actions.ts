@@ -1,5 +1,8 @@
 "use server";
 
+import { cookies } from "next/headers";
+import { ACADEMIC_YEAR_COOKIE } from "@/lib/academic-year/view";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
@@ -196,6 +199,7 @@ export async function loginWithUsername(
 export async function signOutAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "local" });
+  (await cookies()).delete(ACADEMIC_YEAR_COOKIE);
   // Xoá bản dựng đã nhớ của vỏ ứng dụng. Thiếu dòng này thì bấm nút Back sau khi
   // đăng xuất vẫn thấy lại trang cũ dựng sẵn trong bộ nhớ router (AC-F2) — trang
   // đó không còn dữ liệu mới nào, nhưng vẫn phơi tên và số liệu của người trước.

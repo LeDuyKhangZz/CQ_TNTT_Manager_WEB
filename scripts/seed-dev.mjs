@@ -506,6 +506,7 @@ async function main() {
         student_id: student.id,
         academic_year_id: year.id,
         class_id: classId(spec.className),
+        enrolled_on: year.start_date,
         status: "active",
       }),
       `Ghi danh ${spec.fullName}`,

@@ -28,7 +28,7 @@ export function ArchivedYearBanner({
   return (
     <Alert tone="warning" className={className}>
       {academicYearLabel
-        ? `Đang xem dữ liệu năm học ${academicYearLabel} (đã lưu trữ). Không thể chỉnh sửa.`
+        ? `Đang xem dữ liệu năm học ${academicYearLabel} (chỉ xem). Không thể chỉnh sửa.`
         : "Đang xem dữ liệu năm học đã lưu trữ. Không thể chỉnh sửa."}
     </Alert>
   );

@@ -1,5 +1,7 @@
 "use server";
 
+import { assertWritableYearView } from "@/lib/academic-year/view";
+
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { AppError, type AppErrorCode } from "@/lib/errors";
@@ -182,6 +184,7 @@ export async function enrollStudent(
 ): Promise<EnrollmentResult<{ id: string; studentName: string; className: string }>> {
   const actor = await enrollmentRouteContext();
   try {
+    await assertWritableYearView();
     assertEnrollmentWrite(actor);
     const parsed = enrollStudentSchema.parse(input);
     const supabase = await createClient();
@@ -271,6 +274,7 @@ export async function pauseEnrollment(
 ): Promise<EnrollmentResult<{ studentName: string }>> {
   const actor = await enrollmentRouteContext();
   try {
+    await assertWritableYearView();
     assertEnrollmentWrite(actor);
     const parsed = pauseEnrollmentSchema.parse(input);
     const row = await loadWritableEnrollment(parsed.enrollmentId);
@@ -298,6 +302,7 @@ export async function resumeEnrollment(
 ): Promise<EnrollmentResult<{ studentName: string }>> {
   const actor = await enrollmentRouteContext();
   try {
+    await assertWritableYearView();
     assertEnrollmentWrite(actor);
     const parsed = resumeEnrollmentSchema.parse(input);
     const row = await loadWritableEnrollment(parsed.enrollmentId);
@@ -327,6 +332,7 @@ export async function closeEnrollment(
 ): Promise<EnrollmentResult<{ studentName: string; reason: string }>> {
   const actor = await enrollmentRouteContext();
   try {
+    await assertWritableYearView();
     assertEnrollmentWrite(actor);
     const parsed = closeEnrollmentSchema.parse(input);
     const row = await loadWritableEnrollment(parsed.enrollmentId);

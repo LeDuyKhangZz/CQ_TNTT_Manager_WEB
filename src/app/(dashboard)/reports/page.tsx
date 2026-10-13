@@ -1,3 +1,4 @@
+import { getAcademicYearView } from "@/lib/academic-year/view";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { ReportWorkbench } from "@/features/reports/components/report-workbench";
@@ -13,7 +14,8 @@ export default async function ReportsPage({
   // Bộ lọc nằm trên URL: link tải Excel/PDF dùng lại chính chuỗi query này nên
   // file tải về luôn khớp bản đang xem (D-52). Tham số hỏng thì rơi về phạm vi
   // của CHÍNH người đăng nhập, không rơi về "toàn xứ đoàn" (TB-04/TB-05).
-  const { filter, invalidKeys } = parseReportFilter(await searchParams, context);
+  const view = await getAcademicYearView();
+  const { filter, invalidKeys } = parseReportFilter(await searchParams, context, view.readOnly ? view.year?.end_date : undefined);
   const data = await getReportsPageData(filter, context);
   return (
     <PageContainer>

@@ -133,6 +133,13 @@ export type Database = {
             foreignKeyName: "absence_requests_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -382,6 +389,13 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_year_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1298,6 +1312,13 @@ export type Database = {
             foreignKeyName: "enrollments_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -1987,6 +2008,13 @@ export type Database = {
             foreignKeyName: "import_rows_created_student_id_fkey"
             columns: ["created_student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_rows_created_student_id_fkey"
+            columns: ["created_student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -2009,6 +2037,13 @@ export type Database = {
             columns: ["matched_student_id"]
             isOneToOne: false
             referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_rows_matched_student_id_fkey"
+            columns: ["matched_student_id"]
+            isOneToOne: false
+            referencedRelation: "student_year_directory"
             referencedColumns: ["id"]
           },
           {
@@ -2739,6 +2774,13 @@ export type Database = {
             foreignKeyName: "promotion_reviews_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_reviews_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -3196,6 +3238,13 @@ export type Database = {
             foreignKeyName: "student_attendance_records_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -3312,6 +3361,13 @@ export type Database = {
             foreignKeyName: "student_comments_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_comments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -3372,6 +3428,13 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: true
             referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_health_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "student_year_directory"
             referencedColumns: ["id"]
           },
           {
@@ -3453,6 +3516,13 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_sacraments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_year_directory"
             referencedColumns: ["id"]
           },
           {
@@ -3803,6 +3873,66 @@ export type Database = {
           },
         ]
       }
+      student_year_directory: {
+        Row: {
+          academic_year_id: string | null
+          class_id: string | null
+          class_name: string | null
+          enrollment_status:
+            | Database["public"]["Enums"]["enrollment_status"]
+            | null
+          full_name: string | null
+          guardian_id: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          hardship_flag: boolean | null
+          id: string | null
+          saint_name: string | null
+          search_name: string | null
+          sector_code: string | null
+          sector_id: string | null
+          sector_name: string | null
+          status: Database["public"]["Enums"]["student_status"] | null
+          student_code: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_summary"
+            referencedColumns: ["academic_year_id"]
+          },
+          {
+            foreignKeyName: "enrollments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grade_levels_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_class_attendance_summary: {
         Row: {
           academic_year_id: string | null
@@ -3957,6 +4087,13 @@ export type Database = {
             foreignKeyName: "student_attendance_records_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -4025,6 +4162,13 @@ export type Database = {
             foreignKeyName: "assessment_scores_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_year_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -4083,6 +4227,13 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_year_directory"
             referencedColumns: ["id"]
           },
           {
@@ -4388,6 +4539,32 @@ export type Database = {
           p_sector_id?: string
           p_status?: Database["public"]["Enums"]["student_status"]
           p_unassigned?: boolean
+        }
+        Returns: {
+          class_name: string
+          full_name: string
+          guardian_name: string
+          guardian_phone: string
+          hardship_flag: boolean
+          id: string
+          saint_name: string
+          sector_code: string
+          sector_name: string
+          status: Database["public"]["Enums"]["student_status"]
+          student_code: string
+          total_count: number
+        }[]
+      }
+      list_students_for_fees_by_year: {
+        Args: {
+          p_class_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sector_id?: string
+          p_status?: Database["public"]["Enums"]["student_status"]
+          p_unassigned?: boolean
+          p_year_id: string
         }
         Returns: {
           class_name: string
@@ -4868,9 +5045,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       absence_request_status: ["pending", "acknowledged", "cancelled"],

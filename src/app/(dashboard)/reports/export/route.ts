@@ -1,3 +1,4 @@
+import { getReadableAcademicYear } from "@/lib/academic-year/view";
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { parseReportFilter, REPORT_TYPE_LABELS } from "@/features/reports/filters";
@@ -20,7 +21,9 @@ export async function GET(request: Request) {
   // tải về mang một phạm vi khác thứ người dùng nhìn thấy, đúng điều D-52 cấm.
   const context = await reportsRouteContext();
   const { filter } = parseReportFilter(Object.fromEntries(url.searchParams.entries()), context);
-  const report = await buildReport(filter, context);
+  const yearId = url.searchParams.get("academicYearId") ?? undefined;
+  if (yearId !== undefined && !(await getReadableAcademicYear(yearId))) return NextResponse.json({error:"Không tìm thấy năm học."}, {status:404});
+  const report = await buildReport(filter, context, yearId);
   const data: ReportExportData = buildReportExportData(report);
   const label = REPORT_TYPE_LABELS[filter.reportType];
   const subtitle = `${report.academicYear ? `Năm học ${report.academicYear.code} · ` : ""}${report.from} – ${report.to}`;

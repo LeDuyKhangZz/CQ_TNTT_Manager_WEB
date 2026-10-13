@@ -1,4 +1,5 @@
 import "server-only";
+import { getAcademicYearView } from "@/lib/academic-year/view";
 
 import { requireRouteAccess } from "@/lib/auth/guards";
 import type { AppAudience } from "@/lib/permissions/roles";
@@ -101,6 +102,7 @@ export interface GradebookDetail {
   academicYearCode: string;
   yearStart: string;
   yearEnd: string;
+  restrictedStudentsCount?: number;
   canGrade: boolean;
   canComment: boolean;
   canLock: boolean;
@@ -375,12 +377,9 @@ export async function getResultsPageData(): Promise<{
 }> {
   const context = await requireRouteAccess("/results");
   const supabase = await createClient();
-  const { data: year, error: yearError } = await supabase
-    .from("academic_years")
-    .select("id, code")
-    .eq("status", "current")
-    .maybeSingle();
-  if (yearError) throw yearError;
+  const view = await getAcademicYearView();
+  const portalActor = context.role === "guardian" || context.role === "student";
+  const year = portalActor ? view.current : view.year;
   if (!year) {
     return { audience: context.audience, year, classes: [], portal: [], portalStatus: "no_data" };
   }
@@ -403,8 +402,8 @@ export async function getResultsPageData(): Promise<{
     .from("classes")
     .select("id, display_name")
     .eq("academic_year_id", year.id)
-    .eq("status", "active")
     .order("display_name");
+  if (!view.readOnly) classQuery = classQuery.eq("status", "active");
   if (visible !== null) classQuery = classQuery.in("id", [...visible]);
   const { data: classes, error: classError } = await classQuery;
   if (classError) throw classError;
@@ -436,23 +435,28 @@ export async function getResultsPageData(): Promise<{
       displayName: item.display_name,
       assessmentCount: assessmentCount.get(item.id) ?? 0,
       isLocked: lockMap.get(item.id) ?? false,
-      canGrade: gradeability[index] ?? false,
+      canGrade: !view.readOnly && (gradeability[index] ?? false),
     })),
   };
 }
 
-export async function getGradebookDetail(classId: string): Promise<GradebookDetail | null> {
+export async function getGradebookDetail(classId: string, options: { exporting?: boolean } = {}): Promise<GradebookDetail | null> {
   const context = await requireRouteAccess(`/results/${classId}`);
   const supabase = await createClient();
   const { data: classRow } = await supabase
     .from("classes")
-    .select("id, display_name, academic_year_id, academic_years(code, start_date, end_date, top5_enabled)")
+    .select("id, display_name, academic_year_id, academic_years(code, status, start_date, end_date, top5_enabled)")
     .eq("id", classId)
     .maybeSingle();
   if (!classRow?.academic_years) return null;
 
   const visible = await getVisibleResultClassIds(context, supabase);
   if (visible !== null && !visible.has(classId)) return null;
+  const yearView = await getAcademicYearView();
+  const readOnly = yearView.readOnly || classRow.academic_years.status === "closed" || classRow.academic_years.status === "archived";
+  if (!options.exporting && yearView.readOnly && classRow.academic_year_id !== yearView.year?.id) return null;
+  let rosterQuery = supabase.from("enrollments").select("id, student_id, students(id, saint_name, full_name)").eq("class_id", classId);
+  if (!readOnly) rosterQuery = rosterQuery.in("status", ["active", "paused"]);
   const [canGrade, canComment, canManageTop5] = await Promise.all([
     canGradeClass(context, supabase, classId),
     canCommentClass(context, supabase, classId),
@@ -469,11 +473,7 @@ export async function getGradebookDetail(classId: string): Promise<GradebookDeta
       .eq("class_id", classId)
       .order("assessment_date", { ascending: true, nullsFirst: false })
       .order("created_at"),
-    supabase
-      .from("enrollments")
-      .select("id, student_id, students(id, saint_name, full_name)")
-      .eq("class_id", classId)
-      .in("status", ["active", "paused"]),
+    rosterQuery,
     supabase
       .from("assessment_scores")
       .select("assessment_id, enrollment_id, score, system_suggested_score, is_manual_override, note")
@@ -529,7 +529,7 @@ export async function getGradebookDetail(classId: string): Promise<GradebookDeta
       content: comment.content,
       commentDate: comment.comment_date,
       authorName: comment.profiles?.display_name ?? "Nhân sự lớp",
-      canModerate: canModerateComment(context, classId, comment.author_profile_id),
+      canModerate: !readOnly && canModerateComment(context, classId, comment.author_profile_id),
     });
     commentsByEnrollment.set(comment.enrollment_id, list);
   }
@@ -583,13 +583,14 @@ export async function getGradebookDetail(classId: string): Promise<GradebookDeta
     academicYearCode: classRow.academic_years.code,
     yearStart: classRow.academic_years.start_date,
     yearEnd: classRow.academic_years.end_date,
-    canGrade,
-    canComment,
+    restrictedStudentsCount: readOnly ? (enrollments ?? []).filter(item => !item.students).length : undefined,
+    canGrade: !readOnly && canGrade,
+    canComment: !readOnly && canComment,
     // M07-B · D-74 + D-151. Phép tính cũ liệt kê tay năm vai trò và **không
     // kiểm lớp** — xem `canLockGradebook` để biết ba tầng đã lệch nhau ra sao.
-    canLock: canLockGradebook(context, classId),
-    canUnlock: context.role === "super_admin",
-    canManageTop5,
+    canLock: !readOnly && canLockGradebook(context, classId),
+    canUnlock: !readOnly && context.role === "super_admin",
+    canManageTop5: !readOnly && canManageTop5,
     top5Enabled: classRow.academic_years.top5_enabled,
     isLocked: lock?.is_locked ?? false,
     lockedAt: lock?.locked_at ?? null,

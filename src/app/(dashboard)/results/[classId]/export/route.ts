@@ -28,7 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
     return NextResponse.json({ error: "Định dạng xuất không hợp lệ." }, { status: 400 });
   }
 
-  const detail = await getGradebookDetail(classId);
+  const detail = await getGradebookDetail(classId, {exporting:true});
   if (!detail) return NextResponse.json({ error: "Không tìm thấy bảng điểm." }, { status: 404 });
 
   const data = buildGradebookExportData(detail);

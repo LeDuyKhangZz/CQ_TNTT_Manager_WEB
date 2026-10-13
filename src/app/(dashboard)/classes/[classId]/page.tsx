@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FilterField, filterFieldLabelRowClassName } from "@/components/ui/filter-bar";
 import { SearchInputControl } from "@/components/ui/search-input";
@@ -22,6 +22,8 @@ import {
 } from "@/features/classes/class-status";
 import { ClassSettingsForm } from "@/features/classes/components/class-settings-form";
 import { getClassDetail } from "@/features/classes/server/queries";
+import { CLASS_ROLES } from "@/lib/permissions/roles";
+import { getMyClassDestination } from "@/features/navigation/server/queries";
 
 const capacityLabels: Record<string, string> = { representative: "GLV đại diện", member: "GLV lớp", trainee: "Dự trưởng phụ tá" };
 
@@ -36,8 +38,8 @@ export default async function ClassDetailPage({
   // BR-M03-N20 — ô tìm em là `<form method="get">` trên chính trang này, nên nó
   // chạy khi chưa có JavaScript và kết quả tìm chép được bằng đường dẫn.
   const studentSearch = (await searchParams).student?.trim() ?? "";
-  const { classDetail, canManage, canManageClass, availableStudentsTruncated } =
-    await getClassDetail(classId, studentSearch);
+  const [{ context, classDetail, canManage, canManageClass, availableStudentsTruncated }, myClass] =
+    await Promise.all([getClassDetail(classId, studentSearch), getMyClassDestination()]);
   if (!classDetail) notFound();
 
   const today = todayVi();
@@ -76,6 +78,16 @@ export default async function ClassDetailPage({
         }
       />
 
+      {context.role && CLASS_ROLES.includes(context.role) ? (
+        <nav aria-label="Công việc của lớp" className="mb-4 flex flex-wrap gap-2">
+          {classDetail.academicYearStatus === "current" ? <>
+            {myClass?.href === `/classes/${classId}` ? <Link href="/attendance" className={buttonVariants({ variant: "outline", size: "sm" })}>Điểm danh</Link> : null}
+            <Link href={`/teaching-plan/${classId}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Giáo án</Link>
+          </> : null}
+          <Link href={`/results/${classId}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Kết quả học tập</Link>
+        </nav>
+      ) : null}
+
       {yearNotice ? (
         <Alert tone={yearNotice.tone} title={yearNotice.title} className="mb-5">
           {yearNotice.detail}
@@ -91,11 +103,12 @@ export default async function ClassDetailPage({
         <Card>
           <CardHeader>
             <CardTitle>Danh sách thiếu nhi</CardTitle>
-            <CardDescription>{summary.text}</CardDescription>
+            <CardDescription>{classDetail.historicalRosterCount !== undefined ? `${classDetail.historicalRosterCount} lượt ghi danh trong năm học` : summary.text}</CardDescription>
           </CardHeader>
           <CardContent>
+            {classDetail.restrictedRosterCount ? <p className="mb-3 text-sm text-ink-muted">{classDetail.restrictedRosterCount} lượt ghi danh có hồ sơ nằm ngoài quyền đọc hiện tại của bạn.</p> : null}
             {classDetail.roster.length === 0 ? (
-              <p className="text-sm text-ink-muted">Lớp chưa có thiếu nhi ghi danh.</p>
+              <p className="text-sm text-ink-muted">{classDetail.historicalRosterCount ? "Không có hồ sơ được phép hiển thị." : "Lớp chưa có thiếu nhi ghi danh."}</p>
             ) : (
               <ul className="space-y-2">
                 {classDetail.roster.map((item) => (

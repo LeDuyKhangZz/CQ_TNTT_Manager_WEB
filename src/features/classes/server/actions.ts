@@ -1,5 +1,7 @@
 "use server";
 
+import { assertWritableYearView } from "@/lib/academic-year/view";
+
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { AppError, type AppErrorCode } from "@/lib/errors";
@@ -57,6 +59,7 @@ function failure(error: unknown, failed: ClassFailedCode = "invalid"): ClassActi
 export async function updateClass(input: UpdateClassInput): Promise<ClassActionResult<{ status: string }>> {
   const actor = await classRouteContext();
   try {
+    await assertWritableYearView();
     assertClassWrite(actor);
     const parsed = updateClassSchema.parse(input);
     const supabase = await createClient();

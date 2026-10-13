@@ -1,5 +1,7 @@
 "use server";
 
+import { assertWritableYearView } from "@/lib/academic-year/view";
+
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { AppError, type AppErrorCode } from "@/lib/errors";
@@ -132,6 +134,7 @@ export type CreateStudentResult =
 export async function createStudent(input: CreateStudentInput): Promise<CreateStudentResult> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     assertStudentWrite(actor);
     const parsed = createStudentSchema.parse(input);
 
@@ -233,6 +236,7 @@ export async function updateStudent(
 ): Promise<StudentActionResult<{ studentName: string }>> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     assertStudentWrite(actor);
     const parsed = updateStudentSchema.parse(input);
     const { id, ...changes } = parsed;
@@ -281,6 +285,7 @@ export async function updateStudent(
 export async function saveHealthProfile(input: HealthProfileInput): Promise<StudentActionResult> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     // 🔴 `assertSensitiveWrite`, KHÔNG phải `assertStudentWrite`. D-63 nới quyền
     // ghi **hồ sơ** cho vai trò ngành, nhưng policy `student_health_*` vẫn là
     // `app.can_global_write()` vì Q-M03-02 chưa chốt (đợt M03-C). Dùng chung
@@ -339,6 +344,7 @@ export async function upsertSacrament(
 ): Promise<StudentActionResult<{ label: string }>> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     assertSensitiveWrite(actor);
     const parsed = upsertSacramentSchema.parse(input);
     const supabase = await createClient();
@@ -407,6 +413,7 @@ export async function deleteSacrament(
 ): Promise<StudentActionResult<{ label: string }>> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     assertSacramentDelete(actor);
     const parsed = deleteSacramentSchema.parse(input);
     const supabase = await createClient();
@@ -459,6 +466,7 @@ export async function setStudentStatus(
 ): Promise<StudentActionResult<{ studentName: string; className: string | null; action: string }>> {
   const actor = await studentRouteContext();
   try {
+    await assertWritableYearView();
     const parsed = setStudentStatusSchema.parse(input);
     // `docs/05` §5 — "Archive student: SA/global-write". Kiểm ở đây để câu từ
     // chối nói được thành lời; cơ sở dữ liệu vẫn kiểm lại y hệt (ẩn nút không
