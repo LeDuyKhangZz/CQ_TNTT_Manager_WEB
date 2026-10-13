@@ -1,4 +1,5 @@
 import * as React from "react";
+import { SECTOR_PALETTE, type ThemeKey } from "@/lib/theme/sector-palette";
 import { cn } from "@/lib/utils";
 
 /**
@@ -24,6 +25,8 @@ export type ChartPoint = {
   /** Nhãn trục hoành. Giữ ngắn — 360px không có chỗ cho chữ dài. */
   label: string;
   value: number;
+  /** Optional sector color for categorical bars; labels remain the primary key. */
+  themeKey?: ThemeKey;
 };
 
 type ChartFrameProps = {
@@ -165,7 +168,8 @@ export function BarChart({
                 width={barWidth}
                 height={barHeight}
                 rx={4}
-                className="fill-theme-chart"
+                className={point.themeKey ? undefined : "fill-theme-chart"}
+                fill={point.themeKey ? SECTOR_PALETTE[point.themeKey].primary : undefined}
               />
               {/* B-2: nhãn giá trị nằm ngay trên cột, không nằm ở chú giải. */}
               <text
