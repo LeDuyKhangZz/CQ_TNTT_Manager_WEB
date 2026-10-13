@@ -19,8 +19,9 @@ import { cn } from "@/lib/utils";
  * Cả hai vùng **luôn nằm trong DOM kể cả khi rỗng**. Vùng aria-live tạo ra
  * cùng lúc với nội dung thì phần lớn trình đọc màn hình bỏ qua lần đầu.
  *
- * 🔴 Mỗi tone có icon riêng (09 §3) và tự tắt sau 6 giây. `duration: 0` để
- * thông báo ở lại — dùng khi câu chữ dài hơn mức đọc kịp 6 giây.
+ * R2.7: thành công/thông tin tự tắt sau 4 giây; lỗi biểu mẫu đặt inline.
+ * API warning/danger được giữ để tương thích consumer cũ. `duration: 0` để
+ * thông báo ở lại — dùng khi câu chữ dài hơn mức đọc kịp 4 giây.
  */
 
 export type ToastTone = "success" | "info" | "warning" | "danger";
@@ -42,7 +43,8 @@ const TONE_META = {
   danger: { Icon: XCircle, className: "text-danger", srLabel: "Lỗi" },
 } as const;
 
-const DEFAULT_DURATION = 6000;
+// R2.7: success/info confirmations are transient; errors belong by the form.
+const DEFAULT_DURATION = 4000;
 
 type ToastApi = {
   showToast: (toast: ToastInput) => void;
@@ -125,7 +127,7 @@ function ToastViewport({
   const stack = "flex w-full flex-col items-center gap-2 sm:items-end";
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-toast flex flex-col gap-2 p-4 sm:inset-x-auto sm:right-4 sm:w-auto">
+    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-toast flex flex-col gap-2 p-4 sm:inset-x-auto sm:right-4 sm:w-auto lg:bottom-0">
       <div role="alert" aria-live="assertive" className={stack}>
         {urgent.map((toast) => (
           <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
