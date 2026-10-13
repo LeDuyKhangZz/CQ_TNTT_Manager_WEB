@@ -1,4 +1,6 @@
 import "server-only";
+import { AppError } from "@/lib/errors";
+import { getAcademicYearView } from "@/lib/academic-year/view";
 
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
@@ -7,7 +9,8 @@ import type { ExistingStudent } from "@/lib/students/duplicate";
 import {
   buildStudentQuery,
   clampStudentPage,
-  STUDENT_PAGE_SIZE,
+  STUDENT_SORT_COLUMNS,
+  feeStudentCriteria,
   type StudentDirectoryCriteria,
   type StudentDirectoryQuery,
 } from "../student-directory";
@@ -66,6 +69,7 @@ export interface SectorOption {
  */
 interface StudentFilterable<T> {
   eq(column: string, value: unknown): T;
+  in(column: string, values: readonly string[]): T;
   is(column: string, value: null): T;
   or(filters: string): T;
 }
@@ -75,10 +79,14 @@ function applyStudentFilters<T extends StudentFilterable<T>>(
   plan: StudentDirectoryQuery,
 ): T {
   let query = builder;
-  if (plan.status !== "all") query = query.eq("status", plan.status);
-  if (plan.sectorId !== "all") query = query.eq("sector_id", plan.sectorId);
-  if (plan.classId === "none") query = query.is("class_id", null);
-  else if (plan.classId !== "all") query = query.eq("class_id", plan.classId);
+  if (plan.statuses.length) query = query.in("status", plan.statuses);
+  if (plan.sectorIds.length) query = query.in("sector_id", plan.sectorIds);
+  const classIds = plan.classIds.filter(id => id !== "none");
+  if (plan.classIds.includes("none")) {
+    query = classIds.length
+      ? query.or(`class_id.is.null,class_id.in.(${classIds.join(",")})`)
+      : query.is("class_id", null);
+  } else if (classIds.length) query = query.in("class_id", classIds);
 
   if (plan.foldedName !== "") {
     // Trong cú pháp `or` của PostgREST, dấu phẩy tách các nhánh và ngoặc gom
@@ -97,11 +105,13 @@ function applyStudentFilters<T extends StudentFilterable<T>>(
 }
 
 export interface StudentsPageData {
+  criteria: StudentDirectoryCriteria;
   context: Awaited<ReturnType<typeof requireRouteAccess>>;
   canWrite: boolean;
   requiresClassOnCreate: boolean;
   students: StudentListItem[];
   guardians: GuardianOption[];
+  guardianOptionsError: boolean;
   /** Lớp của năm hiện hành mà người đang đăng nhập ghi danh được. */
   classes: ClassOption[];
   sectors: SectorOption[];
@@ -136,10 +146,12 @@ export interface StudentsPageData {
  */
 export async function getStudentsPageData(
   criteria: StudentDirectoryCriteria,
+  { loadCreationOptions = true }: { loadCreationOptions?: boolean } = {},
 ): Promise<StudentsPageData> {
   const context = await requireRouteAccess("/students");
   const supabase = await createClient();
-  const canWrite = canWriteStudents(context.role);
+  const view = await getAcademicYearView();
+  const canWrite = !view.readOnly && canWriteStudents(context.role);
   const plan = buildStudentQuery(criteria);
 
   /*
@@ -156,30 +168,36 @@ export async function getStudentsPageData(
     "KHÔNG được xem".
   */
   if (readsFeeDirectory(context.role)) {
-    return loadFeeDirectoryPage(context, criteria, plan);
+    const feeCriteria = feeStudentCriteria(criteria);
+    return loadFeeDirectoryPage(context, feeCriteria, buildStudentQuery(feeCriteria), view.readOnly ? view.year?.id : undefined);
   }
 
+  const directory = view.readOnly ? "student_year_directory" : "student_directory";
   // Đếm trước để biết trang yêu cầu có tồn tại không. Dấu trang cũ `?page=40`
   // sau khi danh sách ngắn lại phải rơi về trang cuối, không phải một trang
   // trống không giải thích.
-  const { count } = await applyStudentFilters(
-    supabase.from("student_directory").select("id", { count: "exact", head: true }),
+  const { count, error: countError } = await applyStudentFilters(
+    view.readOnly && view.year
+      ? supabase.from(directory).select("id", { count: "exact", head: true }).eq("academic_year_id", view.year.id)
+      : supabase.from(directory).select("id", { count: "exact", head: true }),
     plan,
   );
+  if (countError) throw new AppError("CONFLICT", "Không thể tải danh sách thiếu nhi. Vui lòng thử lại.");
   const totalItems = count ?? 0;
-  const page = clampStudentPage(criteria.page, totalItems);
-  const from = (page - 1) * STUDENT_PAGE_SIZE;
+  const page = clampStudentPage(criteria.page, totalItems, criteria.pageSize);
+  const from = (page - 1) * criteria.pageSize;
 
-  const { data: rows } = await applyStudentFilters(
-    supabase
-      .from("student_directory")
-      .select(
-        "id, student_code, saint_name, full_name, status, hardship_flag, guardian_name, guardian_phone, class_name, sector_code, sector_name",
-      ),
+  const directoryRows = supabase.from(directory).select(
+    "id, student_code, saint_name, full_name, status, hardship_flag, guardian_name, guardian_phone, class_name, sector_code, sector_name",
+  );
+  const { data: rows, error: rowsError } = await applyStudentFilters(
+    view.readOnly && view.year ? directoryRows.eq("academic_year_id", view.year.id) : directoryRows,
     plan,
   )
-    .order("full_name", { ascending: true })
-    .range(from, from + STUDENT_PAGE_SIZE - 1);
+    .order(STUDENT_SORT_COLUMNS[criteria.sort], { ascending: criteria.direction === "asc", nullsFirst: false })
+    .order("id", { ascending: true })
+    .range(from, from + criteria.pageSize - 1);
+  if (rowsError) throw new AppError("CONFLICT", "Không thể tải danh sách thiếu nhi. Vui lòng thử lại.");
 
   const students = ((rows ?? []) as Array<{
     id: string;
@@ -209,27 +227,30 @@ export async function getStudentsPageData(
     sectorName: row.sector_name,
   }));
 
+  let guardianOptionsError = false;
   const [guardians, classes, sectors] = await Promise.all([
-    loadGuardianOptions(canWrite),
+    loadGuardianOptions(canWrite && loadCreationOptions, () => { guardianOptionsError = true; }),
     // 🔴 KHÔNG gán theo `canWrite`. Danh sách lớp phục vụ **hai** việc: ô chọn
     // của biểu mẫu tạo hồ sơ (chỉ người ghi được thấy) và **bộ lọc lớp** của
     // danh sách (ai đọc được trang cũng cần). Gộp làm một là để Giáo lý viên mở
     // trang và thấy ô "Lọc theo lớp" rỗng trơn — một bộ lọc không lọc được gì.
     // RLS đã giới hạn đúng phạm vi lớp của từng người.
-    loadEnrollableClasses(),
+    loadEnrollableClasses(view.readOnly ? view.year?.id : undefined),
     loadSectorOptions(),
   ]);
 
   return {
+    criteria,
     context,
     canWrite,
     requiresClassOnCreate: mustPickClassOnCreate(context.role),
     students,
     guardians,
+    guardianOptionsError,
     classes,
     sectors,
     page,
-    pageSize: STUDENT_PAGE_SIZE,
+    pageSize: criteria.pageSize,
     totalItems,
     feeScope: false,
   };
@@ -254,6 +275,7 @@ async function loadFeeDirectoryPage(
   context: Awaited<ReturnType<typeof requireRouteAccess>>,
   criteria: StudentDirectoryCriteria,
   plan: StudentDirectoryQuery,
+  historicalYearId?: string,
 ): Promise<StudentsPageData> {
   const supabase = await createClient();
   const filters = {
@@ -267,19 +289,16 @@ async function loadFeeDirectoryPage(
   // Một lượt gọi rẻ chỉ để lấy tổng, **trước khi** kẹp số trang. Đường chính
   // cũng đếm trước vì đúng lý do đó: dấu trang cũ `?page=40` sau khi danh sách
   // ngắn lại phải rơi về trang cuối, không phải một trang trống không giải thích.
-  const { data: head } = await supabase.rpc("list_students_for_fees", {
-    ...filters,
-    p_limit: 1,
-    p_offset: 0,
-  });
+  const fetchFeeRows = (limit: number, offset: number) => historicalYearId
+    ? supabase.rpc("list_students_for_fees_by_year", {...filters, p_year_id:historicalYearId, p_limit:limit,p_offset:offset})
+    : supabase.rpc("list_students_for_fees", {...filters,p_limit:limit,p_offset:offset});
+  const { data: head, error: countError } = await fetchFeeRows(1, 0);
+  if (countError) throw new AppError("CONFLICT", "Không thể tải danh sách thiếu nhi. Vui lòng thử lại.");
   const totalItems = Number((head ?? [])[0]?.total_count ?? 0);
-  const page = clampStudentPage(criteria.page, totalItems);
+  const page = clampStudentPage(criteria.page, totalItems, criteria.pageSize);
 
-  const { data } = await supabase.rpc("list_students_for_fees", {
-    ...filters,
-    p_limit: STUDENT_PAGE_SIZE,
-    p_offset: (page - 1) * STUDENT_PAGE_SIZE,
-  });
+  const { data, error: rowsError } = await fetchFeeRows(criteria.pageSize, (page - 1) * criteria.pageSize);
+  if (rowsError) throw new AppError("CONFLICT", "Không thể tải danh sách thiếu nhi. Vui lòng thử lại.");
   const rows = data ?? [];
 
   const students = rows.map((row): StudentListItem => ({
@@ -296,19 +315,21 @@ async function loadFeeDirectoryPage(
     sectorName: row.sector_name,
   }));
 
-  const [classes, sectors] = await Promise.all([loadEnrollableClasses(), loadSectorOptions()]);
+  const [classes, sectors] = await Promise.all([loadEnrollableClasses(historicalYearId), loadSectorOptions()]);
 
   return {
+    criteria,
     context,
     // D-67: *"Thủ quỹ KHÔNG ghi được gì — kể cả ghi chú."*
     canWrite: false,
     requiresClassOnCreate: false,
     students,
     guardians: [],
+    guardianOptionsError: false,
     classes,
     sectors,
     page,
-    pageSize: STUDENT_PAGE_SIZE,
+    pageSize: criteria.pageSize,
     totalItems,
     feeScope: true,
   };
@@ -322,10 +343,11 @@ async function loadFeeDirectoryPage(
  * trơn — và nếu D-63 mở quyền tạo hồ sơ mà không mở đường chọn, họ sẽ tạo phụ
  * huynh mới cho một gia đình đã có, tức là nhân bản đúng lỗi F01.
  */
-async function loadGuardianOptions(canWrite: boolean): Promise<GuardianOption[]> {
+async function loadGuardianOptions(canWrite: boolean, onError?: () => void): Promise<GuardianOption[]> {
   if (!canWrite) return [];
   const supabase = await createClient();
-  const { data } = await supabase.rpc("list_guardian_options", {});
+  const { data, error } = await supabase.rpc("list_guardian_options", {});
+  if (error) onError?.();
   return (data ?? []).map((item): GuardianOption => ({
     id: item.id,
     fullName: item.full_name,
@@ -339,14 +361,14 @@ async function loadGuardianOptions(canWrite: boolean): Promise<GuardianOption[]>
  * Không lọc theo ngành ở đây: RLS đã lọc đúng (`classes_select_scope`), và lọc
  * lần thứ hai trong mã là dựng bản chép tay thứ hai của luật ngành.
  */
-async function loadEnrollableClasses(): Promise<ClassOption[]> {
+async function loadEnrollableClasses(historicalYearId?: string): Promise<ClassOption[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("classes")
     .select("id, display_name, status, academic_years!inner(status), grade_levels(sector_id, sectors(name))")
-    .eq("status", "active")
-    .eq("academic_years.status", "current")
-    .order("display_name");
+;
+  query = historicalYearId ? query.eq("academic_year_id", historicalYearId) : query.eq("status", "active").eq("academic_years.status", "current");
+  const { data } = await query.order("display_name");
   return ((data ?? []) as unknown as Array<{
     id: string;
     display_name: string;
@@ -545,11 +567,13 @@ export async function getStudentDetail(studentId: string): Promise<{
    * nêu nó bằng tên riêng, và ô "Đồng thời kết thúc ghi danh" chỉ hiện khi có.
    */
   openEnrollmentClassName: string | null;
+  viewedClassName?: string | null;
   /** **TB-F12/BR-M03-N16** — cửa sổ hẹp để chọn người giám hộ khác (D-124). */
   guardianOptions: GuardianOption[];
 }> {
   const context = await requireRouteAccess(`/students/${studentId}`);
   const supabase = await createClient();
+  const view = await getAcademicYearView();
 
   const { data } = await supabase
     .from("students")
@@ -559,14 +583,15 @@ export async function getStudentDetail(studentId: string): Promise<{
     .eq("id", studentId)
     .maybeSingle();
 
-  if (!data) {
+  const membership = view.readOnly && view.year ? await supabase.from("enrollments").select("id").eq("student_id", studentId).eq("academic_year_id",view.year.id).limit(1) : null;
+  if (!data || (view.readOnly && !membership?.data?.length)) {
     return {
       context,
-      canWrite: canWriteStudents(context.role),
-      canWriteSensitive: canWriteSensitive(context.role),
+      canWrite: false,
+      canWriteSensitive: !view.readOnly && canWriteSensitive(context.role),
       canViewSensitive: false,
-      canDeleteSacrament: canDeleteSacrament(context.role),
-      canArchive: canArchiveStudent(context.role),
+      canDeleteSacrament: !view.readOnly && canDeleteSacrament(context.role),
+      canArchive: !view.readOnly && canArchiveStudent(context.role),
       student: null,
       enrollableClasses: [],
       openEnrollmentClassName: null,
@@ -594,7 +619,7 @@ export async function getStudentDetail(studentId: string): Promise<{
   const { data: enrollmentRows } = await supabase
     .from("enrollments")
     .select(
-      "id, status, enrolled_on, ended_on, classes(display_name), academic_years(code, status)",
+      "id, academic_year_id, status, enrolled_on, ended_on, classes(display_name), academic_years(code, status)",
     )
     .eq("student_id", studentId)
     .order("enrolled_on", { ascending: false });
@@ -604,6 +629,7 @@ export async function getStudentDetail(studentId: string): Promise<{
     enrolled_on: string;
     ended_on: string | null;
     classes: { display_name: string } | null;
+    academic_year_id: string;
     academic_years: { code: string; status: string } | null;
   }>;
   const enrollments = enrollmentSource.map((item) => ({
@@ -619,7 +645,7 @@ export async function getStudentDetail(studentId: string): Promise<{
   // hành**. Ràng buộc "một ghi danh mở mỗi em mỗi năm" nằm ở cơ sở dữ liệu
   // (`enrollments_one_open_per_student_year_idx`); hiện biểu mẫu khi đã có lớp
   // là mời người dùng đi vào một lỗi `23505`.
-  const canWrite = canWriteStudents(context.role);
+  const canWrite = !view.readOnly && canWriteStudents(context.role);
   const hasOpenEnrollmentThisYear = enrollmentSource.some(
     (item) =>
       (item.status === "active" || item.status === "paused") &&
@@ -681,10 +707,11 @@ export async function getStudentDetail(studentId: string): Promise<{
   return {
     context,
     canWrite,
-    canWriteSensitive: canWriteSensitive(context.role),
+    canWriteSensitive: !view.readOnly && canWriteSensitive(context.role),
     canViewSensitive: sensitive,
-    canDeleteSacrament: canDeleteSacrament(context.role),
-    canArchive: canArchiveStudent(context.role),
+    viewedClassName: view.readOnly ? enrollmentSource.find(item => item.academic_year_id === view.year?.id)?.classes?.display_name ?? null : undefined,
+    canDeleteSacrament: !view.readOnly && canDeleteSacrament(context.role),
+    canArchive: !view.readOnly && canArchiveStudent(context.role),
     enrollableClasses,
     openEnrollmentClassName: openEnrollment?.classes?.display_name ?? null,
     guardianOptions,

@@ -20,6 +20,9 @@ import { UUID_PATTERN } from "@/lib/validation/uuid";
  * là con số làm cho một lớp đông nhất (~50 em) gọn trong ba trang.
  */
 export const STUDENT_PAGE_SIZE = 20;
+export const STUDENT_PAGE_SIZES = [20, 50] as const;
+export const STUDENT_SORT_COLUMNS = { name: "full_name", class: "class_name" } as const;
+export type StudentSortKey = keyof typeof STUDENT_SORT_COLUMNS;
 
 /** `all` mọi trạng thái · còn lại là một giá trị của `student_status`. */
 export const STUDENT_STATUS_FILTERS = [
@@ -67,6 +70,12 @@ export interface StudentDirectoryCriteria {
   classId: StudentClassFilter;
   status: StudentStatusFilter;
   page: number;
+  pageSize: number;
+  sectorIds: string[];
+  classIds: string[];
+  statuses: Exclude<StudentStatusFilter, "all">[];
+  sort: StudentSortKey;
+  direction: "asc" | "desc";
 }
 
 /**
@@ -83,7 +92,7 @@ function parseIdFilter(value: string | undefined, allowNone: boolean): string {
 
 export function parseStudentPage(value: string | undefined): number {
   const parsed = Number.parseInt(value ?? "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? Math.min(parsed, 1_000_000) : 1;
 }
 
 export function parseStudentCriteria(
@@ -93,12 +102,41 @@ export function parseStudentCriteria(
     const value = params[key];
     return Array.isArray(value) ? value[0] : value;
   };
+  const many = (key: string): string[] => {
+    const value = params[key];
+    return [...new Set(Array.isArray(value) ? value : value === undefined ? [] : [value])];
+  };
+  const sectorIds = many("sector").filter(value => UUID_PATTERN.test(value));
+  const classIds = many("class").filter(value => value === "none" || UUID_PATTERN.test(value));
+  const statusValues = params.status === undefined && one("statusMode") === "facet" ? ["all"] : many("status");
+  const statuses = statusValues.includes("all") ? [] : statusValues.filter(
+    (value): value is Exclude<StudentStatusFilter, "all"> => value !== "all" && (STUDENT_STATUS_FILTERS as readonly string[]).includes(value),
+  );
+  if (!statusValues.includes("all") && statuses.length === 0) statuses.push(DEFAULT_STUDENT_STATUS_FILTER as "active");
   return {
     search: (one("q") ?? "").trim(),
-    sectorId: parseIdFilter(one("sector"), false),
-    classId: parseIdFilter(one("class"), true),
-    status: parseStudentStatusFilter(one("status")),
+    sectorId: parseIdFilter(sectorIds[0], false),
+    classId: parseIdFilter(classIds[0], true),
+    status: statuses[0] ?? "all",
     page: parseStudentPage(one("page")),
+    pageSize: one("size") === "50" ? 50 : STUDENT_PAGE_SIZE,
+    sectorIds,
+    classIds,
+    statuses,
+    sort: one("sort") === "class" ? "class" : "name",
+    direction: one("dir") === "desc" ? "desc" : "asc",
+  };
+}
+
+/** The fee RPC supports one value per facet and a fixed, global name order. */
+export function feeStudentCriteria(criteria: StudentDirectoryCriteria): StudentDirectoryCriteria {
+  return {
+    ...criteria,
+    sectorIds: criteria.sectorIds.slice(0, 1),
+    classIds: criteria.classIds.slice(0, 1),
+    statuses: criteria.statuses.slice(0, 1),
+    sort: "name",
+    direction: "asc",
   };
 }
 
@@ -123,21 +161,27 @@ export interface StudentDirectoryQuery {
   sectorId: StudentSectorFilter;
   classId: StudentClassFilter;
   status: StudentStatusFilter;
+  sectorIds: string[];
+  classIds: string[];
+  statuses: Exclude<StudentStatusFilter, "all">[];
   /** Chỉ số dòng đầu, đếm từ 0 — hợp với `range()` của PostgREST. */
   from: number;
   to: number;
 }
 
 export function buildStudentQuery(criteria: StudentDirectoryCriteria): StudentDirectoryQuery {
-  const from = (criteria.page - 1) * STUDENT_PAGE_SIZE;
+  const from = (criteria.page - 1) * criteria.pageSize;
   return {
     foldedName: foldSearchTerm(criteria.search),
     phoneDigits: searchDigits(criteria.search),
     sectorId: criteria.sectorId,
     classId: criteria.classId,
     status: criteria.status,
+    sectorIds: criteria.sectorIds,
+    classIds: criteria.classIds,
+    statuses: criteria.statuses,
     from,
-    to: from + STUDENT_PAGE_SIZE - 1,
+    to: from + criteria.pageSize - 1,
   };
 }
 
@@ -148,18 +192,21 @@ export function buildStudentQuery(criteria: StudentDirectoryCriteria): StudentDi
  * trang cũ `?page=40` sẽ cho một trang **trống không giải thích**. Trang nào
  * vượt quá thì kéo về trang cuối.
  */
-export function clampStudentPage(page: number, totalItems: number): number {
-  const pageCount = Math.max(1, Math.ceil(totalItems / STUDENT_PAGE_SIZE));
+export function clampStudentPage(page: number, totalItems: number, pageSize = STUDENT_PAGE_SIZE): number {
+  const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
   return Math.min(Math.max(1, page), pageCount);
 }
 
 /** Có bộ lọc nào đang bật không — quyết định trạng thái rỗng nói câu gì (`09` §9). */
-export function hasActiveStudentFilter(criteria: StudentDirectoryCriteria): boolean {
+export function hasActiveStudentFilter(
+  criteria: StudentDirectoryCriteria,
+  defaultStatus: StudentStatusFilter = DEFAULT_STUDENT_STATUS_FILTER,
+): boolean {
   return (
     criteria.search !== "" ||
-    criteria.sectorId !== "all" ||
-    criteria.classId !== "all" ||
-    criteria.status !== DEFAULT_STUDENT_STATUS_FILTER
+    criteria.sectorIds.length > 0 ||
+    criteria.classIds.length > 0 ||
+    (defaultStatus === "all" ? criteria.statuses.length > 0 : criteria.statuses.length !== 1 || criteria.statuses[0] !== defaultStatus)
   );
 }
 
@@ -167,12 +214,20 @@ export function hasActiveStudentFilter(criteria: StudentDirectoryCriteria): bool
 export function studentListHref(
   criteria: StudentDirectoryCriteria,
   page: number,
+  defaultStatus: StudentStatusFilter = DEFAULT_STUDENT_STATUS_FILTER,
 ): string {
   const params = new URLSearchParams();
   if (criteria.search) params.set("q", criteria.search);
-  if (criteria.sectorId !== "all") params.set("sector", criteria.sectorId);
-  if (criteria.classId !== "all") params.set("class", criteria.classId);
-  if (criteria.status !== DEFAULT_STUDENT_STATUS_FILTER) params.set("status", criteria.status);
+  criteria.sectorIds.forEach(value => params.append("sector", value));
+  criteria.classIds.forEach(value => params.append("class", value));
+  if (criteria.statuses.length === 0) {
+    if (defaultStatus !== "all") params.set("status", "all");
+  } else if (criteria.statuses.length !== 1 || criteria.statuses[0] !== defaultStatus) {
+    criteria.statuses.forEach(value => params.append("status", value));
+  }
+  if (criteria.sort !== "name") params.set("sort", criteria.sort);
+  if (criteria.direction !== "asc") params.set("dir", criteria.direction);
+  if (criteria.pageSize !== STUDENT_PAGE_SIZE) params.set("size", String(criteria.pageSize));
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/students?${query}` : "/students";

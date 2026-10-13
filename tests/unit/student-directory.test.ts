@@ -4,6 +4,7 @@ import {
   clampStudentPage,
   DEFAULT_STUDENT_STATUS_FILTER,
   foldSearchTerm,
+  feeStudentCriteria,
   hasActiveStudentFilter,
   parseStudentCriteria,
   parseStudentPage,
@@ -32,6 +33,12 @@ describe("đọc tham số từ thanh địa chỉ", () => {
       classId: "all",
       status: DEFAULT_STUDENT_STATUS_FILTER,
       page: 1,
+      pageSize: 20,
+      sectorIds: [],
+      classIds: [],
+      statuses: ["active"],
+      sort: "name",
+      direction: "asc",
     });
     expect(hasActiveStudentFilter(criteria)).toBe(false);
   });
@@ -75,6 +82,34 @@ describe("đọc tham số từ thanh địa chỉ", () => {
   });
 });
 
+describe("R4.1 · facets, sorting and page size", () => {
+  const second = "3f2504e0-4f89-11d3-9a0c-0305e82c3302";
+  it("round-trips repeated filters, removes duplicates and rejects SQL fragments", () => {
+    const criteria = parseStudentCriteria({ sector: [UUID, second, UUID, "invalid"], class: ["none", UUID], status: ["active", "withdrawn"], sort: "class", dir: "desc", size: "50" });
+    const params = new URLSearchParams(studentListHref(criteria, 3).split("?")[1]);
+    expect(params.getAll("sector")).toEqual([UUID, second]);
+    expect(params.getAll("class")).toEqual(["none", UUID]);
+    expect(params.getAll("status")).toEqual(["active", "withdrawn"]);
+    expect(params.get("sort")).toBe("class");
+    expect(params.get("dir")).toBe("desc");
+    expect(params.get("size")).toBe("50");
+    expect(buildStudentQuery({ ...criteria, page: 3 })).toMatchObject({ from: 100, to: 149 });
+    expect(clampStudentPage(99, 101, 50)).toBe(3);
+  });
+  it("unchecking every status means all, while a fresh URL still defaults to active", () => {
+    expect(parseStudentCriteria({ statusMode: "facet" }).statuses).toEqual([]);
+    expect(studentListHref(parseStudentCriteria({ statusMode: "facet" }), 1)).toBe("/students?status=all");
+    expect(parseStudentCriteria({}).statuses).toEqual(["active"]);
+  });
+  it("validates sorting, size and page bounds from untrusted URL values", () => {
+    expect(parseStudentCriteria({ sort: "guardian_phone", dir: "drop", size: "100000", page: "Infinity" })).toMatchObject({ sort: "name", direction: "asc", pageSize: 20, page: 1 });
+    expect(parseStudentCriteria({ page: "999999999999999999999" }).page).toBe(1);
+  });
+  it("normalizes the fee directory to its existing one-value filters and global name order", () => {
+    expect(feeStudentCriteria(parseStudentCriteria({ sector: [UUID, second], class: [UUID, second], status: ["withdrawn", "active"], sort: "class", dir: "desc", size: "50" }))).toMatchObject({ sectorId: UUID, sectorIds: [UUID], classIds: [UUID], statuses: ["withdrawn"], sort: "name", direction: "asc", pageSize: 50 });
+  });
+});
+
 describe("D-126 · tìm không dấu", () => {
   it("bỏ dấu và hạ chữ thường đúng luật của cột `search_name`", () => {
     expect(foldSearchTerm("Trần Ngọc Hiếu")).toBe("tran ngoc hieu");
@@ -108,6 +143,14 @@ describe("trang vượt quá tổng số", () => {
 });
 
 describe("đường dẫn giữ nguyên bộ lọc khi đổi trang", () => {
+  it("năm cũ giữ bộ lọc active khi mặc định là all", () => {
+    const criteria = parseStudentCriteria({ status: "active" });
+    expect(studentListHref(criteria, 2, "all")).toBe("/students?status=active&page=2");
+    expect(hasActiveStudentFilter(criteria, "all")).toBe(true);
+    const historyDefault = parseStudentCriteria({ status: "all" });
+    expect(studentListHref(historyDefault, 2, "all")).toBe("/students?page=2");
+    expect(hasActiveStudentFilter(historyDefault, "all")).toBe(false);
+  });
   it("không lọc gì thì đường dẫn sạch", () => {
     expect(studentListHref(parseStudentCriteria({}), 1)).toBe("/students");
   });

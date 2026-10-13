@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
+import { getAcademicYearView } from "@/lib/academic-year/view";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel, panelClassName } from "@/components/ui/card";
-import { FilterBar, FilterField } from "@/components/ui/filter-bar";
-import { Pagination } from "@/components/ui/pagination";
-import { SearchInputControl } from "@/components/ui/search-input";
+import { buttonVariants } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { DataTableColumnToggle } from "@/components/ui/data-table-column-toggle";
+import { Drawer, drawerHref } from "@/components/ui/drawer";
+import { FacetFilter } from "@/components/ui/facet-filter";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { Select } from "@/components/ui/select";
+import { Toolbar, ToolbarSummary } from "@/components/ui/toolbar";
 import { BranchChip } from "@/components/theme/branch-chip";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/layout/page-container";
@@ -14,255 +19,120 @@ import { CreateGuardianForm } from "@/features/students/components/create-guardi
 import { CreateStudentForm } from "@/features/students/components/create-student-form";
 import { studentStatusLabel } from "@/features/students/student-status";
 import {
-  hasActiveStudentFilter,
-  parseStudentCriteria,
-  studentListHref,
-  STUDENT_STATUS_FILTER_LABELS,
-  STUDENT_STATUS_FILTERS,
+  hasActiveStudentFilter, parseStudentCriteria, studentListHref,
+  STUDENT_PAGE_SIZES, STUDENT_STATUS_FILTER_LABELS, STUDENT_STATUS_FILTERS,
 } from "@/features/students/student-directory";
-import { getStudentsPageData } from "@/features/students/server/queries";
-import { cn } from "@/lib/utils";
+import { getStudentsPageData, type StudentListItem } from "@/features/students/server/queries";
 
-/**
- * Trang Thiếu nhi — TB-F03 (đóng M03-F03) + TB-F13 + TB-F02/F09 + D-123.
- *
- * 🔴 Trước M03-B trang này đổ thẳng **~900 thẻ** vào một lượt dựng, không tìm
- * kiếm, không lọc, không phân trang: muốn tìm một em phải Ctrl+F, và trên máy
- * 360px của Giáo lý viên đứng lớp thì đó là màn hình không dùng được (5W-F03).
- *
- * Thanh lọc và phân trang là `<form method="get">` + `<Link>` thật, nên **chạy
- * không cần JavaScript** và **chép được đường dẫn trang 3** (09 §11).
- */
-export default async function StudentsPage({
-  searchParams,
-}: {
+export default async function StudentsPage({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const criteria = parseStudentCriteria(await searchParams);
-  const {
-    students,
-    guardians,
-    classes,
-    sectors,
-    canWrite,
-    requiresClassOnCreate,
-    page,
-    pageSize,
-    totalItems,
-    feeScope,
-  } = await getStudentsPageData(criteria);
-  const filtered = hasActiveStudentFilter(criteria);
+  const params = await searchParams;
+  const view = await getAcademicYearView();
+  const creating = params.new === "1";
+  const creatingGuardian = params.new === "guardian";
+  const data = await getStudentsPageData(
+    parseStudentCriteria(view.readOnly && params.status === undefined && params.statusMode !== "facet" ? { ...params, status: "all" } : params),
+    { loadCreationOptions: creating },
+  );
+  const { criteria, students, guardians, guardianOptionsError, classes, sectors, canWrite,
+    requiresClassOnCreate, page, pageSize, totalItems, feeScope, context } = data;
+  const defaultStatus = view.readOnly ? "all" : "active";
+  const filtered = hasActiveStudentFilter(criteria, defaultStatus);
+  const listHref = studentListHref(criteria, page, defaultStatus);
+  const listParams = new URLSearchParams(listHref.split("?")[1]);
+  const createHref = drawerHref("/students", listParams, { new: "1" });
+  const guardianHref = drawerHref("/students", listParams, { new: "guardian" });
+  // Shared machines: only column keys are persisted, separately for each account.
+  const tableId = `students-${context.profileId}`;
+  const columns: DataTableColumn<StudentListItem>[] = [
+    {
+      key: "name", header: "Tên thánh & Họ tên", sortKey: feeScope ? undefined : "name",
+      cell: item => <span className="font-medium">{item.saintName} {item.fullName}</span>,
+      className: "md:min-w-56 [&>a]:inline-flex [&>a]:min-h-11 [&>a]:items-center",
+    },
+    {
+      key: "class", header: "Lớp", sortKey: feeScope ? undefined : "class", hideable: true,
+      cell: item => <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span>{item.className ?? "Chưa xếp lớp"}</span>
+        {item.sectorName ? <BranchChip themeKey={themeKeyFromSectorCode(item.sectorCode)} branchName={item.sectorName} /> : null}
+      </span>,
+    },
+    { key: "guardian", header: "Giám hộ", hideable: true, cell: item => item.guardianName },
+    {
+      key: "phone", header: "Điện thoại", hideable: true,
+      cell: item => /\d/.test(item.guardianPhone)
+        ? <a href={`tel:${item.guardianPhone.replace(/[^+\d]/g, "")}`} className="inline-flex min-h-11 items-center whitespace-nowrap rounded-sm text-theme-accent-text underline underline-offset-4" aria-label={`Gọi ${item.guardianName}: ${item.guardianPhone}`}>{item.guardianPhone}</a>
+        : <span className="text-ink-muted">Chưa có SĐT</span>,
+    },
+    {
+      key: "status", header: "Trạng thái", hideable: true,
+      cell: item => <span className="inline-flex flex-wrap gap-1">
+        <Badge variant={item.status === "active" ? "success" : "secondary"}>{studentStatusLabel(item.status)}</Badge>
+        {item.hardshipFlag ? <Badge variant="warning">Hoàn cảnh</Badge> : null}
+      </span>,
+    },
+  ];
+  const statusSummary = criteria.statuses.length
+    ? criteria.statuses.map(status => STUDENT_STATUS_FILTER_LABELS[status]).join(", ")
+    : "Tất cả trạng thái";
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Thiếu nhi"
-        description={
-          // D-67/D-129 — nói ra phạm vi ngay ở đầu trang. Một danh sách thiếu
-          // cột mà không giải thích thì người dùng tưởng hệ thống hỏng, và bài
-          // học D-108 của M04 đã ghi đúng điều đó cho một danh sách tự ẩn bớt.
-          feeScope
-            ? "Danh sách phục vụ việc thu phí: tên em, lớp, ngành và liên lạc phụ huynh. Hồ sơ chi tiết, ngày sinh, địa chỉ, sức khoẻ và bí tích không thuộc phạm vi Thủ quỹ."
-            : "Hồ sơ thiếu nhi và người giám hộ."
-        }
-      />
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
-        <div className="space-y-4">
-          <FilterBar
-            legend="Lọc danh sách thiếu nhi"
-            action="/students"
-            resetHref={filtered ? "/students" : undefined}
-          >
-            <FilterField
-              className="sm:col-span-2 lg:col-span-1"
-              label="Tìm theo tên thiếu nhi"
-              htmlFor="filter-student-search"
-              helper="Gõ không dấu cũng tìm được — cả mã em và số điện thoại phụ huynh."
-            >
-              <SearchInputControl
-                id="filter-student-search"
-                defaultValue={criteria.search}
-                placeholder="Ví dụ: tran ngoc"
-              />
-            </FilterField>
-            <FilterField label="Ngành" htmlFor="filter-sector">
-              <Select id="filter-sector" name="sector" defaultValue={criteria.sectorId}>
-                <option value="all">Tất cả ngành</option>
-                {sectors.map((sector) => (
-                  <option key={sector.id} value={sector.id}>
-                    {sector.name}
-                  </option>
-                ))}
-              </Select>
-            </FilterField>
-            <FilterField label="Lớp" htmlFor="filter-class">
-              <Select id="filter-class" name="class" defaultValue={criteria.classId}>
-                <option value="all">Tất cả lớp</option>
-                <option value="none">Chưa xếp lớp</option>
-                {classes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.displayName}
-                  </option>
-                ))}
-              </Select>
-            </FilterField>
-            <FilterField label="Trạng thái hồ sơ" htmlFor="filter-status">
-              <Select id="filter-status" name="status" defaultValue={criteria.status}>
-                {STUDENT_STATUS_FILTERS.map((value) => (
-                  <option key={value} value={value}>
-                    {STUDENT_STATUS_FILTER_LABELS[value]}
-                  </option>
-                ))}
-              </Select>
-            </FilterField>
-          </FilterBar>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Danh sách thiếu nhi</CardTitle>
-              <CardDescription>
-                {totalItems === 0
-                  ? "Mỗi em có một người giám hộ; một người giám hộ có thể có nhiều con."
-                  : `${totalItems} hồ sơ trong phạm vi của bạn${
-                      criteria.status === "all"
-                        ? ""
-                        : ` · đang lọc "${STUDENT_STATUS_FILTER_LABELS[criteria.status]}"`
-                    }.`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {students.length === 0 ? (
-                /*
-                  Hai câu khác nhau cho hai tình huống khác nhau (09 §9). "Không
-                  tìm thấy" khi đang lọc mà nói "chưa có hồ sơ nào" là nói sai —
-                  người dùng sẽ đi tạo lại một em đã có.
-                */
-                <EmptyState
-                  variant="no-data"
-                  title={filtered ? "Không có em nào khớp bộ lọc" : "Chưa có hồ sơ thiếu nhi"}
-                  description={
-                    filtered
-                      ? "Thử bỏ bớt bộ lọc, hoặc gõ ít chữ hơn ở ô tìm kiếm — ô này tìm cả khi không bỏ dấu."
-                      : "Chưa có hồ sơ thiếu nhi nào trong phạm vi của bạn."
-                  }
-                  action={
-                    filtered ? (
-                      <Link href="/students" className="text-sm font-medium underline underline-offset-4">
-                        Xoá bộ lọc
-                      </Link>
-                    ) : undefined
-                  }
-                />
-              ) : (
-                /*
-                  Tên cho danh sách: vỏ ứng dụng cũng có `<li>` (thanh điều
-                  hướng), nên "mục danh sách đầu tiên trên trang" không phải là
-                  em đầu tiên. Trình đọc màn hình cũng cần biết đây là danh sách
-                  gì trước khi đọc từng em.
-                */
-                <ul aria-label="Danh sách thiếu nhi" className="space-y-3">
-                  {students.map((item) => {
-                    const row = (
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-medium">
-                            {item.saintName} {item.fullName}
-                          </p>
-                          <p className="text-sm text-ink-muted">
-                            Giám hộ: {item.guardianName} · {item.guardianPhone}
-                          </p>
-                          {/*
-                            `docs/06` §8 — cột Lớp. "Chưa xếp lớp" là một TIN,
-                            không phải một ô trống: đó chính là nhóm cần chú ý.
-                          */}
-                          <p className="text-sm text-ink-muted">
-                            Lớp: {item.className ?? "Chưa xếp lớp"}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {item.sectorName ? (
-                            <BranchChip
-                              themeKey={themeKeyFromSectorCode(item.sectorCode)}
-                              branchName={item.sectorName}
-                            />
-                          ) : null}
-                          {item.hardshipFlag ? <Badge variant="warning">Hoàn cảnh</Badge> : null}
-                          <Badge variant={item.status === "active" ? "success" : "secondary"}>
-                            {studentStatusLabel(item.status)}
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                    return (
-                      <li key={item.id}>
-                        {/*
-                          🔴 D-67 — với Thủ quỹ, dòng KHÔNG phải là một liên kết.
-                          Trang chi tiết đọc thẳng bảng `students`, mà RLS vẫn trả
-                          0 dòng cho họ ⇒ bấm vào tên là rơi vào trang 404. Một
-                          liên kết luôn dẫn tới 404 còn tệ hơn không có liên kết:
-                          người dùng sẽ báo "hệ thống mất hồ sơ của em".
-                        */}
-                        {feeScope ? (
-                          <Panel padding="md">{row}</Panel>
-                        ) : (
-                          <Link
-                            href={`/students/${item.id}`}
-                            className={cn(panelClassName({ padding: "md" }), "block transition-colors hover:border-theme-primary hover:bg-theme-soft")}
-                          >
-                            {row}
-                          </Link>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-
-              {totalItems > pageSize ? (
-                <Pagination
-                  page={page}
-                  pageSize={pageSize}
-                  totalItems={totalItems}
-                  itemLabel="thiếu nhi"
-                  buildHref={(target) => studentListHref(criteria, target)}
-                />
-              ) : null}
-            </CardContent>
-          </Card>
-        </div>
-
-        {canWrite ? (
-          <div className="space-y-5">
-            <Card>
-              <CardHeader>
-                <CardTitle>Thêm người giám hộ</CardTitle>
-                <CardDescription>Tạo phụ huynh trước khi thêm con.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CreateGuardianForm />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Thêm thiếu nhi</CardTitle>
-                <CardDescription>Mã thiếu nhi được cấp tự động.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {guardians.length === 0 ? (
-                  <p className="text-sm text-ink-muted">Vui lòng tạo người giám hộ trước.</p>
-                ) : (
-                  <CreateStudentForm
-                    guardians={guardians}
-                    classes={classes}
-                    requiresClass={requiresClassOnCreate}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
+    <PageContainer className="space-y-3">
+      <PageHeader title="Thiếu nhi" className="flex-row items-center justify-between" action={canWrite ?
+        <Link href={createHref} className={buttonVariants()}><Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />Thêm thiếu nhi</Link> : undefined} />
+      {feeScope ? <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-sm text-ink-muted">
+        Chế độ chỉ xem theo quyền Thủ quỹ: tên em, lớp, ngành và liên lạc phụ huynh. Hồ sơ chi tiết, ngày sinh, địa chỉ, sức khoẻ và bí tích không thuộc phạm vi Thủ quỹ.
+      </p> : null}
+      <Toolbar label="Lọc danh sách thiếu nhi" action="/students" className="relative md:sticky md:py-0"
+        search={{ label: "Tìm theo tên thiếu nhi, mã hoặc số điện thoại giám hộ", defaultValue: criteria.search, placeholder: "Tên, mã hoặc SĐT…" }}
+        keepParams={{ sort: criteria.sort, dir: criteria.direction, size: String(pageSize), statusMode: feeScope ? undefined : "facet" }}
+        trailing={<DataTableColumnToggle tableId={tableId} desktopOnly className="hidden md:block" columns={columns.filter(column => column.hideable).map(column => ({ key: column.key, label: String(column.header) }))} />}>
+        {feeScope ? <>
+          <label className="min-w-0"><span className="sr-only">Ngành</span><Select name="sector" className="w-32" defaultValue={criteria.sectorId} key={criteria.sectorId}>
+            <option value="all">Tất cả ngành</option>{sectors.map(sector => <option key={sector.id} value={sector.id}>{sector.name}</option>)}
+          </Select></label>
+          <label className="min-w-0"><span className="sr-only">Lớp</span><Select name="class" className="w-32" defaultValue={criteria.classId} key={criteria.classId}>
+            <option value="all">Tất cả lớp</option><option value="none">Chưa xếp lớp</option>{classes.map(item => <option key={item.id} value={item.id}>{item.displayName}</option>)}
+          </Select></label>
+          <label className="min-w-0"><span className="sr-only">Trạng thái hồ sơ</span><Select name="status" className="w-40" defaultValue={criteria.status} key={criteria.status}>
+            {STUDENT_STATUS_FILTERS.map(status => <option key={status} value={status}>{STUDENT_STATUS_FILTER_LABELS[status]}</option>)}
+          </Select></label>
+        </> : <>
+          <FacetFilter fullWidthBelowXl name="sector" label="Ngành" options={sectors.map(sector => ({ value: sector.id, label: sector.name }))} selected={criteria.sectorIds} />
+          <FacetFilter fullWidthBelowXl name="class" label="Lớp" options={[{ value: "none", label: "Chưa xếp lớp" }, ...classes.map(item => ({ value: item.id, label: item.displayName }))]} selected={criteria.classIds} />
+          <FacetFilter fullWidthBelowXl name="status" label="Trạng thái" options={STUDENT_STATUS_FILTERS.filter(status => status !== "all").map(status => ({ value: status, label: STUDENT_STATUS_FILTER_LABELS[status] }))} selected={criteria.statuses} align="end" />
+        </>}
+      </Toolbar>
+      <div className="space-y-2">
+        <ToolbarSummary resetHref={filtered ? "/students" : undefined} resetLabel="Xoá bộ lọc">{totalItems} hồ sơ · {statusSummary}</ToolbarSummary>
+        <DataTable tableId={tableId} caption="Danh sách thiếu nhi" hideCaption density="compact"
+          columns={columns} rows={students} getRowKey={item => item.id} minWidth="880px"
+          stickyHeader maxHeightClassName="md:max-h-[70vh]"
+          rowHref={feeScope ? undefined : item => `/students/${item.id}`}
+          mobileRow={{ titleKey: "name", metaKeys: ["class", "guardian", "phone", "status"] }}
+          sort={feeScope ? undefined : { key: criteria.sort, direction: criteria.direction,
+            buildHref: (key, direction) => studentListHref({ ...criteria, sort: key === "class" ? "class" : "name", direction }, 1, defaultStatus) }}
+          empty={<EmptyState bare variant="no-data"
+            title={filtered ? "Không có em nào khớp bộ lọc" : "Chưa có hồ sơ thiếu nhi"}
+            description={filtered ? "Thử bỏ bớt bộ lọc hoặc gõ ít chữ hơn ở ô tìm kiếm." : "Chưa có hồ sơ thiếu nhi nào trong phạm vi của bạn."} />}
+          footer={<PaginationFooter action="/students" page={page} pageSize={pageSize} totalItems={totalItems} itemLabel="thiếu nhi" pageSizes={STUDENT_PAGE_SIZES}
+            keepParams={Array.from(listParams, ([name, value]) => ({ name, value }))}
+            buildHref={target => studentListHref(criteria, target, defaultStatus)} />} />
       </div>
+      <Drawer open={canWrite && (creating || creatingGuardian)} title={creatingGuardian ? "Thêm người giám hộ" : "Thêm thiếu nhi"} closeHref={listHref}>
+        {creatingGuardian ? <div className="space-y-3">
+          <CreateGuardianForm />
+          <Link href={createHref} replace className={buttonVariants({ variant: "outline" })}>Tiếp tục thêm thiếu nhi</Link>
+        </div> : <div className="space-y-3">
+          <Link href={guardianHref} replace className={buttonVariants({ variant: "outline" })}>Thêm người giám hộ</Link>
+          {guardianOptionsError ? <div role="alert" className="space-y-2 text-sm">
+            <p>Không thể tải danh sách người giám hộ. Vui lòng thử lại.</p>
+            <a href={createHref} className={buttonVariants({ variant: "outline" })}>Thử lại</a>
+          </div> : guardians.length === 0 ? <p className="text-sm text-ink-muted">Vui lòng tạo người giám hộ trước.</p>
+            : <CreateStudentForm guardians={guardians} classes={classes} requiresClass={requiresClassOnCreate} />}
+        </div>}
+      </Drawer>
     </PageContainer>
   );
 }

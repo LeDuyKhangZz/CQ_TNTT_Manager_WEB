@@ -49,7 +49,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **R4 release — đóng gói R3.5 — Codex — 2026-10-13.** R4 đủ5/5; kiểm thử thật đã chạy trước commit. R4-QA-01 đã sửa, đang hoàn tất E2E/redeploy.
+- **R4 release — đóng gói R4.1 — Codex — 2026-10-13.** R4 đủ5/5; kiểm thử thật đã chạy trước commit. R4-QA-01 đã sửa, đang hoàn tất E2E/redeploy.
 - Kiểm thử: **2.000 unit pass /24 skip; R4 E2E105/105; pgTAP audit1.512/1.512**; lint/typecheck/build đạt. E2E toàn hệ thống cuối đang chạy.
 - Reviewer độc lập kiểm browser/query/quyền; desktop y287, mobile hàng63px; tablet768×1024 thấy12 hàng, cột điện thoại/trạng thái cần cuộn ngang.
 - Production đã backup và áp migration lịch sử;70/70 khớp. Chuẩn bị commit/push/redeploy theo yêu cầu; chưa ghi deployed.

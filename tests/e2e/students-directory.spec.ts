@@ -51,7 +51,7 @@ async function login(page: Page, username: string) {
  * chứ không phải em đầu tiên — bài "chip ngành" đã rớt 3/3 viewport đúng vì thế.
  */
 function studentRows(page: Page) {
-  return page.getByRole("list", { name: "Danh sách thiếu nhi" }).getByRole("listitem");
+  return page.getByRole("table", { name: "Danh sách thiếu nhi" }).locator("tbody tr");
 }
 
 test.beforeEach(async ({ page }) => {
@@ -90,8 +90,9 @@ test.describe("TB-F03 · tìm kiếm, lọc, trạng thái rỗng", () => {
   test("lọc theo lớp chỉ còn em của lớp đó", async ({ page }) => {
     await page.goto("/students");
     const filters = page.getByRole("group", { name: "Lọc danh sách thiếu nhi" });
-    await filters.getByLabel("Lớp", { exact: true }).selectOption({ label: "Ấu 1A" });
-    await page.getByRole("button", { name: "Lọc" }).click();
+    await filters.locator("summary").filter({ hasText: /^Lớp/ }).click();
+    await filters.getByRole("checkbox", { name: "Ấu 1A", exact: true }).check();
+    await filters.locator('[data-facet="class"]').getByRole("button", { name: "Áp dụng" }).click();
     await expect(page.getByRole("link", { name: new RegExp(SEEDED_STUDENT) }).first()).toBeVisible({
       timeout: 20_000,
     });
@@ -123,6 +124,7 @@ test.describe("TB-F13 · cảnh báo trùng", () => {
   }) => {
     await page.goto("/students");
     const form = page.getByRole("form", { name: "Thêm thiếu nhi" });
+    await page.getByRole("link", { name: "Thêm thiếu nhi", exact: true }).click();
     await form.getByLabel("Người giám hộ").selectOption({ label: STUDENT_CREATION_GUARDIAN });
     await form.getByLabel("Tên thánh").fill("Giuse");
     await form.getByLabel("Họ tên").fill(SEEDED_STUDENT);
@@ -141,6 +143,8 @@ test.describe("TB-F13 · cảnh báo trùng", () => {
   test("BR-M03-N09: trùng số điện thoại phụ huynh cũng được cảnh báo", async ({ page }) => {
     await page.goto("/students");
     const form = page.getByRole("form", { name: "Thêm người giám hộ" });
+    await page.getByRole("link", { name: "Thêm thiếu nhi", exact: true }).click();
+    await page.getByRole("dialog").getByRole("link", { name: "Thêm người giám hộ", exact: true }).click();
     await form.getByLabel("Họ tên phụ huynh").fill("Người Khác Hẳn");
     await form.getByLabel("Điện thoại").fill("0912000001");
     await form.getByRole("button", { name: "Tạo phụ huynh" }).click();
@@ -167,6 +171,7 @@ test.describe("TB-F02/F09 · tạo hồ sơ kèm ghi danh", () => {
 
     await page.goto("/students");
     const form = page.getByRole("form", { name: "Thêm thiếu nhi" });
+    await page.getByRole("link", { name: "Thêm thiếu nhi", exact: true }).click();
     await form.getByLabel("Người giám hộ").selectOption({ label: STUDENT_CREATION_GUARDIAN });
     await form.getByLabel("Tên thánh").fill("Anna");
     await form.getByLabel("Họ tên").fill(fullName);
@@ -197,6 +202,6 @@ test.describe("TB-F02/F09 · tạo hồ sơ kèm ghi danh", () => {
 
     // Và em thật sự nằm trong lớp, không chỉ là một câu thông báo.
     await page.goto(`/students?q=${encodeURIComponent(fullName)}`);
-    await expect(page.getByText(`Lớp: ${emptyClass}`).first()).toBeVisible({ timeout: 20_000 });
+    await expect(studentRows(page).first()).toContainText(emptyClass, { timeout: 20_000 });
   });
 });
