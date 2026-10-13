@@ -1,3 +1,4 @@
+import { openStudentFilter, applyStudentFilter, beginStudentCreation } from "./helpers/student-ui";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -78,9 +79,8 @@ test.describe("TB-F03 · tìm kiếm, lọc, trạng thái rỗng", () => {
 
   test("ô tìm kiếm gửi được bằng chính biểu mẫu trên trang", async ({ page }) => {
     await page.goto("/students");
-    const filters = page.getByRole("group", { name: "Lọc danh sách thiếu nhi" });
-    await filters.getByLabel(/Tìm theo tên thiếu nhi/).fill("dinh gia han");
-    await page.getByRole("button", { name: "Lọc" }).click();
+    await page.locator('input[name="q"]:visible').fill("dinh gia han");
+    await page.getByRole("button", { name: page.viewportSize()!.width < 768 ? "Tìm thiếu nhi" : "Lọc", exact:true }).click();
     await expect(page).toHaveURL(/q=dinh\+gia\+han/);
     await expect(page.getByRole("link", { name: new RegExp(OTHER_SECTOR_STUDENT) }).first()).toBeVisible({
       timeout: 20_000,
@@ -89,10 +89,9 @@ test.describe("TB-F03 · tìm kiếm, lọc, trạng thái rỗng", () => {
 
   test("lọc theo lớp chỉ còn em của lớp đó", async ({ page }) => {
     await page.goto("/students");
-    const filters = page.getByRole("group", { name: "Lọc danh sách thiếu nhi" });
-    await filters.locator("summary").filter({ hasText: /^Lớp/ }).click();
+    const filters = await openStudentFilter(page,"class");
     await filters.getByRole("checkbox", { name: "Ấu 1A", exact: true }).check();
-    await filters.locator('[data-facet="class"]').getByRole("button", { name: "Áp dụng" }).click();
+    await applyStudentFilter(page,"class");
     await expect(page.getByRole("link", { name: new RegExp(SEEDED_STUDENT) }).first()).toBeVisible({
       timeout: 20_000,
     });
@@ -114,7 +113,7 @@ test.describe("TB-F03 · tìm kiếm, lọc, trạng thái rỗng", () => {
     // `11` §5 — "không dùng màu làm tín hiệu duy nhất; chip ngành luôn có tên ngành".
     await page.goto("/students?q=nguyen+minh+an");
     await expect(studentRows(page).first()).toBeVisible({ timeout: 20_000 });
-    await expect(studentRows(page).first().getByText("Ấu Nhi")).toBeVisible();
+    await expect(studentRows(page).first().getByText("Ấu Nhi").filter({visible:true})).toBeVisible();
   });
 });
 
@@ -124,8 +123,7 @@ test.describe("TB-F13 · cảnh báo trùng", () => {
   }) => {
     await page.goto("/students");
     const form = page.getByRole("form", { name: "Thêm thiếu nhi" });
-    await page.getByRole("link", { name: "Thêm thiếu nhi", exact: true }).click();
-    await form.getByLabel("Người giám hộ").selectOption({ label: STUDENT_CREATION_GUARDIAN });
+    await beginStudentCreation(page,STUDENT_CREATION_GUARDIAN);
     await form.getByLabel("Tên thánh").fill("Giuse");
     await form.getByLabel("Họ tên").fill(SEEDED_STUDENT);
     await form.getByLabel("Ngày sinh").fill(SEEDED_STUDENT_DOB);
@@ -171,8 +169,7 @@ test.describe("TB-F02/F09 · tạo hồ sơ kèm ghi danh", () => {
 
     await page.goto("/students");
     const form = page.getByRole("form", { name: "Thêm thiếu nhi" });
-    await page.getByRole("link", { name: "Thêm thiếu nhi", exact: true }).click();
-    await form.getByLabel("Người giám hộ").selectOption({ label: STUDENT_CREATION_GUARDIAN });
+    await beginStudentCreation(page,STUDENT_CREATION_GUARDIAN);
     await form.getByLabel("Tên thánh").fill("Anna");
     await form.getByLabel("Họ tên").fill(fullName);
     await form.getByLabel("Ngày sinh").fill("2016-01-01");

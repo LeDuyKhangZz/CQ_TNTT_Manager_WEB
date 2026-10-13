@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { themeKeyFromSectorCode } from "@/lib/theme/sector-palette";
+import { StudentMobileFilters } from "@/features/students/components/student-mobile-filters";
 import { StudentCreationWizard } from "@/features/students/components/student-creation-wizard";
 import { studentStatusLabel } from "@/features/students/student-status";
 import {
@@ -46,8 +47,14 @@ export default async function StudentsPage({ searchParams }: {
   const columns: DataTableColumn<StudentListItem>[] = [
     {
       key: "name", header: "Tên thánh & Họ tên", sortKey: feeScope ? undefined : "name",
-      cell: item => <span className="font-medium">{item.saintName} {item.fullName}</span>,
-      className: "md:min-w-56 [&>a]:inline-flex [&>a]:min-h-11 [&>a]:items-center",
+      cell: item => <span className="flex min-w-0 items-center gap-2 font-medium md:block">
+        <span className="min-w-0 truncate">{item.saintName} {item.fullName}</span>
+        <span className="shrink-0 text-2xs font-normal text-ink-muted md:hidden">{item.sectorName ?? item.className ?? "Chưa xếp lớp"}</span>
+        {item.status !== "active" ? <span className="shrink-0 text-2xs font-normal md:hidden">{studentStatusLabel(item.status)}</span> : null}
+        {item.hardshipFlag ? <span className="text-2xs md:hidden" aria-label="Hoàn cảnh khó khăn">★</span> : null}
+      </span>,
+      className: "leading-4 md:leading-normal md:min-w-56 [&>a]:block md:[&>a]:inline-flex md:[&>a]:min-h-11 [&>a]:items-center",
+
     },
     {
       key: "class", header: "Lớp", sortKey: feeScope ? undefined : "class", hideable: true,
@@ -58,10 +65,12 @@ export default async function StudentsPage({ searchParams }: {
     },
     { key: "guardian", header: "Giám hộ", hideable: true, cell: item => item.guardianName },
     {
-      key: "phone", header: "Điện thoại", hideable: true,
-      cell: item => /\d/.test(item.guardianPhone)
-        ? <a href={`tel:${item.guardianPhone.replace(/[^+\d]/g, "")}`} className="inline-flex min-h-11 items-center whitespace-nowrap rounded-sm text-theme-accent-text underline underline-offset-4" aria-label={`Gọi ${item.guardianName}: ${item.guardianPhone}`}>{item.guardianPhone}</a>
-        : <span className="text-ink-muted">Chưa có SĐT</span>,
+      key: "phone", header: "Điện thoại", label: "Liên lạc", hideable: true,
+      className: "[&>div]:flex [&>div]:min-h-11 [&>div]:items-center [&>div]:gap-2 [&>div>span:first-child]:hidden",
+      cell: item => <><span className="shrink-0 text-2xs md:hidden">{item.className ?? "—"}</span><span className="min-w-0 truncate md:hidden" title={item.guardianName}>{item.guardianName}</span>{/\d/.test(item.guardianPhone)
+        ? <a href={`tel:${item.guardianPhone.replace(/[^+\d]/g, "")}`} className="ml-auto inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-sm text-theme-accent-text underline underline-offset-4 md:ml-0" aria-label={`Gọi ${item.guardianName}: ${item.guardianPhone}`}>{item.guardianPhone}</a>
+        : <span className="ml-auto whitespace-nowrap text-ink-muted md:ml-0">Chưa có SĐT</span>}</>,
+
     },
     {
       key: "status", header: "Trạng thái", hideable: true,
@@ -78,11 +87,12 @@ export default async function StudentsPage({ searchParams }: {
   return (
     <PageContainer className="space-y-3">
       <PageHeader title="Thiếu nhi" className="flex-row items-center justify-between" action={canWrite ?
-        <Link href={createHref} className={buttonVariants()}><Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />Thêm thiếu nhi</Link> : undefined} />
+        <Link href={createHref} className={buttonVariants()}><Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" /><span className="sr-only sm:not-sr-only">Thêm thiếu nhi</span></Link> : undefined} />
       {feeScope ? <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-sm text-ink-muted">
         Chế độ chỉ xem theo quyền Thủ quỹ: tên em, lớp, ngành và liên lạc phụ huynh. Hồ sơ chi tiết, ngày sinh, địa chỉ, sức khoẻ và bí tích không thuộc phạm vi Thủ quỹ.
       </p> : null}
-      <Toolbar label="Lọc danh sách thiếu nhi" action="/students" className="relative md:sticky md:py-0"
+      <StudentMobileFilters data={data} open={params.filters === "1" && !creating && !creatingGuardian} defaultStatus={defaultStatus} />
+      <Toolbar label="Lọc danh sách thiếu nhi" action="/students" className="relative hidden md:sticky md:flex md:py-0"
         search={{ label: "Tìm theo tên thiếu nhi, mã hoặc số điện thoại giám hộ", defaultValue: criteria.search, placeholder: "Tên, mã hoặc SĐT…" }}
         keepParams={{ sort: criteria.sort, dir: criteria.direction, size: String(pageSize), statusMode: feeScope ? undefined : "facet" }}
         trailing={<DataTableColumnToggle tableId={tableId} desktopOnly className="hidden md:block" columns={columns.filter(column => column.hideable).map(column => ({ key: column.key, label: String(column.header) }))} />}>
@@ -107,8 +117,9 @@ export default async function StudentsPage({ searchParams }: {
         <DataTable tableId={tableId} caption="Danh sách thiếu nhi" hideCaption density="compact"
           columns={columns} rows={students} getRowKey={item => item.id} minWidth="880px"
           stickyHeader maxHeightClassName="md:max-h-[70vh]"
+          className="[&_tbody_tr]:gap-y-0 [&_tbody_tr]:py-0"
           rowHref={feeScope ? undefined : item => `/students/${item.id}`}
-          mobileRow={{ titleKey: "name", metaKeys: ["class", "guardian", "phone", "status"] }}
+          mobileRow={{ titleKey: "name", metaKeys: ["phone"] }}
           sort={feeScope ? undefined : { key: criteria.sort, direction: criteria.direction,
             buildHref: (key, direction) => studentListHref({ ...criteria, sort: key === "class" ? "class" : "name", direction }, 1, defaultStatus) }}
           empty={<EmptyState bare variant="no-data"
