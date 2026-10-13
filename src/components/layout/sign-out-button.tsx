@@ -23,8 +23,10 @@ import { cn } from "@/lib/utils";
 export function SignOutButton({
   className,
   variant = "menu",
+  iconOnly = false,
 }: {
   className?: string;
+  iconOnly?: boolean;
   /** `menu` cho mục trong `Dropdown`; `panel` cho nút đứng riêng ở chân thanh bên. */
   variant?: "menu" | "panel";
 }) {
@@ -38,17 +40,20 @@ export function SignOutButton({
       <FormPendingBridge />
       <button
         type="submit"
+        aria-label={iconOnly ? "Đăng xuất" : undefined}
+        title={iconOnly ? "Đăng xuất" : undefined}
         data-dropdown-item={inMenu ? "true" : undefined}
         role={inMenu ? "menuitem" : undefined}
         className={cn(
           dropdownItemClassName("danger"),
           "font-medium",
           !inMenu && "justify-center border border-line",
+          iconOnly && "min-w-11 px-0",
           className,
         )}
       >
         <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-        <span>Đăng xuất</span>
+        <span className={iconOnly ? "sr-only" : undefined}>Đăng xuất</span>
       </button>
     </form>
   );
