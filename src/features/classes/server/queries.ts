@@ -235,7 +235,7 @@ export async function getClassDetail(
       id: string;
       status: string;
       students: { id: string; student_code: string; saint_name: string; full_name: string } | null;
-      promotion_reviews: Array<{ final_status: string }> | null;
+      promotion_reviews: { final_status: string } | null;
     }>;
   };
 
@@ -257,10 +257,9 @@ export async function getClassDetail(
       saintName: item.students!.saint_name,
       fullName: item.students!.full_name,
       status: item.status,
-      // BR-M08-20 / D-158. `source_enrollment_id` là **unique** nên mảng này có
-      // tối đa một phần tử; dùng `some` thay vì `[0]` để không phụ thuộc vào điều
-      // đó — một ràng buộc ở bảng khác không phải chỗ để đặt niềm tin của trang này.
-      pendingPromotion: (item.promotion_reviews ?? []).some((review) => review.final_status === "pending"),
+      // BR-M08-20 / D-158: unique source_enrollment_id makes this PostgREST
+      // relationship one-to-one: an object or null, never an array.
+      pendingPromotion: item.promotion_reviews?.final_status === "pending",
     }))
     .sort((left, right) => left.fullName.localeCompare(right.fullName, "vi"));
 

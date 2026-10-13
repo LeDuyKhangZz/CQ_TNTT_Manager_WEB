@@ -64,8 +64,17 @@ async function saveStatus(page: Page, status: "Đang hoạt động" | "Tạm ng
   const form = settingsForm(page);
   await form.getByLabel("Trạng thái lớp").selectOption({ label: status });
   await form.getByRole("button", { name: "Lưu cài đặt lớp" }).click();
-  // Lớp dùng cho bài này không có thiếu nhi ⇒ không có hộp xác nhận (BR-M02-N11).
-  await expect(page.getByText(`Trạng thái hiện tại: ${status}`)).toBeVisible({ timeout: 45_000 });
+  // The results suite also enrolls pupils in Hiệp 1. Handle the real safety
+  // confirmation instead of assuming that this shared fixture is always empty.
+  const saved = page.getByText(`Trạng thái hiện tại: ${status}`);
+  const confirmation = page.getByRole("dialog", { name: `Chuyển lớp sang "${status}"?`, exact: true });
+  await expect(saved.or(confirmation)).toBeVisible({ timeout: 45_000 });
+  if (await confirmation.isVisible()) {
+    await expect(confirmation).toContainText("em đang sinh hoạt");
+    await expect(confirmation).toContainText(/không.*kết thúc ghi danh/i);
+    await confirmation.getByRole("button", { name: "Lưu cài đặt lớp", exact: true }).click();
+  }
+  await expect(saved).toBeVisible({ timeout: 45_000 });
   await page.reload();
   // `class_status` dùng `inactive`; `paused` là enum của ghi danh. Nhãn UI vẫn
   // là “Tạm ngưng”, nhưng assertion phải kiểm đúng giá trị hợp đồng của lớp.
