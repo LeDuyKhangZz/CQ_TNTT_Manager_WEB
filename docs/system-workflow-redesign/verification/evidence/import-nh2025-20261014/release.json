@@ -1,0 +1,48 @@
+{
+  "deployment": {
+    "source": "04c58fde7311f686357915daa3f136c15ff40271",
+    "state": "success",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "description": "Deployment has completed",
+        "url": "https://vercel.com/khanglebomba/cq-tntt-manager-web/5hEdK7HLtGeiZqYzc3iWAdHtiNso",
+        "updated_at": "2026-10-14T07:54:01Z"
+      }
+    ]
+  },
+  "public_smoke": [
+    {
+      "width": 360,
+      "loginStatus": 200,
+      "overflow": false,
+      "passwordInputs": 1,
+      "anonymousResultsPath": "/login",
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "width": 1366,
+      "loginStatus": 200,
+      "overflow": false,
+      "passwordInputs": 1,
+      "anonymousResultsPath": "/login",
+      "pageErrors": [],
+      "pass": true
+    }
+  ],
+  "unit": {
+    "passed": 2031,
+    "skipped": 24
+  },
+  "pgtap": {
+    "files": 59,
+    "passed": 1512
+  },
+  "data_reconciliation": {
+    "checks": 21,
+    "passed": 21,
+    "score_cells": 18659
+  }
+}

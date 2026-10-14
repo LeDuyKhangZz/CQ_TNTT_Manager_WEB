@@ -50,7 +50,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **IMPORT-NH2025-20261014 — dữ liệu đã nhập; code đã kiểm tra, chờ phát hành — Codex — 2026-10-14.** Đọc 53 tệp; 758 thiếu nhi (+11), 18.659 ô điểm, 6 Trưởng Ban, 39 địa chỉ nhân sự bổ sung; đối soát 21/21 đạt.
+- **IMPORT-NH2025-20261014 — đã nhập phần đủ căn cứ; bản sửa đã phát hành — Codex — 2026-10-14.** Đọc 53 tệp; 758 thiếu nhi (+11), 18.659 ô điểm, 6 Trưởng Ban, 39 địa chỉ nhân sự bổ sung; đối soát 21/21 đạt.
 - **2.031 unit đạt / 24 skip**, lint/typecheck/build đạt; pgTAP trên database local riêng **1.512/1.512**. Sửa truy vấn bảng điểm để đọc đủ hơn 1.000 ô, giữ client có xác thực và lọc lớp.
 - Giữ tổng kết Excel theo xác nhận của user; các cột thành phần lưu ẩn để tránh cộng trùng. 25.095 dấu Giáo lý chưa nhập native do thiếu trạng thái Thánh lễ; 530 dấu chưa rõ ngày và bốn tổng kết thiếu/mâu thuẫn được báo riêng.
 - Không migration/RLS, không đổi tài khoản/quyền; dữ liệu cá nhân, bản sao trước nhập và báo cáo Excel chỉ nằm ngoài Git. Full E2E lịch sử và R5–R13/UX-42/R13.3 giữ backlog riêng.
@@ -58,7 +58,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-Phát hành bản sửa bảng điểm theo AGENTS §10 và kiểm tra đúng SHA. Người dùng bổ sung các trường hồ sơ, xác nhận điểm mâu thuẫn/ngày bị hỏng trong báo cáo Excel. Điểm danh Giáo lý cần mô hình lưu riêng khi không có dữ liệu Thánh lễ; chưa tự đổi schema trong lượt nhập này.
+Source `04c58fd` đã lên production; Vercel success đúng SHA, smoke công khai 360/1366 đạt. Người dùng bổ sung các trường hồ sơ, xác nhận điểm mâu thuẫn/ngày bị hỏng trong báo cáo Excel. Điểm danh Giáo lý cần mô hình lưu riêng khi không có dữ liệu Thánh lễ; chưa tự đổi schema trong lượt nhập này.
 
 ## ⛔ BLOCKERS
 
@@ -166,7 +166,8 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Migration/data impact:** không migration/RLS; giao dịch nhập đã commit sau dry-run và backup schema/data. Sửa ngày ghi danh kỹ thuật của 747 hồ sơ về mốc khai giảng có trong nguồn. Giữ nguyên tài khoản, vai trò, lớp, năm học và điểm danh cũ; báo cáo ghi rõ các mốc ghi danh cần xác nhận.
 - **Đã test:** lint/typecheck/build đạt; `npm test` 2.031 pass / 24 skip, gồm ba regression phân trang. `npm run test:db` ở DB preview bị fixture trùng; chạy toàn bộ 59 file pgTAP trên database local riêng với schema/owner/ACL và seed tham chiếu nguyên bản: 1.512/1.512. Đối soát dữ liệu 21/21, đủ 18.659 ô khớp nguồn. Không chạy lại full E2E.
 - **Giới hạn:** nguồn chỉ điểm danh Giáo lý; 25.095 dấu có ngày và 530 dấu ngày hỏng nằm trong báo cáo, chưa nhập native vì schema bắt buộc trạng thái Thánh lễ. Không tự đoán các ô trống, điểm mâu thuẫn, hồ sơ thiếu hoặc lịch dạy; không tạo ghi danh năm sau. Tổng kết DB lưu hai số lẻ, số gốc và công thức lưu trong ghi chú/báo cáo. Không publish điểm.
-- **Next:** commit/push main theo AGENTS §10, đối chiếu Vercel SHA và smoke production; các mục còn thiếu được giao qua báo cáo Excel 15 sheet ngoài repo.
+- **Phát hành / IMPORT-NH2025-RELEASE-20261014:** source `04c58fd` đã push main; Vercel success đúng SHA. Smoke công khai 360/1366: login 200, không overflow/pageerror, bảng điểm chưa đăng nhập chuyển về login. [Bằng chứng](docs/system-workflow-redesign/verification/evidence/import-nh2025-20261014/release.json). Chưa chạy authenticated CRUD production qua trình duyệt.
+- **Next:** bổ sung dữ liệu còn thiếu theo báo cáo Excel 15 sheet ngoài repo; không coi toàn bộ năm học đã đủ dữ liệu.
 
 ### [2026-10-14] Codex — AUTO-RELEASE-POLICY-20261014 — quy tắc thường trực và phát hành bản UI
 - **Làm được:** AGENTS §10, WORKLOG/D-55 và deployment runbook yêu cầu tự kiểm tra, commit, push và xác minh production sau mỗi task sửa code; không hỏi lại trừ user yêu cầu riêng chưa phát hành. Đã commit/push bản sửa UI `c94386354fa7f24cff0615a0d5f9aa52c50515b7`, Vercel success đúng SHA.
