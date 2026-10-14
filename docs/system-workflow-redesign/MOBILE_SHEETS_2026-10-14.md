@@ -57,4 +57,8 @@ Giả lập browser không thay thế kiểm tra bàn phím ảo và Safari trê
 
 Giữ nháp trong `TaskSheet` áp dụng khi component còn mounted. Drawer theo URL hoặc điều hướng sang trang khác không được mô tả như có bảo vệ nháp toàn hệ thống; guard hiện có của điểm danh/điểm không chặn mọi history/programmatic navigation. Kiểm thử không-JS bao phủ directory và native form fallback, chưa bao phủ chuyển mục của `SectionSwitcher`.
 
-Implementation và các gate cục bộ đã hoàn tất. Đang chuẩn bị commit/push; chỉ ghi nhận deployed sau khi Vercel success đúng SHA và smoke URL công khai. Không migration, reset/seed DB hay thay mật khẩu production. Rollback UI bằng revert commit task, không cần rollback dữ liệu.
+**Đã phát hành ngày 14/10/2026:** source `4bb4d4282a283b37a2eea8fe29ea9d407900add7` đã push `main`; GitHub commit status của Vercel là `success` đúng SHA. URL công khai: https://cq-tntt-manager-web.vercel.app.
+
+Smoke production bằng Chromium tại 360/1366px: login HTTP 200, không overflow hay JavaScript error; CSS mobile mới `.workspace-content .erp-card` đã có trong asset được phục vụ; dashboard chưa đăng nhập chuyển về login. Bằng chứng local: `playwright-report/mobile-production/deployment.json`, `results.json` và ảnh login. Không chạy authenticated CRUD trên production, không đổi mật khẩu KHANG.NHO. Kiểm tra sau đăng nhập được thực hiện trên build local như mô tả ở trên.
+
+Không migration, reset/seed DB hay thay mật khẩu production. Rollback UI bằng revert commit `4bb4d42`, không cần rollback dữ liệu. Cửa sổ preview trực tiếp và dev server 3150 vẫn giữ hoạt động khi bàn giao.
