@@ -5,6 +5,7 @@ import { requireRouteAccess } from "@/lib/auth/guards";
 import type { AppAudience } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
 import type { PortalDataStatus } from "@/features/portal/status";
+import { readGradebookScores } from "./gradebook-scores";
 import type { AssessmentKind, AttendanceScoreComponent, CommentVisibility, LeaderboardSourceType } from "../constants";
 import {
   canCommentClass,
@@ -474,10 +475,7 @@ export async function getGradebookDetail(classId: string, options: { exporting?:
       .order("assessment_date", { ascending: true, nullsFirst: false })
       .order("created_at"),
     rosterQuery,
-    supabase
-      .from("assessment_scores")
-      .select("assessment_id, enrollment_id, score, system_suggested_score, is_manual_override, note")
-      .eq("class_id", classId),
+    readGradebookScores(supabase, classId),
     supabase
       .from("v_student_weighted_average")
       .select("enrollment_id, weighted_average")

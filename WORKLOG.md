@@ -50,19 +50,19 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **AUTO-RELEASE-POLICY-20261014 — hoàn tất — Codex — 2026-10-14.** Đã ghi yêu cầu tự commit/push/deploy sau task sửa code vào AGENTS §10, WORKLOG/D-55 và deployment runbook.
-- **2.028 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **55 đạt / 2 skip có chủ đích**, gồm 14 role ở 360/768/1366px và sinh nhật ở 12 độ rộng. [Bằng chứng](docs/system-workflow-redesign/MOBILE_NAV_GROUPS_2026-10-14.md).
-- **MOBILE-NAV-GROUPS-20261014 đã phát hành:** source `c943863` đã push main, Vercel success đúng SHA; smoke production 360/1366 HTTP 200, CSS mới, không overflow/pageerror, dashboard chưa đăng nhập chuyển về login. Preview 3150 vẫn hoạt động.
-- Không đổi DB/RLS/API/quyền/theme, không ghi dữ liệu nghiệp vụ production; giữ các preset điều hướng nhanh và đường vào chức năng ít dùng.
-- R5–R13/UX-42/R13.3, full E2E lịch sử và hydration P2 vẫn giữ mở; không suy ra hoàn tất từ lượt kiểm tra giao diện này.
+- **IMPORT-NH2025-20261014 — dữ liệu đã nhập; code đã kiểm tra, chờ phát hành — Codex — 2026-10-14.** Đọc 53 tệp; 758 thiếu nhi (+11), 18.659 ô điểm, 6 Trưởng Ban, 39 địa chỉ nhân sự bổ sung; đối soát 21/21 đạt.
+- **2.031 unit đạt / 24 skip**, lint/typecheck/build đạt; pgTAP trên database local riêng **1.512/1.512**. Sửa truy vấn bảng điểm để đọc đủ hơn 1.000 ô, giữ client có xác thực và lọc lớp.
+- Giữ tổng kết Excel theo xác nhận của user; các cột thành phần lưu ẩn để tránh cộng trùng. 25.095 dấu Giáo lý chưa nhập native do thiếu trạng thái Thánh lễ; 530 dấu chưa rõ ngày và bốn tổng kết thiếu/mâu thuẫn được báo riêng.
+- Không migration/RLS, không đổi tài khoản/quyền; dữ liệu cá nhân, bản sao trước nhập và báo cáo Excel chỉ nằm ngoài Git. Full E2E lịch sử và R5–R13/UX-42/R13.3 giữ backlog riêng.
+- MOBILE-NAV-GROUPS-20261014 đã phát hành ở source `c943863`; quy tắc tự commit/push/kiểm tra production tiếp tục áp dụng theo AGENTS §10.
 
 ## ➡️ VIỆC TIẾP THEO
 
-Các task sửa code tiếp theo phải tự kiểm tra → commit → push → xác nhận production theo AGENTS §10, không hỏi lại. KHANG.NHO giữ mật khẩu hiện có. R5.1 và full E2E/R13.3 giữ backlog riêng.
+Phát hành bản sửa bảng điểm theo AGENTS §10 và kiểm tra đúng SHA. Người dùng bổ sung các trường hồ sơ, xác nhận điểm mâu thuẫn/ngày bị hỏng trong báo cáo Excel. Điểm danh Giáo lý cần mô hình lưu riêng khi không có dữ liệu Thánh lễ; chưa tự đổi schema trong lượt nhập này.
 
 ## ⛔ BLOCKERS
 
-Không có blocker cho lượt phát hành này. 24 integration test bỏ qua; full E2E lịch sử và React hydration #418 ngắt quãng vẫn theo dõi riêng. Menu no-JS đã kiểm ở ba viewport; chưa kiểm Safari/điện thoại thật. Smoke production công khai đã đạt, không khẳng định authenticated CRUD production đã chạy lại.
+Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên lạc; hai hồ sơ có điểm tổng kết mâu thuẫn và hai hồ sơ không có tổng kết. Attendance hiện bắt buộc cả Mass/Catechism, nguồn chỉ có Giáo lý. Báo cáo 15 sheet nằm trong `NH_2025-2026/KET_QUA_NHAP_LIEU_20261014` ngoài Git. `npm run test:db` trên DB preview có fixture sẵn bị trùng; bộ 59 file chạy lại trên database riêng giữ nguyên schema/owner/ACL và seed tham chiếu đạt 1.512/1.512. 24 integration skip và full E2E lịch sử chưa kiểm lại.
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi)
 
@@ -160,6 +160,14 @@ Không có blocker cho lượt phát hành này. 24 integration test bỏ qua; f
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-14] Codex — IMPORT-NH2025-20261014 — nhập dữ liệu và tải đủ bảng điểm
+- **Làm được:** đọc đủ 53 tệp nguồn; bổ sung 11 thiếu nhi, 3 giám hộ, 3 bí tích, 6 Trưởng Ban, 39 địa chỉ nhân sự; nhập 472 cột / 18.659 ô điểm và 181 ghi chú nội bộ. Có 754 tổng kết năm không mâu thuẫn; giữ kết quả Excel kể cả công thức tính ô trống theo xác nhận của user. Cột thành phần được lưu ẩn để không cộng trùng vào tổng kết.
+- **File thay đổi:** helper phân trang điểm theo lớp, truy vấn bảng điểm, ba unit hồi quy và tài liệu tracking. Không đưa hồ sơ, điện thoại, bản sao DB hoặc script có dữ liệu cá nhân vào Git.
+- **Migration/data impact:** không migration/RLS; giao dịch nhập đã commit sau dry-run và backup schema/data. Sửa ngày ghi danh kỹ thuật của 747 hồ sơ về mốc khai giảng có trong nguồn. Giữ nguyên tài khoản, vai trò, lớp, năm học và điểm danh cũ; báo cáo ghi rõ các mốc ghi danh cần xác nhận.
+- **Đã test:** lint/typecheck/build đạt; `npm test` 2.031 pass / 24 skip, gồm ba regression phân trang. `npm run test:db` ở DB preview bị fixture trùng; chạy toàn bộ 59 file pgTAP trên database local riêng với schema/owner/ACL và seed tham chiếu nguyên bản: 1.512/1.512. Đối soát dữ liệu 21/21, đủ 18.659 ô khớp nguồn. Không chạy lại full E2E.
+- **Giới hạn:** nguồn chỉ điểm danh Giáo lý; 25.095 dấu có ngày và 530 dấu ngày hỏng nằm trong báo cáo, chưa nhập native vì schema bắt buộc trạng thái Thánh lễ. Không tự đoán các ô trống, điểm mâu thuẫn, hồ sơ thiếu hoặc lịch dạy; không tạo ghi danh năm sau. Tổng kết DB lưu hai số lẻ, số gốc và công thức lưu trong ghi chú/báo cáo. Không publish điểm.
+- **Next:** commit/push main theo AGENTS §10, đối chiếu Vercel SHA và smoke production; các mục còn thiếu được giao qua báo cáo Excel 15 sheet ngoài repo.
+
 ### [2026-10-14] Codex — AUTO-RELEASE-POLICY-20261014 — quy tắc thường trực và phát hành bản UI
 - **Làm được:** AGENTS §10, WORKLOG/D-55 và deployment runbook yêu cầu tự kiểm tra, commit, push và xác minh production sau mỗi task sửa code; không hỏi lại trừ user yêu cầu riêng chưa phát hành. Đã commit/push bản sửa UI `c94386354fa7f24cff0615a0d5f9aa52c50515b7`, Vercel success đúng SHA.
 - **File thay đổi:** AGENTS, WORKLOG, runbook, tài liệu tracking/báo cáo và bằng chứng release; không sửa thêm source sản phẩm ở task này.
@@ -201,15 +209,8 @@ Không có blocker cho lượt phát hành này. 24 integration test bỏ qua; f
 - **Blocker/rủi ro:** fullE2E chưa xanh toàn bộ; guard không intercept history/programmatic navigation; xem báo cáo. Docker đã khôi phục.
 - **Phát hành / ANTI-AI-ERP-RELEASE-20261014:** source97b83c9 đã pushmain; Vercel success đúngSHA; smoke public production360/1366 đạt, xác nhận token8px/none và guard/dashboard. Bàn giao tài khoản theo lựa chọn chủ tài khoản; không tự reset mật khẩu.
 
-### [2026-10-13] Codex — R4.5 — nghiệm thu R4 và triển khai theo yêu cầu
-
-- **Làm được:** R4.2 wizard lưu giám hộ rồi em (JS/no-JS); R4.3 EntityHeader/6 tab, family/attendance và lỗi/retry UX-41; R4.4 hàng mobile63px/filter sheet/chip; R4.5 banner Thủ quỹ. Tất cả R4.1–R4.5 DONE.
-- **File thay đổi:** students pages/components/actions/query, portal attendance query, TabNav/Wizard, E2E helper/spec và 18 unit mới; tài liệu tracking và hồ sơ R4 trong Git. Các phụ thuộc R2/R3 có sẵn được giữ và commit theo task ID.
-- **Migration/data impact:** backup production schema/data ngoài Git; áp migration lịch sử R2.13,70/70 khớp; không policy RLS mới/backfill. E2E ghi fixture local và cleanup theo ID; pgTAP chạy DB audit mới từ70 migration.
-- **Đã test:** lint/typecheck/build đạt; Vitest2.000 pass/24 skip; nhóm component cuối29/29; R4 E2E105/105,3,9 phút; pgTAP1.512/1.512. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Reviewer độc lập16 unit/boundary và JWT thật xác nhận D75.
-- **Giới hạn:** tablet768×1024 có12 hàng nhưng điện thoại/trạng thái cần cuộn ngang;768×800 khoảng7 hàng. Không có live fixture ghi chú khác rỗng. UX-42/R13.3 chưa đóng.
-- **Deployment:** `e4dcf89` đã push main và Vercel Production success. Smoke alias `https://cq-tntt-manager-web.vercel.app` đạt; URL riêng có Vercel Authentication; không gửi form production. **Next:** R5.1 chưa claim; UX-42/R13.3 giữ mở.
-
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
 
 Archive: [MOBILE-NAV-GROUPS-20261014](docs/worklog-archive-before-nav-groups-2026-10-14.md).
+
+Archive: [Trước IMPORT-NH2025-20261014](docs/worklog-archive-before-import-2026-10-14.md).

@@ -1,5 +1,7 @@
 # 16 — NHẬT KÝ TRIỂN KHAI GIAI ĐOẠN 2B
 
+> **14/10/2026 — ◐ IMPORT-NH2025-20261014:** đọc 53 tệp, nhập bổ sung dữ liệu năm 2025–2026 và 18.659 ô điểm; đối soát 21/21. Sửa phân trang truy vấn bảng điểm lớn. Lint/typecheck/build đạt; 2.031 unit pass / 24 skip; 1.512/1.512 pgTAP trên database local riêng. Chưa xác minh deployment bản sửa. Báo cáo thiếu/mâu thuẫn và điểm danh Giáo lý chưa nhập native ở ngoài Git; không migration/RLS, không tự tạo dữ liệu Thánh lễ.
+
 > **14/10/2026 — ☑ MOBILE-NAV-GROUPS-20261014 đã phát hành:** gỡ danh mục khỏi dashboard, thống nhất hàng sinh nhật và chia nhóm menu theo quyền. Lint/typecheck/build đạt; 2.028 unit pass / 24 skip; browser cuối 55 pass / 2 skip (14 role, ba viewport; geometry 12 độ rộng). Source `c943863` đã push main, Vercel success và smoke production 360/1366 đạt; không migration/RLS/API. AGENTS/WORKLOG/runbook ghi quy tắc tự phát hành thường trực. [Báo cáo/ảnh](../MOBILE_NAV_GROUPS_2026-10-14.md).
 
 > **14/10/2026 — MOBILE-SHEETS-COPY-20261014:** implementation mobile xong: bottom sheet, form tác vụ riêng, giảm chữ/card, rà 14 vai trò. **2.028 unit đạt / 24 skip**, lint/typecheck/build đạt; browser **74 pass / 28 skip có chủ đích**, refinement cuối **9/9 pass**. Source `4bb4d42` đã push main, Vercel success đúng SHA và smoke public production 360/1366 đạt (MOBILE-SHEETS-RELEASE-20261014). Không migration/RLS; R5–R13/UX-42/R13.3 và full E2E lịch sử giữ riêng. [Báo cáo và giới hạn](../MOBILE_SHEETS_2026-10-14.md).
