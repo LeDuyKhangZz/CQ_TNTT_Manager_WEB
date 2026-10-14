@@ -1,5 +1,7 @@
 # 08 — Phase Plan
 
+> **14/10/2026 — ANTI-AI-ERP-RELEASE-20261014 DONE:** source97b83c9 đã pushmain, Vercel success đúngSHA và smoke public production360/1366 đạt. Smoke release local43/43;2026unit pass/24skip; full687/hydrationP2 vẫn mở theo báo cáo. Không tự đóng R5–R13.
+
 > **14/10/2026 — ANTI-AI-ERP-20261013:** implementation redesign toàn ERP xong theo yêu cầu mới, chỉ giữ quy định màu;2026unit pass/24skip, lint/typecheck/build đạt. Laptop226pass/3fixturefail, rerun3/3đạt; full687 còn chưa hoàn tất. Đang push/redeploy theo yêu cầu chủ dự án. Không tự đóng R5–R13. [Báo cáo, inventory và giới hạn](system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md).
 
 > **R4 đã push/redeploy production — 13/10/2026.** Source commit `e4dcf89`; Vercel Production success đúng SHA. [Mở ứng dụng](https://cq-tntt-manager-web.vercel.app). Smoke URL chính đạt; URL deployment riêng có Vercel Authentication. R13.3 vẫn mở theo số kiểm thử thật.

@@ -1,6 +1,6 @@
 # ERP UI/UX Redesign — ANTI-AI-ERP-20261013
 
-> Cập nhật 14/10/2026: đã hoàn tất implementation và build local; đang chạy E2E mở rộng và chuẩn bị push/redeploy theo yêu cầu mới của chủ dự án. Chỉ ghi deployed sau khi kiểm tra URL production.
+> **Đã phát hành14/10/2026:** source commit [`97b83c9`](https://github.com/LeDuyKhangZz/CQ_TNTT_Manager_WEB/commit/97b83c9200e9340c9f2ffce94ac9d511b86022d3) đã pushmain. Vercel báo success đúngSHA; smoke [production](https://cq-tntt-manager-web.vercel.app) đạt. Hồ sơ nghiệm thu triển khai: `ANTI-AI-ERP-RELEASE-20261014`. Giới hạn fullE2E/hydration bên dưới vẫn mở, không gọi toàn bộ cổng kiểm định đã xanh.
 
 ## Phạm vi và nguồn quyết định
 
@@ -96,6 +96,7 @@ Kết quả trên source cuối, không sử dụng kết quả của phiên R4 
 | Directory/admin lượt nền | **90/90** (9 màn × 10 width), HTTP200, một h1 và không overflow; thêm 90 hard navigation có gắn route không lặp hydration error |
 | Operations build cuối | **100/100** kiểm layout (10 màn × 10 width) HTTP200, không overflow, một h1, không button thiếu accessible name. Có **2 hydration #418** ở `/teaching-plan:390` và `/results:1440`; không coi đây là 100 lượt không JS error. `playwright-report/anti-ai-operations/results.json` |
 | Draft safety | **83/83** targeted cases; thêm 26 tests có trong tổng unit, không cộng hai lần. Reviewer độc lập kiểm window capture, baseline ack và giữ phần gõ sau khi lưu |
+| Production sau push | Vercel deployment `BkxMsEZRegDZJjaqwZUEdSmjwHJZ` success đúngSHA97b83c9. `/login` ở360/1366 HTTP200, radius8px/shadownone đúngsource, khôngoverflow/JSerror; `/dashboard` chưa đăng nhập chuyển vềlogin. `playwright-report/anti-ai-production/results.json` |
 
 Riêng mật độ `/staff`: trong lượt QA đầu dòng dữ liệu ở y584.5 (1366px) và y831.5 (360px); sau thu gọn toolbar đạt **y333.5** và **y410.5** tương ứng. Đây là đo vị trí trong browser, không phải đo thời gian thao tác.
 
@@ -105,7 +106,9 @@ Riêng mật độ `/staff`: trong lượt QA đầu dòng dữ liệu ở y584.
 - Ma trận responsive dùng 10 chiều rộng `360/375/390/430/768/1024/1366/1440/1920/2560`.
 - Fixture stress của DataTable dùng DOM bản sao trên browser ở 1/5/20/105 dòng; trạng thái 0 dùng query rỗng thật. Đây là kiểm tra layout, không chứng minh backend có 105 bản ghi hay hiệu năng phân trang ở quy mô đó.
 - Portal fixture 0/1/5/20/100 dùng component thực và dữ liệu tổng hợp trong trang browser riêng, không ghi DB.
-- Kết quả test đầy đủ, screenshot và giới hạn sẽ được ghi sau lượt chạy cuối.
+- Các con số trên là kết quả thực của từng lượt riêng; không cộng rerun vào lượt gốc hoặc gộp layout checks với kiểm thử nghiệp vụ.
+- Ảnh và JSON nằm trong các thư mục `playwright-report/anti-ai-portal-final`, `anti-ai-directory`, `anti-ai-operations`, `anti-ai-data`, `anti-ai-production`. Đây là artifact local, không đưa dữ liệu thật production vào Git.
+- Smoke production chỉ đọc trang công khai/guard đăng nhập; chưa chạy CRUD bằng tài khoản production. Tài khoản KHANG.NHO đã xác minh active/Super Admin; mật khẩu mã hóa không thể đọc lại, chưa reset khi chưa được chủ tài khoản đồng ý.
 
 ## Rollback và giới hạn phạm vi
 

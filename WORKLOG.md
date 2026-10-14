@@ -49,16 +49,16 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **ANTI-AI-ERP-20261013 — implementation xong, chuẩn bị push/redeploy — Codex — 2026-10-14.** Redesign shell/shared UI và toàn bộ cụm module theo yêu cầu chỉ giữ quy định màu. [Báo cáo/evidence](docs/system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md).
+- **ANTI-AI-ERP-20261013 — implementation xong và đã deploy — Codex — 2026-10-14.** Source `97b83c9` đã push main, Vercel success đúngSHA; smoke URL production đạt. [Báo cáo/evidence](docs/system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md).
 - **2026 unit pass /24 integration skip**, lint/typecheck/build đạt. E2E laptop đầu **226 pass /3 fail fixture**; chạy lại đúng3 ca **3/3 đạt**, không cộng thành một lượt229/229.
 - Browser bản cuối: portal/auth/dashboard/404 **80/80**; staff10width không overflow, GET/Back/Refresh/no-JS đạt; directory90cases trước refinement đạt. Staff first row y333.5 desktop/y410.5 mobile.
 - Full687 E2E mở rộng bị ngắt sau19ca đạt khi môi trường local dừng; chưa có lượt687/687 xanh. Đã khởi động lại Docker hiện có, không reset DB; smoke release **43/43 đạt** trên build cuối.
-- Giữ server API, quyền, schema/RLS/theme resolver; không migration hoặc dependency mới. User14/10 yêu cầu push để redeploy và thông tin đăng nhập; chỉ xác nhận deployed sau smoke production.
+- **ANTI-AI-ERP-RELEASE-20261014 — nghiệm thu release và cập nhật hồ sơ — Codex.** Production360/1366 HTTP200, radius8px/shadownone đúng bản mới, không JSerror/overflow; dashboard chưa đăng nhập chuyển vềlogin. Không đổi DB/RLS/API.
 - R2/R3/R4 giữ hoàn tất theo hồ sơ lịch sử; R5–R13/UX-42/R13.3 không tự đóng bởi redesign này. Baseline trước task: `8c6024a` (UI `e4dcf89`).
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Đang ưu tiên: ANTI-AI-ERP-20261013 — push/redeploy và smoke URL production theo yêu cầu14/10.** Sau bàn giao mới trở lại R5.1; R13.3 tiếp tục theo dõi gate toàn hệ thống.
+**Redesign đã phát hành.** Bàn giao tài khoản KHANG.NHO; chỉ đặt mật khẩu tạm nếu người dùng xác nhận. Theo dõi hydrationP2 và fullE2E/R13.3; R5.1 giữ backlog riêng.
 
 ## ⛔ BLOCKERS
 
@@ -167,7 +167,7 @@ Docker local đã khôi phục không reset dữ liệu, smoke release **43/43 �
 - **Đã test:** lint/typecheck/build đạt;2026unit pass/24skip. Laptop226pass/3fixturefail, rerun3/3pass; final browser80/80 và staff10width đạt; full687 ngắt ở19pass khi local stack dừng. Khôi phục Docker, smoke release43/43pass trên build cuối.
 - **Quyết định mới:** yêu cầu chủ dự án13/10 thay tiêu chuẩn hình thức cũ, giữ màu/nghiệp vụ; yêu cầu14/10 push/redeploy. Không tự đóng backlog R5–R13.
 - **Blocker/rủi ro:** fullE2E chưa xanh toàn bộ; guard không intercept history/programmatic navigation; xem báo cáo. Docker đã khôi phục.
-- **Next action:** commit/push task này, xác nhận Vercel đúngSHA và smoke URL production; bàn giao tài khoản theo lựa chọn của chủ tài khoản.
+- **Phát hành / ANTI-AI-ERP-RELEASE-20261014:** source97b83c9 đã pushmain; Vercel success đúngSHA; smoke public production360/1366 đạt, xác nhận token8px/none và guard/dashboard. Bàn giao tài khoản theo lựa chọn chủ tài khoản; không tự reset mật khẩu.
 
 ### [2026-10-13] Codex — R4.5 — nghiệm thu R4 và triển khai theo yêu cầu
 
