@@ -190,13 +190,23 @@ High-risk fix:
 
 ## 10. Quy tắc Git
 
-- 🔴 **ĐỔI 2026-08-14 — chủ dự án cấp quyền thường trực: agent ĐƯỢC tự `git commit` và
-  `git push`**, không cần xin phép từng lượt. Điều *"User tự commit"* ở bản cũ không còn hiệu lực.
+- 🔴 **ĐỔI 2026-10-14 — yêu cầu thường trực của chủ dự án: sau mỗi task sửa code đã hoàn tất,
+  agent PHẢI tự `git commit`, `git push` và đưa bản sửa lên production**, không đợi hỏi hoặc
+  xin xác nhận thêm. Quy tắc này thay mức *"được phép"* ngày 2026-08-14 và mọi ghi chú cũ
+  *"User tự commit"* / *"chỉ làm local, chờ yêu cầu deploy"*. Nếu người dùng yêu cầu riêng
+  một lượt chỉ làm local hoặc chưa phát hành thì ưu tiên yêu cầu đó.
 - Ba ràng buộc kèm theo: chạy **kiểm thử thật trước khi commit** · **một commit cho một task ID** ·
   cập nhật `WORKLOG.md` bằng số thật trước khi commit.
 - Vẫn **không** `git commit --amend` lên commit của agent khác, và vẫn không commit secret (§8).
 - Không reset/checkout làm mất thay đổi của user/agent khác.
 - Trước khi sửa xem `git status`.
+- Chỉ stage các file thuộc task, không đưa thay đổi riêng của user/agent khác hoặc secret vào commit.
+- Push lên nhánh phát hành đã cấu hình (`main` của repo hiện tại); dùng tích hợp Git → Vercel
+  hiện có để triển khai. Theo dõi deployment đúng commit SHA và smoke URL production
+  `https://cq-tntt-manager-web.vercel.app` trước khi báo đã phát hành.
+- Nếu kiểm tra bắt buộc, push, build/deploy hoặc smoke thất bại: xử lý trong phạm vi task;
+  nếu chưa thể xử lý, ghi rõ blocker và trạng thái thật. Không bỏ qua kiểm tra hoặc gọi là
+  đã deploy khi chưa xác minh. Không tự đổi cấu hình/quyền/bí mật production để vượt blocker.
 - Báo file thay đổi.
 
 ## 11. Cập nhật WORKLOG

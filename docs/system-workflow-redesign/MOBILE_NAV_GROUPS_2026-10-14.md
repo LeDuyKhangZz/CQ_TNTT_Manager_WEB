@@ -54,7 +54,11 @@ Không migration, sửa dữ liệu nghiệp vụ, thay API/RLS/quyền hoặc d
 
 ## Giới hạn và bàn giao
 
-Bản sửa nằm ở workspace/preview local, chưa commit/push/deploy. Không đóng backlog R5–R13/UX-42/R13.3 hay coi toàn bộ E2E lịch sử đã xanh. Chưa kiểm Safari/iOS hoặc điện thoại thật. Những thay đổi ngoài tám file sản phẩm nêu trên thuộc test và tài liệu tracking.
+**Đã phát hành ngày 14/10/2026:** source `c94386354fa7f24cff0615a0d5f9aa52c50515b7` đã push `main`; Vercel báo success đúng SHA. [Mở production](https://cq-tntt-manager-web.vercel.app). Smoke Chromium 360/1366px: HTTP 200, CSS responsive mới được phục vụ, không overflow/pageerror; dashboard chưa đăng nhập chuyển về login. Bằng chứng ở `verification/evidence/mobile-nav-20261014/production-deployment.json` và `production-results.json`.
+
+Không đóng backlog R5–R13/UX-42/R13.3 hay coi toàn bộ E2E lịch sử đã xanh. Chưa kiểm Safari/iOS hoặc điện thoại thật; không submit authenticated CRUD trên production. Những thay đổi ngoài tám file sản phẩm nêu trên thuộc test và tài liệu tracking.
+
+Theo yêu cầu mới của user 14/10, `AGENTS.md` §10, WORKLOG/D-55 và deployment runbook ghi bắt buộc tự kiểm tra → commit → push → xác nhận production sau mỗi task sửa code, không chờ hỏi lại. Rollback bản UI bằng revert source `c943863`, không cần rollback dữ liệu.
 
 ## Ảnh kiểm tra
 

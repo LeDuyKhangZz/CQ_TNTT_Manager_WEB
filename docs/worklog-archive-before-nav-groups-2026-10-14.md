@@ -10,3 +10,13 @@
 - **Quyết định mới:** không có; CT_NOIBO chỉ áp nguyên tắc UI, giữ DS/nghiệp vụ CQ. Đã rà 14 vai trò/14 module và ghi điểm bất tiện từng phase sau.
 - **Blocker/rủi ro:** R13.3 chưa có ba lượt toàn bộ xanh; UX-41 thiếu báo lỗi/retry giám hộ khi RPC 502; UX-42 tiêu đề desktop lặp. Chưa kiểm Safari/iOS thật, không tuyên bố mọi mutation của mọi vai trò đều đã chạy lại.
 - **Next action:** R4 Thiếu nhi + UX-41; chưa bắt đầu R4, chưa deploy, chưa commit/push gộp working tree R2/R3.
+
+### [2026-10-13] Codex — R4.1 — danh sách thiếu nhi
+
+- **Làm được:** Toolbar/FacetFilter, DataTable v2, sort máy chủ và phân trang20/50; form trong drawer URL; giữ năm lịch sử/quyền Thủ quỹ. Sửa compact CSS, popup tràn và margin drawer.
+- **File thay đổi:** students page/directory/queries, PageHeader, FacetFilter, ColumnToggle, Drawer, globals.css; unit/E2E và docs. [Báo cáo19](../REDESIGN/19_R4_1_COMPLETION_2026-10-13.md) ghi phạm vi và ảnh.
+- **Migration/data impact:** không migration/RLS/production; E2E local có ghi fixture. Spec mới cleanup đúng51 UUID/worker; spec cũ giữ tác động fixture vốn có. Không reset/seed DB.
+- **Đã test:** lint/typecheck/build đạt; full unit1.978 pass/24 skip; E2E90/90 ba viewport; hồi quy tập trung111/111. Reviewer độc lập query/component, các lượt70/70,37/37,44/44.
+- **Quyết định mới:** không có; D-R14 một task rủi ro cao trong phiên. Form hiện có chưa phải wizard R4.2.
+- **Blocker/rủi ro:** không có blocker R4.1; R4.2–.5, UX-41 detail, UX-42/R13.3 vẫn mở. Giữ log lỗi trước sửa và giới hạn Thủ quỹ scalar/fixed sort.
+- **Next action:** R4.2 wizard giám hộ → thiếu nhi. Chưa commit/push vì có thay đổi R2/R3 sẵn trong cùng worktree; không gộp vào task này.

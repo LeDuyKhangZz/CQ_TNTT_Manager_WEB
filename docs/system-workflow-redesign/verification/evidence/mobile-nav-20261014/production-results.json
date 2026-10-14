@@ -1,0 +1,24 @@
+{
+  "source": "c94386354fa7f24cff0615a0d5f9aa52c50515b7",
+  "records": [
+    {
+      "width": 360,
+      "status": 200,
+      "overflow": 0,
+      "username": true,
+      "password": true,
+      "celebrationLayout": true
+    },
+    {
+      "width": 1366,
+      "status": 200,
+      "overflow": 0,
+      "username": true,
+      "password": true,
+      "celebrationLayout": true
+    }
+  ],
+  "errors": [],
+  "protectedRoute": true,
+  "note": "Public production smoke. Authenticated menu coverage ran locally for 14 roles; no production password reset or business mutation."
+}

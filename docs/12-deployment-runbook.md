@@ -8,6 +8,19 @@
 - Ownership hiện tại: tài khoản cá nhân user.
 - Trước production ổn định nên thêm một người quản trị dự phòng.
 
+### Yêu cầu phát hành thường trực — 14/10/2026
+
+Sau mỗi task sửa code hoàn tất, agent tự chạy kiểm tra phù hợp, cập nhật WORKLOG,
+commit đúng file của task và push `main` để tích hợp Git → Vercel triển khai production.
+Không cần hỏi lại chủ dự án. Chỉ dừng ở local khi người dùng yêu cầu rõ cho lượt đó
+hoặc có blocker chưa xử lý được; phải ghi đúng trạng thái và nguyên nhân.
+
+Đối chiếu deployment với commit SHA vừa push và smoke
+`https://cq-tntt-manager-web.vercel.app` trước khi báo đã phát hành. Không tự nạp
+fixture/seed, đổi mật khẩu hoặc thêm migration production nếu task không yêu cầu.
+Quy tắc chi tiết: `AGENTS.md` §10; quyết định này thay mọi ghi chú cũ chỉ cho phép
+commit/push hoặc yêu cầu đợi xác nhận phát hành.
+
 ## 2. Environments
 
 ### Local

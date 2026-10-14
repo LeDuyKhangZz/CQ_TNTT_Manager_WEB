@@ -26,11 +26,12 @@
    ```
    Có DB/RLS → chạy thêm test DB. Có workflow UI → chạy E2E.
 6. **KHÔNG ĐƯỢC:** ghi pass/done/verified/deployed khi chưa chạy thật; sửa test để che bug; tự đổi quyết định; commit secret.
-7. **Commit + push: ĐƯỢC PHÉP** — chủ dự án cấp quyền thường trực **2026-08-14** (thay điều
-   *"tự chạy git commit/push"* ở quy tắc 6 cũ và `AGENTS.md` §"User tự commit"). Ba ràng buộc
-   **giữ nguyên**: (a) chạy kiểm thử thật **trước** khi commit — quy tắc 6 là về tính trung thực,
-   không phải về git; (b) **một commit cho một task ID**, không gộp nhiều task; (c) cập nhật
-   `WORKLOG` + log triển khai bằng số thật trước khi commit.
+7. **Tự commit + push + production: BẮT BUỘC sau mỗi task sửa code hoàn tất**, theo yêu cầu
+   thường trực của chủ dự án **2026-10-14**. Không kết thúc ở local hoặc hỏi lại có muốn
+   phát hành không, trừ khi user yêu cầu riêng chưa phát hành lượt đó. Chạy kiểm thử thật,
+   chỉ stage file thuộc task, một commit cho một task ID, cập nhật log bằng số thật;
+   push `main`, theo dõi Vercel đúng SHA và smoke URL production. Nếu lỗi thì xử lý hoặc
+   ghi blocker thật, không bỏ qua kiểm tra. Chi tiết: `AGENTS.md` §10.
 
 **Format entry:**
 
@@ -49,19 +50,19 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **MOBILE-NAV-GROUPS-20261014 — hoàn tất local — Codex — 2026-10-14.** Gỡ danh mục khỏi dashboard; thống nhất hàng sinh nhật; chia nhóm menu theo quyền trên mobile/desktop.
+- **AUTO-RELEASE-POLICY-20261014 — hoàn tất — Codex — 2026-10-14.** Đã ghi yêu cầu tự commit/push/deploy sau task sửa code vào AGENTS §10, WORKLOG/D-55 và deployment runbook.
 - **2.028 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **55 đạt / 2 skip có chủ đích**, gồm 14 role ở 360/768/1366px và sinh nhật ở 12 độ rộng. [Bằng chứng](docs/system-workflow-redesign/MOBILE_NAV_GROUPS_2026-10-14.md).
-- Preview `http://127.0.0.1:3150` giữ hoạt động; bản sửa này chưa commit/push/deploy. Production trước đó là source `4bb4d42` (MOBILE-SHEETS-RELEASE-20261014).
+- **MOBILE-NAV-GROUPS-20261014 đã phát hành:** source `c943863` đã push main, Vercel success đúng SHA; smoke production 360/1366 HTTP 200, CSS mới, không overflow/pageerror, dashboard chưa đăng nhập chuyển về login. Preview 3150 vẫn hoạt động.
 - Không đổi DB/RLS/API/quyền/theme, không ghi dữ liệu nghiệp vụ production; giữ các preset điều hướng nhanh và đường vào chức năng ít dùng.
 - R5–R13/UX-42/R13.3, full E2E lịch sử và hydration P2 vẫn giữ mở; không suy ra hoàn tất từ lượt kiểm tra giao diện này.
 
 ## ➡️ VIỆC TIẾP THEO
 
-Bản sửa ba phản hồi đã có trên preview local để người dùng xem. Chưa phát hành lượt sửa này. KHANG.NHO giữ mật khẩu hiện có. R5.1 và full E2E/R13.3 giữ backlog riêng.
+Các task sửa code tiếp theo phải tự kiểm tra → commit → push → xác nhận production theo AGENTS §10, không hỏi lại. KHANG.NHO giữ mật khẩu hiện có. R5.1 và full E2E/R13.3 giữ backlog riêng.
 
 ## ⛔ BLOCKERS
 
-Không có blocker cho MOBILE-NAV-GROUPS-20261014 ở local. 24 integration test bỏ qua; full E2E lịch sử và React hydration #418 ngắt quãng vẫn theo dõi riêng. Menu no-JS đã kiểm ở ba viewport; chưa kiểm Safari/điện thoại thật và chưa smoke production bản sửa mới.
+Không có blocker cho lượt phát hành này. 24 integration test bỏ qua; full E2E lịch sử và React hydration #418 ngắt quãng vẫn theo dõi riêng. Menu no-JS đã kiểm ở ba viewport; chưa kiểm Safari/điện thoại thật. Smoke production công khai đã đạt, không khẳng định authenticated CRUD production đã chạy lại.
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi)
 
@@ -121,7 +122,7 @@ Không có blocker cho MOBILE-NAV-GROUPS-20261014 ở local. 24 integration test
 | D-52 | Export phải giữ đúng filter/date range. |
 | D-53 | Dữ liệu import từ Google Sheets/Excel; duplicate chỉ warning; user review. |
 | D-54 | RLS mọi bảng, private storage, service role server-only. |
-| D-55 | User tự commit; agent không commit/push nếu không được yêu cầu rõ. |
+| D-55 | **Thay thế 2026-10-14:** sau mỗi task sửa code hoàn tất và qua kiểm tra, agent tự commit, push và triển khai production, xác nhận đúng SHA + smoke; không hỏi lại trừ user yêu cầu riêng chưa phát hành. Xem `AGENTS.md` §10. |
 | D-56 | Sa mạc thiếu nhi là Phase 8 cuối cùng. |
 | D-57 | Sa mạc: guardian đăng ký, camp leader assignment, phí và published receipt; chi tiết khác hỏi lại. |
 | D-58 | Ngưỡng cảnh báo chuyên cần cấu hình theo năm học, mặc định: 3 buổi vắng liên tiếp, 3 Chúa nhật liên tiếp, tỷ lệ có trọng số < 80%. SA đổi trong `/admin`. |
@@ -159,13 +160,21 @@ Không có blocker cho MOBILE-NAV-GROUPS-20261014 ở local. 24 integration test
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-14] Codex — AUTO-RELEASE-POLICY-20261014 — quy tắc thường trực và phát hành bản UI
+- **Làm được:** AGENTS §10, WORKLOG/D-55 và deployment runbook yêu cầu tự kiểm tra, commit, push và xác minh production sau mỗi task sửa code; không hỏi lại trừ user yêu cầu riêng chưa phát hành. Đã commit/push bản sửa UI `c94386354fa7f24cff0615a0d5f9aa52c50515b7`, Vercel success đúng SHA.
+- **File thay đổi:** AGENTS, WORKLOG, runbook, tài liệu tracking/báo cáo và bằng chứng release; không sửa thêm source sản phẩm ở task này.
+- **Migration/data impact:** không có; không đổi mật khẩu, seed hoặc submit dữ liệu production.
+- **Đã test:** bản UI đã có lint/typecheck/build đạt, 2.028 unit pass / 24 skip, 55 browser pass / 2 skip. Smoke production riêng 360/1366 HTTP 200, CSS bố cục sinh nhật mới, không overflow/pageerror; dashboard chưa đăng nhập chuyển về login. `git diff --check` đạt.
+- **Quyết định mới:** yêu cầu trực tiếp của user 14/10 biến việc tự phát hành từ “được phép” thành bắt buộc sau task sửa code hoàn tất. Chỉ stage file thuộc task; giữ nguyên năm file `nav-*.json` có sẵn ngoài task.
+- **Next:** người dùng xem production; task sau tiếp tục áp quy tắc tự phát hành. Backlog/giới hạn cũ giữ nguyên.
+
 ### [2026-10-14] Codex — MOBILE-NAV-GROUPS-20261014 — sửa theo ba ảnh phản hồi
 - **Làm được:** bỏ khối Tất cả chức năng khỏi dashboard; sinh nhật/bổn mạng luôn xếp ngày dưới tên ở mobile, hai cột từ 640px; chia menu thành danh mục sau khi lọc quyền, tìm kiếm theo tên/nhóm. Desktop mở cùng danh mục trong dialog, giữ fallback no-JS đóng mặc định.
 - **File thay đổi:** 8 file sản phẩm dashboard/shell/navigation, 2 file E2E, tracking và [báo cáo/ảnh](docs/system-workflow-redesign/MOBILE_NAV_GROUPS_2026-10-14.md).
 - **Migration/data impact:** không migration/RLS/API/dependency; không ghi dữ liệu nghiệp vụ. Browser dùng tài khoản local, hình học sinh nhật dùng fixture tên giả trong DOM.
 - **Đã test:** lint/typecheck/build đạt; 2.028 unit pass / 24 skip; Playwright cuối 55 pass / 2 skip có chủ đích, 14 role × ba viewport + geometry 12 độ rộng và 0/1/5/20/100 dòng. Lượt đầu 39 pass / 16 fail / 2 skip do hai lỗi harness, đã sửa và chạy lại toàn nhóm; không cộng lượt cũ vào lượt cuối.
 - **Quyết định mới:** yêu cầu người dùng 14/10 bỏ danh mục khỏi trang chủ và khôi phục nhóm chức năng; quyền và nghiệp vụ giữ nguyên.
-- **Next:** preview 3150 có bản sửa; chưa commit/push/deploy. R5–R13/UX-42/R13.3 giữ backlog riêng.
+- **Phát hành:** source `c943863` đã push main; Vercel và smoke production đạt theo AUTO-RELEASE-POLICY-20261014. R5–R13/UX-42/R13.3 giữ backlog riêng.
 
 ### [2026-10-14] Codex — MOBILE-SHEETS-RELEASE-20261014 — xác nhận production
 - **Làm được:** source `4bb4d42` đã push `main`; Vercel success đúng SHA; kiểm tra URL công khai ở 360/1366px đạt. CSS mobile mới đã được phục vụ; login HTTP 200, không overflow/pageerror, dashboard chưa đăng nhập chuyển về login.
@@ -200,16 +209,6 @@ Không có blocker cho MOBILE-NAV-GROUPS-20261014 ở local. 24 integration test
 - **Đã test:** lint/typecheck/build đạt; Vitest2.000 pass/24 skip; nhóm component cuối29/29; R4 E2E105/105,3,9 phút; pgTAP1.512/1.512. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Reviewer độc lập16 unit/boundary và JWT thật xác nhận D75.
 - **Giới hạn:** tablet768×1024 có12 hàng nhưng điện thoại/trạng thái cần cuộn ngang;768×800 khoảng7 hàng. Không có live fixture ghi chú khác rỗng. UX-42/R13.3 chưa đóng.
 - **Deployment:** `e4dcf89` đã push main và Vercel Production success. Smoke alias `https://cq-tntt-manager-web.vercel.app` đạt; URL riêng có Vercel Authentication; không gửi form production. **Next:** R5.1 chưa claim; UX-42/R13.3 giữ mở.
-
-### [2026-10-13] Codex — R4.1 — danh sách thiếu nhi
-
-- **Làm được:** Toolbar/FacetFilter, DataTable v2, sort máy chủ và phân trang20/50; form trong drawer URL; giữ năm lịch sử/quyền Thủ quỹ. Sửa compact CSS, popup tràn và margin drawer.
-- **File thay đổi:** students page/directory/queries, PageHeader, FacetFilter, ColumnToggle, Drawer, globals.css; unit/E2E và docs. [Báo cáo19](../REDESIGN/19_R4_1_COMPLETION_2026-10-13.md) ghi phạm vi và ảnh.
-- **Migration/data impact:** không migration/RLS/production; E2E local có ghi fixture. Spec mới cleanup đúng51 UUID/worker; spec cũ giữ tác động fixture vốn có. Không reset/seed DB.
-- **Đã test:** lint/typecheck/build đạt; full unit1.978 pass/24 skip; E2E90/90 ba viewport; hồi quy tập trung111/111. Reviewer độc lập query/component, các lượt70/70,37/37,44/44.
-- **Quyết định mới:** không có; D-R14 một task rủi ro cao trong phiên. Form hiện có chưa phải wizard R4.2.
-- **Blocker/rủi ro:** không có blocker R4.1; R4.2–.5, UX-41 detail, UX-42/R13.3 vẫn mở. Giữ log lỗi trước sửa và giới hạn Thủ quỹ scalar/fixed sort.
-- **Next action:** R4.2 wizard giám hộ → thiếu nhi. Chưa commit/push vì có thay đổi R2/R3 sẵn trong cùng worktree; không gộp vào task này.
 
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
 
