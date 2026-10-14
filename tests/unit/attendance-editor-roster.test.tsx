@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type {
   AttendanceRosterEntry,
@@ -13,7 +13,8 @@ import type {
  * tuần: **D-143** (hàng gấp lại, chạm để mở) · **D-142** (ba nút + "…") ·
  * **U-11** (lọc + tìm không dấu) · **TB-03** (hộp xác nhận trước khi chốt).
  */
-const saveAttendance = vi.fn(async (_input: unknown) => ({
+type SaveAttendanceResult = Awaited<ReturnType<typeof import("@/features/attendance/server/actions").saveAttendance>>;
+const saveAttendance = vi.fn(async (_input: unknown): Promise<SaveAttendanceResult> => ({
   ok: true as const,
   data: {
     status: "completed",
@@ -88,8 +89,8 @@ const STAFF: AttendanceStaffEntry[] = [
   },
 ];
 
-function renderEditor(overrides: Partial<Parameters<typeof AttendanceEditor>[0]> = {}) {
-  return render(
+function editorElement(overrides: Partial<Parameters<typeof AttendanceEditor>[0]> = {}) {
+  return (
     <AttendanceEditor
       sessionId="ses-1"
       roster={ROSTER}
@@ -102,8 +103,16 @@ function renderEditor(overrides: Partial<Parameters<typeof AttendanceEditor>[0]>
       leaseExpiresAt={null}
       isFinalized={false}
       {...overrides}
-    />,
+    />
   );
+}
+
+function renderEditor(overrides: Partial<Parameters<typeof AttendanceEditor>[0]> = {}) {
+  return render(editorElement(overrides));
+}
+
+function unloadIsBlocked() {
+  return !window.dispatchEvent(new Event("beforeunload", { cancelable: true }));
 }
 
 function rowButton(label: string) {
@@ -116,6 +125,57 @@ function column(label: string) {
 
 beforeEach(() => {
   saveAttendance.mockClear();
+});
+
+describe("attendance unsaved protection", () => {
+  it("starts clean, detects an edit, and becomes clean after reverting", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    expect(unloadIsBlocked()).toBe(false);
+    await user.click(rowButton("Giuse Nguyễn Minh An"));
+    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }));
+    expect(unloadIsBlocked()).toBe(true);
+    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Có mặt" }));
+    expect(unloadIsBlocked()).toBe(false);
+  });
+
+  it("only clears dirty state after a successful save", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(rowButton("Giuse Nguyễn Minh An"));
+    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }));
+    saveAttendance.mockResolvedValueOnce({ ok: false, code: "CONFLICT", message: "Không lưu được." });
+    await user.click(screen.getByRole("button", { name: "Lưu nháp" }));
+    await screen.findByText("Không lưu được.");
+    expect(unloadIsBlocked()).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Lưu nháp" }));
+    await screen.findByText("Đã lưu nháp.");
+    await waitFor(() => expect(unloadIsBlocked()).toBe(false));
+  });
+
+  it("retains a newer draft through save acknowledgement and refreshed props", async () => {
+    const user = userEvent.setup();
+    const view = renderEditor();
+    const saved = await saveAttendance.getMockImplementation()!({});
+    let resolve!: (result: SaveAttendanceResult) => void;
+    saveAttendance.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
+    await user.click(rowButton("Giuse Nguyễn Minh An"));
+    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }));
+    await user.click(screen.getByRole("button", { name: "Lưu nháp" }));
+    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Có mặt" }));
+    await act(async () => { resolve(saved); });
+    expect(unloadIsBlocked()).toBe(true);
+    view.rerender(editorElement({ roster: ROSTER.map((entry, index) => index === 0 ? { ...entry, massStatus: "unexcused_absence" } : entry) }));
+    expect(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Có mặt" })).toBeChecked();
+    expect(unloadIsBlocked()).toBe(true);
+  });
+
+  it("syncs refreshed server values when the attendance draft is clean", () => {
+    const view = renderEditor();
+    view.rerender(editorElement({ roster: ROSTER.map((entry, index) => index === 0 ? { ...entry, massStatus: "unexcused_absence" } : entry) }));
+    expect(within(rowButton("Giuse Nguyễn Minh An")).getByLabelText("Thánh lễ: Vắng không phép")).toBeInTheDocument();
+    expect(unloadIsBlocked()).toBe(false);
+  });
 });
 
 describe("D-143 — hàng gấp lại, chạm để mở", () => {

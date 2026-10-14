@@ -1,5 +1,7 @@
 # 09 — DESIGN SYSTEM ĐÃ PHÊ DUYỆT
 
+> **Cập nhật 13/10/2026 — ANTI-AI-ERP-20261013:** Chủ dự án yêu cầu redesign toàn ERP và **chỉ giữ quy định màu giao diện**. Bảng màu/contrast/theme tại §3–4 tiếp tục có hiệu lực; các quy định hình thức cũ về radius lớn, bóng card, minh họa, bố cục và mật độ được thay bằng [tiêu chuẩn và báo cáo triển khai mới](../ANTI_AI_ERP_2026-10-13.md). Nghiệp vụ, quyền, API và resolver ở tài liệu 10 giữ nguyên. Nội dung bên dưới lưu lịch sử, không dùng để khôi phục giao diện cũ.
+
 > **Ngày duyệt: 2026-07-23. Người duyệt: chủ dự án.**
 > Đây là **nguồn sự thật** cho mọi việc tạo hình trong Giai đoạn 2B, cùng với
 > `10_APPROVED_THEME_RULES.md`, `11_APPROVED_MODULE_PLAN.md` và tài liệu Giai đoạn 1.

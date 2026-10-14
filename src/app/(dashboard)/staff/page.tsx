@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateField } from "@/components/ui/date-field";
-import { FilterBar, FilterField } from "@/components/ui/filter-bar";
+import { FilterField } from "@/components/ui/filter-bar";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchInputControl } from "@/components/ui/search-input";
 import { Select } from "@/components/ui/select";
+import { Toolbar } from "@/components/ui/toolbar";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { PageContainer } from "@/components/layout/page-container";
@@ -22,7 +22,6 @@ import {
   SERVICE_FILTER_LABELS,
   SERVICE_FILTERS,
   STAFF_PAGE_SIZE,
-  componentBadgeVariant,
   componentLabel,
   formationLabel,
   parsePage,
@@ -83,63 +82,63 @@ export default async function StaffPage({
   const isFiltered = Boolean(search) || classFilter !== "all" || service !== "serving";
 
   return (
-    <PageContainer>
-      <PageHeader title="Huynh trưởng/Giáo lý viên" description="Hồ sơ nhân sự và lịch sử phân công đứng lớp." />
+    <PageContainer data-density="compact">
+      <PageHeader title="Huynh trưởng/Giáo lý viên" description={`${data.total} hồ sơ · Nhân sự và phân công đứng lớp.`}
+        action={canWrite ? <div className="flex flex-wrap gap-2"><Link href="#assign-staff-section" className={buttonVariants({ variant: "outline" })}>Phân công vào lớp</Link><Link href="#add-staff" className={buttonVariants()}>Thêm nhân sự</Link></div> : null}
+      />
       {deletedMessage ? <div className="mb-4"><FormMessage tone="success">{deletedMessage}</FormMessage></div> : null}
       {okMessage ? <div className="mb-4"><FormMessage tone="success">{okMessage}</FormMessage></div> : null}
       {errorMessage ? <div className="mb-4"><FormMessage tone="danger">{errorMessage}</FormMessage></div> : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
+      <div className="space-y-5">
         <div className="space-y-4">
-          <FilterBar
-            legend="Lọc danh sách nhân sự"
+          <Toolbar
+            label="Lọc danh sách nhân sự"
             action="/staff"
-            resetHref={isFiltered ? "/staff" : undefined}
+            search={{
+              id: "filter-staff-search",
+              label: "Tìm theo họ tên",
+              defaultValue: search,
+              placeholder: "Tên, mã GLV hoặc số điện thoại",
+            }}
+            className="relative"
           >
-            <FilterField
-              className="sm:col-span-2 lg:col-span-1"
-              label="Tìm theo họ tên"
-              htmlFor="filter-staff-search"
-              helper="Gõ không dấu cũng tìm được — cả tên thánh, mã GLV và số điện thoại."
-            >
-              <SearchInputControl
-                id="filter-staff-search"
-                name="q"
-                defaultValue={search}
-                placeholder="Tìm theo tên hoặc mã GLV"
-              />
-            </FilterField>
-            <FilterField label="Lớp đang phục vụ" htmlFor="filter-class">
-              <Select id="filter-class" name="classId" defaultValue={classFilter}>
-                <option value="all">Mọi lớp</option>
-                <option value="none">Chưa phân lớp</option>
-                {classes.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name}</option>
-                ))}
-              </Select>
-            </FilterField>
-            <FilterField label="Trạng thái phục vụ" htmlFor="filter-service">
-              <Select id="filter-service" name="service" defaultValue={service}>
-                {SERVICE_FILTERS.map((value) => (
-                  <option key={value} value={value}>{SERVICE_FILTER_LABELS[value]}</option>
-                ))}
-              </Select>
-            </FilterField>
-          </FilterBar>
+            <details className="static sm:relative">
+              <summary className="flex min-h-11 cursor-pointer items-center rounded-md border border-line-strong bg-surface px-3 text-sm font-medium">
+                Bộ lọc{classFilter !== "all" || service !== "serving" ? " · Đang lọc" : ""}
+              </summary>
+              <div className="absolute inset-x-0 z-dropdown mt-1 grid gap-3 rounded-lg border border-line bg-surface p-3 shadow-md sm:left-auto sm:w-80">
+                <FilterField label="Lớp đang phục vụ" htmlFor="filter-class">
+                  <Select id="filter-class" name="classId" defaultValue={classFilter}>
+                    <option value="all">Mọi lớp</option>
+                    <option value="none">Chưa phân lớp</option>
+                    {classes.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
+                    ))}
+                  </Select>
+                </FilterField>
+                <FilterField label="Trạng thái phục vụ" htmlFor="filter-service">
+                  <Select id="filter-service" name="service" defaultValue={service}>
+                    {SERVICE_FILTERS.map((value) => (
+                      <option key={value} value={value}>{SERVICE_FILTER_LABELS[value]}</option>
+                    ))}
+                  </Select>
+                </FilterField>
+                <Button type="submit" variant="secondary">Áp dụng bộ lọc</Button>
+              </div>
+            </details>
+            {isFiltered ? <Link href="/staff" className="inline-flex min-h-11 items-center px-2 text-sm text-ink-muted underline underline-offset-4">Xoá lọc</Link> : null}
+          </Toolbar>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Danh sách nhân sự</CardTitle>
-              <CardDescription>Mỗi người chỉ có một lớp đang phục vụ tại một thời điểm.</CardDescription>
-            </CardHeader>
+            <h2 className="sr-only">Danh sách nhân sự</h2>
             <CardContent className="space-y-3">
               {/* D-108 — danh sách tự ẩn bớt người thì PHẢI nói ra, kèm đường bật lại.
                   Một danh sách âm thầm bỏ sót là một danh sách khiến người dùng
                   tưởng hồ sơ đã biến mất và đi tạo lại một hồ sơ trùng. */}
               {data.hiddenByService > 0 ? (
                 <p className="text-sm text-ink-muted">
-                  Đang ẩn <strong>{data.hiddenByService}</strong> người không thuộc bộ lọc &ldquo;
-                  {SERVICE_FILTER_LABELS[service]}&rdquo;.{" "}
+                  Đang ẩn <strong>{data.hiddenByService}</strong> hồ sơ ngoài bộ lọc.{" "}
                   <Link
                     href={buildHref({ service: "all" })}
                     className="inline-flex min-h-11 items-center underline underline-offset-4"
@@ -169,15 +168,24 @@ export default async function StaffPage({
                   }
                 />
               ) : (
-                staff.map((item) => {
+                <table className="w-full text-left text-sm" aria-label="Danh sách nhân sự">
+                  <thead className="hidden border-b border-line bg-surface-muted text-ink-muted md:table-header-group">
+                    <tr>
+                      <th scope="col" className="px-3 py-2 font-medium">Họ tên / Thành phần</th>
+                      <th scope="col" className="px-3 py-2 font-medium">Liên hệ / Huấn luyện</th>
+                      <th scope="col" className="px-3 py-2 font-medium">Phân công</th>
+                      <th scope="col" className="px-3 py-2 font-medium">Phục vụ / Tài khoản</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                {staff.map((item) => {
                   const account = staffAccountBadge(
                     { hasAccount: item.hasAccount, username: item.username, hasActiveRole: item.hasActiveRole },
                     visibility,
                   );
                   return (
-                    <Panel key={item.id} padding="md">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0">
+                    <tr key={item.id} className="grid gap-1 py-3 md:table-row md:py-0">
+                        <td className="min-w-0 md:px-3 md:py-2">
                           {/* 🔴 `prefetch={false}` là BẮT BUỘC, không phải tinh
                               chỉnh. Mặc định Next tải trước mọi `<Link>` lọt vào
                               khung nhìn: 10 thẻ ⇒ 10 lượt dựng `/staff/[id]`
@@ -190,38 +198,31 @@ export default async function StaffPage({
                               thấy đúng 10 lượt `/staff/<uuid>?_rsc=` chen trước.
                               Người dùng mở nhiều nhất MỘT hồ sơ, nên tải trước
                               chín cái còn lại là trả giá để không dùng. */}
-                          <Link href={`/staff/${item.id}`} prefetch={false} className="font-medium text-ink underline-offset-4 hover:underline">
+                          <Link href={`/staff/${item.id}`} prefetch={false} className="inline-flex min-h-11 items-center break-words font-medium text-ink underline-offset-4 hover:underline">
                             {staffDisplayName(item)}
                           </Link>
                           <p className="text-sm text-ink-muted">
-                            {item.staffCode} · {item.phone ?? "chưa có SĐT"} · Huấn luyện {formationLabel(item.formationLevel)}
+                            {item.staffCode} · {componentLabel(item.component)}
                           </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {/* STAFF-COMP-001 — thẻ ĐẦU TIÊN, trước cả trạng thái
-                              phục vụ. Ban Trợ tá không dạy học nhưng vẫn nằm
-                              trong danh sách này; trước đợt này dấu hiệu duy
-                              nhất để nhận ra họ là thẻ "Chưa phân lớp" — mà
-                              huynh trưởng mới cũng mang đúng thẻ ấy. */}
-                          <Badge variant={componentBadgeVariant(item.component)} icon={false}>
-                            {componentLabel(item.component)}
-                          </Badge>
-                          <Badge variant={item.serviceStatus === "active" ? "success" : "secondary"}>
-                            {serviceLabel(item.serviceStatus)}
-                          </Badge>
-                          <Badge variant={account.tone === "success" ? "success" : account.tone === "warning" ? "warning" : "secondary"}>
-                            {account.text}
-                          </Badge>
-                          <Badge variant={item.assignment ? "success" : "secondary"}>
+                        </td>
+                        <td className="md:px-3 md:py-2">
+                          <p>{item.phone ?? "Chưa có SĐT"}</p>
+                          <p className="text-xs text-ink-muted">Huấn luyện {formationLabel(item.formationLevel)}</p>
+                        </td>
+                        <td className="md:px-3 md:py-2">
                             {item.assignment
                               ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}`
                               : "Chưa phân lớp"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </Panel>
+                        </td>
+                        <td className="md:px-3 md:py-2">
+                          <p>{serviceLabel(item.serviceStatus)}</p>
+                          {account.tone === "warning" ? <Badge variant="warning">{account.text}</Badge> : <p className="text-xs text-ink-muted">{account.text}</p>}
+                        </td>
+                    </tr>
                   );
-                })
+                })}
+                  </tbody>
+                </table>
               )}
 
               <Pagination
@@ -235,13 +236,13 @@ export default async function StaffPage({
           </Card>
         </div>
 
-        {canWrite ? <div className="space-y-5">
-          <Card>
+        {canWrite ? <div className="grid items-start gap-5 xl:grid-cols-2">
+          <Card id="add-staff" className="scroll-mt-24">
             <CardHeader><CardTitle>Thêm nhân sự</CardTitle><CardDescription>Dì/Sơ là danh xưng, không phải role hệ thống.</CardDescription></CardHeader>
             <CardContent><StaffCreateForm /></CardContent>
           </Card>
 
-          <Card>
+          <Card id="assign-staff-section" className="scroll-mt-24">
             <CardHeader><CardTitle>Phân công vào lớp</CardTitle><CardDescription>Muốn đổi lớp mà giữ tài khoản thì mở hồ sơ và dùng &ldquo;Chuyển lớp&rdquo;.</CardDescription></CardHeader>
             <CardContent><form action={assignStaffFromForm} className="space-y-3"><FormPendingBridge />
               <div className="space-y-2">

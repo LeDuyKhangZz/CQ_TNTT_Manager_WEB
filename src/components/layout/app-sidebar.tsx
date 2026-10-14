@@ -38,11 +38,11 @@ export function AppSidebar({ items, pathname, contextIndicator, badges, collapse
       className={cn("flex h-full flex-col border-r border-line bg-surface",
         mobile ? "w-full" : "fixed inset-y-0 left-0 z-sidebar hidden lg:flex",
         !mobile && (rail ? "w-[72px]" : "w-[264px]"))}>
-      <div className={cn("flex min-h-20 shrink-0 items-center gap-3 border-b border-line", rail ? "justify-center px-2" : "px-4")}>
-        <Image src="/logo.png" alt={rail ? "Thiếu Nhi Thánh Thể Chợ Quán" : ""} width={44} height={44} className="h-11 w-11 shrink-0 rounded-xl object-contain" />
+      <div className={cn("flex min-h-[68px] shrink-0 items-center gap-3 border-b border-line", rail ? "justify-center px-2" : "px-4")}>
+        <Image src="/logo.png" alt={rail ? "Thiếu Nhi Thánh Thể Chợ Quán" : ""} width={44} height={44} className="h-11 w-11 shrink-0 object-contain" />
         {!rail ? <div className="min-w-0 flex-1">
-          <p className="truncate text-2xs font-semibold uppercase tracking-wider text-ink-muted">Giáo xứ Chợ Quán</p>
-          <p className="font-semibold text-ink">Thiếu Nhi Thánh Thể</p>
+          <p className="truncate text-xs text-ink-muted">Giáo xứ Chợ Quán</p>
+          <p className="text-sm font-semibold text-ink">Thiếu Nhi Thánh Thể</p>
         </div> : null}
         {mobile ? <button type="button" onClick={onClose} className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-md text-ink-muted hover:bg-surface-muted" aria-label="Đóng menu">
           <X className="h-5 w-5" aria-hidden="true" />
@@ -58,7 +58,7 @@ export function AppSidebar({ items, pathname, contextIndicator, badges, collapse
           </Link>
         </RailLabel>
         {sectionsFor(items).map(({ group, items: groupItems }, index) => <div className="mb-3" key={`${group}-${index}`}>
-          {!rail ? <p className="mb-1 px-3 text-2xs font-semibold uppercase tracking-wider text-ink-muted">{group}</p> : index > 0 ? <div className="mx-2 mb-2 border-t border-line" /> : null}
+          {!rail ? <p className="mb-1 px-3 text-xs font-medium text-ink-muted">{group}</p> : index > 0 ? <div className="mx-2 mb-2 border-t border-line" /> : null}
           <ul className="space-y-1">
             {groupItems.map((item) => {
               const ownId = item.moduleHref === "/classes" ? item.href.split("/")[2] : null;

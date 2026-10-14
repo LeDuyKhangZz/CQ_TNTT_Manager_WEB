@@ -28,10 +28,10 @@ export default async function ChangePasswordPage({
   return (
     <div className="mx-auto max-w-md">
       {forced ? <Badge variant="warning">Bắt buộc</Badge> : null}
-      <h1 className={`${forced ? "mt-4" : ""} text-3xl font-semibold tracking-tight text-ink`}>
+      <h1 className={`${forced ? "mt-3" : ""} text-2xl font-semibold text-ink`}>
         {forced ? "Tạo mật khẩu mới" : "Đổi mật khẩu"}
       </h1>
-      <p className="mb-7 mt-2 text-sm text-ink-muted">
+      <p className="mb-5 mt-2 text-sm text-ink-muted">
         {forced
           ? "Đây là lần đăng nhập đầu tiên. Vui lòng tạo mật khẩu riêng trước khi tiếp tục."
           : "Nhập mật khẩu hiện tại để xác nhận là bạn, rồi đặt mật khẩu mới. Lần đăng nhập sau sẽ dùng mật khẩu này."}

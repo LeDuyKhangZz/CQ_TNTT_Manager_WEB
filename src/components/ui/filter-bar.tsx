@@ -1,6 +1,5 @@
 import * as React from "react";
 import Link from "next/link";
-import { SlidersHorizontal } from "lucide-react";
 import { Button } from "./button";
 import { Label } from "./label";
 import { cn } from "@/lib/utils";
@@ -58,7 +57,6 @@ export function FilterBar({
             hideLegend && "sr-only",
           )}
         >
-          <SlidersHorizontal className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           {legend}
         </legend>
 
@@ -72,8 +70,8 @@ export function FilterBar({
               ))
           : null}
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button type="submit">{submitLabel}</Button>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button type="submit" variant="secondary">{submitLabel}</Button>
           {resetHref ? (
             <Link
               href={resetHref}
@@ -99,14 +97,14 @@ export function FilterBar({
  * ô không nhãn chỉ có `aria-label`, ô có dòng gợi ý, ô không có. Mỗi khác biệt
  * ấy đổi chiều cao của ô ⇒ các ô đứng lệch nhau và mép dưới không thẳng hàng.
  *
- * Lời giải là **ba tầng CỐ ĐỊNH, giống hệt nhau ở mọi ô**, kể cả khi tầng đó
- * rỗng:
+ * Nhãn và control giữ cùng vị trí trong mỗi hàng. Từ redesign 13/10/2026,
+ * dòng gợi ý chỉ chiếm chỗ khi có nội dung; CSS grid vẫn căn đầu các ô lọc:
  *
  * | Tầng | Chiều cao | Ghi chú |
  * |---|---|---|
  * | nhãn | `h-5` (20px) + `mb-1.5` (6px) | nhãn **luôn** render; ẩn thì `sr-only` — hàng vẫn giữ đúng 20px |
  * | control | `min-h-11` (44px) | đúng `--control-height` của `Input`/`Select` |
- * | gợi ý | `min-h-[18px]`, 13px `--ink-muted` | **luôn** chiếm chỗ, kể cả rỗng |
+ * | gợi ý | `min-h-[18px]`, 13px `--ink-muted` | `empty:hidden` khi không có nội dung |
  *
  * `leading-5` cho hàng nhãn là cố ý: `Label` mặc định `leading-normal` (1.5),
  * tức 14px × 1.5 = **21px** — tràn 1px khỏi hàng 20px và kéo lệch trở lại đúng
@@ -207,7 +205,7 @@ export function FilterField({
 
       <div className="flex min-h-11 flex-col justify-center">{control}</div>
 
-      <p id={helperId} className="mt-1 min-h-[18px] text-xs leading-[18px] text-ink-muted">
+      <p id={helperId} className="mt-1 min-h-[18px] text-xs leading-[18px] text-ink-muted empty:hidden">
         {hasHelper ? helper : null}
       </p>
     </div>

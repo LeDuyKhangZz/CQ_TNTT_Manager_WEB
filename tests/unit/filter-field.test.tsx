@@ -42,7 +42,7 @@ describe("FilterField · ba tầng CỐ ĐỊNH", () => {
     expect(helperRow).toHaveTextContent("Chỉ ngành bạn xem được.");
   });
 
-  it("🔴 KHÔNG có gợi ý thì hàng gợi ý VẪN render và VẪN chiếm chỗ", () => {
+  it("gợi ý rỗng giữ DOM ổn định và được ẩn bằng CSS", () => {
     const { container } = render(
       <FilterField label="Lớp" htmlFor="f-class">
         <Select id="f-class" name="class">
@@ -52,11 +52,10 @@ describe("FilterField · ba tầng CỐ ĐỊNH", () => {
     );
 
     const [, , helperRow] = rows(container);
-    // Đây chính là điều kiện làm các ô đứng thẳng hàng: ô có gợi ý và ô không
-    // có gợi ý phải cao **bằng nhau**. Xoá hàng này đi là lưới so le trở lại.
+    // Controls align at the top; an absent hint must not reserve blank space.
     expect(helperRow).toBeInTheDocument();
     expect(helperRow.textContent).toBe("");
-    expect(helperRow).toHaveClass("min-h-[18px]");
+    expect(helperRow).toHaveClass("min-h-[18px]", "empty:hidden");
   });
 
   it("🔴 `hideLabel` giấu nhãn khỏi MẮT nhưng hàng nhãn vẫn giữ đúng 20px", () => {

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -58,21 +58,23 @@ export default async function TeachingPlanPage() {
           description={`Năm học ${data.year.code} chưa có lớp nào ở trạng thái đang hoạt động, nên chưa có giáo án nào để mở. Hãy sinh danh sách lớp ở trang Cấu trúc học vụ trước.`}
         />
       ) : (
-        <section className="mt-7 space-y-4">
-          <h2 className="text-xl font-semibold">Giáo án theo lớp</h2>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {data.classes.map((item) => (
-              <Link key={item.id} href={`/teaching-plan/${item.id}`} className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring focus-visible:ring-offset-2">
-                <Card className="h-full transition-colors hover:border-theme-primary">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-3"><CardTitle>{item.displayName}</CardTitle><Badge variant={item.planId ? "success" : "secondary"}>{item.planId ? `${item.itemCount} mục` : "Chưa tạo"}</Badge></div>
-                    <CardDescription>{item.planTitle ?? "Chưa có kế hoạch giảng dạy"}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="text-sm text-ink-muted">{item.canManage ? "Bạn có quyền chỉnh sửa" : "Chỉ xem"}</CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Giáo án theo lớp</h2>
+          <DataTable
+            caption={`Giáo án theo lớp · năm học ${data.year.code}`}
+            hideCaption
+            density="compact"
+            rows={data.classes}
+            getRowKey={(item) => item.id}
+            minWidth="640px"
+            mobileRow={{ titleKey: "class", metaKeys: ["plan", "items", "access"] }}
+            columns={[
+              { key: "class", header: "Lớp", cell: (item) => <Link href={`/teaching-plan/${item.id}`} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline-offset-4 hover:underline">{item.displayName}</Link> },
+              { key: "plan", header: "Kế hoạch giảng dạy", cell: (item) => <span className="break-words">{item.planTitle ?? "Chưa có kế hoạch giảng dạy"}</span> },
+              { key: "items", header: "Số mục", numeric: true, cell: (item) => item.planId ? item.itemCount : "Chưa tạo" },
+              { key: "access", header: "Quyền thao tác", cell: (item) => <span className="text-ink-muted">{item.canManage ? "Bạn có quyền chỉnh sửa" : "Chỉ xem"}</span> },
+            ]}
+          />
         </section>
       )}
     </PageContainer>

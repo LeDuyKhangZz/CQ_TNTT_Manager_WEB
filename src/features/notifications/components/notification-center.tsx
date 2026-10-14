@@ -308,11 +308,13 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
 
       {availableTargets.length > 0 ? (
-        <Card>
+        <details className="rounded-md border border-line bg-surface">
+          <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-medium">Soạn thông báo</summary>
+        <Card className="border-0 border-t border-line rounded-none">
           <CardHeader>
             <CardTitle>Gửi thông báo</CardTitle>
             <CardDescription>
@@ -411,6 +413,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
             </form>
           </CardContent>
         </Card>
+        </details>
       ) : null}
 
       {/*
@@ -488,7 +491,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                 // `data-testid` để bài E2E đếm ĐÚNG dòng hộp thư: `getByRole
                 // ("listitem")` gom cả mục điều hướng ở vỏ và danh sách "Tôi đã
                 // gửi", nên con số nó trả về không nói lên điều gì.
-                <li key={item.id} data-testid="inbox-item" className="py-4">
+                <li key={item.id} data-testid="inbox-item" className="py-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className={cn("font-medium", item.retracted && "text-ink-muted")}>
@@ -500,7 +503,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                           <span className="ml-2 align-middle"><Badge variant="danger">Đã thu hồi</Badge></span>
                         ) : null}
                       </p>
-                      <p className="mt-1 whitespace-pre-line text-sm">{item.content}</p>
+                      <p className="mt-1 whitespace-pre-line break-words text-sm">{item.content}</p>
                       <p className="mt-2 text-xs text-ink-muted">
                         {/*
                           Chip phạm vi mang **tên phạm vi bằng chữ**, không phải
@@ -508,7 +511,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                           duy nhất.
                         */}
                         {item.targetType ? (
-                          <span className="mr-2 rounded-full border border-line px-2 py-0.5">
+                          <span className="mr-2">
                             {NOTIFICATION_TARGET_LABELS[item.targetType]}
                           </span>
                         ) : null}
@@ -567,7 +570,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                       {item.title}
                     </p>
                     <p className="mt-1 text-xs text-ink-muted">
-                      <span className="mr-2 rounded-full border border-line px-2 py-0.5">
+                      <span className="mr-2">
                         {NOTIFICATION_TARGET_LABELS[item.targetType]}
                       </span>
                       {formatDateTimeVi(item.publishedAt)} · {item.recipientCount} người nhận

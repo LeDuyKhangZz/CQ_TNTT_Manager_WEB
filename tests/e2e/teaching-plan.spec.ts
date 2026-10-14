@@ -103,7 +103,12 @@ test.describe("Giáo án Phase 4", () => {
     const fileName = `tai-lieu-${suffix}.txt`;
 
     await login(page, "GLV909");
-    await page.goto(`/teaching-plan/${classId}`);
+    await page.goto("/teaching-plan");
+    const directory = page.getByRole("table", { name: /Giáo án theo lớp · năm học/ });
+    const classLink = directory.getByRole("link", { name: "Ấu 1A", exact: true });
+    await expect(classLink).toHaveAttribute("href", `/teaching-plan/${classId}`);
+    await classLink.click();
+    await expect(page.getByRole("heading", { name: "Giáo án Ấu 1A", exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page, "trang giáo án lớp");
 
     /**

@@ -39,7 +39,7 @@ function CountCell({
   emphasis?: boolean;
 }) {
   return (
-    <td className={CELL}>
+    <td className={cn(CELL, "sm:text-right")}>
       <span className={MOBILE_LABEL}>{label}</span>
       {count === 0 ? (
         // Số 0 **không** là liên kết: một ô rỗng dẫn tới một trang rỗng là một
@@ -51,7 +51,7 @@ function CountCell({
         <Link
           href={promotionCellHref(classId, status)}
           className={cn(
-            "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 text-sm hover:bg-surface-muted",
+            "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 text-sm hover:bg-surface-muted sm:justify-end sm:pr-0",
             emphasis ? "font-semibold text-ink" : "text-ink",
           )}
           data-numeric
@@ -84,7 +84,7 @@ export function PromotionProgress({
   );
 
   return (
-    <section aria-labelledby="promotion-progress-heading" className="space-y-3">
+    <section id="promotion-progress" aria-labelledby="promotion-progress-heading" className="scroll-mt-20 space-y-3">
       <h2 id="promotion-progress-heading" className="text-lg font-semibold">
         Tiến độ theo lớp
       </h2>
@@ -100,19 +100,19 @@ export function PromotionProgress({
               <th scope="col" className="px-3 py-2 font-semibold">
                 Lớp
               </th>
-              <th scope="col" className="px-3 py-2 font-semibold">
+              <th scope="col" className="px-3 py-2 text-right font-semibold">
                 Sĩ số
               </th>
-              <th scope="col" className="px-3 py-2 font-semibold">
+              <th scope="col" className="px-3 py-2 text-right font-semibold">
                 Chưa đề xuất
               </th>
-              <th scope="col" className="px-3 py-2 font-semibold">
+              <th scope="col" className="px-3 py-2 text-right font-semibold">
                 Chờ duyệt
               </th>
-              <th scope="col" className="px-3 py-2 font-semibold">
+              <th scope="col" className="px-3 py-2 text-right font-semibold">
                 Đã duyệt
               </th>
-              <th scope="col" className="px-3 py-2 font-semibold">
+              <th scope="col" className="px-3 py-2 text-right font-semibold">
                 Từ chối
               </th>
             </tr>
@@ -139,7 +139,7 @@ export function PromotionProgress({
                     </Link>
                   )}
                 </td>
-                <td className={CELL}>
+                <td className={cn(CELL, "sm:text-right")}>
                   <span className={MOBILE_LABEL}>Sĩ số</span>
                   <span data-numeric>{entry.rosterSize}</span>
                 </td>
@@ -176,23 +176,23 @@ export function PromotionProgress({
             <tfoot className="border-t border-line-strong bg-surface-muted font-medium">
               <tr className="block px-4 py-3 sm:table-row sm:px-0 sm:py-0">
                 <td className={CELL}>Tổng {progress.length} lớp</td>
-                <td className={CELL}>
+                <td className={cn(CELL, "sm:text-right")}>
                   <span className={MOBILE_LABEL}>Sĩ số</span>
                   <span data-numeric>{total.rosterSize}</span>
                 </td>
-                <td className={CELL}>
+                <td className={cn(CELL, "sm:text-right")}>
                   <span className={MOBILE_LABEL}>Chưa đề xuất</span>
                   <span data-numeric>{total.notProposed}</span>
                 </td>
-                <td className={CELL}>
+                <td className={cn(CELL, "sm:text-right")}>
                   <span className={MOBILE_LABEL}>Chờ duyệt</span>
                   <span data-numeric>{total.pending}</span>
                 </td>
-                <td className={CELL}>
+                <td className={cn(CELL, "sm:text-right")}>
                   <span className={MOBILE_LABEL}>Đã duyệt</span>
                   <span data-numeric>{total.approved}</span>
                 </td>
-                <td className={CELL}>
+                <td className={cn(CELL, "sm:text-right")}>
                   <span className={MOBILE_LABEL}>Từ chối</span>
                   <span data-numeric>{total.rejected}</span>
                 </td>

@@ -11,7 +11,6 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -494,7 +493,7 @@ function ItemForm({
 
 function DetailLine({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
-  return <div><dt className="text-xs font-medium uppercase tracking-wide text-ink-muted">{label}</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{value}</dd></div>;
+  return <div><dt className="text-sm font-medium text-ink-muted">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm">{value}</dd></div>;
 }
 
 function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: TeachingPlanItem }) {
@@ -625,9 +624,9 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant={item.itemType === "assessment" ? "warning" : "secondary"}>{itemTypeLabel}</Badge>
-              <span className="text-sm text-ink-muted">Tuần {weekNumber(item.plannedDate, detail.yearStart)} · {formatDateVi(item.plannedDate)}</span>
+            <div className="mb-1 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+              <span>{itemTypeLabel}</span>
+              <span>· Tuần {weekNumber(item.plannedDate, detail.yearStart)} · <span className="tabular-nums">{formatDateVi(item.plannedDate)}</span></span>
             </div>
             <CardTitle>{item.title}</CardTitle>
             <CardDescription>Người dạy: {item.teacherName}</CardDescription>
@@ -641,7 +640,7 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
                 (`06_UI_UX_RECOMMENDATIONS` §3).
               */}
               <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Sửa</Button>
-              <Button size="sm" variant="danger" disabled={pending} onClick={() => setConfirming("item")}>Xóa</Button>
+              <Button size="sm" variant="ghost" className="text-danger" disabled={pending} onClick={() => setConfirming("item")}>Xóa</Button>
             </div>
           ) : null}
         </div>
@@ -668,7 +667,7 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
           <DetailLine label="Ghi chú nội bộ" value={item.note} />
         </dl>
         <div className="border-t border-line pt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Tài liệu</p>
+          <p className="text-sm font-medium text-ink-muted">Tài liệu</p>
           {item.materialName ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="min-w-0 flex-1 break-all text-sm">
@@ -704,7 +703,7 @@ function ItemCard({ detail, item }: { detail: TeachingPlanDetail; item: Teaching
                 disabled={pending}
                 className="flex-1"
               />
-              <Button type="submit" size="sm" pending={pending}>Lưu tài liệu</Button>
+              <Button type="submit" size="sm" variant="outline" pending={pending}>Lưu tài liệu</Button>
             </form>
           ) : (
             <p className="mt-2 text-xs text-ink-muted">{TEACHING_MATERIAL_SUMMARY}</p>
@@ -839,9 +838,9 @@ export function TeachingPlanEditor({ detail, view }: { detail: TeachingPlanDetai
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           {detail.canManage ? (
             <form onSubmit={renamePlan} className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2"><Label htmlFor="plan-title">Tên giáo án</Label><Input id="plan-title" name="title" defaultValue={detail.planTitle ?? ""} maxLength={150} required /></div>

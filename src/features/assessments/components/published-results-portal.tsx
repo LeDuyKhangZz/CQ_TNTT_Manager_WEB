@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { formatDateVi } from "@/lib/dates";
 import type { AppAudience } from "@/lib/permissions/roles";
@@ -58,19 +57,19 @@ export function PublishedResultsPortal({
     );
   }
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {results.map((result) => (
         <Card key={result.enrollmentId}>
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div><CardTitle>{result.studentName}</CardTitle><CardDescription>{result.className} · {result.academicYearCode}</CardDescription></div>
               <div className="flex flex-col items-start gap-1 sm:items-end">
-                <Badge variant="success">TB {result.weightedAverage ?? "—"}</Badge>
+                <p className="text-sm font-semibold tabular-nums">TB {result.weightedAverage ?? "—"}</p>
                 <p className="text-xs text-ink-muted">{averageNote(result)}</p>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-4">
             <section>
               <h2 className="mb-2 font-semibold">Điểm đã công bố</h2>
               {result.assessments.length === 0 ? <p className="text-sm text-ink-muted">Chưa có cột điểm được công bố.</p> : (
@@ -81,8 +80,8 @@ export function PublishedResultsPortal({
                 >
                   <table className="w-full min-w-[520px] text-sm">
                     <caption className="sr-only">Điểm đã công bố của {result.studentName}</caption>
-                    <thead className="bg-surface-muted text-left"><tr><th scope="col" className="p-3">Cột điểm</th><th scope="col" className="p-3">Loại</th><th scope="col" className="p-3">Hệ số</th><th scope="col" className="p-3">Điểm</th></tr></thead>
-                    <tbody>{result.assessments.map((assessment) => <tr key={assessment.id} className="border-t border-line"><th scope="row" className="p-3 text-left font-medium">{assessment.title}</th><td className="p-3">{ASSESSMENT_KIND_LABELS[assessment.kind]}</td><td className="p-3">{assessment.weight}</td><td className="p-3">{assessment.score === null ? "—" : `${assessment.score}/${assessment.maxScore}`}</td></tr>)}</tbody>
+                    <thead className="bg-surface-muted text-left"><tr><th scope="col" className="p-3 font-medium">Cột điểm</th><th scope="col" className="p-3 font-medium">Loại</th><th scope="col" className="p-3 text-right font-medium">Hệ số</th><th scope="col" className="p-3 text-right font-medium">Điểm</th></tr></thead>
+                    <tbody>{result.assessments.map((assessment) => <tr key={assessment.id} className="border-t border-line"><th scope="row" className="p-3 text-left font-medium">{assessment.title}</th><td className="p-3">{ASSESSMENT_KIND_LABELS[assessment.kind]}</td><td className="p-3 text-right tabular-nums">{assessment.weight}</td><td className="p-3 text-right tabular-nums">{assessment.score === null ? "—" : `${assessment.score}/${assessment.maxScore}`}</td></tr>)}</tbody>
                   </table>
                 </div>
               )}

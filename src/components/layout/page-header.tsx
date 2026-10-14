@@ -37,7 +37,7 @@ export function PageHeader({
 }) {
   return (
     <>
-    <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between", className)}>
+    <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between", className)}>
       <div className="min-w-0">
         {backHref ? (
           <Link
@@ -48,10 +48,10 @@ export function PageHeader({
             {backLabel}
           </Link>
         ) : null}
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
-        {description ? <p className="mt-1 max-w-3xl text-sm text-ink-muted sm:text-base">{description}</p> : null}
+        <h1 className="break-words text-xl font-semibold tracking-tight text-ink sm:text-2xl">{title}</h1>
+        {description ? <p className="mt-1 max-w-3xl text-sm text-ink-muted">{description}</p> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="flex min-w-0 flex-wrap items-center gap-2 sm:max-w-[50%]">{action}</div> : null}
     </div>
     {toolbar}
     </>

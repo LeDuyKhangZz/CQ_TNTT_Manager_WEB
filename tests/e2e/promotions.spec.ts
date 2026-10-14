@@ -307,6 +307,10 @@ test.describe("M08-C · đề xuất hàng loạt (AC-20)", () => {
     await expect(rosterRows(page).first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("button", { name: /Chọn tất cả \d+ em khớp bộ lọc/ }))
       .toBeVisible();
+    // Chưa chọn em nào thì không mời nhập đề xuất hay gửi một lô rỗng.
+    await expect(page.getByLabel("Đề xuất chung")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Xem lại và gửi \d+ đề xuất/ }))
+      .toHaveCount(0);
   });
 
   test("🔴 chọn tất cả rồi bấm gửi KHÔNG gửi ngay — hộp xem lại liệt kê tên từng em", async ({
@@ -318,8 +322,9 @@ test.describe("M08-C · đề xuất hàng loạt (AC-20)", () => {
 
     // "Tạm nghỉ" — không cần lớp đích, nên không vướng ràng buộc "lớp đích phải
     // thuộc năm học sau" mà `seed:dev` không dựng nổi (xem ghi chú ở D-159).
-    await page.getByLabel("Đề xuất chung").selectOption("temporarily_pause");
     await page.getByRole("button", { name: /Chọn tất cả \d+ em khớp bộ lọc/ }).click();
+    await expect(page.getByLabel("Đề xuất chung")).toBeVisible();
+    await page.getByLabel("Đề xuất chung").selectOption("temporarily_pause");
     await page.getByRole("button", { name: /Xem lại và gửi \d+ đề xuất/ }).click();
 
     const dialog = page.getByRole("dialog");
@@ -333,6 +338,10 @@ test.describe("M08-C · đề xuất hàng loạt (AC-20)", () => {
     await expect(rosterRows(page).filter({ hasText: SEEDED_STUDENT })).toContainText(
       "Chưa đề xuất",
     );
+    await page.getByRole("button", { name: "Bỏ chọn", exact: true }).click();
+    await expect(page.getByLabel("Đề xuất chung")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Xem lại và gửi \d+ đề xuất/ }))
+      .toHaveCount(0);
   });
 
   test("người KHÔNG được đề xuất không thấy thanh hàng loạt", async ({ page }) => {

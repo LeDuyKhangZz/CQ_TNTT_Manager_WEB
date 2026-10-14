@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, panelClassName } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
@@ -20,7 +21,6 @@ import { openAttendanceSessionFromForm } from "@/features/attendance/server/acti
 import { getAttendanceHubData } from "@/features/attendance/server/queries";
 import { formatDateVi, todayVi } from "@/lib/dates";
 import { ATTENDANCE_VIEW_ONLY_ROLES } from "@/lib/permissions/route-map";
-import { cn } from "@/lib/utils";
 
 export default async function AttendancePage({
   searchParams,
@@ -64,7 +64,7 @@ export default async function AttendancePage({
 
       <FormMessage>{error}</FormMessage>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(18rem,0.6fr)_minmax(0,1.4fr)]">
+      <div className="grid items-start gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <Card>
           <CardHeader>
             <CardTitle>Mở buổi điểm danh</CardTitle>
@@ -78,7 +78,7 @@ export default async function AttendancePage({
                   : "Bạn chưa được phân công lớp nào nên không mở được buổi điểm danh. Trưởng ngành chỉ điểm danh trực tiếp ở lớp mình đứng."}
               </p>
             ) : (
-              <form action={openAttendanceSessionFromForm} className="space-y-3">
+              <form action={openAttendanceSessionFromForm} className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
                 {/* Biểu mẫu không cần JS: `useActionState` không có ở đây nên
                     chỉ cầu nối này biết được lượt gửi đang chạy (`17` §3.4). */}
                 <FormPendingBridge />
@@ -105,7 +105,7 @@ export default async function AttendancePage({
                     <option value="sunday">{MEETING_TYPE_LABELS.sunday}</option>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full">Mở buổi</Button>
+                <Button type="submit" className="w-full sm:col-span-3 xl:col-span-1">Mở buổi</Button>
               </form>
             )}
           </CardContent>
@@ -116,38 +116,26 @@ export default async function AttendancePage({
             <CardTitle>Buổi gần đây</CardTitle>
             <CardDescription>Các buổi trong phạm vi bạn được xem.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent>
             {sessions.length === 0 ? (
               <p className="text-sm text-ink-muted">Chưa có buổi điểm danh nào.</p>
             ) : (
-              sessions.map((session) => (
-                <Link
-                  key={session.id}
-                  href={`/attendance/${session.id}`}
-                  className={cn(panelClassName(), "flex flex-wrap items-center justify-between gap-2 hover:bg-surface-muted")}
-                >
-                  <div>
-                    <p className="text-sm font-medium">{session.className}</p>
-                    <p className="text-xs text-ink-muted">
-                      {MEETING_TYPE_LABELS[session.meetingType]} · {formatDateVi(session.attendanceDate)}
-                      {session.editorName ? ` · ${session.editorName} đang phụ trách` : ""}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {session.absentCount > 0 ? (
-                      <Badge variant="warning" aria-label={`${session.absentCount} em vắng`}>
-                        {session.absentCount} vắng
-                      </Badge>
-                    ) : null}
-                    {/* TB-02: in trạng thái ĐÃ SUY RA, không in thẳng cột `status`
-                        của cơ sở dữ liệu — cột ấy không bao giờ mang giá trị
-                        `locked`, nên buổi đã khóa từng hiện "Đã chốt" ở đây. */}
-                    <Badge variant={session.state === "completed" ? "success" : "secondary"}>
-                      {SESSION_STATE_LABELS[session.state]}
-                    </Badge>
-                  </div>
-                </Link>
-              ))
+              <DataTable
+                caption="Các buổi điểm danh gần đây trong phạm vi bạn được xem"
+                hideCaption
+                density="compact"
+                rows={sessions}
+                getRowKey={(session) => session.id}
+                minWidth="560px"
+                mobileRow={{ titleKey: "class", trailingKey: "status", metaKeys: ["date", "editor", "absent"] }}
+                columns={[
+                  { key: "class", header: "Lớp", cell: (session) => <Link href={`/attendance/${session.id}`} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline-offset-4 hover:underline">{session.className}</Link> },
+                  { key: "date", header: "Ngày · buổi", cell: (session) => <div className="whitespace-nowrap"><span className="tabular-nums">{formatDateVi(session.attendanceDate)}</span><span className="block text-xs text-ink-muted">{MEETING_TYPE_LABELS[session.meetingType]}</span></div> },
+                  { key: "status", header: "Trạng thái", cell: (session) => <Badge variant={session.state === "completed" ? "success" : "secondary"}>{SESSION_STATE_LABELS[session.state]}</Badge> },
+                  { key: "absent", header: "Em vắng", numeric: true, cell: (session) => <span className={session.absentCount > 0 ? "font-medium text-warning" : "text-ink-muted"}>{session.absentCount}</span> },
+                  { key: "editor", header: "Đang phụ trách", cell: (session) => <span className="text-ink-muted">{session.editorName ?? "—"}</span> },
+                ]}
+              />
             )}
           </CardContent>
         </Card>
@@ -156,9 +144,7 @@ export default async function AttendancePage({
       {/* TB-06 / AC-F13-1 — đơn phải thấy được **mà không cần mở buổi**. Đặt
           dưới hai thẻ trên vì việc đầu tiên của người vào trang này vẫn là mở
           buổi, nhưng nằm trên cùng một màn hình nên không ai phải đi tìm. */}
-      <div className="mt-5">
-        <AbsenceReviewPanel requests={pendingAbsences} canReview={!viewOnly} />
-      </div>
+      <AbsenceReviewPanel requests={pendingAbsences} canReview={!viewOnly} />
     </PageContainer>
   );
 }

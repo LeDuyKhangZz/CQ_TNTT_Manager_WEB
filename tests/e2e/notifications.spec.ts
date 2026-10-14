@@ -82,6 +82,7 @@ test.describe("M10-A · hộp thư và chuông chỉ thuộc về người đăn
     // đúng là một trong sáu triệu chứng của CRIT-M10-02. Một tiêu chí nghiệm thu
     // không bao giờ chạy thì không phải một bảo đảm.
     const title = `E2E đã đọc ${Date.now()}`;
+    await page.locator("summary").filter({ hasText: "Soạn thông báo" }).click();
     await page.getByLabel("Phạm vi").selectOption("user");
     await page.getByLabel("Tìm người nhận").fill(SECRETARY);
     const picker = page.getByLabel("Người nhận", { exact: true });
@@ -125,6 +126,7 @@ test.describe("M10-B · xem lại trước khi gửi, và gửi đích danh", ()
     await page.goto("/notifications");
 
     const title = `E2E xác nhận ${Date.now()}`;
+    await page.locator("summary").filter({ hasText: "Soạn thông báo" }).click();
     await page.getByLabel("Phạm vi").selectOption("guardians");
     await page.getByLabel("Tiêu đề").fill(title);
     await page.getByLabel("Nội dung").fill("Nội dung do bài E2E tạo.");
@@ -148,6 +150,7 @@ test.describe("M10-B · xem lại trước khi gửi, và gửi đích danh", ()
     await page.goto("/notifications");
 
     const title = `E2E gửi riêng ${Date.now()}`;
+    await page.locator("summary").filter({ hasText: "Soạn thông báo" }).click();
     await page.getByLabel("Phạm vi").selectOption("user");
     await page.getByLabel("Tìm người nhận").fill(NO_ROLE);
     // ⚠️ `exact: true` là bắt buộc: phép so tên của Playwright mặc định là
@@ -182,6 +185,7 @@ test.describe("M10-C · thu hồi, lọc và phân trang", () => {
     // cơ sở dữ liệu, nên một chuỗi nội dung cố định sẽ còn lại từ lượt trước và
     // khẳng định "nội dung đã biến mất" ở cuối bài trở nên vô nghĩa.
     const body = `Bản sẽ bị thu hồi. ${title}`;
+    await page.locator("summary").filter({ hasText: "Soạn thông báo" }).click();
     await page.getByLabel("Phạm vi").selectOption("user");
     await page.getByLabel("Tìm người nhận").fill(NO_ROLE);
     // ⚠️ `exact: true` là bắt buộc: phép so tên của Playwright mặc định là

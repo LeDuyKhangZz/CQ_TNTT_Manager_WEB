@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useUnsavedChangesGuard } from "@/components/shared/use-unsaved-changes-guard";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel, panelClassName } from "@/components/ui/card";
@@ -55,9 +56,9 @@ import type {
   GradebookLeaderboard,
   GradebookStudent,
 } from "../server/queries";
-import { changedScoreCells, readNoteInput, readScoreInput } from "../score-diff";
+import { changedScoreCells, readNoteInput, readScoreInput, type ScoreCellBaseline, type ScoreCellDraft } from "../score-diff";
 import { useGlobalPending } from "@/components/loading/loading-provider";
-import { tableScrollFrameClassName } from "@/components/ui/data-table";
+import { DataTable, tableScrollFrameClassName } from "@/components/ui/data-table";
 
 type Message = { tone: "success" | "error" | "info"; text: string } | null;
 
@@ -477,6 +478,51 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
   const [pending, setPending] = useState(false);
   useGlobalPending(pending);
   const [message, setMessage] = useState<Message>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [dirty, setDirty] = useState(false);
+  const savedCells = Object.fromEntries(detail.students.map((student) => [student.enrollmentId, {
+    score: student.scores[assessment.id]?.score ?? null,
+    note: student.scores[assessment.id]?.note ?? null,
+  }]));
+  const serverKey = JSON.stringify(savedCells);
+  const serverKeyRef = useRef(serverKey);
+  const savedCellsRef = useRef<Record<string, ScoreCellBaseline | undefined>>(savedCells);
+  const readDrafts = useCallback((form: HTMLFormElement) => {
+    const values = new FormData(form);
+    return detail.students.map((student) => ({
+      enrollmentId: student.enrollmentId,
+      score: readScoreInput(values.get(`score-${student.enrollmentId}`)),
+      note: readNoteInput(values.get(`note-${student.enrollmentId}`)),
+    }));
+  }, [detail.students]);
+  const updateDirty = useCallback(() => {
+    setDirty(!!formRef.current && detail.canGrade && !detail.isLocked
+      && changedScoreCells(readDrafts(formRef.current), savedCellsRef.current).length > 0);
+  }, [detail.canGrade, detail.isLocked, readDrafts]);
+  useUnsavedChangesGuard(dirty);
+  useEffect(() => {
+    if (serverKeyRef.current !== serverKey) {
+      serverKeyRef.current = serverKey;
+      const next = JSON.parse(serverKey) as typeof savedCells;
+      for (const [enrollmentId, cell] of Object.entries(next)) {
+        const previous = savedCellsRef.current[enrollmentId];
+        const scoreInput = formRef.current?.elements.namedItem(`score-${enrollmentId}`);
+        const noteInput = formRef.current?.elements.namedItem(`note-${enrollmentId}`);
+        // Refresh only fields that still match the acknowledged snapshot. In
+        // particular, edits typed while a save was pending remain in the form.
+        if (scoreInput instanceof HTMLInputElement
+          && Object.is(readScoreInput(scoreInput.value), previous?.score ?? null)) {
+          scoreInput.value = cell.score === null ? "" : String(cell.score);
+        }
+        if (noteInput instanceof HTMLInputElement
+          && readNoteInput(noteInput.value) === (previous?.note ?? null)) {
+          noteInput.value = cell.note ?? "";
+        }
+      }
+      savedCellsRef.current = next;
+    }
+    updateDirty();
+  }, [serverKey, updateDirty]);
 
   /**
    * M07-A · **TB-M07-01 bước 5 / TB-M07-03 phương án B** — chỉ gửi **ô đã đổi**.
@@ -492,10 +538,7 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
       score: readScoreInput(data.get(`score-${student.enrollmentId}`)),
       note: readNoteInput(data.get(`note-${student.enrollmentId}`)),
     }));
-    const baselines = Object.fromEntries(
-      detail.students.map((student) => [student.enrollmentId, student.scores[assessment.id]]),
-    );
-    const changed = changedScoreCells(drafts, baselines);
+    const changed = changedScoreCells(drafts, savedCellsRef.current);
     if (changed.length === 0) {
       setMessage({ tone: "info", text: "Chưa có ô nào thay đổi nên không có gì để lưu." });
       return;
@@ -506,7 +549,15 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
       setMessage(result.ok
         ? { tone: "success", text: `Đã lưu ${result.data.count} ô điểm.` }
         : { tone: "error", text: result.message });
-      if (result.ok) refreshAfterAction();
+      if (result.ok) {
+        // Only the submitted snapshot is acknowledged, not edits typed while
+        // awaiting the response. Keep dirty until a failed save is resolved.
+        savedCellsRef.current = Object.fromEntries(drafts.map((draft) => [draft.enrollmentId, {
+          ...savedCellsRef.current[draft.enrollmentId], score: draft.score, note: draft.note,
+        }]));
+        updateDirty();
+        refreshAfterAction();
+      }
     } finally {
       setPending(false);
     }
@@ -521,7 +572,24 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
    * ra**. Câu mới kèm luôn đường đi tiếp: mỗi ô ấy có nút "dùng lại đề xuất"
    * ngay dưới ô điểm của nó.
    */
+  function acceptScoreReplacement(requested: readonly ScoreCellDraft[]) {
+    for (const draft of requested) {
+      const input = formRef.current?.elements.namedItem(`score-${draft.enrollmentId}`);
+      if (input instanceof HTMLInputElement && Object.is(readScoreInput(input.value), draft.score)) {
+        // This explicit action replaces the requested score. Bring only that
+        // field back to its baseline so the arriving server result can sync;
+        // keep later typing, unrelated scores, and notes untouched.
+        const baseline = savedCellsRef.current[draft.enrollmentId]?.score ?? null;
+        input.value = baseline === null ? "" : String(baseline);
+      }
+    }
+    updateDirty();
+  }
+
   async function refreshSuggestions() {
+    const requested = formRef.current ? readDrafts(formRef.current).filter((draft) =>
+      !detail.students.find((student) => student.enrollmentId === draft.enrollmentId)?.scores[assessment.id]?.isManualOverride,
+    ) : [];
     setMessage(null);
     setPending(true);
     try {
@@ -531,6 +599,7 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
         return;
       }
       const { refreshed, skippedManual } = result.data;
+      acceptScoreReplacement(requested);
       setMessage({
         tone: "success",
         text: skippedManual === 0
@@ -545,19 +614,23 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
   }
 
   async function resetOverride(enrollmentId: string) {
+    const requested = formRef.current ? readDrafts(formRef.current).filter((draft) => draft.enrollmentId === enrollmentId) : [];
     setMessage(null);
     setPending(true);
     try {
       const result = await resetAttendanceScoreOverride({ assessmentId: assessment.id, enrollmentId });
       setMessage(result.ok ? { tone: "success", text: "Đã dùng lại điểm hệ thống đề xuất." } : { tone: "error", text: result.message });
-      if (result.ok) refreshAfterAction();
+      if (result.ok) {
+        acceptScoreReplacement(requested);
+        refreshAfterAction();
+      }
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <Card id={`assessment-${assessment.id}`}>
+    <Card id={`assessment-${assessment.id}`} className="scroll-mt-20">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><CardTitle>{assessment.title}</CardTitle><CardDescription>{assessment.assessmentDate ? formatDateVi(assessment.assessmentDate) : "Không ghi ngày"} · hệ số {assessment.weight}</CardDescription></div>
@@ -568,19 +641,19 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
         </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={submit}>
+        <form ref={formRef} onSubmit={submit} onChange={updateDirty}>
           <div className={tableScrollFrameClassName}>
             <table className="w-full min-w-[34rem] text-sm">
               <caption className="sr-only">Nhập điểm {assessment.title}</caption>
-              <thead className="bg-surface-muted"><tr><th className="sticky left-0 bg-surface-muted px-3 py-3 text-left">Thiếu nhi</th><th className="w-32 px-3 py-3 text-left">Điểm</th><th className="px-3 py-3 text-left">Ghi chú</th></tr></thead>
+              <thead className="bg-surface-muted"><tr><th scope="col" className="sticky left-0 bg-surface-muted px-3 py-2 text-left font-medium">Thiếu nhi</th><th scope="col" className="w-32 px-3 py-2 text-right font-medium">Điểm</th><th scope="col" className="px-3 py-2 text-left font-medium">Ghi chú</th></tr></thead>
               <tbody>
                 {detail.students.map((student) => {
                   const score = student.scores[assessment.id];
                   return (
                     <tr key={student.enrollmentId} className="border-t border-line">
-                      <th className="sticky left-0 bg-surface px-3 py-2 text-left font-medium">{student.saintName} {student.fullName}</th>
+                      <th scope="row" className="sticky left-0 max-w-48 break-words bg-surface px-3 py-2 text-left font-medium">{student.saintName} {student.fullName}</th>
                       <td className="px-3 py-2">
-                        <Input key={`${assessment.id}-${student.enrollmentId}-${score?.score ?? "null"}`} name={`score-${student.enrollmentId}`} type="number" min="0" max={assessment.maxScore} step="0.01" defaultValue={score?.score ?? ""} disabled={detail.isLocked || !detail.canGrade} aria-label={`Điểm ${student.saintName} ${student.fullName}`} />
+                        <Input key={`${assessment.id}-${student.enrollmentId}-score`} className="text-right tabular-nums" name={`score-${student.enrollmentId}`} type="number" min="0" max={assessment.maxScore} step="0.01" defaultValue={score?.score ?? ""} disabled={detail.isLocked || !detail.canGrade} aria-label={`Điểm ${student.saintName} ${student.fullName}`} />
                         {assessment.kind === "attendance" ? (
                           <div className="mt-1 space-y-1 text-xs text-ink-muted">
                             <p>Đề xuất: {score?.suggestedScore === null || score?.suggestedScore === undefined ? "—" : score.suggestedScore.toFixed(2)}</p>
@@ -588,16 +661,9 @@ function ScoreColumnForm({ detail, assessment }: { detail: GradebookDetail; asse
                           </div>
                         ) : null}
                       </td>
-                      {/*
-                        `key` theo giá trị đang lưu — bắt buộc từ M07-A. Ô này là
-                        ô **không kiểm soát**: sau `router.refresh()` React giữ
-                        nguyên giá trị trong DOM nếu không remount, nên ghi chú do
-                        người khác vừa sửa **không** hiện lên. Trước đợt này chỉ
-                        khó chịu; nay phép so "ô đã đổi chưa" đọc chính ô này, nên
-                        một giá trị cũ kẹt lại sẽ bị tính là **đã đổi** và ghi đè
-                        đúng thứ vừa được cập nhật. Ô điểm bên cạnh đã làm vậy sẵn.
-                      */}
-                      <td className="px-3 py-2"><Input key={`${assessment.id}-${student.enrollmentId}-note-${score?.note ?? "null"}`} name={`note-${student.enrollmentId}`} defaultValue={score?.note ?? ""} maxLength={500} disabled={detail.isLocked || !detail.canGrade} aria-label={`Ghi chú ${student.saintName} ${student.fullName}`} /></td>
+                      {/* Stable input keys retain drafts; the refresh effect
+                          synchronizes each field that still matches its baseline. */}
+                      <td className="px-3 py-2"><Input key={`${assessment.id}-${student.enrollmentId}-note`} name={`note-${student.enrollmentId}`} defaultValue={score?.note ?? ""} maxLength={500} disabled={detail.isLocked || !detail.canGrade} aria-label={`Ghi chú ${student.saintName} ${student.fullName}`} /></td>
                     </tr>
                   );
                 })}
@@ -1295,11 +1361,11 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={detail.isLocked ? "warning" : "success"}>{detail.isLocked ? "Đã khóa" : "Đang mở"}</Badge>
+            <Badge variant={detail.isLocked ? "secondary" : "outline"}>{detail.isLocked ? "Đã khóa" : "Đang mở"}</Badge>
             <span className="text-sm text-ink-muted">{detail.assessments.length} cột điểm · {detail.students.length} thiếu nhi</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1344,11 +1410,52 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
         />
       </Card>
 
-      {detail.canGrade && !detail.isLocked ? <NewAssessmentForm detail={detail} /> : null}
+      <nav aria-label="Nội dung bảng điểm" className="flex flex-wrap gap-x-4 border-b border-line text-sm">
+        <a href="#gradebook-scores" className="inline-flex min-h-11 items-center font-medium text-theme-accent-text hover:underline">Nhập điểm</a>
+        <a href="#gradebook-average" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Trung bình</a>
+        {detail.canGrade ? <a href="#gradebook-columns" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Cấu hình cột điểm</a> : null}
+        <a href="#gradebook-comments" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Nhận xét</a>
+        <a href="#gradebook-top5" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Top 5</a>
+      </nav>
 
-      {detail.assessments.length > 0 && detail.canGrade ? (
-        <section className="space-y-3">
+      {detail.assessments.length === 0 ? (
+        <Card id="gradebook-scores" className="scroll-mt-20"><CardContent className="pt-4 text-sm text-ink-muted">Lớp chưa tạo cột điểm. Đây là trạng thái hợp lệ; không có cột bắt buộc.</CardContent></Card>
+      ) : (
+        <section id="gradebook-scores" className="scroll-mt-20 space-y-3">
+          <h2 className="text-lg font-semibold">Nhập điểm</h2>
+          <nav aria-label="Các cột điểm" className="flex flex-wrap gap-x-3 text-sm">
+            {detail.assessments.map((assessment) => <a key={assessment.id} href={`#assessment-${assessment.id}`} className="inline-flex min-h-11 items-center text-theme-accent-text underline-offset-4 hover:underline">{assessment.title}</a>)}
+          </nav>
+          {/* R1.6 (redesign 2C): trước đây danh sách này render HAI lần
+              (`hidden md:block` + `md:hidden`) với nội dung y hệt — di tích của
+              một hướng responsive đã bỏ, chỉ còn tác dụng nhân đôi DOM. */}
+          <div className="space-y-4">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
+        </section>
+      )}
+
+      <Card id="gradebook-average" className="scroll-mt-20">
+        <CardHeader><CardTitle>Điểm trung bình có trọng số</CardTitle><CardDescription>Chỉ tính các ô đã nhập; thay hệ số cập nhật kết quả ngay.</CardDescription></CardHeader>
+        <CardContent>
+          <DataTable
+            caption={`Điểm trung bình có trọng số · lớp ${detail.className}`}
+            hideCaption
+            density="compact"
+            rows={detail.students}
+            getRowKey={(student) => student.enrollmentId}
+            stickyFirstColumn={false}
+            minWidthClassName="min-w-0"
+            columns={[
+              { key: "student", header: "Thiếu nhi", cell: (student) => <span className="break-words">{student.saintName} {student.fullName}</span> },
+              { key: "average", header: "Điểm trung bình", numeric: true, cell: (student) => student.weightedAverage === null ? "—" : student.weightedAverage.toFixed(2) },
+            ]}
+          />
+        </CardContent>
+      </Card>
+
+      {detail.canGrade ? (
+        <section id="gradebook-columns" className="scroll-mt-20 space-y-3">
           <h2 className="text-lg font-semibold">Cấu hình cột điểm</h2>
+          {!detail.isLocked ? <NewAssessmentForm detail={detail} /> : null}
           {detail.assessments.map((assessment) => (
             <AssessmentSettings
               key={assessment.id}
@@ -1357,38 +1464,13 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
               onRemoved={(text) => setColumnMessage({ tone: "success", text })}
             />
           ))}
+          <HiddenAssessmentsPanel detail={detail} onRestored={(text) => setColumnMessage({ tone: "success", text })} />
         </section>
       ) : null}
 
-      {detail.canGrade ? (
-        <HiddenAssessmentsPanel
-          detail={detail}
-          onRestored={(text) => setColumnMessage({ tone: "success", text })}
-        />
-      ) : null}
+      <div id="gradebook-comments" className="scroll-mt-20"><StudentCommentsPanel detail={detail} /></div>
 
-      {detail.assessments.length === 0 ? (
-        <Card><CardContent className="pt-6 text-sm text-ink-muted">Lớp chưa tạo cột điểm. Đây là trạng thái hợp lệ; không có cột bắt buộc.</CardContent></Card>
-      ) : (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Nhập điểm</h2>
-          {/* R1.6 (redesign 2C): trước đây danh sách này render HAI lần
-              (`hidden md:block` + `md:hidden`) với nội dung y hệt — di tích của
-              một hướng responsive đã bỏ, chỉ còn tác dụng nhân đôi DOM. */}
-          <div className="space-y-4">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
-        </section>
-      )}
-
-      <Card>
-        <CardHeader><CardTitle>Điểm trung bình có trọng số</CardTitle><CardDescription>Chỉ tính các ô đã nhập; thay hệ số cập nhật kết quả ngay.</CardDescription></CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto"><table className="w-full min-w-[24rem] text-sm"><thead><tr className="border-b border-line"><th className="py-3 text-left">Thiếu nhi</th><th className="py-3 text-right">Điểm trung bình</th></tr></thead><tbody>{detail.students.map((student) => <tr key={student.enrollmentId} className="border-b border-line last:border-0"><td className="py-3">{student.saintName} {student.fullName}</td><td className="py-3 text-right font-semibold tabular-nums">{student.weightedAverage === null ? "—" : student.weightedAverage.toFixed(2)}</td></tr>)}</tbody></table></div>
-        </CardContent>
-      </Card>
-
-      <StudentCommentsPanel detail={detail} />
-
-      <LeaderboardPanel detail={detail} />
+      <div id="gradebook-top5" className="scroll-mt-20"><LeaderboardPanel detail={detail} /></div>
     </div>
   );
 }

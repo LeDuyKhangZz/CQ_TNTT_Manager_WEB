@@ -392,6 +392,7 @@ test.describe("Phase 6 — Thông báo", () => {
     // ── Đại diện lớp Ấu 1A gửi thông báo cho lớp mình ───────────────────────
     await login(page, "GLV909");
     await page.goto("/notifications");
+    await page.locator("summary").filter({ hasText: "Soạn thông báo" }).click();
     await page.getByLabel("Phạm vi").selectOption("class");
     await page.getByLabel("Đối tượng nhận").selectOption(classId);
     await page.getByLabel("Tiêu đề").fill(title);

@@ -15,17 +15,17 @@ import { cn } from "@/lib/utils";
  * component bị dùng nhiều nhất trong dự án và nới chữ ký của nó là mở một đường
  * để mọi thẻ HTML đi qua. Chỗ nào cần thẻ khác thì lấy chuỗi này.
  */
-export const cardClassName = "rounded-lg border border-line bg-surface text-ink shadow-sm";
+export const cardClassName = "rounded-lg border border-line bg-surface text-ink";
 
 /**
- * Thẻ — docs/.../09 §6: bo `lg` 16px, padding 20px (mobile 16px), `--shadow-sm`.
+ * Operational panel: shared 8px radius, 16px padding, border without shadow.
  */
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn(cardClassName, className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("space-y-1.5 p-4 sm:p-5", className)} {...props} />;
+  return <div className={cn("space-y-1 p-4", className)} {...props} />;
 }
 
 /**
@@ -39,7 +39,7 @@ export function CardTitle({
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement> & { as?: React.ElementType }) {
   return (
-    <Component className={cn("text-lg font-semibold tracking-tight", className)} {...props} />
+    <Component className={cn("text-base font-semibold", className)} {...props} />
   );
 }
 
@@ -48,7 +48,7 @@ export function CardDescription({ className, ...props }: React.HTMLAttributes<HT
 }
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-4 pt-0 sm:p-5 sm:pt-0", className)} {...props} />;
+  return <div className={cn("p-4 pt-0", className)} {...props} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -62,8 +62,8 @@ export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDi
  * `border-line-strong`), khác nền (trong suốt/`bg-surface`/`bg-surface-muted`),
  * khác padding. Trên cùng một trang chúng đứng cạnh nhau và trông như lỗi.
  *
- * Nay chỉ còn **hai** mẫu: `Card` (thẻ nổi, có bóng, bo 16px) và `Panel` (khối
- * phẳng trong thẻ, **không bóng**, bo 12px). Panel `bg-transparent` chứ không
+ * Hai mẫu dùng chung token: `Card` (nền surface, không bóng, bo 8px) và `Panel`
+ * (khối phẳng bên trong, không bóng, bo 6px). Panel `bg-transparent` chứ không
  * `bg-surface`: nó nằm sẵn trên nền thẻ, tô lại đúng màu ấy chỉ là vẽ thừa —
  * và khi thẻ đổi nền thì khối bên trong lộ ra thành một ô vá màu.
  *

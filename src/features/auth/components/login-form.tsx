@@ -50,7 +50,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
       <Button type="submit" size="lg" className="w-full" pending={isSubmitting}>
         Đăng nhập
       </Button>
-      <p className="text-center text-xs text-ink-muted">Tài khoản do Ban quản trị Giáo xứ cấp. Hệ thống không hỗ trợ đăng ký công khai.</p>
+      <p className="text-sm text-ink-muted">Quên mật khẩu? Liên hệ Ban quản trị Giáo xứ để đặt lại.</p>
     </form>
   );
 }

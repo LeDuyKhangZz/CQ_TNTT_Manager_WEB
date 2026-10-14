@@ -128,6 +128,7 @@ test.describe("Xứ đoàn trưởng đi hết các trang Phase 2", () => {
     // Lối vào duy nhất: trang Quản trị. Menu bên đã bỏ hẳn hai mục này, nên nếu
     // hai đường dẫn dưới đây biến mất thì không còn cách nào tìm ra chúng.
     await page.goto("/admin");
+    await page.getByRole("link", { name: "Nhập hàng loạt", exact: true }).click();
     const admin = page.getByRole("main");
     await expect(admin.getByRole("link", { name: "Nhập hàng loạt nhân sự" })).toBeVisible();
     await expect(admin.getByRole("link", { name: "Nhập dữ liệu thiếu nhi" })).toBeVisible();

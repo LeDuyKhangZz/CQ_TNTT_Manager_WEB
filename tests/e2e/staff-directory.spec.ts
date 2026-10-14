@@ -1,19 +1,42 @@
 import { expect, test, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
+import type { Database } from "../../src/types/database";
 
 /**
  * M04-B — danh sách `/staff` dùng được (TB-M04-04 · D-108 · D-110) và xóa hồ sơ
  * chưa từng dùng (D-106 · D-109).
  *
- * 🔴 Hai bài ở cuối file GHI DỮ LIỆU và chỉ chạy được MỘT LẦN trên một database:
- * tạo hồ sơ và xóa hồ sơ. Ba viewport dùng chung một database (bài học M04-A,
- * nợ #10 họ hàng), nên chúng phải **tự dọn** hoặc **tự chọn mục tiêu còn lại**:
- *   · bài tạo hồ sơ dừng ở PHA CẢNH BÁO, không bấm "Vẫn tạo hồ sơ mới" ⇒ không
- *     ghi gì vào database, chạy bao nhiêu lượt cũng như nhau;
- *   · bài xóa nhận diện hồ sơ mục tiêu bằng "còn xóa được", và seed dựng SẴN hai
- *     hồ sơ chưa từng dùng (GLV916 · GLV917) cho ba viewport — dư một để lượt
- *     thứ ba không rơi vào cảnh không còn gì để xóa.
+ * Các bài lọc trạng thái và xóa hồ sơ tự tạo dữ liệu trên Supabase local, rồi
+ * dọn đúng ID của mình. Không tiêu dần seed dùng chung qua các viewport/lượt
+ * chạy: GLV914 là nhân vật của bài tạm nghỉ, không phải hồ sơ dự phòng để xóa.
  */
 const DEV_PASSWORD = "123456";
+
+function getLocalAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key || !/^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(url)) {
+    throw new Error("Staff E2E fixtures require local Supabase and a service role key.");
+  }
+  return createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+async function createStaffFixtures(entries: Array<{
+  full_name: string;
+  service_status: "active" | "paused" | "inactive";
+}>) {
+  const { data, error } = await getLocalAdmin().from("staff_profiles")
+    .insert(entries.map((entry) => ({ ...entry, title: "anh" as const, saint_name: "Vinh Sơn" })))
+    .select("id, staff_code, full_name, service_status");
+  if (error || !data) throw new Error(`Create isolated staff fixtures: ${error?.message}`);
+  return data;
+}
+
+async function cleanStaffFixtures(ids: string[]) {
+  const { error } = await getLocalAdmin().from("staff_profiles").delete().in("id", ids);
+  if (error) throw new Error(`Clean isolated staff fixtures: ${error.message}`);
+}
 
 async function login(page: Page, username: string) {
   await page.context().clearCookies();
@@ -69,32 +92,35 @@ async function clickUntil(what: string, click: () => Promise<void>, done: () => 
 }
 
 test("D-108: mặc định ẩn người 'Đã nghỉ' và NÓI RA đang ẩn bao nhiêu", async ({ page }) => {
-  await login(page, "GLV901");
-  await page.goto("/staff");
+  const suffix = randomUUID();
+  const pausedName = `Mai Tạm Nghỉ ${suffix}`;
+  const inactiveName = `Hồ Đã Nghỉ ${suffix}`;
+  const fixtures = await createStaffFixtures([
+    { full_name: pausedName, service_status: "paused" },
+    { full_name: inactiveName, service_status: "inactive" },
+  ]);
+  try {
+    await login(page, "GLV901");
+    // The search scopes two known records; no service parameter means default.
+    const fixtureUrl = `/staff?q=${encodeURIComponent(suffix)}`;
+    await page.goto(fixtureUrl);
+    await expect(page.getByText("Đang ẩn", { exact: false })).toBeVisible();
+    await expect(cardFor(page, inactiveName)).toHaveCount(0);
+    await expect(cardFor(page, pausedName)).toHaveCount(1);
 
-  // GLV915 "Hồ Đã Nghỉ" có trong seed nhưng không được hiện ở bộ lọc mặc định.
-  await expect(page.getByText("Đang ẩn", { exact: false })).toBeVisible();
-  await expect(cardFor(page, "Hồ Đã Nghỉ")).toHaveCount(0);
-  /*
-   * Nhưng người "Tạm nghỉ" thì PHẢI còn — ẩn họ là làm hỏng kế hoạch năm học.
-   *
-   * 🔴 Tìm theo tên trước khi kiểm, chứ không đọc thẳng trang 1: `/staff` phân trang
-   * **10 người/trang** và "Mai Tạm Nghỉ" xếp thứ ~10–11 theo họ tên, tức nằm đúng
-   * ranh giới trang 1/trang 2 tuỳ cách so chuỗi tiếng Việt. Đó là lý do bài này chập
-   * chờn (đỏ 1/3 rồi 3/3 viewport) từ khi M04-B thêm phân trang. Ô tìm kiếm **giữ
-   * nguyên bộ lọc trạng thái phục vụ**, nên bài kiểm vẫn đúng điều nó muốn kiểm:
-   * người "Tạm nghỉ" không bị bộ lọc mặc định ẩn đi.
-   */
-  await page.getByLabel(/Tìm theo họ tên/).fill("Mai Tạm Nghỉ");
-  await page.getByRole("button", { name: "Lọc" }).click();
-  await expect(cardFor(page, "Mai Tạm Nghỉ")).toHaveCount(1);
-  await page.goto("/staff");
+    await page.getByLabel(/Tìm theo họ tên/).fill(pausedName);
+    await page.getByRole("button", { name: "Lọc", exact: true }).click();
+    await expect(cardFor(page, pausedName)).toHaveCount(1);
+    await page.goto(fixtureUrl);
 
-  const showAll = page.getByRole("link", { name: "Hiện tất cả" });
-  const showAllHref = await showAll.getAttribute("href");
-  expect(showAllHref, "link Hiện tất cả phải có href").toBeTruthy();
-  await page.goto(showAllHref!);
-  await expect(cardFor(page, "Hồ Đã Nghỉ")).toHaveCount(1);
+    const showAllHref = await page.getByRole("link", { name: "Hiện tất cả" }).getAttribute("href");
+    expect(showAllHref, "link Hiện tất cả phải có href").toBeTruthy();
+    await page.goto(showAllHref!);
+    await expect(cardFor(page, inactiveName)).toHaveCount(1);
+    await expect(cardFor(page, pausedName)).toHaveCount(1);
+  } finally {
+    await cleanStaffFixtures(fixtures.map((fixture) => fixture.id));
+  }
 });
 
 test("TB-M04-04: tìm được người theo tên KHÔNG DẤU và theo mã GLV", async ({ page }) => {
@@ -194,23 +220,13 @@ test("D-106: hồ sơ ĐÃ DÙNG không xóa được và nêu đúng lý do", a
 });
 
 test("D-106: hồ sơ chưa từng dùng xóa được, sau khi gõ lại đúng họ tên", async ({ page }) => {
+  const fixtures = await createStaffFixtures([
+    { full_name: `Chu Chưa Dùng ${randomUUID()}`, service_status: "active" },
+  ]);
+  const target = fixtures[0].staff_code;
+  try {
   await login(page, "GLV901");
-
-  // Chọn một hồ sơ CÒN xóa được: seed dựng GLV916 và GLV917, mỗi lượt viewport
-  // tiêu một hồ sơ. Đọc trạng thái hiện tại thay vì cố định một mã.
-  let target: string | null = null;
-  for (const code of ["GLV916", "GLV917", "GLV914"]) {
-    await page.goto(`/staff?service=all&q=${code}`);
-    const link = staffCards(page).first();
-    if ((await link.count()) === 0) continue;
-    await link.click();
-    await page.waitForURL(/\/staff\/[0-9a-f-]{36}$/);
-    if (await page.getByLabel(/Gõ lại họ tên/).count()) {
-      target = code;
-      break;
-    }
-  }
-  expect(target, "seed phải còn ít nhất một hồ sơ chưa từng dùng để xoá").not.toBeNull();
+  await page.goto(`/staff/${fixtures[0].id}`);
 
   // Lấy họ tên từ `placeholder` của chính ô xác nhận, KHÔNG cắt chuỗi từ `<h1>`:
   // tiêu đề là "Anh Vinh Sơn Chu Chưa Dùng" — danh xưng một từ nhưng tên thánh
@@ -248,6 +264,9 @@ test("D-106: hồ sơ chưa từng dùng xóa được, sau khi gõ lại đúng
   // Hồ sơ biến mất thật khỏi danh sách.
   await page.goto(`/staff?service=all&q=${target}`);
   await expect(staffCards(page)).toHaveCount(0);
+  } finally {
+    await cleanStaffFixtures(fixtures.map((fixture) => fixture.id));
+  }
 });
 
 test("D-109: Trưởng ngành KHÔNG thấy khối xóa hồ sơ", async ({ page }) => {

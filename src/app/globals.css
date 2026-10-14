@@ -111,13 +111,14 @@ html { scroll-padding-top: 80px; scroll-padding-bottom: 96px; }
   --space-8: 32px;
   --space-10: 40px;
 
-  --radius-sm: 8px; /* chip, badge */
-  --radius-md: 12px; /* nút, ô nhập */
-  --radius-lg: 16px; /* thẻ */
-  --radius-xl: 20px; /* dialog */
+  /* Operational UI, 13/10/2026: preserve palette; use restrained geometry. */
+  --radius-sm: 4px; /* chip, badge */
+  --radius-md: 6px; /* nút, ô nhập */
+  --radius-lg: 8px; /* panel, bảng */
+  --radius-xl: 10px; /* dialog */
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 2px rgb(46 42 39 / 0.05); /* thẻ nghỉ */
+  --shadow-sm: none; /* panels are separated by borders, not elevation */
   --shadow-md: 0 8px 24px rgb(46 42 39 / 0.12); /* dialog, dropdown, drawer */
   /* KHÔNG có mức thứ ba. */
 

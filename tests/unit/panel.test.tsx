@@ -15,19 +15,20 @@ import { tableScrollFrameClassName } from "@/components/ui/data-table";
  */
 
 describe("Panel · token", () => {
-  it("bo 12px, viền `--border`, nền trong suốt, padding 12px", () => {
+  it("dùng radius control, viền `--border`, nền trong suốt, padding 12px", () => {
     render(<Panel data-testid="p">x</Panel>);
     const panel = screen.getByTestId("p");
     expect(panel).toHaveClass("rounded-md", "border", "border-line", "bg-transparent", "p-3");
   });
 
-  it("🔴 KHÔNG có bóng — bóng là thứ duy nhất phân biệt nó với `Card`", () => {
+  it("panel và card đều phẳng; card phân biệt bằng nền surface", () => {
     render(<Panel data-testid="p">x</Panel>);
     const cls = screen.getByTestId("p").className;
     expect(cls).not.toContain("shadow");
-    // Và `Card` thì phải có, nếu không hai mẫu lại hoá một.
+    // Redesign 13/10/2026 reserves elevation for overlays.
     render(<Card data-testid="c">y</Card>);
-    expect(screen.getByTestId("c")).toHaveClass("shadow-sm", "rounded-lg", "bg-surface");
+    expect(screen.getByTestId("c")).toHaveClass("rounded-lg", "bg-surface");
+    expect(screen.getByTestId("c").className).not.toContain("shadow");
   });
 
   it("nền trong suốt chứ KHÔNG `bg-surface`: nó nằm sẵn trên nền thẻ", () => {

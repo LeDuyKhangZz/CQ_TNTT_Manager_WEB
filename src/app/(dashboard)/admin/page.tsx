@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from
 import { FormMessage } from "@/components/ui/form-message";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
+import { TabNav } from "@/components/ui/tab-nav";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { requireRouteAccess } from "@/lib/auth/guards";
@@ -42,8 +43,16 @@ function canGenerateClasses(status: string): boolean {
   return status === "draft" || status === "current";
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ section?: string }> }) {
   await requireRouteAccess("/admin");
+  const { section: requestedSection } = await searchParams;
+  const sections = [
+    { key: "years", label: "Năm học" },
+    { key: "accounts", label: "Tài khoản" },
+    { key: "attendance", label: "Cấu hình điểm danh" },
+    { key: "imports", label: "Nhập hàng loạt" },
+  ];
+  const section = sections.some(item => item.key === requestedSection) ? requestedSection! : "years";
   const [academicYears, accountOptions, attendanceSettings, templateCount] = await Promise.all([
     listAcademicYears(),
     getAccountAdminOptions(),
@@ -58,8 +67,10 @@ export default async function AdminPage() {
   const today = todayVi();
 
   return (
-    <PageContainer>
-      <PageHeader title="Quản trị hệ thống" description="Cấu hình năm học và khởi tạo cơ cấu lớp chuẩn." />
+    <PageContainer data-density="compact">
+      <PageHeader title="Quản trị hệ thống" description="Năm học, tài khoản và cấu hình vận hành." />
+      <TabNav label="Nhóm cấu hình" activeKey={section} stickyMobile={false}
+        items={sections.map(item => ({ ...item, href: item.key === "years" ? "/admin" : `/admin?section=${item.key}` }))} />
 
       {/* Thiếu danh mục lớp chuẩn là hỏng cấu hình môi trường, không phải lỗi
           thao tác — nói ra NGAY ở đầu trang, đừng đợi tới lúc bấm nút rồi mới
@@ -82,7 +93,7 @@ export default async function AdminPage() {
         Đặt TRƯỚC lưới cấu hình vì đây là việc theo mùa: đầu năm học dùng liên
         tục vài ngày rồi cả năm không đụng tới, tìm mãi không ra thì tệ hơn.
       */}
-      <Card className="mb-5">
+      {section === "imports" ? <Card>
         <CardHeader>
           <CardTitle>Nhập liệu hàng loạt</CardTitle>
           <CardDescription>
@@ -107,9 +118,9 @@ export default async function AdminPage() {
             Nhập dữ liệu thiếu nhi
           </Link>
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]">
+      {section === "years" ? <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.8fr)]">
         <Card>
           <CardHeader>
             <CardTitle>Năm học</CardTitle>
@@ -282,7 +293,8 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        </div> : null}
+        {section === "attendance" ? <Card className="max-w-3xl">
           <CardHeader>
             <CardTitle>Cấu hình điểm danh</CardTitle>
             <CardDescription>
@@ -306,9 +318,8 @@ export default async function AdminPage() {
               />
             )}
           </CardContent>
-        </Card>
-      </div>
-      <AccountAdminPanel options={accountOptions} />
+        </Card> : null}
+      {section === "accounts" ? <AccountAdminPanel options={accountOptions} /> : null}
     </PageContainer>
   );
 }

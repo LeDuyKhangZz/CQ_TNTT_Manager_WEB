@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import { FormMessage } from "@/components/ui/form-message";
 import { formatDateVi } from "@/lib/dates";
 import type { WeekAheadTeachingData } from "../server/queries";
@@ -25,22 +25,21 @@ export function WeekAheadSchedule({ data }: { data: WeekAheadTeachingData }) {
         ) : data.items.length === 0 ? (
           <p className="text-sm text-ink-muted">Chưa có bài học hoặc bài kiểm tra trong khoảng này.</p>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {data.items.map((item) => (
-              <Panel as="article" key={item.itemId} padding="md">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm text-ink-muted">{formatDateVi(item.plannedDate)}</span>
-                  {item.itemType === "assessment" ? <Badge variant="warning">Kiểm tra</Badge> : <Badge variant="secondary">Bài học</Badge>}
-                </div>
-                <h3 className="font-semibold">{item.itemType === "assessment" ? "Kiểm tra" : item.title}</h3>
-                <p className="mt-1 text-sm text-ink-muted">{item.className}</p>
-                <dl className="mt-3 space-y-2 text-sm">
-                  <div><dt className="text-ink-muted">Người phụ trách</dt><dd>{item.teacherName ?? "Chưa phân công"}</dd></div>
-                  <div><dt className="text-ink-muted">Chuẩn bị</dt><dd>{item.preparation ?? "Không có yêu cầu"}</dd></div>
-                </dl>
-              </Panel>
-            ))}
-          </div>
+          <DataTable
+            caption={`Lịch học từ ${formatDateVi(data.startDate)} đến ${formatDateVi(data.endDate)}`}
+            hideCaption
+            rows={data.items}
+            getRowKey={(item) => item.itemId}
+            minWidth="680px"
+            mobileRow={{ titleKey: "lesson", trailingKey: "date", metaKeys: ["class", "teacher", "preparation"] }}
+            columns={[
+              { key: "lesson", header: "Bài học · kiểm tra", cell: (item) => <span className="font-medium">{item.itemType === "assessment" ? "Kiểm tra" : item.title}</span> },
+              { key: "date", header: "Ngày", cell: (item) => <span className="whitespace-nowrap tabular-nums">{formatDateVi(item.plannedDate)}</span> },
+              { key: "class", header: "Lớp", cell: (item) => item.className },
+              { key: "teacher", header: "Người phụ trách", cell: (item) => item.teacherName ?? "Chưa phân công" },
+              { key: "preparation", header: "Chuẩn bị", cell: (item) => <span className="whitespace-pre-wrap break-words">{item.preparation ?? "Không có yêu cầu"}</span> },
+            ]}
+          />
         )}
       </CardContent>
     </Card>

@@ -127,19 +127,15 @@ export function ReportWorkbench({
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle as="h2">Bộ lọc</CardTitle>
-          <CardDescription>File tải về và bản chốt dùng đúng bộ lọc đang hiển thị.</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {/* Đợt E — khối lọc tự chế. Trước đây bốn ô trong cùng một lưới có ô
               đeo `<Label>` + `mt-1`, ô đeo `<span>` giả nhãn, ô có dòng giải
               thích, ô không; và hai ô "khoá cứng" thay `Select` bằng một `<p>`
               cao `h-control`. Mọi khác biệt ấy đổi chiều cao ⇒ lưới so le. Nay
               cả sáu nhánh đi qua đúng một `FilterField`. */}
-          <form onSubmit={applyFilter} className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <form aria-label="Bộ lọc báo cáo" onSubmit={applyFilter} className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <FilterField label="Loại báo cáo" htmlFor="report-type">
               <Select
                 id="report-type"
@@ -237,6 +233,7 @@ export function ReportWorkbench({
               <Button type="submit">Xem báo cáo</Button>
             </div>
           </form>
+          <p className="mt-2 text-xs text-ink-muted">File tải về và bản chốt dùng đúng bộ lọc của báo cáo đang xem.</p>
         </CardContent>
       </Card>
 
@@ -311,6 +308,8 @@ export function ReportWorkbench({
           ) : (
             <DataTable
               caption={`${data.title} · ${data.scopeLabel} · ${periodRange}.`}
+              hideCaption
+              density="compact"
               columns={columns}
               rows={data.rows}
               getRowKey={(row) => row.classId}

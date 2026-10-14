@@ -20,10 +20,10 @@ export default async function DashboardPage() {
     >
       <PageHeader
         title="Tổng quan"
-        description="Số liệu hiển thị đúng phạm vi bạn được phép xem."
+        description={data.kpis?.academicYearCode ? `Năm học ${data.kpis.academicYearCode} · Trong phạm vi của bạn` : "Trong phạm vi của bạn"}
       />
       {data.audience === "guardian" ? (
-        <div className="mb-6">
+        <div>
           <ChildrenLinks students={childDirectory.children} status={childDirectory.status} />
         </div>
       ) : null}

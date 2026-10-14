@@ -37,7 +37,7 @@ export function ImportTargetFields({
   const classFieldId = `${idPrefix}-class`;
 
   return (
-    <>
+    <div className="grid items-start gap-4 md:grid-cols-2">
       <div className="space-y-2">
         <Label htmlFor={yearFieldId}>Năm học đích</Label>
         <Select
@@ -75,6 +75,6 @@ export function ImportTargetFields({
             : "Sổ lớp Chiên Con không có cột lớp — hãy chọn lớp ở đây. Dòng nào đã ghi lớp trong dữ liệu thì vẫn ưu tiên giá trị đó."}
         </p>
       </div>
-    </>
+    </div>
   );
 }

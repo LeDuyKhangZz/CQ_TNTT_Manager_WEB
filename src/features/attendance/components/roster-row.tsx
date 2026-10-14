@@ -15,7 +15,6 @@ import {
   type AttendanceStatus,
 } from "../constants";
 import type { AttendanceRosterEntry } from "../server/queries";
-import { panelClassName } from "@/components/ui/card";
 
 /**
  * Một em trong danh sách điểm danh — M05-C / U-10 · U-21 · TB-09.
@@ -51,8 +50,7 @@ function statusOptions(current: AttendanceStatus, showAll: boolean): SegmentedOp
   }));
 }
 
-function statusTone(status: AttendanceStatus): "success" | "warning" | "secondary" {
-  if (status === "present") return "success";
+function statusTone(status: AttendanceStatus): "warning" | "secondary" {
   if (isAbsent(status)) return "warning";
   return "secondary";
 }
@@ -86,7 +84,7 @@ export function RosterRow({
 
   return (
     <div
-      className={panelClassName({ padding: "none" })}
+      className="min-w-0 bg-surface"
       // Móc kiểm thử ổn định cho E2E. Bài test cũ bám vào `select[aria-label^=…]`
       // và gãy hết khi ô chọn thành hàng nút (D-142) — `07_IMPLEMENTATION_IMPACT`
       // §2.6 gọi đúng đó là "chi phí ẩn lớn nhất của U-10". Neo vào một thuộc
@@ -100,9 +98,9 @@ export function RosterRow({
         aria-expanded={expanded}
         aria-controls={panelId}
         data-roster-toggle=""
-        className="flex min-h-11 w-full flex-wrap items-center justify-between gap-2 p-3 text-left hover:bg-surface-muted"
+        className="flex min-h-11 w-full flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-3 py-2 text-left hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring"
       >
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">{entry.label}</span>
+        <span className="min-w-0 basis-full break-words text-sm font-medium sm:flex-1 sm:basis-auto">{entry.label}</span>
         <span className="flex flex-wrap items-center gap-1">
           {/* Hai chip nói đủ cả hai cột ngay ở hàng gấp lại. `aria-label` mang
               tên cột đầy đủ vì "Lễ"/"GL" là chữ tắt cho mắt, không cho tai. */}

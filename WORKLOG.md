@@ -49,19 +49,20 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **R4 DONE5/5, DEPLOYED — Codex — 2026-10-13.** Source `e4dcf89` đã push main; Vercel Production success và smoke URL thật đạt.
-- Kiểm thử: **2.000 unit pass /24 skip; R4 E2E105/105; pgTAP audit1.512/1.512**; lint/typecheck/build đạt. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh.
-- Reviewer độc lập kiểm browser/query/quyền; desktop y287, mobile hàng63px; tablet768×1024 thấy12 hàng, cột điện thoại/trạng thái cần cuộn ngang.
-- Production đã backup và áp migration lịch sử;70/70 khớp. Đã push/redeploy `e4dcf89`; [production](https://cq-tntt-manager-web.vercel.app) smoke đạt; URL riêng có Vercel Authentication.
-- R2 13/13, R3 5/5 giữ hoàn tất; UX-42/R13.3 và R5–R13 còn mở. [Hồ sơ R4](docs/system-workflow-redesign/redesign-2c/R4_COMPLETION_2026-10-13.md).
+- **ANTI-AI-ERP-20261013 — implementation xong, chuẩn bị push/redeploy — Codex — 2026-10-14.** Redesign shell/shared UI và toàn bộ cụm module theo yêu cầu chỉ giữ quy định màu. [Báo cáo/evidence](docs/system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md).
+- **2026 unit pass /24 integration skip**, lint/typecheck/build đạt. E2E laptop đầu **226 pass /3 fail fixture**; chạy lại đúng3 ca **3/3 đạt**, không cộng thành một lượt229/229.
+- Browser bản cuối: portal/auth/dashboard/404 **80/80**; staff10width không overflow, GET/Back/Refresh/no-JS đạt; directory90cases trước refinement đạt. Staff first row y333.5 desktop/y410.5 mobile.
+- Full687 E2E mở rộng bị ngắt sau19ca đạt khi môi trường local dừng; chưa có lượt687/687 xanh. Đã khởi động lại Docker hiện có, không reset DB; smoke release **43/43 đạt** trên build cuối.
+- Giữ server API, quyền, schema/RLS/theme resolver; không migration hoặc dependency mới. User14/10 yêu cầu push để redeploy và thông tin đăng nhập; chỉ xác nhận deployed sau smoke production.
+- R2/R3/R4 giữ hoàn tất theo hồ sơ lịch sử; R5–R13/UX-42/R13.3 không tự đóng bởi redesign này. Baseline trước task: `8c6024a` (UI `e4dcf89`).
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Task kế tiếp: R5.1 — khung workspace lớp học.** R4 đã bàn giao và redeploy; chưa claim R5. R13.3 tiếp tục theo dõi gate toàn hệ thống/fixture.
+**Đang ưu tiên: ANTI-AI-ERP-20261013 — push/redeploy và smoke URL production theo yêu cầu14/10.** Sau bàn giao mới trở lại R5.1; R13.3 tiếp tục theo dõi gate toàn hệ thống.
 
 ## ⛔ BLOCKERS
 
-Không còn blocker chức năng R4. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Git/Vercel đã hoàn tất và smoke production đạt. UX-42/R13.3 giữ mở. Giới hạn tablet và bản nháp wizard ghi rõ trong báo cáo; không reset DB local để xử lý xung đột pgTAP fixture.
+Docker local đã khôi phục không reset dữ liệu, smoke release **43/43 đạt**. P2 còn theo dõi: React hydration#418 ngắt quãng trong operations sweep (teaching-plan390 tái hiện2/10, trang vẫn hoạt động); chưa biết nguyên nhân. Full E2E chưa hoàn tất,24 integration skip và giới hạn browser/guard nháp được ghi trong báo cáo. Production KHANG.NHO active/Super Admin; mật khẩu không đọc lại được, chỉ reset nếu chủ tài khoản cho phép.
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi)
 
@@ -159,6 +160,15 @@ Không còn blocker chức năng R4. Full E2E trước sửa cuối: **677 pass 
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-14] Codex — ANTI-AI-ERP-20261013 — redesign ERP và chuẩn bị phát hành
+- **Làm được:** áp dụng tiêu chuẩn anti-AI toàn shell/module; chỉ giữ palette; bảng/list gọn, dashboard theo việc, disclosure cho tác vụ ít dùng, loading không che màn hình; bảo vệ nháp điểm danh/điểm và giữ phần gõ tiếp qua save/refresh.
+- **File thay đổi:** inventory và route matrix tại [báo cáo anti-AI](docs/system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md); shared UI, presentation components, tests và docs.
+- **Migration/data impact:** không đổi SQL/RLS/API/permission/dependency; E2E dùng fixture local riêng, không seed/reset production.
+- **Đã test:** lint/typecheck/build đạt;2026unit pass/24skip. Laptop226pass/3fixturefail, rerun3/3pass; final browser80/80 và staff10width đạt; full687 ngắt ở19pass khi local stack dừng. Khôi phục Docker, smoke release43/43pass trên build cuối.
+- **Quyết định mới:** yêu cầu chủ dự án13/10 thay tiêu chuẩn hình thức cũ, giữ màu/nghiệp vụ; yêu cầu14/10 push/redeploy. Không tự đóng backlog R5–R13.
+- **Blocker/rủi ro:** fullE2E chưa xanh toàn bộ; guard không intercept history/programmatic navigation; xem báo cáo. Docker đã khôi phục.
+- **Next action:** commit/push task này, xác nhận Vercel đúngSHA và smoke URL production; bàn giao tài khoản theo lựa chọn của chủ tài khoản.
+
 ### [2026-10-13] Codex — R4.5 — nghiệm thu R4 và triển khai theo yêu cầu
 
 - **Làm được:** R4.2 wizard lưu giám hộ rồi em (JS/no-JS); R4.3 EntityHeader/6 tab, family/attendance và lỗi/retry UX-41; R4.4 hàng mobile63px/filter sheet/chip; R4.5 banner Thủ quỹ. Tất cả R4.1–R4.5 DONE.
@@ -207,80 +217,4 @@ Không còn blocker chức năng R4. Full E2E trước sửa cuối: **677 pass 
 - **File thay đổi:** WORKLOG + tài liệu tracking REDESIGN + báo cáo/harness/evidence độc lập ngoài repo app. **Không sửa source sản phẩm, không migration/RLS/production; E2E chỉ dùng fixture DB local.**
 - **Next:** khi tiếp tục sửa, ưu tiên QA-05 rồi QA-01/02/03/04 và QA-06/07/08. Phiên này **dừng sau kiểm định**, không sửa lỗi hoặc làm task mới, không commit/push; giữ nguyên thay đổi chưa commit của R2.12.
 
-### [2026-08-20] Phiên 75 — Claude — `BDH-2025-001` + `BDH-2025-002` (ngoài 2B — yêu cầu trực tiếp của chủ dự án)
-
-- **Claim:** chủ dự án gửi `NH_2025-2026/DS BAN ĐIỀU HÀNH.xlsx` kèm ảnh màn hình `/account`:
-  *"file chứa các người được bổ nhiệm làm các chức vụ tương đương với các role phân quyền trong hệ
-  thống, thì tôi cần bạn làm sao kiếm các người này trong hệ thống hiện tại và đảm bảo khi tôi là
-  admin tạo tài khoản cho họ thì họ sẽ được đúng role đúng phân quyền hệ thống — ví dụ như anh lê
-  trí dũng là Xứ Đoàn Phó Nội Vụ… nhưng khi tạo tài khoản ra thì vai trò chỉ là giáo lý viên bình
-  thường"*.
-- **Đã hỏi lại trước khi code** — ba lựa chọn, chủ dự án chọn cả ba mức "làm thật": (a) thêm trường
-  chức vụ bổ nhiệm, (b) gộp Chiên Con vào ngành Ấu Nhi, (c) tạo 6 Ban bằng migration.
-- **Đo trước khi sửa, không đoán.** Đối chiếu từng dòng sổ với production qua session pooler:
-  **20/20 hồ sơ tìm thấy, tên thánh khớp 20/20.** Toàn hệ thống mới có **3 tài khoản** (2 Super
-  Admin + `GLV040`). `select count(*) from public.committees` ⇒ **0**.
-  `class_staff_assignments` đang hoạt động: `member 65` · `trainee 22` · **`representative 0`**.
-- **Nguyên nhân gốc (không phải lỗi phân quyền):** `staff_profiles` **không có cột nào ghi chức vụ**,
-  và `role_assignments` không dùng để ghi trước được — nó tham chiếu `profiles(id)`, tức phải CÓ tài
-  khoản rồi mới ghi được vai trò, trong khi chức vụ có trước tài khoản hàng tháng. Nên hộp thoại
-  "Cấp tài khoản" chỉ còn một thứ để đoán: `capacity` của phân công lớp.
-- **Làm được:**
-  1. **`BDH-2025-001` — 6 Ban thật vào migration.** `PHUNG_VU · SINH_HOAT · KY_THUAT · TRUC ·
-     TRUYEN_THONG · Y_TE`, thứ tự theo đúng sổ, chỉ Ban Kỹ thuật giữ kho thiết bị. `QUAN_LY` của
-     seed cũ bị hạ cờ rồi **xoá có điều kiện** (9 khoá ngoại `on delete restrict` trỏ vào
-     `committees`, nên phải tự kiểm trước chứ không để DB trả lời hộ). Khối committees **rời khỏi
-     `seed.sql`** — cùng lý do và cùng khuôn với `20260725000100_reference_catalog.sql`.
-  2. **`BDH-2025-002` — `appointed_role` + `appointed_sector_id`.** CHECK
-     `staff_profiles_appointment_shape` hẹp hơn `app_role` một cách có chủ ý: **không** nhận vai trò
-     lớp (đã suy được từ phân công — ghi lần hai là hai nguồn sự thật lệch nhau), không nhận
-     `super_admin` (trần D-102), và buộc cặp chức-vụ-ngành khớp nhau đúng như
-     `role_assignments_scope_matches_role`. Backfill **14 hồ sơ** khớp bằng **`staff_code`, không
-     bằng họ tên**: sổ có **hai** "Maria Nguyễn Thị Thanh Hằng" (`GLV021` là Soeur ở Thiếu 1A,
-     `GLV056` là chị huynh trưởng ở Ấu 3A) — khớp bằng tên ở đây là trao toàn quyền xứ đoàn cho
-     nhầm người. **6 Trưởng Ban của sổ cố ý để NULL:** "Trưởng ban" không phải `app_role` (D-15).
-  3. **Ai sửa được cột mới — 0 policy mới.** `staff_profiles_update_global_write` đã đúng tập người
-     cầm sổ bổ nhiệm; còn `staff_profiles_update_self` bị `app.guard_staff_self_update()`
-     (IMP-BULK-002) chặn theo **danh sách cho phép** (`to_jsonb(new) - <4 cột liên lạc>`), nên hai
-     cột thêm hôm nay **tự động** được bảo vệ. pgTAP `058` canh đúng chỗ đó: nếu ai đổi hàm ấy sang
-     danh-sách-cấm thì đây là bài đỏ trước tiên.
-  4. **Tầng ứng dụng:** `grantableRolesForStaff` nhận thêm `appointedRole` và **sổ bổ nhiệm thắng
-     phân công lớp** · `isAppointableRole()` lọc lại giá trị đọc từ DB (chọn sẵn một vai trò lớp mà
-     không kèm `classId` là đẩy người dùng vào lượt chèn chắc chắn bị trigger chặn) ·
-     `recommendedSectorId` điền sẵn luôn ô Ngành · khối "Tài khoản đăng nhập" **cảnh báo khi vai trò
-     lệch chức vụ** (dùng khuôn `border-warning` thay vì `FormMessage tone="danger"`: đây là trạng
-     thái đứng yên, `role="alert"` sẽ bắt trình đọc màn hình đọc "Lỗi:" ngay khi tải trang) · ô
-     "Chức vụ bổ nhiệm" trong biểu mẫu sửa hồ sơ, ô "Ngành" chỉ hiện với chức vụ ngành ·
-     `updateStaffSchema.superRefine` canh cặp ở tầng Zod để người dùng nhận câu tiếng Việt thay vì
-     một `23514` trần bị `updateStaff` đổi thành "Không cập nhật được hồ sơ".
-  5. **`NH_2025-2026/PHAN_QUYEN_BAN_DIEU_HANH_2025-2026.md`** — bảng 20 người kèm mã hồ sơ, vai trò
-     phải chọn, ngành phải chọn; cách sửa `GLV040`; và 4 lỗ hổng đo được (§6).
-- **File thay đổi:** `supabase/migrations/20260820000100_parish_committees.sql` ·
-  `supabase/migrations/20260820000200_staff_appointed_role.sql` ·
-  `supabase/tests/058_bdh_appointment_and_committees_test.sql` · `supabase/seed.sql` ·
-  `src/types/database.ts` · `staff/grantable-roles.ts` · `staff/schemas.ts` ·
-  `staff/server/queries.ts` · `staff/server/actions.ts` · `staff/components/staff-account-panel.tsx` ·
-  `staff/components/staff-profile-editor.tsx` · `app/(dashboard)/staff/[staffId]/page.tsx` ·
-  `tests/unit/provisionable-roles.test.ts` · `tests/unit/staff-schemas.test.ts` ·
-  `NH_2025-2026/PHAN_QUYEN_BAN_DIEU_HANH_2025-2026.md` (mới).
-- **Migration/data impact:** 2 migration, **đã push production**. Chèn **6 dòng** vào một bảng đang
-  rỗng (`committees`), thêm **2 cột nullable** và backfill **14 dòng** `staff_profiles`. **0 policy
-  mới · 0 đổi RLS · 0 đổi quyền · 0 dòng thiếu nhi bị đụng.** Sao lưu trước khi push:
-  `backups/prod-20260820-truoc-BDH.sql` (schema) + `…-data.sql` (2,1 MB, ngoài repo).
-- **Đã test (số thật):** pgTAP **1500/1500** (58 file, +19 bài mới) · unit **1749 pass / 24 skip**
-  (123 file, +11 bài mới) · lint **0 warning** · typecheck ✓ · build **28/28**. Xác minh trên
-  production sau push: `committees` 6 dòng đúng thứ tự sổ · `appointed_role is not null` = **14**.
-  ⚠️ **Chưa chạy E2E** cho đợt này.
-- **Quyết định mới:** **BDH-2025-002** — chức vụ bổ nhiệm là **dữ liệu về sổ, không phải quyền**;
-  nó chỉ điền sẵn ô chọn và bật cảnh báo lệch, quyền vẫn đi nguyên qua `assign_primary_role` với
-  trần D-102 và chốt "chỉ Super Admin". **BDH-2025-001** — danh sách Ban của xứ đoàn có **Ban Trực**
-  và **không có** "Ban Quản lý"; dữ liệu tham chiếu đi theo migration, không theo seed.
-- **Blocker/rủi ro:** việc (b) **gộp Chiên Con vào Ấu Nhi — CHƯA LÀM**, xem `BLOCKERS`. Ngoài ra
-  `GLV040` vẫn đang mang `class_teacher`: cố ý để chủ dự án bấm "Đổi vai trò" trên giao diện, vì
-  đường ấy ghi `account_audit_events` còn một lệnh UPDATE trong migration thì không có actor thật
-  để ghi vào nhật ký.
-- **Next action:** chốt hướng Chiên Con (§6.1 của báo cáo), rồi cấp 19 tài khoản còn lại theo bảng
-  §3 và gắn 6 Trưởng ban ở `/committees`.
-
-
-Các entry cũ hơn: [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
+Các entry cũ hơn: [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).

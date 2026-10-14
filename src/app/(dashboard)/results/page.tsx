@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { getResultsPageData } from "@/features/assessments/server/queries";
@@ -29,21 +30,27 @@ export default async function ResultsPage() {
           yearCode={data.year.code}
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {data.portal.length > 0 ? <section className="space-y-3"><h2 className="text-lg font-semibold">Kết quả của con</h2><PublishedResultsPortal results={data.portal} status={data.portalStatus} audience={data.audience} yearCode={data.year.code} /></section> : null}
           <section className="space-y-3">
             <h2 className="text-lg font-semibold">Bảng điểm phụ trách</h2>
-            {data.classes.length === 0 ? <Card><CardContent className="pt-6 text-sm text-ink-muted">Bạn chưa có lớp nào trong phạm vi kết quả.</CardContent></Card> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{data.classes.map((item) => (
-            <Link key={item.id} href={`/results/${item.id}`} className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring focus-visible:ring-offset-2">
-              <Card className="h-full transition-colors hover:border-theme-primary">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-3"><CardTitle>{item.displayName}</CardTitle><Badge variant={item.isLocked ? "warning" : "success"}>{item.isLocked ? "Đã khóa" : "Đang mở"}</Badge></div>
-                  <CardDescription>{item.assessmentCount} cột điểm</CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm text-ink-muted">{item.canGrade ? "Có quyền nhập điểm" : "Chỉ xem"}</CardContent>
-              </Card>
-            </Link>
-          ))}</div>}
+            {data.classes.length === 0 ? <Card><CardContent className="pt-4 text-sm text-ink-muted">Bạn chưa có lớp nào trong phạm vi kết quả.</CardContent></Card> : (
+              <DataTable
+                caption={`Bảng điểm phụ trách · năm học ${data.year.code}`}
+                hideCaption
+                density="compact"
+                rows={data.classes}
+                getRowKey={(item) => item.id}
+                minWidth="560px"
+                mobileRow={{ titleKey: "class", trailingKey: "status", metaKeys: ["assessments", "access"] }}
+                columns={[
+                  { key: "class", header: "Lớp", cell: (item) => <Link href={`/results/${item.id}`} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline-offset-4 hover:underline">{item.displayName}</Link> },
+                  { key: "assessments", header: "Cột điểm", numeric: true, cell: (item) => item.assessmentCount },
+                  { key: "status", header: "Trạng thái", cell: (item) => <Badge variant={item.isLocked ? "secondary" : "outline"}>{item.isLocked ? "Đã khóa" : "Đang mở"}</Badge> },
+                  { key: "access", header: "Quyền thao tác", cell: (item) => <span className="text-ink-muted">{item.canGrade ? "Có quyền nhập điểm" : "Chỉ xem"}</span> },
+                ]}
+              />
+            )}
           </section>
         </div>
       )}

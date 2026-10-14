@@ -124,7 +124,7 @@ function DecisionJournal({ events }: { events: readonly PromotionReviewEvent[] }
   if (!hasPromotionHistory(events)) return null;
   return (
     <Panel as="section">
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+      <h4 className="text-sm font-medium text-ink-muted">
         Nhật ký quyết định
       </h4>
       <ol className="mt-2 space-y-1 text-xs">
@@ -852,6 +852,7 @@ function PromotionBatchBar({
 
       {overflowNote ? <FormMessage tone="info">{overflowNote}</FormMessage> : null}
 
+      {selected.length > 0 ? <>
       <div className="grid gap-3 md:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="batch-status">Đề xuất chung</Label>
@@ -907,6 +908,7 @@ function PromotionBatchBar({
       >
         {`Xem lại và gửi ${selected.length} đề xuất`}
       </Button>
+      </> : <p className="text-sm text-ink-muted">Chọn thiếu nhi trong danh sách để lập đề xuất chung.</p>}
 
       {message ? (
         <FormMessage tone={message.tone === "error" ? "danger" : "success"}>{message.text}</FormMessage>

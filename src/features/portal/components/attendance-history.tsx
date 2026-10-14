@@ -65,11 +65,11 @@ export function AttendanceHistory({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Chuyên cần</CardTitle>
-          <CardDescription>Tính trên các buổi đã được giáo lý viên chốt.</CardDescription>
+          <CardTitle as="h2">Chuyên cần</CardTitle>
+          <CardDescription>{yearCode ? `Năm học ${yearCode}. ` : ""}Tính trên các buổi đã được giáo lý viên chốt.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {summary === null ? null : (
@@ -77,19 +77,19 @@ export function AttendanceHistory({
               <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div>
                   <span className="text-ink-muted">Số buổi</span>
-                  <p className="text-lg font-semibold">{summary.sessionsCounted}</p>
+                  <p className="text-base font-semibold tabular-nums">{summary.sessionsCounted}</p>
                 </div>
                 <div>
                   <span className="text-ink-muted">Có mặt lễ</span>
-                  <p className="text-lg font-semibold">{summary.massPresentCount}</p>
+                  <p className="text-base font-semibold tabular-nums">{summary.massPresentCount}</p>
                 </div>
                 <div>
                   <span className="text-ink-muted">Điểm Thánh lễ</span>
-                  <p className="text-lg font-semibold">{summary.massAttendanceScore ?? "—"}</p>
+                  <p className="text-base font-semibold tabular-nums">{summary.massAttendanceScore ?? "—"}</p>
                 </div>
                 <div>
                   <span className="text-ink-muted">Điểm Giáo lý</span>
-                  <p className="text-lg font-semibold">{summary.catechismAttendanceScore ?? "—"}</p>
+                  <p className="text-base font-semibold tabular-nums">{summary.catechismAttendanceScore ?? "—"}</p>
                 </div>
               </div>
               {warnings.length > 0 ? (
@@ -118,7 +118,7 @@ export function AttendanceHistory({
 
       <Card>
         <CardHeader>
-          <CardTitle>Lịch sử từng buổi</CardTitle>
+          <CardTitle as="h2">Lịch sử từng buổi</CardTitle>
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
@@ -129,32 +129,33 @@ export function AttendanceHistory({
               tabIndex={0}
               aria-label="Bảng lịch sử điểm danh, có thể cuộn ngang"
             >
-              <table className="w-full min-w-[600px] text-sm">
+              <table className="w-full text-sm">
                 <caption className="sr-only">Lịch sử điểm danh đã được Giáo lý viên chốt</caption>
                 <thead className="bg-surface-muted text-left">
                   <tr>
-                    <th scope="col" className="p-3">Ngày</th>
-                    <th scope="col" className="p-3">Buổi</th>
-                    <th scope="col" className="p-3">Thánh lễ</th>
-                    <th scope="col" className="p-3">Giáo lý</th>
+                    <th scope="col" className="px-2 py-3 sm:px-3">Ngày</th>
+                    <th scope="col" className="hidden p-3 sm:table-cell">Buổi</th>
+                    <th scope="col" className="px-2 py-3 sm:px-3">Thánh lễ</th>
+                    <th scope="col" className="px-2 py-3 sm:px-3">Giáo lý</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.recordId} className="border-t border-line">
-                      <th scope="row" className="p-3 text-left font-medium">
+                      <th scope="row" className="whitespace-nowrap px-2 py-3 text-left font-medium tabular-nums sm:px-3">
                         {formatDateVi(row.attendanceDate)}
+                        <span className="mt-1 block text-xs font-normal text-ink-muted sm:hidden">{MEETING_TYPE_LABELS[row.meetingType]}</span>
                       </th>
-                      <td className="p-3">{MEETING_TYPE_LABELS[row.meetingType]}</td>
-                      <td className="p-3">
-                        <Badge variant={isAbsent(row.massStatus) ? "danger" : "success"}>
-                          {ATTENDANCE_STATUS_LABELS[row.massStatus]}
-                        </Badge>
+                      <td className="hidden p-3 sm:table-cell">{MEETING_TYPE_LABELS[row.meetingType]}</td>
+                      <td className="px-2 py-3 sm:px-3">
+                        {isAbsent(row.massStatus) ? (
+                          <Badge variant="danger" icon={false}>{ATTENDANCE_STATUS_LABELS[row.massStatus]}</Badge>
+                        ) : ATTENDANCE_STATUS_LABELS[row.massStatus]}
                       </td>
-                      <td className="p-3">
-                        <Badge variant={isAbsent(row.catechismStatus) ? "danger" : "success"}>
-                          {ATTENDANCE_STATUS_LABELS[row.catechismStatus]}
-                        </Badge>
+                      <td className="px-2 py-3 sm:px-3">
+                        {isAbsent(row.catechismStatus) ? (
+                          <Badge variant="danger" icon={false}>{ATTENDANCE_STATUS_LABELS[row.catechismStatus]}</Badge>
+                        ) : ATTENDANCE_STATUS_LABELS[row.catechismStatus]}
                       </td>
                       {/* D-75: không đọc và không in ghi chú nội bộ của Giáo lý viên. */}
                     </tr>

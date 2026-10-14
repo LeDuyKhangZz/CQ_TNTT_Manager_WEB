@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { LoginForm } from "@/features/auth/components/login-form";
 import {
   buildChangePasswordUrl,
@@ -53,9 +52,8 @@ export default async function LoginPage({
 
   return (
     <div className="mx-auto max-w-md">
-      <Badge variant="secondary">Hệ thống nội bộ</Badge>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink">Chào mừng bạn trở lại</h1>
-      <p className="mb-7 mt-2 text-sm text-ink-muted">Đăng nhập bằng tài khoản do Ban quản trị cấp để vào hệ thống.</p>
+      <h1 className="text-2xl font-semibold text-ink">Đăng nhập</h1>
+      <p className="mb-5 mt-2 text-sm text-ink-muted">Dùng tài khoản do Ban quản trị cấp.</p>
       {banner ? (
         <Alert
           tone={banner.tone}

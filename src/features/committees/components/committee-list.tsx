@@ -4,12 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { COMMITTEE_POSITION_LABELS } from "../constants";
 import { createCommittee } from "../server/actions";
 import type { CommitteeSummary } from "../server/queries";
@@ -19,53 +18,38 @@ type Message = { tone: "success" | "danger"; text: string } | null;
 
 function CommitteeCard({ committee }: { committee: CommitteeSummary }) {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-3">
+    <li className="grid gap-2 px-4 py-3 lg:grid-cols-[minmax(12rem,1fr)_minmax(16rem,1.5fr)_auto] lg:gap-4">
           <div className="min-w-0">
-            <CardTitle>{committee.name}</CardTitle>
-            <CardDescription>
+            <Link href={`/committees/${committee.id}`} prefetch={false} className="inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline">{committee.name}</Link>
+            <p className="text-sm text-ink-muted">
               {committee.memberCount} thành viên
               {committee.managesEquipment ? " · Quản lý kho thiết bị" : ""}
-            </CardDescription>
+            </p>
+            {committee.description ? <p className="mt-1 break-words text-sm text-ink-muted">{committee.description}</p> : null}
           </div>
-          {committee.myPosition ? (
-            <Badge variant="success">{COMMITTEE_POSITION_LABELS[committee.myPosition]}</Badge>
-          ) : (
-            <Badge variant="outline">{committee.isActive ? "Đang hoạt động" : "Ngưng hoạt động"}</Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {committee.description ? (
-          <p className="text-sm text-ink-muted">{committee.description}</p>
-        ) : null}
         {/* TB-M09-06: tên Trưởng/Phó ban trên thẻ. Đọc được nhờ D-100; ẩn dòng
             khi chưa có/không đọc được thay vì hiện nhãn trống. */}
         {committee.leaderNames.length > 0 || committee.deputyNames.length > 0 ? (
-          <dl className="space-y-1 text-sm">
+          <dl className="min-w-0 space-y-1 py-2 text-sm">
             {committee.leaderNames.length > 0 ? (
-              <div className="flex gap-2">
-                <dt className="text-ink-muted">Trưởng ban:</dt>
-                <dd className="font-medium text-ink">{committee.leaderNames.join(", ")}</dd>
+              <div className="flex flex-wrap gap-x-2">
+                <dt className="shrink-0 text-ink-muted">Trưởng ban:</dt>
+                <dd className="break-words text-ink">{committee.leaderNames.join(", ")}</dd>
               </div>
             ) : null}
             {committee.deputyNames.length > 0 ? (
-              <div className="flex gap-2">
-                <dt className="text-ink-muted">Phó ban:</dt>
-                <dd className="font-medium text-ink">{committee.deputyNames.join(", ")}</dd>
+              <div className="flex flex-wrap gap-x-2">
+                <dt className="shrink-0 text-ink-muted">Phó ban:</dt>
+                <dd className="break-words text-ink">{committee.deputyNames.join(", ")}</dd>
               </div>
             ) : null}
           </dl>
-        ) : null}
-        <Link
-          href={`/committees/${committee.id}`}
-          className={cn(buttonVariants({ variant: "outline" }))}
-        >
-          Mở trang Ban
-        </Link>
-      </CardContent>
-    </Card>
+        ) : <span />}
+        <div className="py-2 text-sm text-ink-muted">
+          {committee.myPosition ? <p>{COMMITTEE_POSITION_LABELS[committee.myPosition]}</p> : null}
+          {!committee.isActive ? <Badge variant="secondary">Ngưng hoạt động</Badge> : <p>Đang hoạt động</p>}
+        </div>
+    </li>
   );
 }
 
@@ -105,8 +89,13 @@ export function CommitteeList({
   }
 
   return (
-    <div className="space-y-6">
-      {canManage ? (
+    <div className="space-y-4" data-density="compact">
+      {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-ink-muted">{committees.length} Ban trong phạm vi của bạn</p>
+        {canManage && !showForm ? <Button type="button" onClick={() => setShowForm(true)}>Thêm Ban mới</Button> : null}
+      </div>
+      {canManage && showForm ? (
         <Card>
           <CardHeader>
             <CardTitle>Thêm Ban</CardTitle>
@@ -135,7 +124,6 @@ export function CommitteeList({
             ) : (
               <Button type="button" variant="outline" onClick={() => setShowForm(true)}>Thêm Ban mới</Button>
             )}
-            {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
           </CardContent>
         </Card>
       ) : null}
@@ -147,11 +135,11 @@ export function CommitteeList({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="divide-y divide-line rounded-md border border-line bg-surface">
           {committees.map((committee) => (
             <CommitteeCard key={committee.id} committee={committee} />
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

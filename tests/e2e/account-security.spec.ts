@@ -71,9 +71,11 @@ test("trang Tài khoản hiện trạng thái mật khẩu và hai thao tác", a
 test("xóa tài khoản: hộp thoại gõ lại tên, nút khóa tới khi gõ đúng", async ({ page }) => {
   await login(page, "Khang.Nho");
   await page.goto("/admin");
+  await page.getByRole("navigation", { name: "Nhóm cấu hình" }).getByRole("link", { name: "Tài khoản", exact: true }).click();
 
   // Lọc danh sách còn đúng tài khoản GLV910 (không phải Super Admin).
   await page.getByPlaceholder("Tìm theo tên hoặc tên đăng nhập").fill("GLV910");
+  await page.locator("summary").filter({ hasText: /Quản lý tài khoản GLV910/i }).click();
   await page.getByRole("button", { name: "Xóa tài khoản" }).first().click();
 
   const dialog = page.getByRole("dialog");
@@ -102,6 +104,8 @@ test("xóa tài khoản: hộp thoại gõ lại tên, nút khóa tới khi gõ 
 test("biểu mẫu tạo tài khoản ở /admin chỉ còn vai trò không gắn hồ sơ Giáo lý viên", async ({ page }) => {
   await login(page, "Khang.Nho");
   await page.goto("/admin");
+  await page.getByRole("navigation", { name: "Nhóm cấu hình" }).getByRole("link", { name: "Tài khoản", exact: true }).click();
+  await page.locator("summary").filter({ hasText: "Tạo tài khoản ngoại lệ" }).click();
 
   // `exact: true`: trang còn một ô "Lọc theo vai trò" ở danh sách tài khoản.
   const roleSelect = page.getByLabel("Vai trò", { exact: true });

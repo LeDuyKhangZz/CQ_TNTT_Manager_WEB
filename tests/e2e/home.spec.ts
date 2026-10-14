@@ -3,13 +3,13 @@ import { expect, test } from "@playwright/test";
 test("trang gốc chuyển đến đăng nhập", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole("heading", { name: "Chào mừng bạn trở lại" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Đăng nhập", exact: true })).toBeVisible();
 });
 
 test("dashboard yêu cầu đăng nhập", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login\?next=%2Fdashboard$/);
-  await expect(page.getByRole("heading", { name: "Chào mừng bạn trở lại" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Đăng nhập", exact: true })).toBeVisible();
 });
 
 /**

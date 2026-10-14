@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useUnsavedChangesGuard } from "@/components/shared/use-unsaved-changes-guard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
@@ -57,6 +58,10 @@ interface AttendanceEditorProps {
 type StudentDraft = Record<string, { mass: AttendanceStatus; catechism: AttendanceStatus; note: string }>;
 type StaffDraft = Record<string, { status: StaffAttendanceStatus; note: string }>;
 
+function draftFingerprint(draft: StudentDraft | StaffDraft): string {
+  return JSON.stringify(Object.entries(draft).sort(([a], [b]) => a.localeCompare(b)).map(([id, entry]) => [id, { ...entry, note: entry.note.trim() }]));
+}
+
 const capacityLabels: Record<string, string> = {
   representative: "Đại diện",
   member: "GLV lớp",
@@ -96,6 +101,27 @@ export function AttendanceEditor({
   const router = useRouter();
   const [students, setStudents] = useState<StudentDraft>(() => buildStudentDraft(roster));
   const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => buildStaffDraft(staff));
+  const [savedDraft, setSavedDraft] = useState(() => ({ students: buildStudentDraft(roster), staff: buildStaffDraft(staff) }));
+  const savedDraftRef = useRef(savedDraft);
+  const serverDraftRef = useRef({ sessionId, key: `${draftFingerprint(buildStudentDraft(roster))}|${draftFingerprint(buildStaffDraft(staff))}` });
+  const dirty = draftFingerprint(students) !== draftFingerprint(savedDraft.students)
+    || draftFingerprint(staffDraft) !== draftFingerprint(savedDraft.staff);
+  useUnsavedChangesGuard(dirty);
+
+  useEffect(() => {
+    const next = { students: buildStudentDraft(roster), staff: buildStaffDraft(staff) };
+    const key = `${draftFingerprint(next.students)}|${draftFingerprint(next.staff)}`;
+    const changedSession = serverDraftRef.current.sessionId !== sessionId;
+    if (!changedSession && serverDraftRef.current.key === key) return;
+    const previous = savedDraftRef.current;
+    // Fresh server values replace a clean draft. A refresh must not erase edits
+    // made while the previous save was in flight.
+    setStudents((current) => changedSession || draftFingerprint(current) === draftFingerprint(previous.students) ? next.students : current);
+    setStaffDraft((current) => changedSession || draftFingerprint(current) === draftFingerprint(previous.staff) ? next.staff : current);
+    serverDraftRef.current = { sessionId, key };
+    savedDraftRef.current = next;
+    setSavedDraft(next);
+  }, [roster, sessionId, staff]);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [summary, setSummary] = useState<FinalizeSummary | null>(null);
   const [pending, startTransition] = useTransition();
@@ -234,6 +260,9 @@ export function AttendanceEditor({
           return;
         }
         setSummary(finalize ? result.data : null);
+        const saved = { students, staff: staffDraft };
+        savedDraftRef.current = saved;
+        setSavedDraft(saved);
         setMessage({
           tone: "success",
           text: finalize ? "Đã chốt buổi điểm danh." : "Đã lưu nháp.",
@@ -441,24 +470,26 @@ export function AttendanceEditor({
               {visibleRoster.length === 0 ? (
                 <p className="text-sm text-ink-muted">{emptyRosterMessage(filter, query)}</p>
               ) : (
-                visibleRoster.map((entry) => {
-                  const draft = students[entry.enrollmentId];
-                  if (!draft) return null;
-                  return (
-                    <RosterRow
-                      key={entry.enrollmentId}
-                      entry={entry}
-                      draft={draft}
-                      readOnly={readOnly}
-                      expanded={expanded.has(entry.enrollmentId)}
-                      showAllStatuses={showAllStatuses}
-                      onToggleExpanded={() => toggleExpanded(entry.enrollmentId)}
-                      onToggleAllStatuses={() => setShowAllStatuses((current) => !current)}
-                      onChange={(patch) => patchStudent(entry.enrollmentId, patch)}
-                      onApplySuggestion={() => applyAbsenceSuggestion(entry.enrollmentId)}
-                    />
-                  );
-                })
+                <div className="divide-y divide-line overflow-hidden rounded-md border border-line">
+                  {visibleRoster.map((entry) => {
+                    const draft = students[entry.enrollmentId];
+                    if (!draft) return null;
+                    return (
+                      <RosterRow
+                        key={entry.enrollmentId}
+                        entry={entry}
+                        draft={draft}
+                        readOnly={readOnly}
+                        expanded={expanded.has(entry.enrollmentId)}
+                        showAllStatuses={showAllStatuses}
+                        onToggleExpanded={() => toggleExpanded(entry.enrollmentId)}
+                        onToggleAllStatuses={() => setShowAllStatuses((current) => !current)}
+                        onChange={(patch) => patchStudent(entry.enrollmentId, patch)}
+                        onApplySuggestion={() => applyAbsenceSuggestion(entry.enrollmentId)}
+                      />
+                    );
+                  })}
+                </div>
               )}
             </>
           )}
@@ -533,7 +564,7 @@ export function AttendanceEditor({
 
       {readOnly ? null : (
         // Đợt E V8 — thanh hành động dính đáy: chỉ đổi token, giữ nguyên sticky.
-        <div className="sticky bottom-4 space-y-2 rounded-md border border-line bg-surface p-3 shadow-sm">
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] z-sticky space-y-2 rounded-md border border-line bg-surface p-3 lg:bottom-4">
           {/* 🔴 U-17 — thông báo nằm TRONG thanh hành động, cạnh đúng cái nút
               vừa bấm. Bản cũ đặt nó ở đầu editor trong khi hai nút ở đáy màn
               hình: trên máy 360px với 50 em, hai chỗ ấy cách nhau hàng nghìn

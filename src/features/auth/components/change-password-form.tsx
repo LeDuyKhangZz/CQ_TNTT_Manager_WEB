@@ -79,7 +79,7 @@ export function ChangePasswordForm({
         <PasswordField id="confirm-password" autoComplete="new-password" placeholder="Nhập lại mật khẩu mới" aria-invalid={!!errors.confirmPassword} aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined} {...register("confirmPassword")} />
         <FormMessage id="confirm-password-error">{errors.confirmPassword?.message}</FormMessage>
       </div>
-      <FormMessage tone="muted">{foundationMessage}</FormMessage>
+      <FormMessage tone="danger">{foundationMessage}</FormMessage>
       <Button type="submit" size="lg" className="w-full" pending={isSubmitting}>
         Lưu mật khẩu mới
       </Button>

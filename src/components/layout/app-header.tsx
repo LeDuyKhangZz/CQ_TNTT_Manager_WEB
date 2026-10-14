@@ -24,7 +24,7 @@ export function AppHeader({ viewer, title, pathname, notificationBell, academicY
     // tức header dính trên cùng đang trong suốt và chữ đè lên nội dung cuộn bên
     // dưới. `backdrop-blur` cũng bỏ luôn vì sau nền đặc nó không làm gì.
     <header className="sticky top-0 z-header bg-page">
-      <div className="flex min-h-16 items-center gap-2 px-4 sm:px-6 lg:px-8">
+      <div className="flex min-h-16 items-center gap-2 px-4 sm:px-6">
         <button type="button" onClick={onOpenMenu} className="flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center rounded-md text-ink-muted hover:bg-surface-muted lg:hidden" aria-label="Mở menu" aria-expanded={menuOpen} aria-controls="mobile-navigation">
           <Menu className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
           <span className="text-2xs font-medium leading-4">Menu</span>
@@ -39,7 +39,7 @@ export function AppHeader({ viewer, title, pathname, notificationBell, academicY
         </button> : null}
         <div className="hidden min-w-0 flex-1 sm:block">
           <Breadcrumb items={buildBreadcrumbTrail(pathname)} />
-          <p className="truncate text-base font-semibold text-ink sm:text-lg">{title}</p>
+          <p className="sr-only">{title}</p>
         </div>
         <div className="flex-1 sm:hidden" aria-hidden="true" />
         {yearControl ?? <AcademicYearSwitcher current={academicYear} />}

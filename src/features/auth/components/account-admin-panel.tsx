@@ -168,8 +168,12 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
 
   const isOwnershipRole = role === "guardian" || role === "student";
   return (
-    <div className="mt-5 grid gap-5 xl:grid-cols-2">
-      <Card>
+    <div className="space-y-5" data-density="compact">
+      {message ? <p className="text-sm text-ink" role="status">{message}</p> : null}
+      {temporaryPassword ? <div className="rounded-md border border-warning bg-warning-subtle p-4"><p className="text-sm font-medium text-warning">Mật khẩu tạm — chỉ hiển thị lần này</p><code className="mt-2 block text-lg font-semibold text-ink">{temporaryPassword}</code></div> : null}
+      <details className="rounded-md border border-line bg-surface">
+        <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-medium">Tạo tài khoản ngoại lệ</summary>
+      <Card className="max-w-3xl border-0">
         <CardHeader>
           <CardTitle>Tạo tài khoản ngoại lệ</CardTitle>
           <CardDescription>
@@ -178,13 +182,15 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Panel as="p" className="mb-4 text-sm text-ink-muted">
-            Tài khoản của Giáo lý viên được cấp ngay tại hồ sơ người đó —{" "}
-            <Link href="/staff" className="font-medium text-ink underline underline-offset-2">
+          <Panel className="mb-4 text-sm text-ink-muted">
+            <p>
+              Tài khoản của Giáo lý viên được cấp ngay tại hồ sơ người đó. Chọn đúng người rồi
+              bấm &ldquo;Cấp tài khoản&rdquo;. Trang hồ sơ biết sẵn mã GLV, lớp và phân công nên
+              không phải gõ lại.
+            </p>
+            <Link href="/staff" className="inline-flex min-h-11 items-center font-medium text-ink underline underline-offset-2">
               mở Danh sách nhân sự
             </Link>
-            , chọn đúng người rồi bấm &ldquo;Cấp tài khoản&rdquo;. Ở đó trang biết sẵn mã GLV, lớp và
-            phân công nên không phải gõ lại.
           </Panel>
           <form action={provision} className="space-y-4">
             <FormPendingBridge />
@@ -231,10 +237,9 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
             <div className="space-y-2"><Label htmlFor="account-start">Ngày bắt đầu</Label><DateField id="account-start" name="startsOn" required /></div>
             <Button type="submit" className="w-full">Tạo tài khoản</Button>
           </form>
-          {message ? <p className="mt-4 text-sm text-ink-muted" role="status">{message}</p> : null}
-          {temporaryPassword ? <div className="mt-3 rounded-md border border-warning bg-warning-subtle p-4"><p className="text-xs font-medium uppercase tracking-wide text-warning">Mật khẩu tạm — chỉ hiển thị lần này</p><code className="mt-2 block text-xl font-semibold text-ink">{temporaryPassword}</code></div> : null}
         </CardContent>
       </Card>
+      </details>
 
       <Card>
         <CardHeader><CardTitle>Tài khoản hiện có</CardTitle><CardDescription>Chỉ tài khoản không phải Super Admin mới sửa hoặc xóa được tại đây.</CardDescription></CardHeader>
@@ -250,9 +255,9 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
               trò" bằng `exact: true` đúng vì trên trang còn ô này. */}
           <fieldset className="min-w-0 border-0 p-0">
             <legend className="mb-3 text-sm font-semibold text-ink">Lọc danh sách tài khoản</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <FilterField
-                className="sm:col-span-2"
+                className="sm:col-span-2 lg:col-span-1"
                 label="Tìm tài khoản"
                 htmlFor="account-search"
                 helper="Tìm theo tên hiển thị hoặc tên đăng nhập."
@@ -291,7 +296,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
             const canManage = account.role !== "super_admin";
             const status = STATUS_META[account.status];
             return (
-              <Panel key={account.id} padding="md">
+              <div key={account.id} className="border-b border-line py-3 last:border-b-0">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-medium text-ink">{account.displayName}</p>
@@ -303,10 +308,12 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                   </div>
                 </div>
                 {canManage ? (
-                  <div className="mt-4 space-y-3">
+                  <details className="mt-2">
+                    <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Quản lý tài khoản {account.username}</summary>
+                  <div className="max-w-3xl space-y-3 border-t border-line pt-3">
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <Input aria-label={`Tên đăng nhập ${account.displayName}`} value={usernames[account.id] ?? account.username} onChange={(event) => setUsernames((current) => ({ ...current, [account.id]: event.target.value }))} />
-                      <Button type="button" variant="outline" onClick={() => updateUsername(account.id, account.username)}>Lưu username</Button>
+                      <Button type="button" variant="outline" onClick={() => updateUsername(account.id, account.username)}>Lưu tên đăng nhập</Button>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <Input aria-label={`Mật khẩu mới ${account.displayName}`} type="password" minLength={8} placeholder="Mật khẩu mới, ít nhất 8 ký tự" value={passwords[account.id] ?? ""} onChange={(event) => setPasswords((current) => ({ ...current, [account.id]: event.target.value }))} />
@@ -318,8 +325,9 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                       <Button type="button" size="sm" variant="danger" onClick={() => openDelete(account)}>Xóa tài khoản</Button>
                     </div>
                   </div>
+                  </details>
                 ) : <p className="mt-3 text-xs text-ink-muted">Tài khoản Super Admin không được sửa/xóa qua danh sách này.</p>}
-              </Panel>
+              </div>
             );
           })}
 

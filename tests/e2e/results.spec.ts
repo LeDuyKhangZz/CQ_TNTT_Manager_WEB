@@ -141,6 +141,27 @@ async function prepareFixture(testInfo: TestInfo) {
   await ensureRole(guardianProfileId, "guardian");
 
   const studentProfileId = await ensureAccount(fixture.studentCode, `Thiếu nhi E2E ${fixture.index}`);
+  // This local fixture is reused across runs. Its immutable decision journal
+  // remains intact; restore only the mutable review and its generated, empty
+  // destination enrollment before exercising proposal/approval again.
+  const fixtureEnrollmentId = uuid(4, fixture.index * 10 + 1);
+  const { data: previousReview, error: reviewError } = await admin.from("promotion_reviews")
+    .select("id, created_enrollment_id").eq("source_enrollment_id", fixtureEnrollmentId).maybeSingle();
+  if (reviewError) throw new Error(`Đọc đề xuất E2E trước: ${reviewError.message}`);
+  if (previousReview) {
+    const { error: resetReviewError } = await admin.from("promotion_reviews").update({
+      final_status: "pending", reviewed_by: null, reviewed_at: null, review_note: null,
+      approved_target_class_id: null, created_enrollment_id: null,
+    }).eq("id", previousReview.id);
+    if (resetReviewError) throw new Error(`Khôi phục đề xuất E2E: ${resetReviewError.message}`);
+    if (previousReview.created_enrollment_id) {
+      const { error: removeTargetError } = await admin.from("enrollments").delete()
+        .eq("id", previousReview.created_enrollment_id)
+        .eq("previous_enrollment_id", fixtureEnrollmentId)
+        .eq("class_id", targetClassId);
+      if (removeTargetError) throw new Error(`Khôi phục ghi danh đích E2E: ${removeTargetError.message}`);
+    }
+  }
   const studentNames: string[] = [];
   const enrollmentIds: string[] = [];
   for (let offset = 1; offset <= 6; offset += 1) {
@@ -301,7 +322,11 @@ test.describe("Kết quả và chuyển lớp Phase 5", () => {
     const topTitle = `Top 5 ${suffix}`;
 
     await login(page, setup.fixture.rep);
-    await page.goto(`/results/${setup.classId}`);
+    await page.goto("/results");
+    const directory = page.getByRole("table", { name: /Bảng điểm phụ trách · năm học/ });
+    const classLink = directory.getByRole("link", { name: setup.fixture.sourceClass, exact: true });
+    await expect(classLink).toHaveAttribute("href", `/results/${setup.classId}`);
+    await classLink.click();
     await expect(page.getByRole("heading", { name: `Bảng điểm ${setup.fixture.sourceClass}` })).toBeVisible();
 
     // Nợ #20 (M07-A) — **chỗ cuối cùng** của món nợ vùng chạm 44px. Đo

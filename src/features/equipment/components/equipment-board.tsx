@@ -256,12 +256,12 @@ function ItemRow({
   }
 
   return (
-    <Panel as="li">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <li className="py-3">
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:gap-4">
         <div className="min-w-0">
-          <p className="font-medium">{item.name} <span className="text-xs text-ink-muted">({item.assetCode})</span></p>
+          <p className="break-words font-medium">{item.name} <span className="text-xs text-ink-muted">({item.assetCode})</span></p>
           <p className="text-xs text-ink-muted">
-            Khả dụng {item.availableQuantity}/{item.totalQuantity}
+            Khả dụng <span className="tabular-nums">{item.availableQuantity}/{item.totalQuantity}</span>
             {item.category ? ` · ${item.category}` : ""}
             {item.storageLocation ? ` · ${item.storageLocation}` : ""}
           </p>
@@ -365,7 +365,7 @@ function ItemRow({
           <div className="md:col-span-2"><Button type="submit" pending={pending}>Lưu thiết bị</Button></div>
         </form>
       ) : null}
-    </Panel>
+    </li>
   );
 }
 
@@ -446,7 +446,7 @@ function OpenLoanCard({
   }
 
   return (
-    <Panel>
+    <div className="border-b border-line py-3 last:border-b-0">
       <p className="text-sm font-medium">{loan.itemName} · {describeLoanBalance(loan)}</p>
       <p className="text-xs text-ink-muted">
         {loan.borrowerName ? `${loan.borrowerName} mượn lúc ` : "Mượn lúc "}
@@ -556,7 +556,7 @@ function OpenLoanCard({
           </p>
         </form>
       ) : null}
-    </Panel>
+    </div>
   );
 }
 
@@ -618,7 +618,7 @@ export function EquipmentBoard({
   const closedLoans = board.loans.filter((loan) => loan.status === "returned");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4" data-density="compact">
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
 
       <Card>
@@ -631,6 +631,8 @@ export function EquipmentBoard({
         </CardHeader>
         <CardContent className="space-y-4">
           {canManageCatalog ? (
+            <details className="border-b border-line pb-3">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Thêm thiết bị vào kho</summary>
             <form onSubmit={submitItem} className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="asset-code">Mã thiết bị</Label>
@@ -660,12 +662,13 @@ export function EquipmentBoard({
                 <Button type="submit" pending={pending}>Thêm thiết bị</Button>
               </div>
             </form>
+            </details>
           ) : null}
 
           {board.items.length === 0 ? (
             <p className="text-sm text-ink-muted">Kho chưa có thiết bị nào.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="divide-y divide-line">
               {board.items.map((item) => (
                 <ItemRow
                   key={item.id}

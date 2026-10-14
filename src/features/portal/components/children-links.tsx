@@ -52,7 +52,7 @@ export function ChildrenLinks({
                 href={`/parent/children/${child.id}`}
                 className="flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2 text-sm font-medium text-ink hover:bg-surface-muted"
               >
-                <span className="min-w-0 truncate">{child.label}</span>
+                <span className="min-w-0 break-words">{child.label}</span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden="true" />
               </Link>
             </li>

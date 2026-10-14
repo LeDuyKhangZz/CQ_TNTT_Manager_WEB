@@ -17,7 +17,6 @@ import {
 import type { EnrollmentFeedback } from "../enrollment-feedback";
 import { enrollmentRowFormAction } from "../server/actions";
 import { useGlobalPending } from "@/components/loading/loading-provider";
-import { Panel } from "@/components/ui/card";
 
 /**
  * Một dòng trong danh sách thiếu nhi của lớp — M03-A, TB-F10 / AC-F10-01…03.
@@ -116,10 +115,10 @@ export function RosterRow({
       từng em. Bản cũ là một chồng `<div>` nên người dùng bàn phím không biết mình
       đang ở đâu trong danh sách.
     */
-    <Panel as="li">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <li className="border-b border-line py-2 last:border-b-0">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/students/${studentId}`} className="text-sm font-medium hover:underline">
+          <Link href={`/students/${studentId}`} prefetch={false} className="inline-flex min-h-11 items-center break-words text-sm font-medium hover:underline">
             {studentName}
           </Link>
           {/*
@@ -141,7 +140,9 @@ export function RosterRow({
         </div>
 
         {canManage ? (
-          <div className="flex flex-wrap items-end gap-2">
+          <details className="min-w-0">
+            <summary className="min-h-11 cursor-pointer py-3 text-sm text-ink-muted">Quản lý ghi danh</summary>
+          <div className="flex flex-wrap items-end gap-2 border-t border-line py-2">
             {paused ? (
               <form action={formAction}>
                 <input type="hidden" name="enrollmentId" value={enrollmentId} />
@@ -200,6 +201,7 @@ export function RosterRow({
             </form>
             )}
           </div>
+          </details>
         ) : null}
       </div>
 
@@ -219,6 +221,6 @@ export function RosterRow({
         tone="danger"
         consequence={<p>{closeReasonConsequence(pendingReason, studentName, className)}</p>}
       />
-    </Panel>
+    </li>
   );
 }

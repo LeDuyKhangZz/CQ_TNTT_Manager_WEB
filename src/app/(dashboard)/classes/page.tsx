@@ -15,53 +15,45 @@ import {
 } from "@/features/classes/class-status";
 import { getClassesPageData, type ClassCard } from "@/features/classes/server/queries";
 
-/**
- * Thẻ lớp — **09 §4.4 #10**: nền `theme-soft`, viền `theme-pastel-deep`. Màu ngành
- * do `ThemeScope` bọc ngoài từng nhóm ngành bơm vào, đúng cách `theme-scope.tsx`
- * đã dự tính từ Đợt 0-UI ("trang `/classes` … mỗi thẻ tự bọc `ThemeScope` của
- * ngành mình").
- *
- * 🔴 **Đây cũng là chỗ trả nợ #5** — bản cũ dùng `hover:border-primary/50
- * hover:bg-accent/40`. Bổ ngữ độ mờ trên một token là `var()` trần thì Tailwind
- * **bỏ luôn cả lớp**: hai lớp đó **không tồn tại trong CSS xuất ra**, nên thẻ lớp
- * từ trước tới nay **không có hiệu ứng hover nào** — hỏng im lặng, không ai thấy.
- *
- * Chữ trên nền pastel theo đúng bảng bắt buộc 09 §4.3: `soft`/`pastel` chỉ đi với
- * `--text` (đo được ≥8,5:1). Vì vậy ba dòng phụ đổi từ `text-muted-foreground` sang
- * `text-ink` — thứ bậc thị giác chuyển sang cỡ chữ và độ đậm, không dựa vào màu
- * nhạt nữa. `--text-muted` trên nền pastel **không** có trong bảng đã đo.
- */
-function ClassCardLink({ item }: { item: ClassCard }) {
+/** Keep each branch's theme while making class counts and assignments comparable. */
+function ClassDirectory({ items, label }: { items: ClassCard[]; label: string }) {
   return (
-    <Link
-      href={`/classes/${item.id}`}
-      className="block rounded-lg border border-theme-pastel-deep bg-theme-soft p-4 text-ink transition-colors duration-fast hover:bg-theme-pastel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring focus-visible:ring-offset-2"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-medium">{item.displayName}</p>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-          {/* BR-M02-N12 — huy hiệu CHỈ hiện cho lớp không `active`. Gắn cả 19 lớp thì
-              huy hiệu mất giá trị báo hiệu đúng lúc cần nó nhất: một lớp bị tạm ngưng
-              nằm lẫn giữa 18 lớp đang chạy. Nhãn là **chữ tiếng Việt**, không phải
-              chấm màu (11 §5 — không dùng màu làm tín hiệu duy nhất). */}
-          {needsStatusBadge(item.status) ? (
-            <Badge variant={classStatusBadgeVariant(item.status)}>
-              {classStatusLabel(item.status)}
-            </Badge>
-          ) : null}
-          {item.sectionCode ? <Badge variant="outline">{item.sectionCode}</Badge> : null}
-        </div>
-      </div>
-      {/* D-121 — em tạm nghỉ vẫn thuộc lớp nên vẫn nằm trong sĩ số, nhưng phải đếm
-          riêng: một con số gộp nói rằng cả 28 em đang sinh hoạt. Chỉ hiện vế thứ hai
-          khi thật sự có em tạm nghỉ, để 19 thẻ lớp không mang thêm một dòng "0". */}
-      <p className="mt-1 text-sm">
-        Sĩ số: {item.studentCount}
-        {item.pausedCount > 0 ? ` · ${item.pausedCount} tạm nghỉ` : ""}
-      </p>
-      <p className="text-sm">GLV đại diện: {item.representative}</p>
-      <p className="text-sm">Số GLV/Dự trưởng: {item.staffCount}</p>
-    </Link>
+    <table className="w-full text-left text-sm" aria-label={label}>
+      <thead className="hidden border-b border-line bg-surface-muted text-ink-muted md:table-header-group">
+        <tr>
+          <th scope="col" className="w-1/4 px-3 py-2 font-medium">Lớp</th>
+          <th scope="col" className="px-3 py-2 text-right font-medium">Sĩ số</th>
+          <th scope="col" className="px-3 py-2 font-medium">GLV đại diện</th>
+          <th scope="col" className="px-3 py-2 text-right font-medium">GLV/Dự trưởng</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-line">
+        {items.map((item) => (
+          <tr key={item.id} className="grid grid-cols-2 items-center px-3 py-2 hover:bg-surface-muted md:table-row md:p-0">
+            <td className="col-span-2 min-w-0 md:px-3 md:py-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href={`/classes/${item.id}`} prefetch={false} className="inline-flex min-h-11 items-center font-medium text-ink underline-offset-4 hover:underline">
+                  {item.displayName}
+                </Link>
+                {needsStatusBadge(item.status) ? (
+                  <Badge variant={classStatusBadgeVariant(item.status)}>{classStatusLabel(item.status)}</Badge>
+                ) : null}
+              </div>
+            </td>
+            <td className="tabular-nums md:px-3 md:py-2 md:text-right">
+              <span className="text-ink-muted md:hidden">Sĩ số: </span>{item.studentCount}
+              {item.pausedCount > 0 ? <span className="block text-xs text-ink-muted">{item.pausedCount} tạm nghỉ</span> : null}
+            </td>
+            <td className="col-span-2 row-start-3 min-w-0 break-words py-1 text-ink-muted md:px-3 md:py-2 md:text-ink">
+              <span className="md:hidden">GLV đại diện: </span>{item.representative}
+            </td>
+            <td className="col-start-2 row-start-2 text-right tabular-nums md:px-3 md:py-2">
+              <span className="text-ink-muted md:hidden">GLV/Dự trưởng: </span>{item.staffCount}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -89,7 +81,7 @@ export default async function ClassesPage() {
   const traineeNotice = semester1Notice(year.semester_1_end_date, todayVi(), formatDateVi);
 
   return (
-    <PageContainer>
+    <PageContainer data-density="compact">
       {/* Số ngành đọc từ dữ liệu thật. Chuỗi `5 ngành` viết cứng cạnh một con số thật
           là đúng họ lỗi mà I11 đã trả ở M02-A với `/19`: ở môi trường thiếu danh mục,
           trang vẫn dõng dạc "5 ngành" trong khi không có ngành nào hiện ra. */}
@@ -97,20 +89,20 @@ export default async function ClassesPage() {
         title="Lớp học"
         description={`Năm học ${year.code} · ${sectors.length} ngành${trainees.length > 0 ? " và lớp Dự trưởng" : ""}.`}
       />
-      <div className="space-y-6">
+      <div className="space-y-4">
         {sectors.map((sector) => (
-          <section key={sector.sectorId} className="space-y-3">
+          <section key={sector.sectorId} className="space-y-2">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">{sector.name}</h3>
-              <Badge variant="secondary">{sector.classes.length} lớp</Badge>
+              <ThemeScope themeKey={themeKeyFromSectorCode(sector.code)}>
+                <h2 className="rounded-sm bg-theme-tint px-2 py-1 text-sm font-semibold text-theme-accent-text">{sector.name}</h2>
+              </ThemeScope>
+              <span className="text-sm text-ink-muted">{sector.classes.length} lớp</span>
             </div>
             <ThemeScope
               themeKey={themeKeyFromSectorCode(sector.code)}
-              className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+              className="overflow-hidden rounded-md border border-line bg-surface"
             >
-              {sector.classes.map((item) => (
-                <ClassCardLink key={item.id} item={item} />
-              ))}
+              <ClassDirectory items={sector.classes} label={`Lớp ngành ${sector.name}`} />
             </ThemeScope>
           </section>
         ))}
@@ -118,7 +110,7 @@ export default async function ClassesPage() {
         {trainees.length > 0 ? (
           <section className="space-y-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">Dự trưởng</h3>
+              <h2 className="text-base font-semibold">Dự trưởng</h2>
               <Badge variant="warning">Học kỳ 1</Badge>
             </div>
             {traineeNotice ? (
@@ -130,11 +122,9 @@ export default async function ClassesPage() {
                 theme mặc định Huynh Trưởng — đúng nhánh dự phòng của 10 §3. */}
             <ThemeScope
               themeKey={FALLBACK_THEME_KEY}
-              className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+              className="overflow-hidden rounded-md border border-line bg-surface"
             >
-              {trainees.map((item) => (
-                <ClassCardLink key={item.id} item={item} />
-              ))}
+              <ClassDirectory items={trainees} label="Lớp Dự trưởng" />
             </ThemeScope>
           </section>
         ) : null}

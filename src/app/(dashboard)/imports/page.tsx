@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, cardClassName } from "@/components/ui/card";
 import { FilterBar, FilterField } from "@/components/ui/filter-bar";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
@@ -62,7 +62,7 @@ function BatchCard({ batch }: { batch: BatchSummary }) {
     <li>
       <Link
         href={`/imports/${batch.id}`}
-        className="block rounded-lg border border-line-strong p-4 transition-colors hover:border-theme-primary hover:bg-theme-soft"
+        className="block px-4 py-3 transition-colors hover:bg-surface-muted"
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
           <p className="break-all font-medium">{batch.filename}</p>
@@ -153,9 +153,9 @@ export default async function ImportsPage({
         />
       ) : (
         <div className="space-y-6">
-          <Card>
+          <Card className="max-w-4xl">
             <CardHeader>
-              <CardTitle>Tải file lên</CardTitle>
+              <CardTitle as="h2">Tải file lên</CardTitle>
             </CardHeader>
             <CardContent>
               <ImportUploadForm
@@ -166,18 +166,16 @@ export default async function ImportsPage({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Hoặc dán dữ liệu trực tiếp</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <details className={`${cardClassName} max-w-4xl`}>
+            <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-semibold hover:bg-surface-muted">Hoặc dán dữ liệu trực tiếp</summary>
+            <div className="border-t border-line p-4">
               <ImportPasteForm
                 years={writableYears}
                 classOptionsByYear={classOptionsByYear}
                 defaultYearId={defaultYearId}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </details>
 
           <section className="space-y-3">
             <h2 className="text-lg font-semibold">Lần nhập gần đây</h2>
@@ -243,7 +241,7 @@ export default async function ImportsPage({
                 <p className="text-sm text-ink-muted">
                   {list.totalItems} lần nhập. {scopeText(criteria, selectedYear)}
                 </p>
-                <ul aria-label="Danh sách lần nhập" className="grid gap-3">
+                <ul aria-label="Danh sách lần nhập" className="divide-y divide-line rounded-lg border border-line bg-surface">
                   {list.batches.map((batch) => (
                     <BatchCard key={batch.id} batch={batch} />
                   ))}

@@ -1,5 +1,7 @@
 # 08 — Phase Plan
 
+> **14/10/2026 — ANTI-AI-ERP-20261013:** implementation redesign toàn ERP xong theo yêu cầu mới, chỉ giữ quy định màu;2026unit pass/24skip, lint/typecheck/build đạt. Laptop226pass/3fixturefail, rerun3/3đạt; full687 còn chưa hoàn tất. Đang push/redeploy theo yêu cầu chủ dự án. Không tự đóng R5–R13. [Báo cáo, inventory và giới hạn](system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md).
+
 > **R4 đã push/redeploy production — 13/10/2026.** Source commit `e4dcf89`; Vercel Production success đúng SHA. [Mở ứng dụng](https://cq-tntt-manager-web.vercel.app). Smoke URL chính đạt; URL deployment riêng có Vercel Authentication. R13.3 vẫn mở theo số kiểm thử thật.
 
 > **13/10/2026 — R4 DONE 5/5:** danh sách, wizard giám hộ → thiếu nhi, hồ sơ 6 tab, mobile filter sheet và chế độ Thủ quỹ. UX-41 đã xử lý. Unit **2.000 pass /24 skip**, R4 E2E **105/105**, pgTAP audit **1.512/1.512**, lint/typecheck/build đạt. Full E2E trước sửa cuối: **677 pass /10 fail**; build release: **140 pass /1 lỗi giả định fixture lớp**, trong đó R4 **105/105 PASS**. Sau cập nhật test xác nhận lớp: **15/15 PASS**; luồng lên lớp trên DB audit mới **3/3 PASS**. Không cộng rerun vào lượt gốc để gọi toàn hệ thống xanh. Production đã backup và migration khớp70/70; Git/Vercel đã push/redeploy; smoke production đạt. UX-42/R13.3 và giới hạn tablet vẫn mở. [Báo cáo R4](system-workflow-redesign/redesign-2c/R4_COMPLETION_2026-10-13.md). Các mốc bên dưới giữ nguyên lịch sử.

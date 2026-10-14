@@ -149,7 +149,7 @@ describe("LoadingProvider — nội dung cửa sổ chờ (17 §3.2)", () => {
     vi.useRealTimers();
   });
 
-  it("hiện một câu Lời Chúa kèm nguồn, và ảnh là ảnh trang trí (alt rỗng)", async () => {
+  it("hiện tiến trình gọn, không cướp focus hay thông báo kết quả của biểu mẫu", async () => {
     renderProvider(<Task pending />);
     await advance(1);
 
@@ -163,13 +163,9 @@ describe("LoadingProvider — nội dung cửa sổ chờ (17 §3.2)", () => {
     expect(box).not.toHaveAttribute("role");
     expect(box).not.toHaveAttribute("aria-live");
 
-    const quote = box!.querySelector("blockquote");
-    expect(quote).not.toBeNull();
-    expect(VERSES.some((verse) => quote!.textContent?.includes(verse.text))).toBe(true);
-
-    const image = box!.querySelector("img");
-    expect(image).not.toBeNull();
-    expect(image).toHaveAttribute("alt", "");
+    expect(box).toHaveTextContent("Đang xử lý…");
+    expect(box).toHaveClass("pointer-events-none");
+    expect(box!.querySelector("blockquote, img")).toBeNull();
   });
 });
 

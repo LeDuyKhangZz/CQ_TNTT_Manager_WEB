@@ -146,13 +146,13 @@ export function AppShell({
           onToggleSidebar={toggleSidebar}
           sidebarCollapsed={collapsed}
           menuOpen={drawerOpen}
-          menuHint={menuHintOpen ? <aside role="note" aria-label="Hướng dẫn menu"
-            className="absolute left-4 top-16 z-dropdown flex max-w-[calc(100vw-32px)] items-center gap-2 rounded-md border border-line-strong bg-surface py-2 pl-3 pr-1 text-sm text-ink shadow-md lg:hidden">
+        />
+        {menuHintOpen ? <aside role="note" aria-label="Hướng dẫn menu"
+            className="flex items-center justify-between gap-2 border-b border-line bg-surface px-4 py-1 text-sm text-ink lg:hidden">
             <span>Tất cả chức năng nằm trong Menu.</span>
             <button type="button" aria-label="Ẩn hướng dẫn menu" onClick={() => setMenuHintOpen(false)}
               className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-md hover:bg-surface-muted"><X className="h-4 w-4" aria-hidden="true" /></button>
           </aside> : null}
-        />
         {/* Mốc `main` duy nhất của trang, và là đích của skip link. `tabIndex`
             -1 để focus thật sự nhảy vào đây, không chỉ cuộn tới.
             `PageContainer` cố ý KHÔNG còn là `<main>` — hai `main` lồng nhau

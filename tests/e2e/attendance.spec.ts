@@ -615,10 +615,15 @@ test.describe("Điểm danh Phase 3", () => {
 
     // Danh sách — chính chỗ từng nói dối.
     await page.goto("/attendance");
-    const card = page.locator(`a[href="/attendance/${sessionId}"]`);
-    await expect(card).toHaveCount(1);
-    await expect(card.getByText("Đã khóa")).toBeVisible();
-    await expect(card.getByText("Đã chốt")).toHaveCount(0);
+    const sessionLink = page.locator(`a[href="/attendance/${sessionId}"]`);
+    await expect(sessionLink).toHaveCount(1);
+    // Danh sách dùng bảng chung: trạng thái nằm cùng hàng với liên kết của buổi.
+    const sessionRow = page.getByRole("table", {
+      name: "Các buổi điểm danh gần đây trong phạm vi bạn được xem",
+    }).locator("tbody tr").filter({ has: sessionLink });
+    await expect(sessionRow).toHaveCount(1);
+    await expect(sessionRow.getByText("Đã khóa", { exact: true })).toBeVisible();
+    await expect(sessionRow.getByText("Đã chốt", { exact: true })).toHaveCount(0);
   });
 
   /**

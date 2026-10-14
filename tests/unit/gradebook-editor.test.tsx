@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { GradebookDetail } from "@/features/assessments/server/queries";
 
@@ -14,7 +14,8 @@ import type { GradebookDetail } from "@/features/assessments/server/queries";
  * `getAllBy*` và lấy bản đầu, nếu không bài kiểm đỏ vì *"tìm thấy nhiều phần
  * tử"* chứ không phải vì mã sai.
  */
-const saveAssessmentScores = vi.fn(async (_input: unknown) => ({ ok: true as const, data: { count: 1 } }));
+type SaveScoresResult = Awaited<ReturnType<typeof import("@/features/assessments/server/actions").saveAssessmentScores>>;
+const saveAssessmentScores = vi.fn(async (_input: unknown): Promise<SaveScoresResult> => ({ ok: true, data: { count: 1 } }));
 const deleteAssessment = vi.fn(async (_id: string) => ({ ok: true as const, data: { removedEmptyScores: 2 } }));
 const archiveAssessment = vi.fn(async (_id: string) => ({ ok: true as const, data: undefined }));
 const refreshAttendanceScores = vi.fn(async (_id: string) => ({
@@ -115,6 +116,138 @@ const DETAIL: GradebookDetail = {
 function firstScoreForm() {
   return screen.getAllByRole("button", { name: /^Lưu điểm/ })[0];
 }
+
+describe("score entry unsaved protection", () => {
+  function unloadIsBlocked() {
+    return !window.dispatchEvent(new Event("beforeunload", { cancelable: true }));
+  }
+
+  it("distinguishes blank from zero and clears when a draft is reverted", async () => {
+    const user = userEvent.setup();
+    render(<GradebookEditor detail={DETAIL} />);
+    expect(unloadIsBlocked()).toBe(false);
+    const input = screen.getAllByLabelText("Điểm Gioan Trần Bình")[0];
+    await user.type(input, "0");
+    expect(unloadIsBlocked()).toBe(true);
+    await user.clear(input);
+    expect(unloadIsBlocked()).toBe(false);
+    await user.type(screen.getAllByLabelText("Ghi chú Gioan Trần Bình")[0], "  ");
+    expect(unloadIsBlocked()).toBe(false);
+  });
+
+  it("keeps failed saves dirty and clears after a successful retry", async () => {
+    const user = userEvent.setup();
+    render(<GradebookEditor detail={DETAIL} />);
+    await user.type(screen.getAllByLabelText("Điểm Gioan Trần Bình")[0], "8");
+    saveAssessmentScores.mockResolvedValueOnce({ ok: false, code: "CONFLICT", message: "Không lưu được." });
+    await user.click(firstScoreForm());
+    await screen.findByText("Không lưu được.");
+    expect(unloadIsBlocked()).toBe(true);
+    await user.click(firstScoreForm());
+    await screen.findByText("Đã lưu 1 ô điểm.");
+    await waitFor(() => expect(unloadIsBlocked()).toBe(false));
+  });
+
+  it("keeps edits typed after submission through acknowledgement and server refresh", async () => {
+    const user = userEvent.setup();
+    const view = render(<GradebookEditor detail={DETAIL} />);
+    let resolve!: (result: SaveScoresResult) => void;
+    saveAssessmentScores.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
+    const input = screen.getAllByLabelText("Điểm Gioan Trần Bình")[0];
+    await user.type(input, "8");
+    await user.click(firstScoreForm());
+    await user.clear(input);
+    await user.type(input, "9");
+    await act(async () => { resolve({ ok: true, data: { count: 1 } }); });
+    expect(unloadIsBlocked()).toBe(true);
+    view.rerender(<GradebookEditor detail={{ ...DETAIL, students: DETAIL.students.map((student, index) => index === 1 ? {
+      ...student, scores: { "asm-1": { score: 8, note: null, suggestedScore: null, isManualOverride: false } },
+    } : student) }} />);
+    expect(screen.getAllByLabelText("Điểm Gioan Trần Bình")[0]).toHaveValue(9);
+    expect(unloadIsBlocked()).toBe(true);
+  });
+
+  it("refreshes clean fields independently while retaining a dirty note", async () => {
+    const user = userEvent.setup();
+    const view = render(<GradebookEditor detail={DETAIL} />);
+    const note = screen.getAllByLabelText("Ghi chú Maria Nguyễn An")[0];
+    await user.type(note, "Cần ôn bài");
+    view.rerender(<GradebookEditor detail={{ ...DETAIL, students: DETAIL.students.map((student, index) => index === 0 ? {
+      ...student, scores: { "asm-1": { score: 9, note: null, suggestedScore: null, isManualOverride: false } },
+    } : student) }} />);
+    expect(screen.getAllByLabelText("Điểm Maria Nguyễn An")[0]).toHaveValue(9);
+    expect(note).toHaveValue("Cần ôn bài");
+    expect(unloadIsBlocked()).toBe(true);
+    await user.clear(note);
+    expect(unloadIsBlocked()).toBe(false);
+  });
+
+  it("saves a reversion against the acknowledged value before refreshed props arrive", async () => {
+    const user = userEvent.setup();
+    render(<GradebookEditor detail={DETAIL} />);
+    const input = screen.getAllByLabelText("Điểm Maria Nguyễn An")[0];
+    await user.clear(input);
+    await user.type(input, "9");
+    await user.click(firstScoreForm());
+    await user.clear(input);
+    await user.type(input, "8");
+    await user.click(firstScoreForm());
+    expect(saveAssessmentScores).toHaveBeenLastCalledWith({
+      assessmentId: "asm-1", scores: [{ enrollmentId: "enr-1", score: 8, note: null }],
+    });
+    expect(unloadIsBlocked()).toBe(false);
+  });
+
+  it("explicitly resetting an override replaces only that score, preserving other drafts", async () => {
+    const user = userEvent.setup();
+    const detail: GradebookDetail = {
+      ...DETAIL,
+      assessments: [{ ...DETAIL.assessments[0], kind: "attendance" }],
+      students: DETAIL.students.map((student, index) => index === 0 ? {
+        ...student, scores: { "asm-1": { score: 8, note: null, suggestedScore: 6, isManualOverride: true } },
+      } : student),
+    };
+    const view = render(<GradebookEditor detail={detail} />);
+    const input = screen.getAllByLabelText("Điểm Maria Nguyễn An")[0];
+    await user.clear(input);
+    await user.type(input, "7");
+    await user.type(screen.getAllByLabelText("Ghi chú Maria Nguyễn An")[0], "Giữ ghi chú");
+    await user.type(screen.getAllByLabelText("Điểm Gioan Trần Bình")[0], "9");
+    await user.click(screen.getAllByRole("button", { name: "Đang chỉnh tay · dùng lại đề xuất" })[0]);
+    view.rerender(<GradebookEditor detail={{ ...detail, students: detail.students.map((student, index) => index === 0 ? {
+      ...student, scores: { "asm-1": { score: 6, note: null, suggestedScore: 6, isManualOverride: false } },
+    } : student) }} />);
+    expect(input).toHaveValue(6);
+    expect(screen.getAllByLabelText("Ghi chú Maria Nguyễn An")[0]).toHaveValue("Giữ ghi chú");
+    expect(screen.getAllByLabelText("Điểm Gioan Trần Bình")[0]).toHaveValue(9);
+    expect(unloadIsBlocked()).toBe(true);
+  });
+
+  it("refreshing suggestions replaces eligible scores while preserving manual drafts", async () => {
+    const user = userEvent.setup();
+    const detail: GradebookDetail = {
+      ...DETAIL,
+      assessments: [{ ...DETAIL.assessments[0], kind: "attendance" }],
+      students: DETAIL.students.map((student, index) => index === 1 ? {
+        ...student, scores: { "asm-1": { score: 4, note: null, suggestedScore: 6, isManualOverride: true } },
+      } : student),
+    };
+    const view = render(<GradebookEditor detail={detail} />);
+    const input = screen.getAllByLabelText("Điểm Maria Nguyễn An")[0];
+    const manual = screen.getAllByLabelText("Điểm Gioan Trần Bình")[0];
+    await user.clear(input);
+    await user.type(input, "7");
+    await user.clear(manual);
+    await user.type(manual, "5");
+    await user.click(screen.getAllByRole("button", { name: "Lấy đề xuất mới" })[0]);
+    view.rerender(<GradebookEditor detail={{ ...detail, students: detail.students.map((student, index) => index === 0 ? {
+      ...student, scores: { "asm-1": { score: 6, note: null, suggestedScore: 6, isManualOverride: false } },
+    } : student) }} />);
+    expect(input).toHaveValue(6);
+    expect(manual).toHaveValue(5);
+    expect(unloadIsBlocked()).toBe(true);
+  });
+});
 
 describe("gradebook editor", () => {
   beforeEach(() => {

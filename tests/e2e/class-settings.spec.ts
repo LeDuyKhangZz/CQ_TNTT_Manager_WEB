@@ -113,7 +113,7 @@ test.describe("M02-B · chi tiết lớp và cài đặt lớp", () => {
       // phải chấm màu.
       await page.goto("/classes");
       const card = page.getByRole("link", { name: new RegExp(`^${className}\\b`) }).first();
-      await expect(card).toContainText("Tạm ngưng", { timeout: 20_000 });
+      await expect(page.getByRole("row").filter({ has: card })).toContainText("Tạm ngưng", { timeout: 20_000 });
     } finally {
       // Cleanup phải chạy cả khi assertion ở giữa thất bại. Nếu để lớp tạm
       // ngưng, các fixture M07/M13 dùng lại lớp đó sẽ đỏ dây chuyền với
@@ -126,7 +126,7 @@ test.describe("M02-B · chi tiết lớp và cài đặt lớp", () => {
     // giá trị báo hiệu đúng lúc cần nó nhất.
     await page.goto("/classes");
     const restored = page.getByRole("link", { name: new RegExp(`^${className}\\b`) }).first();
-    await expect(restored).not.toContainText("Tạm ngưng", { timeout: 20_000 });
+    await expect(page.getByRole("row").filter({ has: restored })).not.toContainText("Tạm ngưng", { timeout: 20_000 });
   });
 
   test("đóng lớp còn thiếu nhi: hộp xác nhận nêu SỐ EM và TÊN LỚP (BR-M02-N11)", async ({ page }) => {

@@ -59,7 +59,7 @@ export default async function ClassDetailPage({
       : null;
 
   return (
-    <PageContainer>
+    <PageContainer data-density="compact">
       <PageHeader
         title={classDetail.displayName}
         /* Trạng thái năm học đứng ngay trong phụ đề, không chỉ nằm trong dải cảnh
@@ -79,7 +79,7 @@ export default async function ClassDetailPage({
       />
 
       {context.role && CLASS_ROLES.includes(context.role) ? (
-        <nav aria-label="Công việc của lớp" className="mb-4 flex flex-wrap gap-2">
+        <nav aria-label="Công việc của lớp" className="flex flex-wrap gap-2">
           {classDetail.academicYearStatus === "current" ? <>
             {myClass?.href === `/classes/${classId}` ? <Link href="/attendance" className={buttonVariants({ variant: "outline", size: "sm" })}>Điểm danh</Link> : null}
             <Link href={`/teaching-plan/${classId}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Giáo án</Link>
@@ -99,7 +99,7 @@ export default async function ClassDetailPage({
         </Alert>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Card>
           <CardHeader>
             <CardTitle>Danh sách thiếu nhi</CardTitle>
@@ -110,7 +110,7 @@ export default async function ClassDetailPage({
             {classDetail.roster.length === 0 ? (
               <p className="text-sm text-ink-muted">{classDetail.historicalRosterCount ? "Không có hồ sơ được phép hiển thị." : "Lớp chưa có thiếu nhi ghi danh."}</p>
             ) : (
-              <ul className="space-y-2">
+              <ul>
                 {classDetail.roster.map((item) => (
                   <RosterRow
                     key={item.enrollmentId}

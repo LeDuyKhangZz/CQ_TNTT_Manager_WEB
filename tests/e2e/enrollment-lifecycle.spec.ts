@@ -77,6 +77,7 @@ test.describe("M03-A · vòng đời ghi danh", () => {
     await expect(row).toBeVisible({ timeout: 20_000 });
 
     // --- Tạm nghỉ ---------------------------------------------------------
+    await row.locator("summary").filter({ hasText: "Quản lý ghi danh" }).click();
     await row.getByRole("button", { name: "Tạm nghỉ" }).click();
 
     // Điều mà bản cũ KHÔNG BAO GIỜ làm được: thao tác thành công và nói ra kết quả.
@@ -103,6 +104,7 @@ test.describe("M03-A · vòng đời ghi danh", () => {
 
     // --- Khôi phục --------------------------------------------------------
     // AC-F10-02: chức năng này CHƯA TỪNG TỒN TẠI trước đợt này (BR-M03-21).
+    await rosterRow(page, STUDENT_NAME).locator("summary").filter({ hasText: "Quản lý ghi danh" }).click();
     await rosterRow(page, STUDENT_NAME).getByRole("button", { name: "Khôi phục" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Đang học" }).first()).toBeVisible({
       timeout: 45_000,
@@ -116,12 +118,14 @@ test.describe("M03-A · vòng đời ghi danh", () => {
     // nên không lọt vào phép đếm này.
     await expect(page.getByText(/tạm nghỉ/)).toHaveCount(0);
     // Và nút quay lại đúng nhãn ban đầu — em không còn ở trạng thái tạm nghỉ.
+    await rosterRow(page, STUDENT_NAME).locator("summary").filter({ hasText: "Quản lý ghi danh" }).click();
     await expect(rosterRow(page, STUDENT_NAME).getByRole("button", { name: "Tạm nghỉ" })).toBeVisible();
   });
 
   test("ô lý do kết thúc KHÔNG còn mục 'Tạm nghỉ' — gốc rễ của F10", async ({ page }) => {
     await login(page, GROUP_LEADER);
     await openClass(page, CLASS_WITH_STUDENTS);
+    await rosterRow(page, STUDENT_NAME).locator("summary").filter({ hasText: "Quản lý ghi danh" }).click();
 
     const select = page.getByLabel(`Lý do kết thúc ghi danh của ${STUDENT_NAME}`);
     await expect(select).toBeVisible({ timeout: 20_000 });
@@ -137,6 +141,7 @@ test.describe("M03-A · vòng đời ghi danh", () => {
 
     const row = rosterRow(page, STUDENT_NAME);
     await expect(row).toBeVisible({ timeout: 20_000 });
+    await row.locator("summary").filter({ hasText: "Quản lý ghi danh" }).click();
     await row.getByRole("button", { name: "Kết thúc", exact: true }).click();
 
     // Trước đợt này nút "Kết thúc" nằm ngay cạnh tên từng em và ghi thẳng, không
@@ -155,6 +160,7 @@ test.describe("M03-A · vòng đời ghi danh", () => {
   test("D-122 · lý do 'Chuyển lớp' nói thẳng hệ thống KHÔNG ghi danh em vào lớp mới", async ({ page }) => {
     await login(page, GROUP_LEADER);
     await openClass(page, CLASS_WITH_STUDENTS);
+    await rosterRow(page, STUDENT_NAME).locator("summary").filter({ hasText: "Quản lý ghi danh" }).click();
 
     await page
       .getByLabel(`Lý do kết thúc ghi danh của ${STUDENT_NAME}`)

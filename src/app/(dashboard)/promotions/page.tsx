@@ -56,7 +56,7 @@ export default async function PromotionsPage({
     <PageContainer>
       <PageHeader
         title="Lên lớp và chuyển lớp"
-        description="Đại diện lớp đề xuất; trưởng ngành duyệt và hệ thống cập nhật ghi danh trong một giao dịch."
+        description="Đại diện lớp đề xuất; trưởng ngành xem xét và duyệt ghi danh cho năm học tiếp theo."
       />
 
       {!data.yearCode ? (
@@ -93,7 +93,7 @@ export default async function PromotionsPage({
           }
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* BR-M08-14 — chỉ ghi danh của năm học hiện hành. Bản cũ đọc mọi năm
               (BR-M08-Y3) nên đề xuất đã duyệt của các năm trước tích tụ mãi trên
               cùng màn hình với việc đang phải làm. Nói ra phạm vi, không im lặng. */}
@@ -101,7 +101,10 @@ export default async function PromotionsPage({
             Ghi danh của năm học <span className="font-medium text-ink">{data.yearCode}</span>.
           </p>
 
-          <PromotionProgress progress={data.progress} activeClassId={effectiveCriteria.classId} />
+          <nav aria-label="Nội dung chuyển lớp" className="flex flex-wrap gap-x-4 border-b border-line text-sm">
+            <a href="#promotion-list" className="inline-flex min-h-11 items-center font-medium text-theme-accent-text hover:underline">Danh sách đề xuất</a>
+            <a href="#promotion-progress" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Tiến độ theo lớp</a>
+          </nav>
 
           {data.unknownClassFilter ? (
             // TO-BE 1 "Validation": lớp lạ thì hiện lại bộ chọn kèm thông báo,
@@ -114,7 +117,7 @@ export default async function PromotionsPage({
             </FormMessage>
           ) : null}
 
-          <section aria-labelledby="promotion-list-heading" className="space-y-3">
+          <section id="promotion-list" aria-labelledby="promotion-list-heading" className="scroll-mt-20 space-y-3">
             <h2 id="promotion-list-heading" className="text-lg font-semibold">
               Danh sách đề xuất
             </h2>
@@ -215,6 +218,7 @@ export default async function PromotionsPage({
               />
             ) : null}
           </section>
+          <PromotionProgress progress={data.progress} activeClassId={effectiveCriteria.classId} />
         </div>
       )}
     </PageContainer>
