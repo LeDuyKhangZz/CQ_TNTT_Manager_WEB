@@ -50,14 +50,14 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **RESTORE-LUCE-LOADING-20261014 — khôi phục và kiểm tra xong, chờ phát hành — Codex — 2026-10-14.** Nối lại 4 ảnh Luce/kho Lời Chúa cho cả auth và dashboard, cửa sổ giữa màn hình, ảnh lắc lư và ba chấm; ảnh/câu không lặp liền kề.
+- **RESTORE-LUCE-LOADING-20261014 — đã khôi phục và phát hành — Codex — 2026-10-14.** Nối lại 4 ảnh Luce/kho Lời Chúa cho cả auth và dashboard, cửa sổ giữa màn hình, ảnh lắc lư và ba chấm; ảnh/câu không lặp liền kề.
 - **2.033 unit đạt / 24 skip**, lint/typecheck/build đạt; E2E loading cuối **6/6** trên 360/768/1366, chuyển động thường/giảm chuyển động, cả đăng nhập và điều hướng. Không migration/DB/RLS/quyền.
 - **IMPORT-NH2025-20261014 đã nhập phần đủ căn cứ**, bản sửa bảng điểm source `04c58fd` đã phát hành: 758 thiếu nhi, 18.659 ô điểm, 6 Trưởng Ban, 39 địa chỉ bổ sung; đối soát 21/21.
 - Dữ liệu năm học còn thiếu/mâu thuẫn và điểm danh Giáo lý chưa nhập native được liệt kê trong báo cáo Excel ngoài Git. Full E2E lịch sử và R5–R13/UX-42/R13.3 giữ backlog riêng.
 
 ## ➡️ VIỆC TIẾP THEO
 
-Phát hành bản khôi phục Luce theo AGENTS §10, kiểm tra đúng SHA và ảnh/câu thực trên production. Các thiếu sót dữ liệu năm học tiếp tục theo báo cáo Excel đã bàn giao; không đổi mô hình điểm danh trong task giao diện này.
+Source `82c05b0` đã lên production; Vercel success đúng SHA, smoke Luce/Lời Chúa 4/4. Người dùng tải lại trang để nhận bản mới. Các thiếu sót dữ liệu năm học tiếp tục theo báo cáo Excel đã bàn giao; không đổi mô hình điểm danh trong task giao diện này.
 
 ## ⛔ BLOCKERS
 
@@ -165,7 +165,8 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **File thay đổi:** hai layout auth/dashboard, loading-overlay/provider, unit và E2E loading, tài liệu tracking. Ảnh `public/loading` và nội dung `src/content/LoiChua.md` dùng nguyên bản; tracing build có cả 4 ảnh và kho câu.
 - **Migration/data impact:** không có; browser đăng nhập bằng fixture local, không seed/reset dữ liệu, không đổi quyền hay mật khẩu.
 - **Đã test:** lint/typecheck đạt; `npm test` 2.033 pass / 24 skip (nhóm loading 24/24); build production cô lập đạt; E2E cuối 6/6 trên mobile 360, tablet 768, laptop 1366 × hai chế độ chuyển động. Lượt đầu 4/6 do locator của test nhầm menu desktop `<summary>` là button; sửa locator đúng DOM và chạy lại toàn nhóm. Không gọi full E2E lịch sử xanh.
-- **Next:** commit/push và smoke production đúng SHA; chưa báo đã phát hành trước khi xác minh.
+- **Phát hành / RESTORE-LUCE-RELEASE-20261014:** source `82c05b0` đã push main, Vercel success đúng SHA. Smoke production 4/4 (360/1366 × thường/giảm chuyển động): ảnh CDN tải thật, câu/nguồn khớp kho gốc, card nằm gọn màn hình, không pageerror. POST đăng nhập bị giữ/chặn ngay trong trình duyệt kiểm thử, không gửi yêu cầu đăng nhập hay ghi dữ liệu production. [Bằng chứng và ảnh](docs/system-workflow-redesign/verification/evidence/luce-loading-20261014/release.json).
+- **Next:** người dùng tải lại trang; backlog dữ liệu năm học và full E2E lịch sử giữ nguyên.
 
 ### [2026-10-14] Codex — IMPORT-NH2025-20261014 — nhập dữ liệu và tải đủ bảng điểm
 - **Làm được:** đọc đủ 53 tệp nguồn; bổ sung 11 thiếu nhi, 3 giám hộ, 3 bí tích, 6 Trưởng Ban, 39 địa chỉ nhân sự; nhập 472 cột / 18.659 ô điểm và 181 ghi chú nội bộ. Có 754 tổng kết năm không mâu thuẫn; giữ kết quả Excel kể cả công thức tính ô trống theo xác nhận của user. Cột thành phần được lưu ẩn để không cộng trùng vào tổng kết.

@@ -1,0 +1,93 @@
+{
+  "deployment": {
+    "source": "82c05b02452ee9d56d8156786c5ed732601215f1",
+    "state": "success",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "description": "Deployment has completed",
+        "url": "https://vercel.com/khanglebomba/cq-tntt-manager-web/EZGRaaG9mXsZQbKC2DBnTrsNR5d2",
+        "updated_at": "2026-10-14T08:12:38Z"
+      }
+    ]
+  },
+  "public_smoke": [
+    {
+      "width": 360,
+      "reduced": false,
+      "loginStatus": 200,
+      "image": "/loading/luce4.jpg",
+      "verseInOriginalSource": true,
+      "animation": "loading-bob",
+      "cardFits": true,
+      "blockedPosts": 1,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "reduced": true,
+      "loginStatus": 200,
+      "image": "/loading/luce2.jpg",
+      "verseInOriginalSource": true,
+      "animation": "none",
+      "cardFits": true,
+      "blockedPosts": 1,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "width": 1366,
+      "reduced": false,
+      "loginStatus": 200,
+      "image": "/loading/luce3.jpg",
+      "verseInOriginalSource": true,
+      "animation": "loading-bob",
+      "cardFits": true,
+      "blockedPosts": 1,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "width": 1366,
+      "reduced": true,
+      "loginStatus": 200,
+      "image": "/loading/luce3.jpg",
+      "verseInOriginalSource": true,
+      "animation": "none",
+      "cardFits": true,
+      "blockedPosts": 1,
+      "pageErrors": [],
+      "pass": true
+    }
+  ],
+  "unit": {
+    "passed": 2033,
+    "skipped": 24
+  },
+  "loading_e2e": {
+    "passed": 6,
+    "viewports": [
+      360,
+      768,
+      1366
+    ],
+    "motion": [
+      "normal",
+      "reduced"
+    ]
+  },
+  "asset_tracing": [
+    {
+      "route": "(auth)/login",
+      "images": 4,
+      "verseSource": true
+    },
+    {
+      "route": "(dashboard)/dashboard",
+      "images": 4,
+      "verseSource": true
+    }
+  ]
+}
