@@ -1,5 +1,7 @@
 # 08 — Phase Plan
 
+> **14/10/2026 — ☑ MOBILE-NAV-GROUPS-20261014 (local):** sửa ba ảnh phản hồi: bỏ danh mục khỏi dashboard, thống nhất sinh nhật/bổn mạng, chia nhóm menu theo quyền. Lint/typecheck/build đạt, 2.028 unit pass / 24 skip; browser cuối 55 pass / 2 skip. Chưa commit/push/deploy; không migration/RLS. [Báo cáo và ảnh](system-workflow-redesign/MOBILE_NAV_GROUPS_2026-10-14.md).
+
 > **14/10/2026 — MOBILE-SHEETS-COPY-20261014:** implementation mobile xong: bottom sheet, form tác vụ riêng, giảm chữ/card, rà 14 vai trò. **2.028 unit đạt / 24 skip**, lint/typecheck/build đạt; browser **74 pass / 28 skip có chủ đích**, refinement cuối **9/9 pass**. Source `4bb4d42` đã push main, Vercel success đúng SHA và smoke public production 360/1366 đạt (MOBILE-SHEETS-RELEASE-20261014). Không migration/RLS; R5–R13/UX-42/R13.3 và full E2E lịch sử giữ riêng. [Báo cáo và giới hạn](system-workflow-redesign/MOBILE_SHEETS_2026-10-14.md).
 
 > **14/10/2026 — ANTI-AI-ERP-RELEASE-20261014 DONE:** source97b83c9 đã pushmain, Vercel success đúngSHA và smoke public production360/1366 đạt. Smoke release local43/43;2026unit pass/24skip; full687/hydrationP2 vẫn mở theo báo cáo. Không tự đóng R5–R13.

@@ -51,11 +51,11 @@ export function AppSidebar({ items, pathname, contextIndicator, badges, collapse
       {contextIndicator && !rail ? <div className="border-b border-line px-4 py-3">{contextIndicator}</div> : null}
       <nav aria-label="Điều hướng chính" className={cn("min-h-0 flex-1 overflow-y-auto py-3", rail ? "px-2" : "px-3")}>
         <RailLabel label="Tất cả chức năng" enabled={rail}>
-          <Link href="/dashboard#all-features" onClick={onShowAllFeatures ?? onClose} title={rail ? "Tất cả chức năng" : undefined}
-            className={cn("mb-3 flex min-h-11 items-center gap-3 rounded-md border border-line text-sm font-medium text-ink hover:bg-surface-muted", rail ? "justify-center" : "px-3 py-2")}>
+          <button type="button" onClick={onShowAllFeatures} title={rail ? "Tất cả chức năng" : undefined} aria-haspopup="dialog"
+            className={cn("mb-3 flex min-h-11 w-full items-center gap-3 rounded-md border border-line text-sm font-medium text-ink hover:bg-surface-muted", rail ? "justify-center" : "px-3 py-2")}>
             <Grid2X2 className="h-5 w-5 shrink-0" aria-hidden="true" strokeWidth={1.75} />
             <span className={rail ? "sr-only" : undefined}>Tất cả chức năng</span>
-          </Link>
+          </button>
         </RailLabel>
         {sectionsFor(items).map(({ group, items: groupItems }, index) => <div className="mb-3" key={`${group}-${index}`}>
           {!rail ? <p className="mb-1 px-3 text-xs font-medium text-ink-muted">{group}</p> : index > 0 ? <div className="mx-2 mb-2 border-t border-line" /> : null}

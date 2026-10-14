@@ -219,7 +219,22 @@ export function getNavigationVariant(viewer: NavigationViewer): NavigationVarian
 /** Full catalogue, including modules omitted from the frequent-use sidebar.
  * No imports/bulk links: their only entry remains /admin (IMP-BULK-002). */
 export function getAllFeaturesNavigation(viewer: NavigationViewer): readonly NavigationItem[] {
-  return [...platformNavigation, accountNavigationItem].filter((item) => isItemVisible(item, viewer));
+  return [...platformNavigation, accountNavigationItem]
+    .filter((item) => isItemVisible(item, viewer))
+    .map((item) => ({
+      ...item,
+      group: item.href.startsWith("/parent/") ? "Gia đình"
+        : ["/teaching-plan", "/results"].includes(item.href) ? "Học tập" : item.group,
+    }));
+}
+
+/** Group only permitted items; empty categories never become menu sections. */
+export function groupNavigationItems(items: readonly NavigationItem[]) {
+  const order: readonly NavigationItem["group"][] = ["Chung", "Mục vụ", "Học tập", "Theo dõi", "Điều hành", "Gia đình"];
+  return order.flatMap((group) => {
+    const members = items.filter((item) => item.group === group);
+    return members.length ? [{ group, items: members }] : [];
+  });
 }
 
 export function getDesktopNavigation(

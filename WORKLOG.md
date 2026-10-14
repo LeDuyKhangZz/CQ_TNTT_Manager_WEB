@@ -49,20 +49,19 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **MOBILE-SHEETS-COPY-20261014 — hoàn tất và đã phát hành — Codex — 2026-10-14.** Menu/tài khoản bottom sheet; form tác vụ tách khỏi danh sách; giảm chữ/card trên toàn module, giữ màu/nghiệp vụ/quyền.
-- **2.028 unit đạt / 0 lỗi / 24 integration bỏ qua**, lint/typecheck/build đạt. Build riêng không ngắt preview trực tiếp `http://127.0.0.1:3150`.
-- Browser 14 vai trò: **74 đạt / 28 bỏ qua có chủ đích**, ba viewport; rà module ở 360px. Sau tinh chỉnh bộ lọc cuối, chạy lại **9/9 đạt**. [Phạm vi và bằng chứng](docs/system-workflow-redesign/MOBILE_SHEETS_2026-10-14.md).
-- Kiểm chứng độc lập theo AGENTS §9: modal/focus/hydration và mất lease điểm danh; không đổi server rule, DB/RLS/API hay mật khẩu production.
-- **MOBILE-SHEETS-RELEASE-20261014:** source `4bb4d42` đã push main, Vercel success đúng SHA; production 360/1366 HTTP 200, CSS mobile mới, không overflow/pageerror; dashboard yêu cầu đăng nhập.
+- **MOBILE-NAV-GROUPS-20261014 — hoàn tất local — Codex — 2026-10-14.** Gỡ danh mục khỏi dashboard; thống nhất hàng sinh nhật; chia nhóm menu theo quyền trên mobile/desktop.
+- **2.028 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **55 đạt / 2 skip có chủ đích**, gồm 14 role ở 360/768/1366px và sinh nhật ở 12 độ rộng. [Bằng chứng](docs/system-workflow-redesign/MOBILE_NAV_GROUPS_2026-10-14.md).
+- Preview `http://127.0.0.1:3150` giữ hoạt động; bản sửa này chưa commit/push/deploy. Production trước đó là source `4bb4d42` (MOBILE-SHEETS-RELEASE-20261014).
+- Không đổi DB/RLS/API/quyền/theme, không ghi dữ liệu nghiệp vụ production; giữ các preset điều hướng nhanh và đường vào chức năng ít dùng.
 - R5–R13/UX-42/R13.3, full E2E lịch sử và hydration P2 vẫn giữ mở; không suy ra hoàn tất từ lượt kiểm tra giao diện này.
 
 ## ➡️ VIỆC TIẾP THEO
 
-Bản mobile đã phát hành; giữ cửa sổ preview để người dùng xem và phản hồi trực tiếp. KHANG.NHO dùng mật khẩu hiện có theo xác nhận; không đặt lại. R5.1 và full E2E/R13.3 giữ backlog riêng.
+Bản sửa ba phản hồi đã có trên preview local để người dùng xem. Chưa phát hành lượt sửa này. KHANG.NHO giữ mật khẩu hiện có. R5.1 và full E2E/R13.3 giữ backlog riêng.
 
 ## ⛔ BLOCKERS
 
-Không có blocker cho phát hành UI này. 24 integration test bỏ qua; full E2E lịch sử chưa hoàn tất. React hydration #418 ngắt quãng trước đây vẫn theo dõi riêng dù lượt rà module hiện tại không ghi nhận pageerror. Giới hạn Safari/điện thoại thật, no-JS và bảo vệ nháp ghi rõ trong báo cáo; không dùng kết quả giả lập để khẳng định mọi thao tác production.
+Không có blocker cho MOBILE-NAV-GROUPS-20261014 ở local. 24 integration test bỏ qua; full E2E lịch sử và React hydration #418 ngắt quãng vẫn theo dõi riêng. Menu no-JS đã kiểm ở ba viewport; chưa kiểm Safari/điện thoại thật và chưa smoke production bản sửa mới.
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi)
 
@@ -160,6 +159,14 @@ Không có blocker cho phát hành UI này. 24 integration test bỏ qua; full E
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-14] Codex — MOBILE-NAV-GROUPS-20261014 — sửa theo ba ảnh phản hồi
+- **Làm được:** bỏ khối Tất cả chức năng khỏi dashboard; sinh nhật/bổn mạng luôn xếp ngày dưới tên ở mobile, hai cột từ 640px; chia menu thành danh mục sau khi lọc quyền, tìm kiếm theo tên/nhóm. Desktop mở cùng danh mục trong dialog, giữ fallback no-JS đóng mặc định.
+- **File thay đổi:** 8 file sản phẩm dashboard/shell/navigation, 2 file E2E, tracking và [báo cáo/ảnh](docs/system-workflow-redesign/MOBILE_NAV_GROUPS_2026-10-14.md).
+- **Migration/data impact:** không migration/RLS/API/dependency; không ghi dữ liệu nghiệp vụ. Browser dùng tài khoản local, hình học sinh nhật dùng fixture tên giả trong DOM.
+- **Đã test:** lint/typecheck/build đạt; 2.028 unit pass / 24 skip; Playwright cuối 55 pass / 2 skip có chủ đích, 14 role × ba viewport + geometry 12 độ rộng và 0/1/5/20/100 dòng. Lượt đầu 39 pass / 16 fail / 2 skip do hai lỗi harness, đã sửa và chạy lại toàn nhóm; không cộng lượt cũ vào lượt cuối.
+- **Quyết định mới:** yêu cầu người dùng 14/10 bỏ danh mục khỏi trang chủ và khôi phục nhóm chức năng; quyền và nghiệp vụ giữ nguyên.
+- **Next:** preview 3150 có bản sửa; chưa commit/push/deploy. R5–R13/UX-42/R13.3 giữ backlog riêng.
+
 ### [2026-10-14] Codex — MOBILE-SHEETS-RELEASE-20261014 — xác nhận production
 - **Làm được:** source `4bb4d42` đã push `main`; Vercel success đúng SHA; kiểm tra URL công khai ở 360/1366px đạt. CSS mobile mới đã được phục vụ; login HTTP 200, không overflow/pageerror, dashboard chưa đăng nhập chuyển về login.
 - **File thay đổi:** hồ sơ release, WORKLOG, ba tài liệu tracking và lưu trữ nhật ký; không thay source sản phẩm trong commit release.
@@ -204,15 +211,6 @@ Không có blocker cho phát hành UI này. 24 integration test bỏ qua; full E
 - **Blocker/rủi ro:** không có blocker R4.1; R4.2–.5, UX-41 detail, UX-42/R13.3 vẫn mở. Giữ log lỗi trước sửa và giới hạn Thủ quỹ scalar/fixed sort.
 - **Next action:** R4.2 wizard giám hộ → thiếu nhi. Chưa commit/push vì có thay đổi R2/R3 sẵn trong cùng worktree; không gộp vào task này.
 
-### [2026-10-12] Codex — R3 — Shell & Navigation và rà luồng theo vai trò
-
-- **Làm được:** R3.1–R3.5 DONE; 5 biến thể menu, resolver Lớp của tôi đúng Q-R9/năm/phân công, rail nhớ theo tài khoản, badge server đúng lớp/ngành/người nhận, Menu/map/no-JS/coachmark. Sửa QA-01–06; giữ 7 preset mobile và luật CQ.
-- **File thay đổi:** `src/config/navigation.ts`, feature navigation mới, layout shell/header/sidebar/drawer/rail/badge/map/sign-out, dashboard layout/page, class detail shortcuts; unit navigation/query và `tests/e2e/r3-navigation.spec.ts`; tài liệu và evidence ở `../REDESIGN/17_R3_COMPLETION_2026-10-12.md`, `18_ROLE_WORKFLOW_REVIEW_2026-10-12.md`.
-- **Migration/data impact:** không migration/RLS mới, không production. E2E ghi DB audit riêng 54521; 16 dòng fixture badge/4 bảng đã cleanup đúng ID, xác nhận còn 0 và count về baseline. Walkthrough chỉ đọc normal 54421. Giữ toàn bộ thay đổi R2 chưa commit.
-- **Đã test:** `npm.cmd test` 1.967 pass / 24 skip; `npm.cmd run lint`, `typecheck`, `build` đạt. Playwright R3 cuối 54/54; full 651 test: 645 pass / 6 fail, chạy lại 6 tình huống × 3 viewport: 18/18 pass. Walkthrough 644/644; SSR 15/15; shortcut 9/9; 9 cặp viewport chuẩn. Log thật trong `../REDESIGN/r3-verification/`.
-- **Độc lập theo AGENTS §9:** JWT 54/54, sau Q-R9 20/20; pure Q-R9 9/9; badge dương 52/52; rail 13/13; NextLink 32/32. Không dùng lượt trước sửa để che lỗi; bundle cuối QA-06 được build và kiểm R3/shortcut lại.
-- **Quyết định mới:** không có; CT_NOIBO chỉ áp nguyên tắc UI, giữ DS/nghiệp vụ CQ. Đã rà 14 vai trò/14 module và ghi điểm bất tiện từng phase sau.
-- **Blocker/rủi ro:** R13.3 chưa có ba lượt toàn bộ xanh; UX-41 thiếu báo lỗi/retry giám hộ khi RPC 502; UX-42 tiêu đề desktop lặp. Chưa kiểm Safari/iOS thật, không tuyên bố mọi mutation của mọi vai trò đều đã chạy lại.
-- **Next action:** R4 Thiếu nhi + UX-41; chưa bắt đầu R4, chưa deploy, chưa commit/push gộp working tree R2/R3.
-
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
+
+Archive: [MOBILE-NAV-GROUPS-20261014](docs/worklog-archive-before-nav-groups-2026-10-14.md).

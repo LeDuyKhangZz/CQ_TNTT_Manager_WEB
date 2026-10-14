@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { saveShellPreference, type ShellPreferences } from "@/features/navigation/types";
 import { usePathname } from "next/navigation";
@@ -13,6 +12,7 @@ import { AppHeader } from "./app-header";
 import { AppSidebar, type NavigationBadges } from "./app-sidebar";
 import { MobileBottomNavigation } from "./mobile-bottom-navigation";
 import { MobileMenuSheet, type MobilePanel } from "./mobile-menu-sheet";
+import { AllFeaturesGrid } from "./all-features-grid";
 
 /**
  * Vỏ ứng dụng.
@@ -51,24 +51,12 @@ export function AppShell({
   navigationBadges?: NavigationBadges;
 }) {
   const pathname = usePathname();
-  const [focusFeatures, setFocusFeatures] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>(null);
-  const drawerOpen = mobilePanel !== null;
   const [collapsed, setCollapsed] = useState(preferences?.collapsed ?? false);
   const desktopItems = getDesktopNavigation(viewer, myClass);
   const mobileItems = getMobileNavigation(viewer);
 
   useEffect(() => setMobilePanel(null), [pathname]);
-  useEffect(() => {
-    if (!focusFeatures || drawerOpen || pathname !== "/dashboard") return;
-    // Run after the drawer restores its opener, including same-page hash links.
-    const frame = requestAnimationFrame(() => {
-      document.getElementById("all-features-title")?.focus({ preventScroll: true });
-      setFocusFeatures(false);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [focusFeatures, drawerOpen, pathname]);
-  const showAllFeatures = () => { setMobilePanel(null); setFocusFeatures(true); };
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
     const desktop = window.matchMedia("(min-width: 1024px)");
@@ -103,7 +91,7 @@ export function AppShell({
         Bỏ qua điều hướng
       </a>
 
-      <AppSidebar items={desktopItems} pathname={pathname} contextIndicator={contextIndicator} collapsed={collapsed} badges={navigationBadges} onShowAllFeatures={showAllFeatures} />
+      <AppSidebar items={desktopItems} pathname={pathname} contextIndicator={contextIndicator} collapsed={collapsed} badges={navigationBadges} onShowAllFeatures={openMenu} />
 
       <MobileMenuSheet panel={mobilePanel} setPanel={setMobilePanel} viewer={viewer} pathname={pathname} myClass={myClass} badges={navigationBadges} />
 
@@ -138,7 +126,12 @@ export function AppShell({
           {/* Dải chữ "vì sao màn hình của bạn không có màu ngành" (10 §8) đứng
               TRƯỚC nội dung: nó giải thích cả cái vỏ vừa đổi màu lẫn việc lớp
               của người dùng không xuất hiện. */}
-          <noscript><p className="px-4 pt-3 sm:px-6 lg:hidden"><Link href="/dashboard#all-features" className="inline-flex min-h-11 items-center text-sm font-medium underline">Tất cả chức năng</Link></p></noscript>
+          <noscript>
+            <details className="mx-4 mt-3 rounded-md border border-line bg-surface px-3 sm:mx-6">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Menu chức năng</summary>
+              <AllFeaturesGrid viewer={viewer} />
+            </details>
+          </noscript>
           {unassignedBanner}
           {yearView ? <AcademicYearViewBanner view={yearView} /> : null}
           {children}

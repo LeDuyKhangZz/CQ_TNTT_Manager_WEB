@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
-import { getAllFeaturesNavigation, getMobileNavigation } from "../../src/config/navigation";
+import { getAllFeaturesNavigation, getMobileNavigation, groupNavigationItems } from "../../src/config/navigation";
 import { APP_ROLES, getAudienceForRole, getScopeKindForRole, type AppRole } from "../../src/lib/permissions/roles";
 
 const users: Partial<Record<AppRole, string>> = {
@@ -36,6 +36,12 @@ async function login(page: Page, username: string) {
 async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
 }
+async function openFeatures(page: Page) {
+  await page.getByRole("button", { name: page.viewportSize()!.width < 1024 ? "Mở menu" : "Tất cả chức năng", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Chức năng", exact: true });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
 async function signOut(page: Page) {
   if (page.viewportSize()!.width < 1024) {
     await page.getByRole("button", { name: /Mở tài khoản của/ }).click();
@@ -51,24 +57,32 @@ for (const role of APP_ROLES) {
   test(`R3 ${role}: complete feature directory, primary menu and frozen bottom navigation`, async ({ page }, testInfo) => {
     await login(page, users[role] ?? await studentUsername());
     const viewer = { role, audience: getAudienceForRole(role), scopeKind: getScopeKindForRole(role), hasGuardianProfile: role === "class_teacher" };
-    const catalogue = page.getByRole("navigation", { name: "Tất cả chức năng", exact: true });
     const expected = getAllFeaturesNavigation(viewer);
-    await expect(catalogue.getByRole("link")).toHaveCount(expected.length);
-    for (const item of expected) await expect(catalogue.locator(`a[href="${item.href}"]`)).toHaveText(item.label);
-    await expect(catalogue.locator('a[href="/imports"], a[href="/staff/bulk"]')).toHaveCount(0);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Tất cả chức năng", exact: true })).toHaveCount(0);
     if (page.viewportSize()!.width < 1024) {
       const bottom = page.getByRole("navigation", { name: "Điều hướng nhanh" });
       expect(await bottom.getByRole("link").evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual(getMobileNavigation(viewer).filter(item => item.href !== "/account").map(item => item.href));
       await expect(bottom.getByRole("button", { name: "Tài khoản", exact: true })).toBeVisible();
       await expect(page.getByRole("button", { name: "Mở menu", exact: true })).toHaveText("Menu");
-      await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-      await expect(page.getByRole("dialog", { name: "Chức năng" })).toBeVisible();
     }
+    const dialog = await openFeatures(page);
+    const catalogue = dialog.getByRole("navigation", { name: "Tất cả chức năng", exact: true });
+    await expect(catalogue.getByRole("link")).toHaveCount(expected.length - 1);
+    await expect(catalogue.getByRole("button", { name: "Tài khoản", exact: true })).toHaveCount(1);
+    await expect(catalogue.getByRole("heading", { level: 3 })).toHaveText(groupNavigationItems(expected).map(section => section.group));
+    for (const item of expected) {
+      const section = catalogue.getByRole("region", { name: item.group, exact: true });
+      if (item.href === "/account") await expect(section.getByRole("button", { name: item.label, exact: true })).toHaveCount(1);
+      else if (item.href === "/classes" && viewer.scopeKind === "class") await expect(section.getByRole("link", { name: "Lớp của tôi", exact: true })).toHaveAttribute("href", /^\/classes\/[a-f0-9-]{36}$/);
+      else await expect(section.locator(`a[href="${item.href}"]`).getByText(item.label, { exact: true })).toHaveCount(1);
+    }
+    await expect(catalogue.locator('a[href="/imports"], a[href="/staff/bulk"]')).toHaveCount(0);
+    if (page.viewportSize()!.width >= 1024) await dialog.getByRole("button", { name: "Đóng chức năng" }).click();
     const primary = page.viewportSize()!.width < 1024 ? page.getByRole("dialog", { name: "Chức năng" }).getByRole("navigation") : page.locator('nav[aria-label="Điều hướng chính"]:visible');
     if (["class_representative", "class_teacher", "trainee_assistant"].includes(role)) {
       await expect(primary.getByRole("link", { name: /^Lớp của tôi/ })).toHaveAttribute("href", /^\/classes\/[a-f0-9-]{36}$/);
       if (page.viewportSize()!.width >= 1024) {
-        await expect(primary.getByRole("link")).toHaveCount(role === "class_teacher" ? 10 : 8);
+        await expect(primary.getByRole("link")).toHaveCount(role === "class_teacher" ? 9 : 7);
         await expect(primary.locator('a[href="/teaching-plan"], a[href="/results"]')).toHaveCount(0);
       } else {
         await expect(primary.getByRole("link")).toHaveCount(expected.length - 1);
@@ -106,15 +120,10 @@ test("R3 discovery link reaches the complete map and hidden class tools remain r
   await work.getByRole("link", { name: "Giáo án", exact: true }).click();
   await expect(page).toHaveURL(/\/teaching-plan\/[a-f0-9-]{36}$/);
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-  if (page.viewportSize()!.width < 1024) await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-  if (page.viewportSize()!.width < 1024) {
-    await page.getByRole("dialog", { name: "Chức năng" }).locator('a[href="/results"]').click();
-  } else {
-    await page.locator('nav[aria-label="Điều hướng chính"]:visible').getByRole("link", { name: "Tất cả chức năng", exact: true }).click();
-    await expect(page).toHaveURL(/\/dashboard#all-features$/);
-    await expect(page.getByRole("heading", { name: "Tất cả chức năng" })).toBeFocused();
-    await page.getByRole("navigation", { name: "Tất cả chức năng", exact: true }).getByRole("link", { name: "Kết quả học tập", exact: true }).click();
-  }
+  const features = await openFeatures(page);
+  await expect(features).toBeFocused();
+  await expect(page).toHaveURL(/\/teaching-plan\/[a-f0-9-]{36}$/);
+  await features.getByRole("region", { name: "Học tập", exact: true }).getByRole("link", { name: "Kết quả học tập", exact: true }).click();
   await expect(page).toHaveURL(/\/results$/);
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
 });
@@ -164,7 +173,9 @@ test("R3 feature directory renders without JavaScript", async ({ page, browser }
   const context = await browser.newContext({ javaScriptEnabled: false, storageState: await page.context().storageState(), viewport: page.viewportSize()! });
   try {
     const native = await context.newPage();
-    await native.goto(new URL("/dashboard#all-features", page.url()).href);
+    await native.goto(new URL("/dashboard", page.url()).href);
+    await expect(native.getByRole("navigation", { name: "Tất cả chức năng", exact: true })).toHaveCount(0);
+    await native.locator("summary").filter({ hasText: "Menu chức năng" }).click();
     await expect(native.getByRole("navigation", { name: "Tất cả chức năng", exact: true }).getByRole("link", { name: "Giáo án", exact: true })).toBeVisible();
     await native.getByRole("navigation", { name: "Tất cả chức năng", exact: true }).getByRole("link", { name: "Kết quả học tập", exact: true }).click();
     await expect(native.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
@@ -182,6 +193,12 @@ test("R3 mobile search and account sheet", async ({ page }) => {
   await sheet.getByRole("searchbox").fill("diem danh");
   await expect(sheet.getByRole("link")).toHaveCount(1);
   await expect(sheet.getByRole("link")).toHaveAttribute("href", "/attendance");
+  await expect(sheet.getByRole("heading", { level: 3 })).toHaveText(["Mục vụ"]);
+  await sheet.getByRole("searchbox").fill("hoc tap");
+  await expect(sheet.getByRole("heading", { level: 3 })).toHaveText(["Học tập"]);
+  await expect(sheet.getByRole("link")).toHaveText(["Giáo án", "Kết quả học tập"]);
+  await sheet.getByRole("searchbox").fill("khong co chuc nang nay");
+  await expect(sheet.getByRole("status")).toHaveText("Không tìm thấy chức năng. Thử tên khác.");
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   await page.getByRole("navigation", { name: "Điều hướng nhanh" }).getByRole("button", { name: "Tài khoản" }).click();

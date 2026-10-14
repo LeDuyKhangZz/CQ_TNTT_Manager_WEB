@@ -212,9 +212,9 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
             ) : (
               <ul className="divide-y divide-line">
                 {data.celebrations.map((item) => (
-                  <li key={`${item.studentId}-${item.kind}`} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-sm">
+                  <li key={`${item.studentId}-${item.kind}`} className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-1 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline">
                     <span className="min-w-0 break-words text-ink">{item.displayName}</span>
-                    <span className="text-ink-muted">{item.kind === "birthday" ? "Sinh nhật" : "Bổn mạng"} · {formatDateVi(item.nextOccurrence)}</span>
+                    <span className="text-ink-muted sm:text-right">{item.kind === "birthday" ? "Sinh nhật" : "Bổn mạng"} · <time dateTime={item.nextOccurrence} className="whitespace-nowrap tabular-nums">{formatDateVi(item.nextOccurrence)}</time></span>
                   </li>
                 ))}
               </ul>

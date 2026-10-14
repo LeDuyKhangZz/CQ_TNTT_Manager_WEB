@@ -4,7 +4,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { useModalBehavior } from "./modal-behavior";
 
-/** Mobile navigation surface. Keep it outside sticky headers so its backdrop
+/** Navigation sheet on mobile, centered dialog on desktop. Keep it outside sticky headers so its backdrop
  * covers the whole shell, while inheriting the current sector's theme tokens. */
 export function BottomSheet({ open, onClose, id, title, toolbar, children }: {
   open: boolean; onClose: () => void; id: string; title: string;
@@ -18,12 +18,12 @@ export function BottomSheet({ open, onClose, id, title, toolbar, children }: {
   useEffect(() => { if (open) panelRef.current?.focus(); }, [open, title]);
 
   if (!open) return null;
-  return <div className="fixed inset-0 z-drawer flex items-end justify-center lg:hidden">
+  return <div className="fixed inset-0 z-drawer flex items-end justify-center lg:items-center lg:p-6">
     <div aria-hidden="true" data-sheet-backdrop onClick={onClose} className="drawer-overlay-enter absolute inset-0 bg-overlay" />
     <div ref={panelRef} id={id} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} tabIndex={-1}
-      className="bottom-sheet-enter relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[24px] border border-b-0 border-line bg-surface shadow-md outline-none">
+      className="bottom-sheet-enter relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[24px] border border-b-0 border-line bg-surface shadow-md outline-none lg:rounded-lg lg:border-b">
       <div className="shrink-0 border-b border-line px-4 pb-3 sm:px-5">
-        <div aria-hidden="true" className="flex h-5 touch-none items-center justify-center"
+        <div aria-hidden="true" className="flex h-5 touch-none items-center justify-center lg:invisible"
           onPointerDown={(event) => { dragStart.current = { x: event.clientX, y: event.clientY }; event.currentTarget.setPointerCapture(event.pointerId); }}
           onPointerCancel={() => { dragStart.current = null; }}
           onPointerUp={(event) => {
