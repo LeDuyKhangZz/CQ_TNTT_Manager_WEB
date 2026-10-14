@@ -115,11 +115,15 @@ export function LoadingProvider({
     [begin, end, beginNavigation],
   );
 
-  /** Retain frame selection for compatibility; the compact notice needs no image requests. */
+  /** Chọn và nạp sẵn ảnh cho lần chờ kế tiếp để Luce hiện ngay khi thao tác bắt đầu. */
   const queueNextImage = React.useCallback(() => {
     const next = pickNextIndex(images.length, lastImageRef.current);
     queuedImageRef.current = next;
 
+    if (next >= 0 && typeof window !== "undefined") {
+      const preloader = new window.Image();
+      preloader.src = images[next];
+    }
   }, [images]);
 
   React.useEffect(() => {

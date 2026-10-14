@@ -149,7 +149,7 @@ describe("LoadingProvider — nội dung cửa sổ chờ (17 §3.2)", () => {
     vi.useRealTimers();
   });
 
-  it("hiện tiến trình gọn, không cướp focus hay thông báo kết quả của biểu mẫu", async () => {
+  it("hiện Luce và một câu Lời Chúa có nguồn, không cướp focus hay thông báo kết quả", async () => {
     renderProvider(<Task pending />);
     await advance(1);
 
@@ -165,7 +165,35 @@ describe("LoadingProvider — nội dung cửa sổ chờ (17 §3.2)", () => {
 
     expect(box).toHaveTextContent("Đang xử lý…");
     expect(box).toHaveClass("pointer-events-none");
-    expect(box!.querySelector("blockquote, img")).toBeNull();
+    expect(IMAGES).toContain(box!.querySelector("img")?.getAttribute("src"));
+    const verse = VERSES.find((item) => box!.querySelector("blockquote")?.textContent === `“${item.text}”`);
+    expect(verse).toBeDefined();
+    expect(box!.querySelector("figcaption")).toHaveTextContent(verse!.source);
+    expect(box!.querySelectorAll("blockquote")).toHaveLength(1);
+  });
+
+  it("lần chờ kế tiếp đổi cả ảnh và câu, không đổi nội dung giữa một lần chờ", async () => {
+    const { rerender } = renderProvider(<Task pending />);
+    await advance(1);
+    const firstImage = overlay()!.querySelector("img")!.getAttribute("src");
+    const firstVerse = overlay()!.querySelector("blockquote")!.textContent;
+    await advance(2000);
+    expect(overlay()!.querySelector("img")).toHaveAttribute("src", firstImage);
+    expect(overlay()!.querySelector("blockquote")!.textContent).toBe(firstVerse);
+
+    rerenderWith(rerender, <Task pending={false} />);
+    await advance(MIN_VISIBLE_MS + 1);
+    rerenderWith(rerender, <Task pending />);
+    await advance(1);
+    expect(overlay()!.querySelector("img")!.getAttribute("src")).not.toBe(firstImage);
+    expect(overlay()!.querySelector("blockquote")!.textContent).not.toBe(firstVerse);
+  });
+
+  it("vẫn báo đang xử lý nếu thư mục ảnh hoặc kho câu rỗng", async () => {
+    render(<LoadingProvider images={[]} verses={[]}><Task pending /></LoadingProvider>);
+    await advance(1);
+    expect(overlay()).toHaveTextContent("Đang xử lý…");
+    expect(overlay()!.querySelector("img, blockquote")).toBeNull();
   });
 });
 

@@ -50,15 +50,14 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **IMPORT-NH2025-20261014 — đã nhập phần đủ căn cứ; bản sửa đã phát hành — Codex — 2026-10-14.** Đọc 53 tệp; 758 thiếu nhi (+11), 18.659 ô điểm, 6 Trưởng Ban, 39 địa chỉ nhân sự bổ sung; đối soát 21/21 đạt.
-- **2.031 unit đạt / 24 skip**, lint/typecheck/build đạt; pgTAP trên database local riêng **1.512/1.512**. Sửa truy vấn bảng điểm để đọc đủ hơn 1.000 ô, giữ client có xác thực và lọc lớp.
-- Giữ tổng kết Excel theo xác nhận của user; các cột thành phần lưu ẩn để tránh cộng trùng. 25.095 dấu Giáo lý chưa nhập native do thiếu trạng thái Thánh lễ; 530 dấu chưa rõ ngày và bốn tổng kết thiếu/mâu thuẫn được báo riêng.
-- Không migration/RLS, không đổi tài khoản/quyền; dữ liệu cá nhân, bản sao trước nhập và báo cáo Excel chỉ nằm ngoài Git. Full E2E lịch sử và R5–R13/UX-42/R13.3 giữ backlog riêng.
-- MOBILE-NAV-GROUPS-20261014 đã phát hành ở source `c943863`; quy tắc tự commit/push/kiểm tra production tiếp tục áp dụng theo AGENTS §10.
+- **RESTORE-LUCE-LOADING-20261014 — khôi phục và kiểm tra xong, chờ phát hành — Codex — 2026-10-14.** Nối lại 4 ảnh Luce/kho Lời Chúa cho cả auth và dashboard, cửa sổ giữa màn hình, ảnh lắc lư và ba chấm; ảnh/câu không lặp liền kề.
+- **2.033 unit đạt / 24 skip**, lint/typecheck/build đạt; E2E loading cuối **6/6** trên 360/768/1366, chuyển động thường/giảm chuyển động, cả đăng nhập và điều hướng. Không migration/DB/RLS/quyền.
+- **IMPORT-NH2025-20261014 đã nhập phần đủ căn cứ**, bản sửa bảng điểm source `04c58fd` đã phát hành: 758 thiếu nhi, 18.659 ô điểm, 6 Trưởng Ban, 39 địa chỉ bổ sung; đối soát 21/21.
+- Dữ liệu năm học còn thiếu/mâu thuẫn và điểm danh Giáo lý chưa nhập native được liệt kê trong báo cáo Excel ngoài Git. Full E2E lịch sử và R5–R13/UX-42/R13.3 giữ backlog riêng.
 
 ## ➡️ VIỆC TIẾP THEO
 
-Source `04c58fd` đã lên production; Vercel success đúng SHA, smoke công khai 360/1366 đạt. Người dùng bổ sung các trường hồ sơ, xác nhận điểm mâu thuẫn/ngày bị hỏng trong báo cáo Excel. Điểm danh Giáo lý cần mô hình lưu riêng khi không có dữ liệu Thánh lễ; chưa tự đổi schema trong lượt nhập này.
+Phát hành bản khôi phục Luce theo AGENTS §10, kiểm tra đúng SHA và ảnh/câu thực trên production. Các thiếu sót dữ liệu năm học tiếp tục theo báo cáo Excel đã bàn giao; không đổi mô hình điểm danh trong task giao diện này.
 
 ## ⛔ BLOCKERS
 
@@ -160,6 +159,14 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-14] Codex — RESTORE-LUCE-LOADING-20261014 — khôi phục loading theo yêu cầu
+- **Nguyên nhân:** commit anti-AI `97b83c9` bỏ ảnh/câu khỏi overlay, truyền hai mảng rỗng vào provider ở cả auth/dashboard và bỏ preload ảnh. Tài sản gốc vẫn còn.
+- **Làm được:** khôi phục ảnh Luce, một câu Lời Chúa có nguồn, ba chấm và chuyển động đã có; nạp trước ảnh kế tiếp, giữ chọn ngẫu nhiên không lặp liền kề. Giữ ngưỡng hiện 0 ms, tối thiểu 250 ms, failsafe 30 giây, không chặn chuột/cướp focus. Không khôi phục whole-page Suspense từng che nội dung SSR khi thiếu JavaScript.
+- **File thay đổi:** hai layout auth/dashboard, loading-overlay/provider, unit và E2E loading, tài liệu tracking. Ảnh `public/loading` và nội dung `src/content/LoiChua.md` dùng nguyên bản; tracing build có cả 4 ảnh và kho câu.
+- **Migration/data impact:** không có; browser đăng nhập bằng fixture local, không seed/reset dữ liệu, không đổi quyền hay mật khẩu.
+- **Đã test:** lint/typecheck đạt; `npm test` 2.033 pass / 24 skip (nhóm loading 24/24); build production cô lập đạt; E2E cuối 6/6 trên mobile 360, tablet 768, laptop 1366 × hai chế độ chuyển động. Lượt đầu 4/6 do locator của test nhầm menu desktop `<summary>` là button; sửa locator đúng DOM và chạy lại toàn nhóm. Không gọi full E2E lịch sử xanh.
+- **Next:** commit/push và smoke production đúng SHA; chưa báo đã phát hành trước khi xác minh.
+
 ### [2026-10-14] Codex — IMPORT-NH2025-20261014 — nhập dữ liệu và tải đủ bảng điểm
 - **Làm được:** đọc đủ 53 tệp nguồn; bổ sung 11 thiếu nhi, 3 giám hộ, 3 bí tích, 6 Trưởng Ban, 39 địa chỉ nhân sự; nhập 472 cột / 18.659 ô điểm và 181 ghi chú nội bộ. Có 754 tổng kết năm không mâu thuẫn; giữ kết quả Excel kể cả công thức tính ô trống theo xác nhận của user. Cột thành phần được lưu ẩn để không cộng trùng vào tổng kết.
 - **File thay đổi:** helper phân trang điểm theo lớp, truy vấn bảng điểm, ba unit hồi quy và tài liệu tracking. Không đưa hồ sơ, điện thoại, bản sao DB hoặc script có dữ liệu cá nhân vào Git.
@@ -201,17 +208,10 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Quyết định mới:** yêu cầu người dùng cấm nút cuộn tới form cuối trang, ưu tiên bottom sheet, ít chữ trên điện thoại; giữ quy định màu/nghiệp vụ. Không tự đóng backlog R5–R13/UX-42/R13.3.
 - **Phát hành:** source `4bb4d42` đã push main; Vercel và smoke production đạt theo task MOBILE-SHEETS-RELEASE-20261014. Giữ preview trực tiếp; giới hạn thực tế và rollback trong báo cáo.
 
-### [2026-10-14] Codex — ANTI-AI-ERP-20261013 — redesign ERP và chuẩn bị phát hành
-- **Làm được:** áp dụng tiêu chuẩn anti-AI toàn shell/module; chỉ giữ palette; bảng/list gọn, dashboard theo việc, disclosure cho tác vụ ít dùng, loading không che màn hình; bảo vệ nháp điểm danh/điểm và giữ phần gõ tiếp qua save/refresh.
-- **File thay đổi:** inventory và route matrix tại [báo cáo anti-AI](docs/system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md); shared UI, presentation components, tests và docs.
-- **Migration/data impact:** không đổi SQL/RLS/API/permission/dependency; E2E dùng fixture local riêng, không seed/reset production.
-- **Đã test:** lint/typecheck/build đạt;2026unit pass/24skip. Laptop226pass/3fixturefail, rerun3/3pass; final browser80/80 và staff10width đạt; full687 ngắt ở19pass khi local stack dừng. Khôi phục Docker, smoke release43/43pass trên build cuối.
-- **Quyết định mới:** yêu cầu chủ dự án13/10 thay tiêu chuẩn hình thức cũ, giữ màu/nghiệp vụ; yêu cầu14/10 push/redeploy. Không tự đóng backlog R5–R13.
-- **Blocker/rủi ro:** fullE2E chưa xanh toàn bộ; guard không intercept history/programmatic navigation; xem báo cáo. Docker đã khôi phục.
-- **Phát hành / ANTI-AI-ERP-RELEASE-20261014:** source97b83c9 đã pushmain; Vercel success đúngSHA; smoke public production360/1366 đạt, xác nhận token8px/none và guard/dashboard. Bàn giao tài khoản theo lựa chọn chủ tài khoản; không tự reset mật khẩu.
-
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
 
 Archive: [MOBILE-NAV-GROUPS-20261014](docs/worklog-archive-before-nav-groups-2026-10-14.md).
 
 Archive: [Trước IMPORT-NH2025-20261014](docs/worklog-archive-before-import-2026-10-14.md).
+
+Archive: [Trước RESTORE-LUCE-LOADING-20261014](docs/worklog-archive-before-luce-2026-10-14.md).

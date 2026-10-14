@@ -16,6 +16,7 @@ import { getCurrentAcademicYear } from "@/features/academic-years/server/queries
 import { requireAuthContext } from "@/lib/auth/guards";
 import { DEFAULT_AFTER_LOGIN_PATH, REQUEST_PATH_HEADER } from "@/lib/auth/login-redirect";
 import { toShellViewer } from "@/lib/auth/types";
+import { getLoadingAssets } from "@/lib/loading/assets";
 import { resolveThemeContext } from "@/lib/theme/resolve-theme-context";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -58,10 +59,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const view = authContext.audience === "staff" ? await getAcademicYearView() : null;
   const presentYear = (year: NonNullable<typeof view>["year"]) => year ? {id:year.id,code:year.code,name:year.name} : null;
   const yearView = view ? {year:presentYear(view.year), current:presentYear(view.current), years:view.years.map(year => ({id:year.id,code:year.code,name:year.name})), readOnly:view.readOnly} : undefined;
+  const loadingAssets = getLoadingAssets();
 
   return (
     <ThemeScope theme={theme} className="min-h-screen">
-      <LoadingProvider images={[]} verses={[]}>
+      <LoadingProvider images={loadingAssets.images} verses={loadingAssets.verses}>
         <ToastProvider>
         <AppShell
           key={preferences.key}

@@ -16,14 +16,21 @@ const SLOW_MS = 2000;
 async function login(page: Page, username: string) {
   await page.context().clearCookies();
   await page.goto("/login");
+  await page.route("**/login", async (route) => {
+    if (route.request().method() === "POST") await new Promise((resolve) => setTimeout(resolve, SLOW_MS));
+    await route.continue();
+  });
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await page.getByLabel("Tên đăng nhập").fill(username);
     await page.locator("input#password").fill(DEV_PASSWORD);
     await page.getByRole("button", { name: "Đăng nhập" }).click();
+    await expectLuce(page);
     try {
       await page.waitForURL(/\/(dashboard|change-password)$/, { timeout: 10_000 });
       await expect(page).toHaveURL(/\/dashboard$/);
+      await page.unroute("**/login");
+      await waitForIdle(page);
       return;
     } catch {
       await page.goto("/login");
@@ -32,15 +39,28 @@ async function login(page: Page, username: string) {
   throw new Error(`Không đăng nhập được bằng ${username}. Đã chạy seed:dev chưa?`);
 }
 
-/** Mục `Tài khoản` có mặt ở cả thanh bên (≥1024px) lẫn thanh dưới — cả 3 viewport. */
-function accountLink(page: Page) {
+/** Mở menu tài khoản hiện hành trước khi chọn liên kết, trên cả ba viewport. */
+async function accountLink(page: Page) {
+  await page.locator('[aria-label^="Mở tài khoản của"]:visible, summary[aria-label^="Menu tài khoản của"]:visible').click();
   return page.locator('a[href="/account"]:visible').first();
 }
 
-test("điều hướng chậm: cửa sổ chờ hiện rồi tự biến mất", async ({ page }) => {
+async function expectLuce(page: Page) {
+  const overlay = page.getByTestId(LOADING_OVERLAY_TEST_ID);
+  await expect(overlay).toBeVisible();
+  const image = overlay.locator("img");
+  await expect(image).toHaveAttribute("src", /^\/loading\/luce\d+\.jpg$/);
+  await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
+  await expect(overlay.locator("blockquote")).toHaveCount(1);
+  await expect(overlay.locator("blockquote")).not.toBeEmpty();
+  await expect(overlay.locator("figcaption")).not.toBeEmpty();
+}
+
+for (const reducedMotion of [false, true]) test(`Luce và Lời Chúa khi đăng nhập/chuyển trang${reducedMotion ? " — giảm chuyển động" : ""}`, async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
   await login(page, "GLV901");
 
-  // Giữ lượt điều hướng lại đúng 2 giây — vượt ngưỡng 1 giây của `SHOW_AFTER_MS`.
+  // Giữ lượt điều hướng để kiểm được ảnh/câu trong trạng thái đang chờ thật.
   await page.route("**/account**", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, SLOW_MS));
     await route.continue();
@@ -49,9 +69,16 @@ test("điều hướng chậm: cửa sổ chờ hiện rồi tự biến mất",
   const overlay = page.getByTestId(LOADING_OVERLAY_TEST_ID);
   await expect(overlay).toHaveCount(0);
 
-  await accountLink(page).click();
+  await (await accountLink(page)).click();
 
-  await expect(overlay).toBeVisible({ timeout: 10_000 });
+  await expectLuce(page);
+  await expect(overlay).toHaveCSS("opacity", "1");
+  await expect(overlay.locator("img")).toHaveCSS("animation-name", reducedMotion ? "none" : "loading-bob");
+  const bounds = await overlay.locator("figure").boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.screenshot({ path: info.outputPath(`luce-${reducedMotion ? "reduced" : "animated"}.png`) });
   // Trang trí cho mắt nhìn, KHÔNG phải vùng phát thông báo — nếu không nó cướp
   // `getByRole("status").first()` của `FormMessage` và đọc cả câu Kinh Thánh cho
   // trình đọc màn hình ở mỗi cú bấm.
