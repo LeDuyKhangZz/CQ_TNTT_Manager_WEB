@@ -1,5 +1,7 @@
 # 00 — System Audit Board
 
+> **14/10/2026 — MOBILE-SHEETS-COPY-20261014:** implementation mobile xong: bottom sheet, form tác vụ riêng, giảm chữ/card, rà 14 vai trò. **2.028 unit đạt / 24 skip**, lint/typecheck/build đạt; browser **74 pass / 28 skip có chủ đích**, refinement cuối **9/9 pass**. Chuẩn bị commit/push, chưa ghi deployed. Không migration/RLS; R5–R13/UX-42/R13.3 và full E2E lịch sử giữ riêng. [Báo cáo và giới hạn](MOBILE_SHEETS_2026-10-14.md).
+
 > **14/10/2026 — ANTI-AI-ERP-RELEASE-20261014 DONE:** source97b83c9 đã pushmain, Vercel success đúngSHA; public production360/1366 đạt. Smoke local43/43. FullE2E chưa hoàn tất, hydrationP2 và24integration skip vẫn ghi rõ. [Báo cáo phát hành](ANTI_AI_ERP_2026-10-13.md).
 
 > **14/10/2026 — ANTI-AI-ERP-20261013:** implementation redesign toàn ERP xong, giữ palette/nghiệp vụ/API/quyền.2026unit pass/24skip, lint/typecheck/build đạt; final portal80/80 và staff10width đạt. E2E laptop226pass/3fixturefail, rerun3/3đạt; chưa có full687 xanh. Đang chuẩn bị push/redeploy; các mốc production bên dưới là lịch sử. [Báo cáo/evidence](ANTI_AI_ERP_2026-10-13.md).

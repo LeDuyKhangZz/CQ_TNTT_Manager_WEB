@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionSheet } from "@/components/ui/task-sheet";
+import { Drawer } from "@/components/ui/drawer";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
@@ -103,98 +105,7 @@ export function SacramentPanel({
     deleteFormRef.current?.requestSubmit();
   }
 
-  return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Bí tích đã lãnh</CardTitle>
-          <CardDescription>Mỗi loại bí tích chỉ ghi một lần cho mỗi em.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {sacraments.length === 0 ? (
-            <EmptyState
-              variant="no-data"
-              title="Chưa có thông tin bí tích"
-              description="Dùng biểu mẫu bên cạnh để ghi bí tích đầu tiên cho em."
-            />
-          ) : (
-            <ul aria-label={`Bí tích của ${studentName}`} className="space-y-3">
-              {sacraments.map((item) => (
-                <Panel as="li" key={item.id} className="text-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium">
-                        {sacramentLabel(item.sacramentType, item.sacramentName)}
-                      </p>
-                      <p className="text-ink-muted">
-                        {item.sacramentDate ? formatDateVi(item.sacramentDate) : "Chưa rõ ngày"}
-                        {item.place ? ` · ${item.place}` : ""}
-                      </p>
-                      {item.godparentName ? (
-                        <p className="text-ink-muted">Người đỡ đầu: {item.godparentName}</p>
-                      ) : null}
-                      {item.registryNumber ? (
-                        <p className="text-ink-muted">Số sổ: {item.registryNumber}</p>
-                      ) : null}
-                    </div>
-
-                    {canWrite ? (
-                      <div className="flex flex-wrap items-center gap-2">
-                        {/*
-                          `<Link>` mang lớp của nút chứ KHÔNG bọc trong `<Button>`:
-                          `Button` của Đợt 0-UI luôn dựng ra một `<button>` thật
-                          (không có `asChild`), và một `<button>` lồng trong một
-                          `<a>` là HTML sai — trình đọc màn hình đọc ra hai điều
-                          khiển chồng nhau. `buttonVariants` sinh ra đúng bộ lớp
-                          ấy, gồm cả `min-h-control` = 44px.
-                        */}
-                        <Link
-                          href={`${backHref}&edit=${item.id}`}
-                          aria-label={`Sửa bí tích ${sacramentLabel(item.sacramentType, item.sacramentName)}`}
-                          className={buttonVariants({ variant: "outline", size: "sm" })}
-                        >
-                          Sửa
-                        </Link>
-                        {canDelete ? (
-                          <form
-                            action={formAction}
-                            onSubmit={(event) => handleDeleteSubmit(event, item)}
-                          >
-                            <input type="hidden" name="intent" value="delete" />
-                            <input type="hidden" name="studentId" value={studentId} />
-                            <input type="hidden" name="id" value={item.id} />
-                            <Button type="submit" variant="outline" size="sm" pending={pending}>
-                              Xoá
-                            </Button>
-                          </form>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                </Panel>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      {canWrite ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editing ? "Sửa bản ghi bí tích" : "Thêm bí tích"}</CardTitle>
-            <CardDescription>
-              {editing
-                ? `Đang sửa: ${sacramentLabel(editing.sacramentType, editing.sacramentName)}.`
-                : "Ghi lại bí tích em đã lãnh nhận."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/*
-              `key` đổi theo bản ghi đang sửa VÀ theo câu phản hồi cuối: đổi theo
-              bản ghi để các ô nạp lại giá trị mới; đổi theo phản hồi để biểu mẫu
-              "thêm mới" tự trống sau một lượt lưu thành công.
-            */}
-            <form
+  const editorForm = <div className="space-y-3">{feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}<form
               key={`${editing?.id ?? "new"}-${feedback?.text ?? "idle"}`}
               action={formAction}
               aria-label={editing ? "Sửa bản ghi bí tích" : "Thêm bí tích"}
@@ -282,10 +193,86 @@ export function SacramentPanel({
                   </Link>
                 ) : null}
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+            </form></div>;
+
+  return (
+    <div className="space-y-4">
+      {canWrite ? (editing ? <Drawer open title="Sửa bản ghi bí tích" closeHref={backHref}>{editorForm}</Drawer> : <ActionSheet title="Thêm bí tích">{editorForm}</ActionSheet>) : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bí tích đã lãnh</CardTitle>
+          <CardDescription>Mỗi loại bí tích chỉ ghi một lần cho mỗi em.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {sacraments.length === 0 ? (
+            <EmptyState
+              variant="no-data"
+              title="Chưa có thông tin bí tích"
+              description={canWrite ? "Chọn Thêm bí tích để bổ sung." : "Chưa ghi nhận bí tích."}
+            />
+          ) : (
+            <ul aria-label={`Bí tích của ${studentName}`} className="space-y-3">
+              {sacraments.map((item) => (
+                <Panel as="li" key={item.id} className="text-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">
+                        {sacramentLabel(item.sacramentType, item.sacramentName)}
+                      </p>
+                      <p className="text-ink-muted">
+                        {item.sacramentDate ? formatDateVi(item.sacramentDate) : "Chưa rõ ngày"}
+                        {item.place ? ` · ${item.place}` : ""}
+                      </p>
+                      {item.godparentName ? (
+                        <p className="text-ink-muted">Người đỡ đầu: {item.godparentName}</p>
+                      ) : null}
+                      {item.registryNumber ? (
+                        <p className="text-ink-muted">Số sổ: {item.registryNumber}</p>
+                      ) : null}
+                    </div>
+
+                    {canWrite ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/*
+                          `<Link>` mang lớp của nút chứ KHÔNG bọc trong `<Button>`:
+                          `Button` của Đợt 0-UI luôn dựng ra một `<button>` thật
+                          (không có `asChild`), và một `<button>` lồng trong một
+                          `<a>` là HTML sai — trình đọc màn hình đọc ra hai điều
+                          khiển chồng nhau. `buttonVariants` sinh ra đúng bộ lớp
+                          ấy, gồm cả `min-h-control` = 44px.
+                        */}
+                        <Link
+                          href={`${backHref}&edit=${item.id}`}
+                          scroll={false}
+                          aria-label={`Sửa bí tích ${sacramentLabel(item.sacramentType, item.sacramentName)}`}
+                          className={buttonVariants({ variant: "outline", size: "sm" })}
+                        >
+                          Sửa
+                        </Link>
+                        {canDelete ? (
+                          <form
+                            action={formAction}
+                            onSubmit={(event) => handleDeleteSubmit(event, item)}
+                          >
+                            <input type="hidden" name="intent" value="delete" />
+                            <input type="hidden" name="studentId" value={studentId} />
+                            <input type="hidden" name="id" value={item.id} />
+                            <Button type="submit" variant="outline" size="sm" pending={pending}>
+                              Xoá
+                            </Button>
+                          </form>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </Panel>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+
 
       {/*
         Một chỗ duy nhất hiển thị phản hồi cho cả ba thao tác (thêm · sửa · xoá).

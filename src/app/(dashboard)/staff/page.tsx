@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Drawer, drawerHref } from "@/components/ui/drawer";
 import { DateField } from "@/components/ui/date-field";
 import { FilterField } from "@/components/ui/filter-bar";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
-import { Toolbar } from "@/components/ui/toolbar";
+import { ActionSheet } from "@/components/ui/task-sheet";
+import { SearchInputControl } from "@/components/ui/search-input";
+import { Search } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { PageContainer } from "@/components/layout/page-container";
@@ -46,6 +49,7 @@ type StaffSearchParams = {
   ok?: string;
   error?: string;
   deleted?: string;
+  panel?: string;
 };
 
 export default async function StaffPage({
@@ -80,11 +84,13 @@ export default async function StaffPage({
   }
   const pageHref = (page: number) => buildHref({ page });
   const isFiltered = Boolean(search) || classFilter !== "all" || service !== "serving";
+  const closeHref = buildHref({ page: data.page });
+  const listParams = new URLSearchParams(closeHref.split("?")[1]);
 
   return (
     <PageContainer data-density="compact">
-      <PageHeader title="Huynh trưởng/Giáo lý viên" description={`${data.total} hồ sơ · Nhân sự và phân công đứng lớp.`}
-        action={canWrite ? <div className="flex flex-wrap gap-2"><Link href="#assign-staff-section" className={buttonVariants({ variant: "outline" })}>Phân công vào lớp</Link><Link href="#add-staff" className={buttonVariants()}>Thêm nhân sự</Link></div> : null}
+      <PageHeader title="Huynh trưởng/Giáo lý viên" description={`${data.total} hồ sơ`}
+        action={canWrite ? <div className="flex flex-wrap gap-2"><Link scroll={false} href={drawerHref("/staff", listParams, { panel: "assign" })} className={buttonVariants({ variant: "outline" })}>Phân công</Link><Link scroll={false} href={drawerHref("/staff", listParams, { panel: "new" })} className={buttonVariants()}>Thêm nhân sự</Link></div> : null}
       />
       {deletedMessage ? <div className="mb-4"><FormMessage tone="success">{deletedMessage}</FormMessage></div> : null}
       {okMessage ? <div className="mb-4"><FormMessage tone="success">{okMessage}</FormMessage></div> : null}
@@ -92,22 +98,11 @@ export default async function StaffPage({
 
       <div className="space-y-5">
         <div className="space-y-4">
-          <Toolbar
-            label="Lọc danh sách nhân sự"
-            action="/staff"
-            search={{
-              id: "filter-staff-search",
-              label: "Tìm theo họ tên",
-              defaultValue: search,
-              placeholder: "Tên, mã GLV hoặc số điện thoại",
-            }}
-            className="relative"
-          >
-            <details className="static sm:relative">
-              <summary className="flex min-h-11 cursor-pointer items-center rounded-md border border-line-strong bg-surface px-3 text-sm font-medium">
-                Bộ lọc{classFilter !== "all" || service !== "serving" ? " · Đang lọc" : ""}
-              </summary>
-              <div className="absolute inset-x-0 z-dropdown mt-1 grid gap-3 rounded-lg border border-line bg-surface p-3 shadow-md sm:left-auto sm:w-80">
+          <form action="/staff" method="get" aria-label="Lọc danh sách nhân sự" className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1"><SearchInputControl id="filter-staff-search" name="q" aria-label="Tìm theo họ tên" defaultValue={search} placeholder="Tên, mã hoặc SĐT" /></div>
+            <Button type="submit" variant="secondary" aria-label="Tìm nhân sự" className="w-11 px-0"><Search className="h-4 w-4" aria-hidden="true" /></Button>
+            <ActionSheet title="Bộ lọc nhân sự" triggerLabel={classFilter !== "all" || service !== "serving" ? "Lọc · Đang lọc" : "Lọc"}>
+              <div className="space-y-4">
                 <FilterField label="Lớp đang phục vụ" htmlFor="filter-class">
                   <Select id="filter-class" name="classId" defaultValue={classFilter}>
                     <option value="all">Mọi lớp</option>
@@ -126,9 +121,9 @@ export default async function StaffPage({
                 </FilterField>
                 <Button type="submit" variant="secondary">Áp dụng bộ lọc</Button>
               </div>
-            </details>
+            </ActionSheet>
             {isFiltered ? <Link href="/staff" className="inline-flex min-h-11 items-center px-2 text-sm text-ink-muted underline underline-offset-4">Xoá lọc</Link> : null}
-          </Toolbar>
+          </form>
 
           <Card>
             <h2 className="sr-only">Danh sách nhân sự</h2>
@@ -138,7 +133,7 @@ export default async function StaffPage({
                   tưởng hồ sơ đã biến mất và đi tạo lại một hồ sơ trùng. */}
               {data.hiddenByService > 0 ? (
                 <p className="text-sm text-ink-muted">
-                  Đang ẩn <strong>{data.hiddenByService}</strong> hồ sơ ngoài bộ lọc.{" "}
+                  <strong>{data.hiddenByService}</strong> hồ sơ đang ẩn.{" "}
                   <Link
                     href={buildHref({ service: "all" })}
                     className="inline-flex min-h-11 items-center underline underline-offset-4"
@@ -199,22 +194,24 @@ export default async function StaffPage({
                               Người dùng mở nhiều nhất MỘT hồ sơ, nên tải trước
                               chín cái còn lại là trả giá để không dùng. */}
                           <Link href={`/staff/${item.id}`} prefetch={false} className="inline-flex min-h-11 items-center break-words font-medium text-ink underline-offset-4 hover:underline">
-                            {staffDisplayName(item)}
+                            <span className="md:hidden">{item.fullName}</span><span className="hidden md:inline">{staffDisplayName(item)}</span>
                           </Link>
-                          <p className="text-sm text-ink-muted">
+                          <p className="hidden text-sm text-ink-muted md:block">
                             {item.staffCode} · {componentLabel(item.component)}
                           </p>
+                          <p className="text-xs text-ink-muted md:hidden">{item.assignment ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}` : "Chưa phân lớp"}{item.serviceStatus !== "active" ? ` · ${serviceLabel(item.serviceStatus)}` : ""}</p>
+                          {account.tone === "warning" ? <span className="mt-1 block text-xs text-warning md:hidden">{account.text}</span> : null}
                         </td>
-                        <td className="md:px-3 md:py-2">
+                        <td className="hidden md:table-cell md:px-3 md:py-2">
                           <p>{item.phone ?? "Chưa có SĐT"}</p>
                           <p className="text-xs text-ink-muted">Huấn luyện {formationLabel(item.formationLevel)}</p>
                         </td>
-                        <td className="md:px-3 md:py-2">
+                        <td className="hidden md:table-cell md:px-3 md:py-2">
                             {item.assignment
                               ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}`
                               : "Chưa phân lớp"}
                         </td>
-                        <td className="md:px-3 md:py-2">
+                        <td className="hidden md:table-cell md:px-3 md:py-2">
                           <p>{serviceLabel(item.serviceStatus)}</p>
                           {account.tone === "warning" ? <Badge variant="warning">{account.text}</Badge> : <p className="text-xs text-ink-muted">{account.text}</p>}
                         </td>
@@ -236,15 +233,11 @@ export default async function StaffPage({
           </Card>
         </div>
 
-        {canWrite ? <div className="grid items-start gap-5 xl:grid-cols-2">
-          <Card id="add-staff" className="scroll-mt-24">
-            <CardHeader><CardTitle>Thêm nhân sự</CardTitle><CardDescription>Dì/Sơ là danh xưng, không phải role hệ thống.</CardDescription></CardHeader>
-            <CardContent><StaffCreateForm /></CardContent>
-          </Card>
-
-          <Card id="assign-staff-section" className="scroll-mt-24">
-            <CardHeader><CardTitle>Phân công vào lớp</CardTitle><CardDescription>Muốn đổi lớp mà giữ tài khoản thì mở hồ sơ và dùng &ldquo;Chuyển lớp&rdquo;.</CardDescription></CardHeader>
-            <CardContent><form action={assignStaffFromForm} className="space-y-3"><FormPendingBridge />
+        <Drawer open={canWrite && params.panel === "new"} title="Thêm nhân sự" closeHref={closeHref}>
+          <StaffCreateForm />
+        </Drawer>
+        <Drawer open={canWrite && params.panel === "assign"} title="Phân công vào lớp" closeHref={closeHref} description="Đổi lớp? Mở hồ sơ nhân sự và chọn Chuyển lớp.">
+            <form action={assignStaffFromForm} className="space-y-3"><FormPendingBridge />
               <div className="space-y-2">
                 <Label htmlFor="assign-staff">Nhân sự</Label>
                 {/* Liệt kê TOÀN BỘ danh sách, không phải trang đang xem — xem ghi
@@ -273,9 +266,8 @@ export default async function StaffPage({
               </div>
               <div className="space-y-2"><Label htmlFor="assign-start">Ngày bắt đầu</Label><DateField id="assign-start" name="startsOn" required /></div>
               <Button type="submit" className="w-full">Lưu phân công</Button>
-            </form></CardContent>
-          </Card>
-        </div> : null}
+            </form>
+        </Drawer>
       </div>
     </PageContainer>
   );

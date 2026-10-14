@@ -102,6 +102,18 @@ export function StaffCreateForm() {
         </div>
       ) : null}
 
+      <div className="space-y-2">
+        <Label htmlFor="staff-saint">Tên thánh</Label>
+        <Input id="staff-saint" name="saintName" defaultValue={state.values.saintName} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="staff-name">Họ tên</Label>
+        <Input id="staff-name" name="fullName" defaultValue={state.values.fullName} required />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="staff-phone">Điện thoại</Label>
+        <Input id="staff-phone" name="phone" inputMode="tel" defaultValue={state.values.phone} required />
+      </div>
       {/* 🔴 `key` KHÔNG phải trang trí. `defaultValue` của `<select>` chỉ có tác
           dụng lúc gắn vào DOM; ô chữ thì trình duyệt tự cập nhật theo thuộc tính
           `value` khi người dùng chưa gõ vào, nhưng ô CHỌN thì không. Thiếu `key`,
@@ -153,22 +165,9 @@ export function StaffCreateForm() {
             ))}
           </Select>
           <p id="staff-component-hint" className="text-2xs text-ink-muted">
-            Trợ tá là người hỗ trợ hậu cần, không dạy học — hồ sơ nhận mã TT thay
-            vì GLV. Mã cấp một lần, đổi thành phần sau không đánh lại mã.
+            Trợ tá nhận mã TT; các thành phần khác nhận mã GLV. Mã không đổi sau khi tạo.
           </p>
         </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="staff-saint">Tên thánh</Label>
-        <Input id="staff-saint" name="saintName" defaultValue={state.values.saintName} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="staff-name">Họ tên</Label>
-        <Input id="staff-name" name="fullName" defaultValue={state.values.fullName} required />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="staff-phone">Điện thoại</Label>
-        <Input id="staff-phone" name="phone" inputMode="tel" defaultValue={state.values.phone} required />
       </div>
       <div className="space-y-2">
         <Label htmlFor="staff-birth">Ngày sinh</Label>

@@ -1,11 +1,12 @@
 "use client";
+import { ActionSheet } from "@/components/ui/task-sheet";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateField } from "@/components/ui/date-field";
 import { Dialog } from "@/components/ui/dialog";
 import { FilterField } from "@/components/ui/filter-bar";
@@ -171,27 +172,15 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
     <div className="space-y-5" data-density="compact">
       {message ? <p className="text-sm text-ink" role="status">{message}</p> : null}
       {temporaryPassword ? <div className="rounded-md border border-warning bg-warning-subtle p-4"><p className="text-sm font-medium text-warning">Mật khẩu tạm — chỉ hiển thị lần này</p><code className="mt-2 block text-lg font-semibold text-ink">{temporaryPassword}</code></div> : null}
-      <details className="rounded-md border border-line bg-surface">
-        <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-medium">Tạo tài khoản ngoại lệ</summary>
-      <Card className="max-w-3xl border-0">
-        <CardHeader>
-          <CardTitle>Tạo tài khoản ngoại lệ</CardTitle>
-          <CardDescription>
-            Chỉ dành cho người <strong>không có hồ sơ Giáo lý viên</strong>: Cha sở, Cha phó, phụ
-            huynh và thiếu nhi. Mật khẩu tạm 8 ký tự chỉ hiển thị sau khi tạo thành công.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Panel className="mb-4 text-sm text-ink-muted">
-            <p>
-              Tài khoản của Giáo lý viên được cấp ngay tại hồ sơ người đó. Chọn đúng người rồi
-              bấm &ldquo;Cấp tài khoản&rdquo;. Trang hồ sơ biết sẵn mã GLV, lớp và phân công nên
-              không phải gõ lại.
-            </p>
+      <ActionSheet title="Tạo tài khoản ngoại lệ" description="Dành cho Cha, phụ huynh và thiếu nhi.">
+          {message ? <p role="status" className="mb-3 text-sm">{message}</p> : null}
+          {temporaryPassword ? <div className="mb-3 rounded-md border border-warning p-3"><p className="text-sm">Mật khẩu tạm — chỉ hiển thị lần này</p><code>{temporaryPassword}</code></div> : null}
+          <div className="mb-4 text-sm text-ink-muted">
+            <p>Cấp tài khoản GLV tại hồ sơ nhân sự.</p>
             <Link href="/staff" className="inline-flex min-h-11 items-center font-medium text-ink underline underline-offset-2">
-              mở Danh sách nhân sự
+              Danh sách nhân sự
             </Link>
-          </Panel>
+          </div>
           <form action={provision} className="space-y-4">
             <FormPendingBridge />
             <div className="space-y-2">
@@ -237,9 +226,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
             <div className="space-y-2"><Label htmlFor="account-start">Ngày bắt đầu</Label><DateField id="account-start" name="startsOn" required /></div>
             <Button type="submit" className="w-full">Tạo tài khoản</Button>
           </form>
-        </CardContent>
-      </Card>
-      </details>
+      </ActionSheet>
 
       <Card>
         <CardHeader><CardTitle>Tài khoản hiện có</CardTitle><CardDescription>Chỉ tài khoản không phải Super Admin mới sửa hoặc xóa được tại đây.</CardDescription></CardHeader>
@@ -308,8 +295,8 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                   </div>
                 </div>
                 {canManage ? (
-                  <details className="mt-2">
-                    <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Quản lý tài khoản {account.username}</summary>
+                  <ActionSheet title={`Tài khoản ${account.username}`} triggerLabel="Quản lý">
+                    {message ? <p role="status" className="mb-3 text-sm">{message}</p> : null}
                   <div className="max-w-3xl space-y-3 border-t border-line pt-3">
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <Input aria-label={`Tên đăng nhập ${account.displayName}`} value={usernames[account.id] ?? account.username} onChange={(event) => setUsernames((current) => ({ ...current, [account.id]: event.target.value }))} />
@@ -325,7 +312,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                       <Button type="button" size="sm" variant="danger" onClick={() => openDelete(account)}>Xóa tài khoản</Button>
                     </div>
                   </div>
-                  </details>
+                  </ActionSheet>
                 ) : <p className="mt-3 text-xs text-ink-muted">Tài khoản Super Admin không được sửa/xóa qua danh sách này.</p>}
               </div>
             );

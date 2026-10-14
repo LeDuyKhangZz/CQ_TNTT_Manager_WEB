@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -79,12 +80,13 @@ describe("AC-06-01 · xem lại trước khi gửi", () => {
   it("bấm Gửi mở hộp xác nhận và CHƯA gọi máy chủ", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await fillDraft(user);
     await user.selectOptions(screen.getByLabelText("Đối tượng nhận"), "class-1");
 
     await user.click(screen.getByRole("button", { name: /Gửi thông báo/ }));
 
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: /Gửi thông báo/ })).toBeInTheDocument();
     // 🔴 Điều quan trọng nhất của bài này: hộp thoại mở ra mà thông báo **chưa
     // được gửi**. Nếu khẳng định dưới đây đỏ thì hộp xác nhận chỉ là trang trí.
     expect(publish).not.toHaveBeenCalled();
@@ -93,12 +95,13 @@ describe("AC-06-01 · xem lại trước khi gửi", () => {
   it("hộp xác nhận nêu tên lớp, số người nhận và nội dung sắp gửi", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await fillDraft(user);
     await user.selectOptions(screen.getByLabelText("Đối tượng nhận"), "class-1");
     await waitFor(() => expect(preview).toHaveBeenCalled());
 
     await user.click(screen.getByRole("button", { name: /Gửi thông báo/ }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: /Gửi thông báo/ });
 
     expect(dialog).toHaveTextContent("Ấu 1A");
     expect(dialog).toHaveTextContent("27");
@@ -109,6 +112,7 @@ describe("AC-06-01 · xem lại trước khi gửi", () => {
   it("Quay lại sửa thì không gửi gì", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await fillDraft(user);
     await user.selectOptions(screen.getByLabelText("Đối tượng nhận"), "class-1");
     await user.click(screen.getByRole("button", { name: /Gửi thông báo/ }));
@@ -120,6 +124,7 @@ describe("AC-06-01 · xem lại trước khi gửi", () => {
   it("D-165 — xác nhận rồi thì gửi kèm mã chống gửi đúp", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await fillDraft(user);
     await user.selectOptions(screen.getByLabelText("Đối tượng nhận"), "class-1");
     await waitFor(() => expect(preview).toHaveBeenCalled());
@@ -136,30 +141,34 @@ describe("AC-06-01 · xem lại trước khi gửi", () => {
   it("AC-02-01 — sau khi gửi nói ra số người nhận thật", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await fillDraft(user);
     await user.selectOptions(screen.getByLabelText("Đối tượng nhận"), "class-1");
     await waitFor(() => expect(preview).toHaveBeenCalled());
     await user.click(screen.getByRole("button", { name: /Gửi thông báo/ }));
     await user.click(await screen.findByRole("button", { name: /Gửi cho 27 người/ }));
 
-    expect(await screen.findByText(/Đã gửi thông báo tới 27 người/)).toBeInTheDocument();
+    expect(await within(screen.getByRole("dialog", { name: "Soạn thông báo" })).findByText(/Đã gửi thông báo tới 27 người/)).toBeInTheDocument();
   });
 });
 
 describe("TB-M10-03 · phạm vi Một người", () => {
   it("hiện trong danh sách phạm vi khi người dùng có quyền", () => {
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     expect(screen.getByRole("option", { name: "Một người" })).toBeInTheDocument();
   });
 
   it("KHÔNG hiện với người không có quyền gửi toàn cục", () => {
     render(<NotificationCenter data={pageData({ canPublishGlobal: false, canPublishUser: false })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     expect(screen.queryByRole("option", { name: "Một người" })).not.toBeInTheDocument();
   });
 
   it("gõ dưới 2 ký tự thì không gọi máy chủ", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await user.selectOptions(screen.getByLabelText("Phạm vi"), "user");
     await user.type(screen.getByLabelText("Tìm người nhận"), "N");
     expect(search).not.toHaveBeenCalled();
@@ -168,6 +177,7 @@ describe("TB-M10-03 · phạm vi Một người", () => {
   it("tìm được người và nói rõ chỉ người đó nhìn thấy", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await user.selectOptions(screen.getByLabelText("Phạm vi"), "user");
     await user.type(screen.getByLabelText("Tìm người nhận"), "Thư");
 
@@ -182,6 +192,7 @@ describe("TB-M10-03 · phạm vi Một người", () => {
   it("đổi phạm vi thì bỏ đối tượng đã chọn của phạm vi cũ (test cũ)", async () => {
     const user = userEvent.setup();
     render(<NotificationCenter data={pageData()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Soạn thông báo" }));
     await user.selectOptions(screen.getByLabelText("Đối tượng nhận"), "class-1");
     await user.selectOptions(screen.getByLabelText("Phạm vi"), "all");
     await user.selectOptions(screen.getByLabelText("Phạm vi"), "class");

@@ -122,7 +122,7 @@ export default async function ReportSnapshotsPage({
     <PageContainer>
       <PageHeader
         title="Báo cáo đã chốt"
-        description="Bản chốt giữ nguyên số liệu tại thời điểm chốt, kể cả khi dữ liệu nguồn thay đổi về sau."
+        help="Bản chốt giữ nguyên số liệu tại thời điểm chốt, kể cả khi dữ liệu nguồn thay đổi về sau."
         backHref="/reports"
         backLabel="Về trang Báo cáo"
       />

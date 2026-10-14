@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -58,7 +59,7 @@ const { RosterRow } = await import("@/features/enrollments/components/roster-row
 
 /** Dòng là một `<li>` thật, nên phải dựng trong `<ul>` — đúng cách trang gọi nó. */
 function renderRow(overrides: Partial<Parameters<typeof RosterRow>[0]> = {}) {
-  return render(
+  const view = render(
     <ul>
       <RosterRow
         enrollmentId="enrollment-1"
@@ -73,6 +74,9 @@ function renderRow(overrides: Partial<Parameters<typeof RosterRow>[0]> = {}) {
       />
     </ul>,
   );
+  const trigger = screen.queryByRole("button", { name: "Quản lý ghi danh" });
+  if (trigger) fireEvent.click(trigger);
+  return view;
 }
 
 beforeEach(() => {
@@ -86,7 +90,7 @@ describe('🔴 "Tạm nghỉ" tách hẳn khỏi "Kết thúc" (gốc rễ F10)'
     await user.click(screen.getByRole("button", { name: "Tạm nghỉ" }));
     expect(intentsCalled()).toEqual(["pause"]);
     // Không có hộp xác nhận: tạm nghỉ là thao tác hoàn tác được bằng đúng một nút.
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /Kết thúc/ })).not.toBeInTheDocument();
   });
 
   it("ô chọn lý do kết thúc KHÔNG còn mục 'Tạm nghỉ'", () => {
@@ -167,7 +171,7 @@ describe("AC-F10-03 — kết thúc phải hỏi trước, nêu hậu quả bằ
     const user = userEvent.setup();
     renderRow();
     await user.click(screen.getByRole("button", { name: "Kết thúc" }));
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /Kết thúc/ });
     expect(dialog).toHaveTextContent("Maria Nguyễn Thị A");
     expect(dialog).toHaveTextContent("Ấu 1A");
     expect(rowFormAction).not.toHaveBeenCalled();
@@ -181,7 +185,7 @@ describe("AC-F10-03 — kết thúc phải hỏi trước, nêu hậu quả bằ
       "transferred",
     );
     await user.click(screen.getByRole("button", { name: "Kết thúc" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent(/CHỈ đóng ghi danh ở lớp hiện tại/);
+    expect(screen.getByRole("dialog", { name: /Kết thúc/ })).toHaveTextContent(/CHỈ đóng ghi danh ở lớp hiện tại/);
   });
 
   it("huỷ thì không ghi gì", async () => {
@@ -189,7 +193,7 @@ describe("AC-F10-03 — kết thúc phải hỏi trước, nêu hậu quả bằ
     renderRow();
     await user.click(screen.getByRole("button", { name: "Kết thúc" }));
     await user.click(screen.getByRole("button", { name: "Huỷ" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /Kết thúc/ })).not.toBeInTheDocument();
     expect(rowFormAction).not.toHaveBeenCalled();
   });
 

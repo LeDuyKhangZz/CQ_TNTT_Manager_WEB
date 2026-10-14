@@ -37,8 +37,13 @@ async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
 }
 async function signOut(page: Page) {
-  await page.locator('summary[aria-label^="Menu tài khoản"]').click();
-  await page.getByRole("menuitem", { name: "Đăng xuất", exact: true }).click();
+  if (page.viewportSize()!.width < 1024) {
+    await page.getByRole("button", { name: /Mở tài khoản của/ }).click();
+    await page.getByRole("dialog", { name: "Tài khoản", exact: true }).getByRole("button", { name: "Đăng xuất", exact: true }).click();
+  } else {
+    await page.locator('summary[aria-label^="Menu tài khoản"]').click();
+    await page.getByRole("menuitem", { name: "Đăng xuất", exact: true }).click();
+  }
   await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
 }
 
@@ -53,16 +58,22 @@ for (const role of APP_ROLES) {
     await expect(catalogue.locator('a[href="/imports"], a[href="/staff/bulk"]')).toHaveCount(0);
     if (page.viewportSize()!.width < 1024) {
       const bottom = page.getByRole("navigation", { name: "Điều hướng nhanh" });
-      expect(await bottom.getByRole("link").evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual(getMobileNavigation(viewer).map(item => item.href));
+      expect(await bottom.getByRole("link").evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual(getMobileNavigation(viewer).filter(item => item.href !== "/account").map(item => item.href));
+      await expect(bottom.getByRole("button", { name: "Tài khoản", exact: true })).toBeVisible();
       await expect(page.getByRole("button", { name: "Mở menu", exact: true })).toHaveText("Menu");
       await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-      await expect(page.getByRole("dialog", { name: "Menu điều hướng" })).toBeVisible();
+      await expect(page.getByRole("dialog", { name: "Chức năng" })).toBeVisible();
     }
-    const primary = page.locator('nav[aria-label="Điều hướng chính"]:visible');
+    const primary = page.viewportSize()!.width < 1024 ? page.getByRole("dialog", { name: "Chức năng" }).getByRole("navigation") : page.locator('nav[aria-label="Điều hướng chính"]:visible');
     if (["class_representative", "class_teacher", "trainee_assistant"].includes(role)) {
       await expect(primary.getByRole("link", { name: /^Lớp của tôi/ })).toHaveAttribute("href", /^\/classes\/[a-f0-9-]{36}$/);
-      await expect(primary.getByRole("link")).toHaveCount(role === "class_teacher" ? 10 : 8);
-      await expect(primary.locator('a[href="/teaching-plan"], a[href="/results"]')).toHaveCount(0);
+      if (page.viewportSize()!.width >= 1024) {
+        await expect(primary.getByRole("link")).toHaveCount(role === "class_teacher" ? 10 : 8);
+        await expect(primary.locator('a[href="/teaching-plan"], a[href="/results"]')).toHaveCount(0);
+      } else {
+        await expect(primary.getByRole("link")).toHaveCount(expected.length - 1);
+        await expect(primary.locator('a[href="/teaching-plan"], a[href="/results"]')).toHaveCount(2);
+      }
     }
     if (role === "treasurer") await expect(primary.locator('a[href="/attendance"], a[href="/promotions"]')).toHaveCount(0);
     await noOverflow(page);
@@ -89,20 +100,21 @@ for (const role of APP_ROLES) {
 test("R3 discovery link reaches the complete map and hidden class tools remain reachable", async ({ page }) => {
   await login(page, "GLV909");
   if (page.viewportSize()!.width < 1024) await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-  await page.locator('nav[aria-label="Điều hướng chính"]:visible').getByRole("link", { name: /^Lớp của tôi/ }).click();
+  await (page.viewportSize()!.width < 1024 ? page.getByRole("dialog", { name: "Chức năng" }) : page.locator('nav[aria-label="Điều hướng chính"]:visible')).getByRole("link", { name: /^Lớp của tôi/ }).click();
   await expect(page).toHaveURL(/\/classes\/[a-f0-9-]{36}$/);
   const work = page.getByRole("navigation", { name: "Công việc của lớp" });
   await work.getByRole("link", { name: "Giáo án", exact: true }).click();
   await expect(page).toHaveURL(/\/teaching-plan\/[a-f0-9-]{36}$/);
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
   if (page.viewportSize()!.width < 1024) await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-  await page.locator('nav[aria-label="Điều hướng chính"]:visible').getByRole("link", { name: "Tất cả chức năng", exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard#all-features$/);
-  await expect(page.getByRole("heading", { name: "Tất cả chức năng" })).toBeInViewport();
-  await expect(page.getByRole("heading", { name: "Tất cả chức năng" })).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(page.getByRole("navigation", { name: "Tất cả chức năng", exact: true }).getByRole("link").first()).toBeFocused();
-  await page.getByRole("navigation", { name: "Tất cả chức năng", exact: true }).getByRole("link", { name: "Kết quả học tập", exact: true }).click();
+  if (page.viewportSize()!.width < 1024) {
+    await page.getByRole("dialog", { name: "Chức năng" }).locator('a[href="/results"]').click();
+  } else {
+    await page.locator('nav[aria-label="Điều hướng chính"]:visible').getByRole("link", { name: "Tất cả chức năng", exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard#all-features$/);
+    await expect(page.getByRole("heading", { name: "Tất cả chức năng" })).toBeFocused();
+    await page.getByRole("navigation", { name: "Tất cả chức năng", exact: true }).getByRole("link", { name: "Kết quả học tập", exact: true }).click();
+  }
   await expect(page).toHaveURL(/\/results$/);
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
 });
@@ -111,12 +123,12 @@ test("R3 rail persistence is isolated per account; mobile drawer remains usable"
   await login(page, "GLV909");
   if (page.viewportSize()!.width < 1024) {
     await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Đóng menu" })).toBeFocused();
+    await expect(page.getByRole("dialog", { name: "Chức năng" })).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Mở menu", exact: true })).toBeFocused();
     await page.getByRole("button", { name: "Mở menu", exact: true }).click();
     await page.setViewportSize({ width: 1366, height: 768 });
-    await expect(page.getByRole("dialog", { name: "Menu điều hướng" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Chức năng" })).toHaveCount(0);
     expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
   }
   await page.getByRole("button", { name: "Thu gọn thanh bên" }).click();
@@ -160,22 +172,21 @@ test("R3 feature directory renders without JavaScript", async ({ page, browser }
   } finally { await context.close(); }
 });
 
-test("R3 Menu hint is dismissible and appears only once", async ({ page }) => {
+test("R3 mobile search and account sheet", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await login(page, "GLV909");
-  // Same-page hash navigation must move keyboard focus out of the menu.
-  const hint = page.getByRole("note", { name: "Hướng dẫn menu" });
-  await expect(hint).toBeVisible();
-  await page.getByRole("button", { name: "Ẩn hướng dẫn menu" }).click();
-  await expect(hint).toHaveCount(0);
-  await page.reload();
-  await page.waitForTimeout(1100);
-  await expect(hint).toHaveCount(0);
-  await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Menu điều hướng" })).toBeVisible();
-  await page.locator('nav[aria-label="Điều hướng chính"]:visible').getByRole("link", { name: "Tất cả chức năng", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Tất cả chức năng" })).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(page.getByRole("navigation", { name: "Tất cả chức năng", exact: true }).getByRole("link").first()).toBeFocused();
+  const trigger = page.getByRole("button", { name: "Mở menu", exact: true });
+  await trigger.click();
+  const sheet = page.getByRole("dialog", { name: "Chức năng" });
+  await expect(sheet).toBeFocused();
+  await sheet.getByRole("searchbox").fill("diem danh");
+  await expect(sheet.getByRole("link")).toHaveCount(1);
+  await expect(sheet.getByRole("link")).toHaveAttribute("href", "/attendance");
+  await page.keyboard.press("Escape");
+  await expect(trigger).toBeFocused();
+  await page.getByRole("navigation", { name: "Điều hướng nhanh" }).getByRole("button", { name: "Tài khoản" }).click();
+  const account = page.getByRole("dialog", { name: "Tài khoản", exact: true });
+  await expect(account.getByRole("link", { name: "Hồ sơ cá nhân" })).toHaveAttribute("href", "/account");
+  await expect(account.getByRole("button", { name: "Đăng xuất" })).toBeVisible();
   await noOverflow(page);
 });

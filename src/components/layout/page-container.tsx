@@ -8,5 +8,5 @@ import { cn } from "@/lib/utils";
  * trình đọc màn hình đọc sai cấu trúc trang (Mốc 0B mục 0.7).
  */
 export function PageContainer({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mx-auto w-full min-w-0 space-y-4 px-4 py-4 sm:px-6 lg:space-y-5 lg:py-5", className)} {...props} />;
+  return <div className={cn("workspace-content mx-auto w-full min-w-0 space-y-4 px-4 py-4 sm:px-6 lg:space-y-5 lg:py-5", className)} {...props} />;
 }

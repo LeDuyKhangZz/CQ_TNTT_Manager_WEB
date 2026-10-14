@@ -20,7 +20,7 @@ export default async function DashboardPage() {
     >
       <PageHeader
         title="Tổng quan"
-        description={data.kpis?.academicYearCode ? `Năm học ${data.kpis.academicYearCode} · Trong phạm vi của bạn` : "Trong phạm vi của bạn"}
+        description={data.kpis?.academicYearCode ? `Năm học ${data.kpis.academicYearCode}` : undefined}
       />
       {data.audience === "guardian" ? (
         <div>

@@ -17,9 +17,17 @@ import { SignOutButton } from "./sign-out-button";
  * Đây cũng là chỗ trả một phần nợ #7: `Dropdown` là component đầu tiên của Đợt
  * 0-UI được đưa vào một menu chạy trong trang thật.
  */
-export function UserMenu({ viewer }: { viewer: ShellViewer }) {
+export function UserMenu({ viewer, onOpenAccount, accountOpen = false }: { viewer: ShellViewer; onOpenAccount?: () => void; accountOpen?: boolean }) {
   const roleLabel = viewer.role ? ROLE_LABELS[viewer.role] : "Chưa gán vai trò";
-  return (
+  return (<>
+    {onOpenAccount ? <>
+      <button type="button" onClick={onOpenAccount} aria-label={`Mở tài khoản của ${viewer.displayName}`} aria-haspopup="dialog" aria-expanded={accountOpen} aria-controls="mobile-account"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-ink lg:hidden">
+        <UserRound className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+      </button>
+      <noscript><Link href="/account" className="inline-flex min-h-11 items-center text-sm lg:hidden">Tài khoản</Link></noscript>
+    </> : null}
+    <div className={onOpenAccount ? "hidden lg:block" : undefined}>
     <Dropdown
       align="end"
       ariaLabel={`Menu tài khoản của ${viewer.displayName}`}
@@ -50,5 +58,7 @@ export function UserMenu({ viewer }: { viewer: ShellViewer }) {
       <DropdownSeparator />
       <SignOutButton />
     </Dropdown>
+    </div>
+    </>
   );
 }

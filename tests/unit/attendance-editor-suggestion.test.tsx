@@ -101,7 +101,7 @@ async function openRow(user: ReturnType<typeof userEvent.setup>, label: string) 
 
 /** Hàng nút của một cột — `<fieldset>` + `<legend>` cho ra role "group". */
 function column(label: string) {
-  return within(screen.getByRole("group", { name: label }));
+  return screen.getByRole("combobox", { name: label });
 }
 
 beforeEach(() => {
@@ -114,15 +114,12 @@ describe("AC-F13-3/AC-F13-4 — đơn xin nghỉ chỉ GỢI Ý", () => {
     renderEditor();
 
     // Đọc được ngay ở hàng gấp lại, không phải mở ra mới biết (D-143).
-    const row = within(screen.getByRole("button", { name: /Maria Trần Thị Hoa/ }));
-    expect(row.getByLabelText("Thánh lễ: Có mặt")).toBeInTheDocument();
-    expect(row.getByLabelText("Giáo lý: Có mặt")).toBeInTheDocument();
+    expect(column("Thánh lễ của Maria Trần Thị Hoa")).toHaveValue("present");
+    expect(column("Giáo lý của Maria Trần Thị Hoa")).toHaveValue("present");
 
     await openRow(user, "Maria Trần Thị Hoa");
-    expect(column("Thánh lễ của Maria Trần Thị Hoa").getByRole("radio", { name: "Có mặt" }))
-      .toBeChecked();
-    expect(column("Giáo lý của Maria Trần Thị Hoa").getByRole("radio", { name: "Có mặt" }))
-      .toBeChecked();
+    expect(column("Thánh lễ của Maria Trần Thị Hoa")).toHaveValue("present");
+    expect(column("Giáo lý của Maria Trần Thị Hoa")).toHaveValue("present");
   });
 
   it("chỉ em CÓ đơn mới hiện nút gợi ý", async () => {
@@ -131,11 +128,12 @@ describe("AC-F13-3/AC-F13-4 — đơn xin nghỉ chỉ GỢI Ý", () => {
 
     await openRow(user, "Maria Trần Thị Hoa");
     expect(screen.getAllByRole("button", { name: "Áp dụng gợi ý: Vắng có phép" })).toHaveLength(1);
-    expect(screen.getByText(/Có đơn xin nghỉ: Cháu về quê giỗ ông/)).toBeInTheDocument();
+    expect(screen.getByText(/Đơn xin nghỉ: Cháu về quê giỗ ông/)).toBeInTheDocument();
 
+    await user.keyboard("{Escape}");
     await openRow(user, "Anna Lê Bảo Trân");
-    // Mở thêm một em KHÔNG có đơn cũng không sinh ra nút thứ hai.
-    expect(screen.getAllByRole("button", { name: "Áp dụng gợi ý: Vắng có phép" })).toHaveLength(1);
+    // Chỉ sheet của em hiện tại xuất hiện.
+    expect(screen.queryByRole("button", { name: "Áp dụng gợi ý: Vắng có phép" })).toBeNull();
   });
 
   it("bấm gợi ý đặt CẢ HAI cột — đơn khai theo buổi, không theo từng phần", async () => {
@@ -145,17 +143,13 @@ describe("AC-F13-3/AC-F13-4 — đơn xin nghỉ chỉ GỢI Ý", () => {
     await openRow(user, "Maria Trần Thị Hoa");
     await user.click(screen.getByRole("button", { name: "Áp dụng gợi ý: Vắng có phép" }));
 
-    expect(
-      column("Thánh lễ của Maria Trần Thị Hoa").getByRole("radio", { name: "Vắng có phép" }),
-    ).toBeChecked();
-    expect(
-      column("Giáo lý của Maria Trần Thị Hoa").getByRole("radio", { name: "Vắng có phép" }),
-    ).toBeChecked();
+    expect(column("Thánh lễ của Maria Trần Thị Hoa")).toHaveValue("excused_absence");
+    expect(column("Giáo lý của Maria Trần Thị Hoa")).toHaveValue("excused_absence");
 
     // Em không có đơn không bị đụng tới — đọc ngay ở hàng gấp lại của em ấy.
+    await user.keyboard("{Escape}");
     await openRow(user, "Anna Lê Bảo Trân");
-    expect(column("Thánh lễ của Anna Lê Bảo Trân").getByRole("radio", { name: "Có mặt" }))
-      .toBeChecked();
+    expect(column("Thánh lễ của Anna Lê Bảo Trân")).toHaveValue("present");
   });
 
   it("gợi ý KHÔNG tự gửi đi — người điểm danh vẫn phải bấm Lưu", async () => {
@@ -180,11 +174,12 @@ describe("AC-F13-3/AC-F13-4 — đơn xin nghỉ chỉ GỢI Ý", () => {
 });
 
 describe("D-75 — ghi chú là ghi chú NỘI BỘ", () => {
-  it("thẻ danh sách nói thẳng phụ huynh không nhìn thấy", () => {
-    renderEditor();
+  it("sheet ghi chú nói thẳng phụ huynh không nhìn thấy", async () => {
+    const user = userEvent.setup(); renderEditor();
+    await openRow(user, "Maria Trần Thị Hoa");
 
     expect(
-      screen.getByText(/Ghi chú là ghi chú nội bộ — phụ huynh không nhìn thấy/),
+      within(screen.getByRole("dialog")).getByText("Phụ huynh không nhìn thấy."),
     ).toBeInTheDocument();
   });
 
@@ -199,9 +194,6 @@ describe("D-75 — ghi chú là ghi chú NỘI BỘ", () => {
     const noteInput = screen.getByLabelText(
       "Ghi chú nội bộ của Maria Trần Thị Hoa — phụ huynh không nhìn thấy",
     );
-    expect(noteInput).toHaveAttribute(
-      "placeholder",
-      "Ghi chú nội bộ — phụ huynh không nhìn thấy",
-    );
+    expect(noteInput).toHaveAccessibleName("Ghi chú nội bộ của Maria Trần Thị Hoa — phụ huynh không nhìn thấy");
   });
 });

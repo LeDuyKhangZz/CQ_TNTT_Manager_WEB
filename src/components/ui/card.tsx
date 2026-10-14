@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * component bị dùng nhiều nhất trong dự án và nới chữ ký của nó là mở một đường
  * để mọi thẻ HTML đi qua. Chỗ nào cần thẻ khác thì lấy chuỗi này.
  */
-export const cardClassName = "rounded-lg border border-line bg-surface text-ink";
+export const cardClassName = "erp-card rounded-lg border border-line bg-surface text-ink";
 
 /**
  * Operational panel: shared 8px radius, 16px padding, border without shadow.
@@ -25,7 +25,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("space-y-1 p-4", className)} {...props} />;
+  return <div className={cn("erp-card-header space-y-1 p-4", className)} {...props} />;
 }
 
 /**
@@ -48,7 +48,7 @@ export function CardDescription({ className, ...props }: React.HTMLAttributes<HT
 }
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-4 pt-0", className)} {...props} />;
+  return <div className={cn("erp-card-content p-4 pt-0", className)} {...props} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -91,7 +91,7 @@ export function panelClassName({
 }: Pick<PanelProps, "variant" | "padding"> = {}): string {
   return cn(
     "rounded-md border border-line",
-    variant === "muted" ? "bg-surface-muted" : "bg-transparent",
+    variant === "muted" ? "bg-surface-muted" : "erp-list-row bg-transparent",
     padding === "md" ? "p-4" : padding === "sm" ? "p-3" : "",
   );
 }

@@ -21,7 +21,7 @@ export default async function ReportsPage({
     <PageContainer>
       <PageHeader
         title="Báo cáo"
-        description="Xem theo tuần, tháng hoặc năm học; xuất Excel/PDF và chốt bản không đổi để lưu 5 năm."
+        help="Xem theo tuần, tháng hoặc năm học; xuất Excel/PDF và chốt bản không đổi để lưu 5 năm."
       />
       <ReportWorkbench data={data} filterWarning={invalidFilterMessage(invalidKeys)} />
     </PageContainer>

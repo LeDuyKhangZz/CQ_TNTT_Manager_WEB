@@ -261,6 +261,10 @@ html { scroll-padding-top: 80px; scroll-padding-bottom: 96px; }
     animation: drawer-enter-sheet var(--duration-slow) var(--ease-out);
   }
 
+  .bottom-sheet-enter {
+    animation: drawer-enter-sheet var(--duration-slow) var(--ease-out);
+  }
+
   .drawer-overlay-enter {
     animation: drawer-enter-overlay var(--duration-base) var(--ease-out);
   }
@@ -304,6 +308,25 @@ html { scroll-padding-top: 80px; scroll-padding-bottom: 96px; }
   }
   to {
     transform: translateY(0);
+  }
+}
+
+/* Phone workspaces use flat sections and list separators, without nested cards. */
+@media (max-width: 767px) {
+  .workspace-content .erp-card {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .workspace-content .erp-card-header { padding: 12px 0; }
+  .workspace-content .erp-card-content { padding-left: 0; padding-right: 0; }
+  .workspace-content .erp-list-row {
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 

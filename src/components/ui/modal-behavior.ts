@@ -61,11 +61,13 @@ export function useModalBehavior({
   onClose,
   panelRef,
   initialFocus = "panel",
+  returnFocusRef,
 }: {
   open: boolean;
   onClose: () => void;
   panelRef: React.RefObject<HTMLElement | null>;
   initialFocus?: InitialFocus;
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
 }): void {
   const isTopLayer = useDismissLayer(open, panelRef, true);
   // Yêu cầu 1 + 4 + 5.
@@ -73,6 +75,7 @@ export function useModalBehavior({
     if (!open) return;
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
+    const explicitReturnTarget = returnFocusRef?.current;
     const panel = panelRef.current;
 
     if (panel) {
@@ -87,9 +90,10 @@ export function useModalBehavior({
     return () => {
       scrollLocks -= 1;
       if (scrollLocks === 0) document.body.style.overflow = savedOverflow;
-      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+      const returnTarget = explicitReturnTarget ?? previouslyFocused;
+      if (returnTarget?.isConnected) returnTarget.focus();
     };
-  }, [open, panelRef, initialFocus]);
+  }, [open, panelRef, initialFocus, returnFocusRef]);
 
   // Yêu cầu 2 + 3.
   React.useEffect(() => {

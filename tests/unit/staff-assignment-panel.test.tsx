@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -44,7 +45,7 @@ const CLASSES = [
 ];
 
 function renderPanel(overrides: Partial<Parameters<typeof StaffAssignmentPanel>[0]> = {}) {
-  return render(
+  const view = render(
     <StaffAssignmentPanel
       staffProfileId="staff-1"
       staffName="Anh Giuse Trần Văn B"
@@ -56,6 +57,9 @@ function renderPanel(overrides: Partial<Parameters<typeof StaffAssignmentPanel>[
       {...overrides}
     />,
   );
+  const trigger = screen.queryByRole("button", { name: /^(Quản lý phân công|Phân công vào lớp)$/ });
+  if (trigger) fireEvent.click(trigger);
+  return view;
 }
 
 beforeEach(() => {
@@ -68,7 +72,7 @@ describe('AC-03.1 — hộp xác nhận "Kết thúc phân công" nói ĐÚNG h�
     renderPanel();
     await user.click(screen.getByRole("button", { name: "Kết thúc phân công" }));
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: /^(Chuyển lớp|Kết thúc phân công\?)$/ });
     expect(dialog).toHaveTextContent("Anh Giuse Trần Văn B");
     expect(dialog).toHaveTextContent("Ấu 1A");
     // Đây là điều nút cũ giấu — C5 = 1 của M04-F05.
@@ -90,7 +94,7 @@ describe('AC-03.1 — hộp xác nhận "Kết thúc phân công" nói ĐÚNG h�
     const user = userEvent.setup();
     renderPanel({ hasAccount: false });
     await user.click(screen.getByRole("button", { name: "Kết thúc phân công" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: /^(Chuyển lớp|Kết thúc phân công\?)$/ });
     expect(dialog).toHaveTextContent("Ấu 1A");
     expect(dialog).not.toHaveTextContent(/vô hiệu hoá vai trò đăng nhập/i);
   });
@@ -101,7 +105,7 @@ describe("D-105 — hộp thoại Chuyển lớp tự nó là lời xác nhận"
     const user = userEvent.setup();
     renderPanel();
     await user.click(screen.getByRole("button", { name: "Chuyển lớp" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: /^(Chuyển lớp|Kết thúc phân công\?)$/ });
 
     await user.selectOptions(screen.getByLabelText("Lớp mới"), "class-thieu-2b");
 
@@ -122,7 +126,7 @@ describe("D-105 — hộp thoại Chuyển lớp tự nó là lời xác nhận"
     await user.clear(effective);
     await user.type(effective, "2026-11-01");
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /^(Chuyển lớp|Kết thúc phân công\?)$/ });
     expect(dialog).toHaveTextContent("31/10/2026");
     expect(dialog).toHaveTextContent("01/11/2026");
   });
@@ -138,7 +142,7 @@ describe("D-105 — hộp thoại Chuyển lớp tự nó là lời xác nhận"
     await user.click(screen.getByRole("button", { name: "Chuyển lớp" }));
     await user.selectOptions(screen.getByLabelText("Lớp mới"), "class-thieu-2b");
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /^(Chuyển lớp|Kết thúc phân công\?)$/ });
     expect(dialog).toHaveTextContent(/Vai trò đăng nhập chuyển từ/i);
     expect(dialog).not.toHaveTextContent(/chưa có tài khoản đăng nhập/i);
   });
@@ -149,7 +153,7 @@ describe("D-105 — hộp thoại Chuyển lớp tự nó là lời xác nhận"
     await user.click(screen.getByRole("button", { name: "Chuyển lớp" }));
     await user.selectOptions(screen.getByLabelText("Lớp mới"), "class-thieu-2b");
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /^(Chuyển lớp|Kết thúc phân công\?)$/ });
     expect(dialog).toHaveTextContent(/chưa có tài khoản đăng nhập/i);
     expect(dialog).not.toHaveTextContent(/Vai trò đăng nhập chuyển từ/i);
   });
@@ -221,7 +225,7 @@ describe("D-105 — hộp thoại Chuyển lớp tự nó là lời xác nhận"
 
     expect(await screen.findByText(/đã có Giáo lý viên đại diện/)).toBeInTheDocument();
     // Hộp thoại KHÔNG đóng khi lỗi — đóng đi là mất luôn câu lỗi và các ô đã điền.
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /^(Chuyển lớp|Kết thúc phân công\?)$/ })).toBeInTheDocument();
   });
 });
 

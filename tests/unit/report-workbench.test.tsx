@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -80,6 +81,7 @@ beforeEach(() => {
 describe("D-171 — ô chọn kỳ của báo cáo Kết quả học tập", () => {
   it("báo cáo Chuyên cần vẫn cho chọn kỳ và ngày trong kỳ", () => {
     render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.getByRole("combobox", { name: "Kỳ báo cáo" })).toBeInTheDocument();
     expect(screen.getByLabelText("Ngày trong kỳ")).toBeInTheDocument();
   });
@@ -91,6 +93,7 @@ describe("D-171 — ô chọn kỳ của báo cáo Kết quả học tập", () 
         filterWarning={null}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.queryByRole("combobox", { name: "Kỳ báo cáo" })).not.toBeInTheDocument();
     expect(screen.getByText("Báo cáo Kết quả học tập luôn tính cho cả năm học.")).toBeInTheDocument();
   });
@@ -102,6 +105,7 @@ describe("D-171 — ô chọn kỳ của báo cáo Kết quả học tập", () 
         filterWarning={null}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.queryByLabelText("Ngày trong kỳ")).not.toBeInTheDocument();
   });
 });
@@ -110,19 +114,21 @@ describe("D-172 / AC-B09 — hộp xác nhận trước khi chốt", () => {
   it("🔴 bấm 'Chốt báo cáo' MỞ HỘP chứ không ghi ngay", async () => {
     const user = userEvent.setup();
     render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
 
     await user.click(screen.getByRole("button", { name: "Chốt báo cáo" }));
 
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /Chốt/ })).toBeInTheDocument();
     expect(snapshotAction).not.toHaveBeenCalled();
   });
 
   it("hộp nêu hậu quả BẰNG TÊN RIÊNG: loại · kỳ · khoảng ngày · phạm vi · số dòng", async () => {
     const user = userEvent.setup();
     render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     await user.click(screen.getByRole("button", { name: "Chốt báo cáo" }));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /Chốt/ });
     expect(dialog).toHaveTextContent("Chuyên cần");
     expect(dialog).toHaveTextContent("Tháng");
     expect(dialog).toHaveTextContent("Lớp Ấu 1A");
@@ -133,21 +139,23 @@ describe("D-172 / AC-B09 — hộp xác nhận trước khi chốt", () => {
   it("🔴 bấm Huỷ thì KHÔNG có hàng nào được tạo — hộp không phải đồ trang trí", async () => {
     const user = userEvent.setup();
     render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     await user.click(screen.getByRole("button", { name: "Chốt báo cáo" }));
     await user.click(screen.getByRole("button", { name: "Huỷ" }));
 
     expect(snapshotAction).not.toHaveBeenCalled();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /Chốt/ })).not.toBeInTheDocument();
   });
 
   it("xác nhận rồi mới gọi Server Action, và gửi ĐÚNG bộ lọc đang hiển thị (D-52)", async () => {
     const user = userEvent.setup();
     const data = pageData();
     render(<ReportWorkbench data={data} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     await user.click(screen.getByRole("button", { name: "Chốt báo cáo" }));
     // Hộp mở ra thì có HAI nút cùng tên: nút mở hộp và nút xác nhận trong hộp.
     // Nút xác nhận là nút nằm trong `role="dialog"`.
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /Chốt/ });
     await user.click(within(dialog).getByRole("button", { name: "Chốt báo cáo" }));
 
     expect(snapshotAction).toHaveBeenCalledTimes(1);
@@ -159,9 +167,10 @@ describe("D-172 — hộp nhận ra bản chốt trùng", () => {
   it("không có bản trùng thì không có dòng cảnh báo nào", async () => {
     const user = userEvent.setup();
     render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     await user.click(screen.getByRole("button", { name: "Chốt báo cáo" }));
 
-    expect(screen.getByRole("dialog")).not.toHaveTextContent("bản chốt trùng");
+    expect(screen.getByRole("dialog", { name: /Chốt/ })).not.toHaveTextContent("bản chốt trùng");
   });
 
   it("🔴 có bản trùng thì nói ra SỐ BẢN, NGÀY và TÊN người chốt", async () => {
@@ -179,9 +188,10 @@ describe("D-172 — hộp nhận ra bản chốt trùng", () => {
         filterWarning={null}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     await user.click(screen.getByRole("button", { name: "Chốt báo cáo" }));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /Chốt/ });
     expect(dialog).toHaveTextContent("Đã có 2 bản chốt trùng");
     expect(dialog).toHaveTextContent("Trưởng ngành Ấu");
     expect(dialog).toHaveTextContent("12/09/2026");
@@ -203,9 +213,10 @@ describe("D-172 — hộp nhận ra bản chốt trùng", () => {
         filterWarning={null}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     await user.click(screen.getByRole("button", { name: "Chốt báo cáo" }));
 
-    expect(screen.getByRole("dialog")).toHaveTextContent("Đã có 1 bản chốt trùng");
+    expect(screen.getByRole("dialog", { name: /Chốt/ })).toHaveTextContent("Đã có 1 bản chốt trùng");
   });
 });
 
@@ -221,10 +232,12 @@ describe("M11-C — trạng thái rỗng và dòng tóm tắt", () => {
     const { unmount } = render(
       <ReportWorkbench data={pageData({ rows: [], reason: "out_of_scope" })} filterWarning={null} />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.getByText("Phạm vi này nằm ngoài phần bạn phụ trách")).toBeInTheDocument();
     unmount();
 
     render(<ReportWorkbench data={pageData({ rows: [], reason: "empty" })} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.getByText("Chưa có số liệu trong khoảng thời gian này")).toBeInTheDocument();
   });
 
@@ -235,12 +248,14 @@ describe("M11-C — trạng thái rỗng và dòng tóm tắt", () => {
         filterWarning={null}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.getByText(/Lớp Ấu 1A — Trong khoảng này chưa có buổi điểm danh nào được chốt/))
       .toBeInTheDocument();
   });
 
   it("AC-B15 — số dòng kết quả nằm trong vùng aria-live", () => {
     const { container } = render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     const live = container.querySelector("[aria-live='polite']");
     expect(live).not.toBeNull();
     expect(live).toHaveTextContent("2 dòng");
@@ -249,11 +264,13 @@ describe("M11-C — trạng thái rỗng và dòng tóm tắt", () => {
 
   it("AC-B15 — bảng có caption nêu đúng loại, phạm vi và khoảng ngày", () => {
     const { container } = render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(container.querySelector("caption")).toHaveTextContent("Chuyên cần · Lớp Ấu 1A");
   });
 
   it("TB-06 — có đường vào kho bản chốt ngay trên trang", () => {
     render(<ReportWorkbench data={pageData()} filterWarning={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.getByRole("link", { name: "Mở kho bản chốt" }))
       .toHaveAttribute("href", "/reports/snapshots");
   });
@@ -267,6 +284,7 @@ describe("ranh giới của nút Chốt — không hồi quy M11-A", () => {
         filterWarning={null}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.queryByRole("button", { name: "Chốt báo cáo" })).not.toBeInTheDocument();
   });
 
@@ -277,6 +295,7 @@ describe("ranh giới của nút Chốt — không hồi quy M11-A", () => {
         filterWarning={null}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Lọc báo cáo" }));
     expect(screen.getByRole("button", { name: "Chốt báo cáo" })).toBeDisabled();
     expect(screen.getByText(/chỉ chốt được báo cáo trong phạm vi lớp hoặc ngành mình phụ trách/))
       .toBeInTheDocument();

@@ -184,7 +184,7 @@ describe("Phiếu đang mượn — nhận lại hàng KHÔNG phải báo hỏng
     expect(receiveEquipment.mock.calls[0][0]).toMatchObject({ loanId: "loan-1", quantity: 3 });
     // Nhận lại hàng không phá huỷ gì nên KHÔNG chèn hộp xác nhận vào đường đi
     // thường ngày của người trực kho.
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /\?$/ })).toBeNull();
   });
 
   it("phiếu còn nợ thì câu báo kết quả nói rõ còn nợ bao nhiêu (D-61)", async () => {
@@ -215,7 +215,7 @@ describe("Báo hỏng/mất — hộp xác nhận là hàng rào DUY NHẤT (D-9
     renderBoard();
     await openWriteOffForm(user);
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /\?$/ });
     expect(within(dialog).getByText(/Bộ dây tín hiệu/)).toBeInTheDocument();
     expect(dialog).toHaveTextContent("Tổng kho giảm từ 5 xuống 3");
     expect(dialog).toHaveTextContent("không hoàn tác được");
@@ -227,9 +227,9 @@ describe("Báo hỏng/mất — hộp xác nhận là hàng rào DUY NHẤT (D-9
     await openWriteOffForm(user);
 
     expect(writeOffEquipment).not.toHaveBeenCalled();
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Huỷ" }));
+    await user.click(within(screen.getByRole("dialog", { name: /\?$/ })).getByRole("button", { name: "Huỷ" }));
     expect(writeOffEquipment).not.toHaveBeenCalled();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /\?$/ })).toBeNull();
   });
 
   it("xác nhận rồi mới gửi đúng số và ghi chú xuống server", async () => {
@@ -238,7 +238,7 @@ describe("Báo hỏng/mất — hộp xác nhận là hàng rào DUY NHẤT (D-9
     await openWriteOffForm(user);
 
     await user.click(
-      within(screen.getByRole("dialog")).getByRole("button", { name: "Báo hỏng/mất 2 cái" }),
+      within(screen.getByRole("dialog", { name: /\?$/ })).getByRole("button", { name: "Báo hỏng/mất 2 cái" }),
     );
     expect(writeOffEquipment).toHaveBeenCalledTimes(1);
     expect(writeOffEquipment.mock.calls[0][0]).toEqual({
@@ -255,7 +255,7 @@ describe("Báo hỏng/mất — hộp xác nhận là hàng rào DUY NHẤT (D-9
     await openWriteOffForm(user);
 
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /\?$/ })).toBeNull();
     expect(writeOffEquipment).not.toHaveBeenCalled();
   });
 });
@@ -270,7 +270,7 @@ describe("Đổi tổng kho — TB-M09-04 + D-98", () => {
     await user.type(screen.getByLabelText("Số cái nhập thêm"), "5");
     await user.click(screen.getByRole("button", { name: "Ghi nhận nhập thêm" }));
 
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /\?$/ })).toBeNull();
     expect(adjustEquipmentStock).toHaveBeenCalledTimes(1);
     expect(adjustEquipmentStock.mock.calls[0][0]).toMatchObject({ delta: 5, reason: "purchase" });
 
@@ -280,7 +280,7 @@ describe("Đổi tổng kho — TB-M09-04 + D-98", () => {
     await user.type(screen.getByLabelText("Ghi chú (bắt buộc)"), "Cháy khi cất kho");
     await user.click(screen.getByRole("button", { name: "Ghi nhận giảm tồn kho" }));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("dialog", { name: /\?$/ });
     expect(dialog).toHaveTextContent("giảm từ 5 xuống 3");
     expect(adjustEquipmentStock).toHaveBeenCalledTimes(1);
 

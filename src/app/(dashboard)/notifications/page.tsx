@@ -21,7 +21,7 @@ export default async function NotificationsPage({
     >
       <PageHeader
         title="Thông báo"
-        description="Danh sách người nhận được chốt ngay khi gửi, nên số chưa đọc không đổi khi bạn chuyển lớp hay đổi vai trò."
+        help="Danh sách người nhận được chốt ngay khi gửi, nên số chưa đọc không đổi khi bạn chuyển lớp hay đổi vai trò."
       />
       <NotificationCenter data={data} />
     </PageContainer>

@@ -33,7 +33,7 @@ export function StudentMobileFilters({ data, open, defaultStatus }: {
       </Link>
     </div>
     <div className="flex flex-wrap gap-1" aria-label="Bộ lọc đang áp dụng">
-      {groups.flatMap(group=>group.selected.map(value=>{
+      {groups.flatMap(group=>group.selected.filter(value => !(group.name === "status" && value === defaultStatus && group.selected.length === 1)).map(value=>{
         const field = group.name === "sector" ? "sectorIds" : group.name === "class" ? "classIds" : "statuses";
         const next = {...criteria,[field]:group.selected.filter(item=>item!==value)};
         const label = group.options.find(item=>item.value===value)?.label ?? value;

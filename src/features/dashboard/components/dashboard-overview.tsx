@@ -69,9 +69,8 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
           {isStudent ? (
             <Section id="dashboard-self-attendance" title="Điểm danh của tôi">
               <div className="text-sm">
-                <p className="text-ink-muted">Xem lại từng buổi Thánh lễ và Giáo lý đã được chốt.</p>
                 <Link href="/student/attendance" className="inline-flex min-h-11 items-center text-theme-accent-text hover:underline">
-                  Mở trang điểm danh của tôi
+                  Xem điểm danh
                 </Link>
               </div>
             </Section>
@@ -80,23 +79,19 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
           <Section
             id="dashboard-attendance-attention"
             title={isStaff ? "Cần quan tâm" : "Nhắc nhở chuyên cần"}
-            description={aggregateOnly
-              ? "Số liệu tổng hợp của cả xứ đoàn."
-              : isStaff
-                ? `${data.kpis.warnedStudentCount} em đang có cảnh báo chuyên cần.`
-                : "Những buổi vắng liên tiếp mà Xứ đoàn đang lưu ý."}
+            description={!aggregateOnly && isStaff && data.kpis.warnedStudentCount > 0
+              ? `${data.kpis.warnedStudentCount} em cần theo dõi chuyên cần` : undefined}
           >
             {aggregateOnly ? (
               <div className="max-w-3xl space-y-2 text-sm">
-                <p className="font-semibold tabular-nums text-ink">{data.kpis.warnedStudentCount}</p>
+                <p className="text-ink"><strong className="tabular-nums">{data.kpis.warnedStudentCount}</strong> em cần theo dõi chuyên cần</p>
                 <p className="text-ink-muted">
-                  em đang có cảnh báo chuyên cần. Vai trò Thủ quỹ xem được số tổng hợp;
-                  danh sách tên từng em thuộc quyền của Ban điều hành và giáo lý viên phụ trách.
+                  Thủ quỹ chỉ xem số tổng hợp.
                 </p>
               </div>
             ) : data.atRisk.length === 0 ? (
               <p className="text-sm text-ink-muted">
-                {isStaff ? "Không có em nào cần lưu ý trong phạm vi của bạn." : "Không có nhắc nhở nào."}
+                {isStaff ? (data.kpis.warnedStudentCount > 0 ? "Chưa có danh sách chi tiết." : "Không có cảnh báo chuyên cần.") : "Không có nhắc nhở."}
               </p>
             ) : (
               <ul className="divide-y divide-line">
@@ -126,9 +121,9 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
             <Section id="dashboard-incomplete-profiles" title="Hồ sơ thiếu dữ liệu">
               <div className="text-sm">
                 <p className="text-ink-muted">
-                  <span className="font-semibold tabular-nums text-ink">{data.incompleteProfileCount}</span> hồ sơ còn thiếu số điện thoại phụ huynh, bổn mạng hoặc địa chỉ.
+                  <span className="font-semibold tabular-nums text-ink">{data.incompleteProfileCount}</span> hồ sơ cần bổ sung
                 </p>
-                <Link href="/students" className="inline-flex min-h-11 items-center text-theme-accent-text hover:underline">Mở danh sách thiếu nhi</Link>
+                <Link href="/students" className="inline-flex min-h-11 items-center text-theme-accent-text hover:underline">Xem danh sách</Link>
               </div>
             </Section>
           ) : null}
@@ -136,9 +131,9 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
 
         {!aggregateOnly ? (
           <div className="min-w-0 space-y-5">
-            <Section id="dashboard-upcoming" title="Buổi học sắp tới" description="Ba tuần tới, kèm các buổi có kiểm tra.">
+            <Section id="dashboard-upcoming" title="Buổi học sắp tới" action={<span className="text-sm text-ink-muted">3 tuần tới</span>}>
               {data.upcoming.length === 0 ? (
-                <p className="text-sm text-ink-muted">Chưa có bài nào được xếp lịch.</p>
+                <p className="text-sm text-ink-muted">Chưa có lịch học.</p>
               ) : (
                 <ul className="divide-y divide-line">
                   {data.upcoming.map((item) => (
@@ -157,7 +152,7 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
             {showNamedLists ? (
               <Section id="dashboard-committee-work" title="Công việc Ban">
                 {data.committeeTasks.length === 0 ? (
-                  <p className="text-sm text-ink-muted">Ban của bạn chưa đăng công việc tuần.</p>
+                  <p className="text-sm text-ink-muted">Chưa có việc tuần này.</p>
                 ) : (
                   <ul className="divide-y divide-line">
                     {data.committeeTasks.map((task) => (
@@ -211,7 +206,7 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
         </Section>
 
         {showNamedLists ? (
-          <Section id="dashboard-celebrations" title="Sinh nhật và bổn mạng" description="Trong 30 ngày tới.">
+          <Section id="dashboard-celebrations" title="Sinh nhật và bổn mạng" action={<span className="text-sm text-ink-muted">30 ngày tới</span>}>
             {data.celebrations.length === 0 ? (
               <p className="text-sm text-ink-muted">Không có dịp nào sắp tới.</p>
             ) : (
@@ -231,8 +226,8 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
       {isStudent && data.atRisk.length === 0 && data.kpis.massRate === null ? (
         <EmptyState
           variant="not-linked"
-          title="Chưa có buổi điểm danh nào được chốt cho em"
-          description="Khi giáo lý viên chốt buổi điểm danh đầu tiên, số liệu của em sẽ hiện ở đây."
+          title="Chưa có điểm danh đã chốt"
+          description="Số liệu sẽ hiện sau khi giáo lý viên chốt buổi học."
         />
       ) : null}
     </div>

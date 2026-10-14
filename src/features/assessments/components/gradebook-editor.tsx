@@ -1,5 +1,8 @@
 "use client";
 
+import { SectionSwitcher } from "@/components/ui/section-switcher";
+import { ActionSheet } from "@/components/ui/task-sheet";
+
 import { useCallback, useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useUnsavedChangesGuard } from "@/components/shared/use-unsaved-changes-guard";
@@ -1410,30 +1413,22 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
         />
       </Card>
 
-      <nav aria-label="Nội dung bảng điểm" className="flex flex-wrap gap-x-4 border-b border-line text-sm">
-        <a href="#gradebook-scores" className="inline-flex min-h-11 items-center font-medium text-theme-accent-text hover:underline">Nhập điểm</a>
-        <a href="#gradebook-average" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Trung bình</a>
-        {detail.canGrade ? <a href="#gradebook-columns" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Cấu hình cột điểm</a> : null}
-        <a href="#gradebook-comments" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Nhận xét</a>
-        <a href="#gradebook-top5" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Top 5</a>
-      </nav>
-
+      <SectionSwitcher label="Nội dung bảng điểm" sections={[
+        { id: "scores", label: "Nhập điểm", content: <>
       {detail.assessments.length === 0 ? (
         <Card id="gradebook-scores" className="scroll-mt-20"><CardContent className="pt-4 text-sm text-ink-muted">Lớp chưa tạo cột điểm. Đây là trạng thái hợp lệ; không có cột bắt buộc.</CardContent></Card>
       ) : (
         <section id="gradebook-scores" className="scroll-mt-20 space-y-3">
           <h2 className="text-lg font-semibold">Nhập điểm</h2>
-          <nav aria-label="Các cột điểm" className="flex flex-wrap gap-x-3 text-sm">
-            {detail.assessments.map((assessment) => <a key={assessment.id} href={`#assessment-${assessment.id}`} className="inline-flex min-h-11 items-center text-theme-accent-text underline-offset-4 hover:underline">{assessment.title}</a>)}
-          </nav>
-          {/* R1.6 (redesign 2C): trước đây danh sách này render HAI lần
-              (`hidden md:block` + `md:hidden`) với nội dung y hệt — di tích của
-              một hướng responsive đã bỏ, chỉ còn tác dụng nhân đôi DOM. */}
-          <div className="space-y-4">{detail.assessments.map((assessment) => <ScoreColumnForm key={assessment.id} detail={detail} assessment={assessment} />)}</div>
+          <SectionSwitcher label="Các cột điểm" sections={detail.assessments.map((assessment) => ({
+            id: assessment.id, label: assessment.title,
+            content: <ScoreColumnForm detail={detail} assessment={assessment} />,
+          }))} />
         </section>
       )}
 
-      <Card id="gradebook-average" className="scroll-mt-20">
+        </> },
+        { id: "average", label: "Trung bình", content: <Card id="gradebook-average" className="scroll-mt-20">
         <CardHeader><CardTitle>Điểm trung bình có trọng số</CardTitle><CardDescription>Chỉ tính các ô đã nhập; thay hệ số cập nhật kết quả ngay.</CardDescription></CardHeader>
         <CardContent>
           <DataTable
@@ -1452,10 +1447,10 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
         </CardContent>
       </Card>
 
-      {detail.canGrade ? (
-        <section id="gradebook-columns" className="scroll-mt-20 space-y-3">
+      },
+      ...(detail.canGrade ? [{ id: "columns", label: "Cột điểm", content: <section id="gradebook-columns" className="scroll-mt-20 space-y-3">
           <h2 className="text-lg font-semibold">Cấu hình cột điểm</h2>
-          {!detail.isLocked ? <NewAssessmentForm detail={detail} /> : null}
+          {!detail.isLocked ? <ActionSheet title="Thêm cột điểm"><NewAssessmentForm detail={detail} /></ActionSheet> : null}
           {detail.assessments.map((assessment) => (
             <AssessmentSettings
               key={assessment.id}
@@ -1465,12 +1460,10 @@ export function GradebookEditor({ detail }: { detail: GradebookDetail }) {
             />
           ))}
           <HiddenAssessmentsPanel detail={detail} onRestored={(text) => setColumnMessage({ tone: "success", text })} />
-        </section>
-      ) : null}
-
-      <div id="gradebook-comments" className="scroll-mt-20"><StudentCommentsPanel detail={detail} /></div>
-
-      <div id="gradebook-top5" className="scroll-mt-20"><LeaderboardPanel detail={detail} /></div>
+        </section> }] : []),
+        { id: "comments", label: "Nhận xét", content: <StudentCommentsPanel detail={detail} /> },
+        { id: "top5", label: "Top 5", content: <LeaderboardPanel detail={detail} /> },
+      ]} />
     </div>
   );
 }

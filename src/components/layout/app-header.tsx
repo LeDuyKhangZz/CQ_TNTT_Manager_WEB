@@ -1,4 +1,4 @@
-import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Grid2X2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { buildBreadcrumbTrail } from "@/config/navigation";
 import { AcademicYearSwitcher, type AcademicYearOption } from "./academic-year-switcher";
@@ -16,7 +16,7 @@ import type { ShellViewer } from "@/lib/auth/types";
  * thật. Ở mobile, tiêu đề nằm trong main; thanh68px dành chỗ cho bộ chọn năm
  * và các thao tác, tránh ép breadcrumb thành một vài ký tự không đọc được.
  */
-export function AppHeader({ viewer, title, pathname, notificationBell, academicYear, yearControl, onOpenMenu, onToggleSidebar, sidebarCollapsed = false, menuOpen = false, menuHint }: { viewer: ShellViewer; title: string; pathname: string; notificationBell: React.ReactNode; academicYear: AcademicYearOption | null; yearControl?: React.ReactNode; onOpenMenu: () => void; onToggleSidebar?: () => void; sidebarCollapsed?: boolean; menuOpen?: boolean; menuHint?: React.ReactNode }) {
+export function AppHeader({ viewer, title, pathname, notificationBell, academicYear, yearControl, onOpenMenu, onOpenAccount, accountOpen, onToggleSidebar, sidebarCollapsed = false, menuOpen = false }: { viewer: ShellViewer; title: string; pathname: string; notificationBell: React.ReactNode; academicYear: AcademicYearOption | null; yearControl?: React.ReactNode; onOpenMenu: () => void; onOpenAccount?: () => void; accountOpen?: boolean; onToggleSidebar?: () => void; sidebarCollapsed?: boolean; menuOpen?: boolean }) {
   return (
     // 🔴 Nền ĐẶC, không phải `bg-page/95`. Token màu là `var()` trần nên
     // Tailwind KHÔNG sinh nổi lớp có bổ ngữ độ mờ: `.bg-page\/95` của bản
@@ -26,10 +26,9 @@ export function AppHeader({ viewer, title, pathname, notificationBell, academicY
     <header className="sticky top-0 z-header bg-page">
       <div className="flex min-h-16 items-center gap-2 px-4 sm:px-6">
         <button type="button" onClick={onOpenMenu} className="flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center rounded-md text-ink-muted hover:bg-surface-muted lg:hidden" aria-label="Mở menu" aria-expanded={menuOpen} aria-controls="mobile-navigation">
-          <Menu className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+          <Grid2X2 className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
           <span className="text-2xs font-medium leading-4">Menu</span>
         </button>
-        {menuHint}
         {onToggleSidebar ? <button type="button" onClick={onToggleSidebar}
           className="hidden min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-surface-muted lg:inline-flex"
           aria-label={sidebarCollapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
@@ -46,7 +45,7 @@ export function AppHeader({ viewer, title, pathname, notificationBell, academicY
         {/* Nút chuông đi vào đây dưới dạng node dựng sẵn ở máy chủ (M14 A-16),
             nên header không cần biết con số chưa đọc và không phải chờ nó. */}
         {notificationBell}
-        <UserMenu viewer={viewer} />
+        <UserMenu viewer={viewer} onOpenAccount={onOpenAccount} accountOpen={accountOpen} />
       </div>
       {/* Dải màu ngành 4px — hướng thiết kế "Sân Giáo Xứ" đã duyệt (`11` §1) và
           là **nơi số 1** trong 12 nơi được dùng `--theme-*` (09 §4.4). Đây là

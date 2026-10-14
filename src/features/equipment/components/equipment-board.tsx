@@ -1,4 +1,5 @@
 "use client";
+import { ActionSheet, TaskSheet, TaskFeedbackProvider } from "@/components/ui/task-sheet";
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent, type ReactNode } from "react";
@@ -287,7 +288,8 @@ function ItemRow({
       </div>
 
       {panel === "borrow" ? (
-        <form onSubmit={submitBorrow} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-2">
+        <TaskSheet open onClose={() => setPanel(null)} title="Cho mượn">
+<form onSubmit={submitBorrow} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`borrower-${item.id}`}>Người mượn</Label>
             {/* D-94 · AC-M09-30: mọi nhân sự xứ đoàn, không chỉ thành viên Ban
@@ -320,10 +322,12 @@ function ItemRow({
           </div>
           <div className="md:col-span-2"><Button type="submit" pending={pending}>Ghi nhận mượn</Button></div>
         </form>
+</TaskSheet>
       ) : null}
 
       {panel === "increase" || panel === "decrease" ? (
-        <StockAdjustForm
+        <TaskSheet open onClose={() => setPanel(null)} title={panel === "increase" ? "Nhập thêm thiết bị" : "Giảm tồn kho"}>
+<StockAdjustForm
           item={item}
           direction={panel}
           pending={pending}
@@ -331,10 +335,12 @@ function ItemRow({
           askConfirm={askConfirm}
           onDone={() => setPanel(null)}
         />
+</TaskSheet>
       ) : null}
 
       {panel === "edit" ? (
-        <form onSubmit={submitEdit} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-2">
+        <TaskSheet open onClose={() => setPanel(null)} title="Sửa thiết bị">
+<form onSubmit={submitEdit} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`name-${item.id}`}>Tên thiết bị</Label>
             <Input id={`name-${item.id}`} name="name" defaultValue={item.name} required maxLength={200} />
@@ -364,6 +370,7 @@ function ItemRow({
           </Checkbox>
           <div className="md:col-span-2"><Button type="submit" pending={pending}>Lưu thiết bị</Button></div>
         </form>
+</TaskSheet>
       ) : null}
     </li>
   );
@@ -484,7 +491,8 @@ function OpenLoanCard({
       </div>
 
       {panel === "receive" ? (
-        <form onSubmit={submitReceive} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-3">
+        <TaskSheet open onClose={() => setPanel(null)} title="Nhận lại hàng">
+<form onSubmit={submitReceive} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor={`receive-qty-${loan.id}`}>Số cái nhận lại</Label>
             <Input
@@ -517,10 +525,12 @@ function OpenLoanCard({
             Tổng kho không đổi. Phiếu chỉ đóng khi nhận đủ {loan.outstandingQuantity} cái còn nợ.
           </p>
         </form>
+</TaskSheet>
       ) : null}
 
       {panel === "write_off" ? (
-        <form onSubmit={submitWriteOff} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-3">
+        <TaskSheet open onClose={() => setPanel(null)} title="Báo hỏng/mất">
+<form onSubmit={submitWriteOff} className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor={`writeoff-qty-${loan.id}`}>Số cái hỏng/mất</Label>
             <Input
@@ -555,6 +565,7 @@ function OpenLoanCard({
             Tổng kho sẽ giảm và không hoàn tác được. Hệ thống hỏi lại một lần trước khi ghi.
           </p>
         </form>
+</TaskSheet>
       ) : null}
     </div>
   );
@@ -618,6 +629,7 @@ export function EquipmentBoard({
   const closedLoans = board.loans.filter((loan) => loan.status === "returned");
 
   return (
+    <TaskFeedbackProvider value={message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}>
     <div className="space-y-4" data-density="compact">
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
 
@@ -631,8 +643,7 @@ export function EquipmentBoard({
         </CardHeader>
         <CardContent className="space-y-4">
           {canManageCatalog ? (
-            <details className="border-b border-line pb-3">
-              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Thêm thiết bị vào kho</summary>
+            <ActionSheet title="Thêm thiết bị vào kho">
             <form onSubmit={submitItem} className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="asset-code">Mã thiết bị</Label>
@@ -662,7 +673,7 @@ export function EquipmentBoard({
                 <Button type="submit" pending={pending}>Thêm thiết bị</Button>
               </div>
             </form>
-            </details>
+            </ActionSheet>
           ) : null}
 
           {board.items.length === 0 ? (
@@ -788,5 +799,6 @@ export function EquipmentBoard({
         pending={pending}
       />
     </div>
+    </TaskFeedbackProvider>
   );
 }

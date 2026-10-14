@@ -6,6 +6,8 @@ import { FormMessage } from "@/components/ui/form-message";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { TabNav } from "@/components/ui/tab-nav";
+import { Drawer } from "@/components/ui/drawer";
+import { ActionSheet } from "@/components/ui/task-sheet";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { requireRouteAccess } from "@/lib/auth/guards";
@@ -43,9 +45,9 @@ function canGenerateClasses(status: string): boolean {
   return status === "draft" || status === "current";
 }
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ section?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ section?: string; panel?: string }> }) {
   await requireRouteAccess("/admin");
-  const { section: requestedSection } = await searchParams;
+  const { section: requestedSection, panel } = await searchParams;
   const sections = [
     { key: "years", label: "Năm học" },
     { key: "accounts", label: "Tài khoản" },
@@ -98,7 +100,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <CardTitle>Nhập liệu hàng loạt</CardTitle>
           <CardDescription>
             Dán hoặc tải sổ của giáo xứ để tạo hồ sơ theo lô. Chỉ Quản trị viên hệ thống làm
-            được việc này. Thứ tự bắt buộc: tạo năm học và sinh lớp ở khối bên dưới → nhập nhân
+            được việc này. Thứ tự bắt buộc: tạo năm học và sinh lớp → nhập nhân
             sự → nhập thiếu nhi.
           </CardDescription>
         </CardHeader>
@@ -120,7 +122,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </CardContent>
       </Card> : null}
 
-      {section === "years" ? <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.8fr)]">
+      {section === "years" ? <div className="space-y-4">
+        <Link href="/admin?panel=new-year" scroll={false} className={buttonVariants()}>Tạo năm học</Link>
         <Card>
           <CardHeader>
             <CardTitle>Năm học</CardTitle>
@@ -129,7 +132,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <CardContent className="space-y-3">
             {academicYears.length === 0 ? (
               <p className="text-sm text-ink-muted">
-                Chưa có năm học. Tạo năm học đầu tiên bằng biểu mẫu bên cạnh.
+                Chưa có năm học. Chọn Tạo năm học để bắt đầu.
               </p>
             ) : academicYears.map((year) => {
               const short = `${year.classCount}/${templateCount ?? "?"} lớp`;
@@ -152,12 +155,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       chỉ làm đổi cảnh báo trên dữ liệu quá khứ. */}
                   {canGenerateClasses(year.status) ? (
                     <div className="mt-3 border-t border-line pt-3">
+                      <ActionSheet title={`Mốc học kỳ · ${year.code}`} triggerLabel="Sửa mốc học kỳ">
                       <SemesterMilestoneForm
                         academicYearId={year.id}
                         startDate={year.start_date}
                         endDate={year.end_date}
                         semester1EndDate={year.semester_1_end_date}
                       />
+                      </ActionSheet>
                     </div>
                   ) : year.semester_1_end_date ? (
                     <p className="mt-3 text-sm text-ink-muted">
@@ -179,12 +184,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       chạy, năm đã đóng thì đóng lại sẽ ghi đè thời điểm chốt sổ thật. */}
                   {year.status === "current" ? (
                     <div className="mt-3 border-t border-line pt-3">
+                      <ActionSheet title={`Chốt sổ · ${year.code}`} triggerLabel="Chốt sổ năm học">
                       <CloseYearPanel
                         academicYearId={year.id}
                         code={year.code}
                         name={year.name}
                         openWork={closeChecklist}
                       />
+                      </ActionSheet>
                     </div>
                   ) : null}
 
@@ -283,15 +290,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Tạo năm học</CardTitle>
-            <CardDescription>Năm mới được tạo ở trạng thái nháp; hãy sinh lớp trước khi đặt hiện hành.</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Drawer open={panel === "new-year"} title="Tạo năm học" closeHref="/admin" description="Tạo năm nháp, sinh lớp rồi đặt hiện hành.">
             <CreateYearForm />
-          </CardContent>
-        </Card>
+        </Drawer>
 
         </div> : null}
         {section === "attendance" ? <Card className="max-w-3xl">

@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -45,7 +46,10 @@ const OPTIONS: AccountAdminOptions = {
 };
 
 function renderPanel() {
-  return render(<AccountAdminPanel options={OPTIONS} />);
+  const view = render(<AccountAdminPanel options={OPTIONS} />);
+  const trigger = screen.queryByRole("button", { name: "Tạo tài khoản ngoại lệ" });
+  if (trigger) fireEvent.click(trigger);
+  return view;
 }
 
 describe("ô chọn vai trò của biểu mẫu tạo tài khoản", () => {
@@ -74,13 +78,13 @@ describe("ô chọn vai trò của biểu mẫu tạo tài khoản", () => {
 describe("chỉ đường sang nơi cấp tài khoản Giáo lý viên", () => {
   it("có liên kết sang danh sách nhân sự", () => {
     renderPanel();
-    const link = screen.getByRole("link", { name: "mở Danh sách nhân sự" });
+    const link = screen.getByRole("link", { name: "Danh sách nhân sự" });
     expect(link).toHaveAttribute("href", "/staff");
   });
 
   it("nói rõ tài khoản Giáo lý viên cấp ở đâu, không chỉ im lặng bỏ đi", () => {
     renderPanel();
-    expect(screen.getByText(/cấp ngay tại hồ sơ người đó/)).toBeInTheDocument();
+    expect(screen.getByText(/Cấp tài khoản GLV tại hồ sơ nhân sự/)).toBeInTheDocument();
   });
 });
 

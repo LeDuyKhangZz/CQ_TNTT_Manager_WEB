@@ -49,20 +49,20 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **ANTI-AI-ERP-20261013 — implementation xong và đã deploy — Codex — 2026-10-14.** Source `97b83c9` đã push main, Vercel success đúngSHA; smoke URL production đạt. [Báo cáo/evidence](docs/system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md).
-- **2026 unit pass /24 integration skip**, lint/typecheck/build đạt. E2E laptop đầu **226 pass /3 fail fixture**; chạy lại đúng3 ca **3/3 đạt**, không cộng thành một lượt229/229.
-- Browser bản cuối: portal/auth/dashboard/404 **80/80**; staff10width không overflow, GET/Back/Refresh/no-JS đạt; directory90cases trước refinement đạt. Staff first row y333.5 desktop/y410.5 mobile.
-- Full687 E2E mở rộng bị ngắt sau19ca đạt khi môi trường local dừng; chưa có lượt687/687 xanh. Đã khởi động lại Docker hiện có, không reset DB; smoke release **43/43 đạt** trên build cuối.
-- **ANTI-AI-ERP-RELEASE-20261014 — nghiệm thu release và cập nhật hồ sơ — Codex.** Production360/1366 HTTP200, radius8px/shadownone đúng bản mới, không JSerror/overflow; dashboard chưa đăng nhập chuyển vềlogin. Không đổi DB/RLS/API.
-- R2/R3/R4 giữ hoàn tất theo hồ sơ lịch sử; R5–R13/UX-42/R13.3 không tự đóng bởi redesign này. Baseline trước task: `8c6024a` (UI `e4dcf89`).
+- **MOBILE-SHEETS-COPY-20261014 — implementation và kiểm thử xong, chuẩn bị phát hành — Codex — 2026-10-14.** Menu/tài khoản bottom sheet; form tác vụ tách khỏi danh sách; giảm chữ/card trên toàn module, giữ màu/nghiệp vụ/quyền.
+- **2.028 unit đạt / 0 lỗi / 24 integration bỏ qua**, lint/typecheck/build đạt. Build riêng không ngắt preview trực tiếp `http://127.0.0.1:3150`.
+- Browser 14 vai trò: **74 đạt / 28 bỏ qua có chủ đích**, ba viewport; rà module ở 360px. Sau tinh chỉnh bộ lọc cuối, chạy lại **9/9 đạt**. [Phạm vi và bằng chứng](docs/system-workflow-redesign/MOBILE_SHEETS_2026-10-14.md).
+- Kiểm chứng độc lập theo AGENTS §9: modal/focus/hydration và mất lease điểm danh; không đổi server rule, DB/RLS/API hay mật khẩu production.
+- Production trước task: UI `97b83c9`, hồ sơ `e849e61`. Task này chưa ghi deployed trước khi push và smoke URL công khai.
+- R5–R13/UX-42/R13.3, full E2E lịch sử và hydration P2 vẫn giữ mở; không suy ra hoàn tất từ lượt kiểm tra giao diện này.
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Redesign đã phát hành.** Bàn giao tài khoản KHANG.NHO; chỉ đặt mật khẩu tạm nếu người dùng xác nhận. Theo dõi hydrationP2 và fullE2E/R13.3; R5.1 giữ backlog riêng.
+Commit/push MOBILE-SHEETS-COPY-20261014, kiểm tra Vercel đúng SHA và smoke production. Giữ cửa sổ preview để người dùng xem trực tiếp. KHANG.NHO dùng mật khẩu hiện có theo xác nhận; không đặt lại. R5.1 và full E2E/R13.3 giữ backlog riêng.
 
 ## ⛔ BLOCKERS
 
-Docker local đã khôi phục không reset dữ liệu, smoke release **43/43 đạt**. P2 còn theo dõi: React hydration#418 ngắt quãng trong operations sweep (teaching-plan390 tái hiện2/10, trang vẫn hoạt động); chưa biết nguyên nhân. Full E2E chưa hoàn tất,24 integration skip và giới hạn browser/guard nháp được ghi trong báo cáo. Production KHANG.NHO active/Super Admin; mật khẩu không đọc lại được, chỉ reset nếu chủ tài khoản cho phép.
+Không có blocker cho phát hành UI này. 24 integration test bỏ qua; full E2E lịch sử chưa hoàn tất. React hydration #418 ngắt quãng trước đây vẫn theo dõi riêng dù lượt rà module hiện tại không ghi nhận pageerror. Giới hạn Safari/điện thoại thật, no-JS và bảo vệ nháp ghi rõ trong báo cáo; không dùng kết quả giả lập để khẳng định mọi thao tác production.
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi)
 
@@ -160,6 +160,15 @@ Docker local đã khôi phục không reset dữ liệu, smoke release **43/43 �
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-14] Codex — MOBILE-SHEETS-COPY-20261014 — bố cục mobile và preview trực tiếp
+- **Làm được:** menu/account bottom sheet theo ảnh; giảm chữ và khung card; danh sách thiếu nhi gọn; điểm danh hai cột trạng thái trực tiếp, ghi chú trong sheet; thay form cuối trang/anchor bằng sheet hoặc chuyển mục tại chỗ ở các module. Preview Chromium 390×844 có Fast Refresh, QA chạy browser riêng.
+- **File thay đổi:** shared UI/layout, presentation pages/components trong `src`, test hồi quy và [báo cáo/inventory](docs/system-workflow-redesign/MOBILE_SHEETS_2026-10-14.md).
+- **Migration/data impact:** không migration/API/RLS/dependency; không reset/seed DB hay thay mật khẩu production. E2E mới kiểm giao diện/read-only với tài khoản local.
+- **Đã test:** lint/typecheck/build đạt; unit 2.028 pass / 0 fail / 24 skip; Playwright R3 navigation + mobile workspaces 74 pass / 28 skip có chủ đích. Sau tinh chỉnh bộ lọc, bản build cuối 9/9 pass. Không cộng rerun hay gọi full E2E lịch sử xanh.
+- **Độc lập theo AGENTS §9:** verifier kiểm 59 guard/drawer test và browser/harness; lỗi mất lease vẫn cho lưu và hydration thay node mất nháp đã sửa, xác minh lại. Hai lượt verifier timeout do HMR không tính pass.
+- **Quyết định mới:** yêu cầu người dùng cấm nút cuộn tới form cuối trang, ưu tiên bottom sheet, ít chữ trên điện thoại; giữ quy định màu/nghiệp vụ. Không tự đóng backlog R5–R13/UX-42/R13.3.
+- **Next:** commit/push và smoke production; giữ preview trực tiếp. Giới hạn thực tế và rollback trong báo cáo.
+
 ### [2026-10-14] Codex — ANTI-AI-ERP-20261013 — redesign ERP và chuẩn bị phát hành
 - **Làm được:** áp dụng tiêu chuẩn anti-AI toàn shell/module; chỉ giữ palette; bảng/list gọn, dashboard theo việc, disclosure cho tác vụ ít dùng, loading không che màn hình; bảo vệ nháp điểm danh/điểm và giữ phần gõ tiếp qua save/refresh.
 - **File thay đổi:** inventory và route matrix tại [báo cáo anti-AI](docs/system-workflow-redesign/ANTI_AI_ERP_2026-10-13.md); shared UI, presentation components, tests và docs.
@@ -209,12 +218,4 @@ Docker local đã khôi phục không reset dữ liệu, smoke release **43/43 �
 - **Rủi ro:** Next pin 15.5.20; khi nâng phiên bản phải đánh giá lại backport React. Chưa deploy; không đóng nợ production ngoài R2.
 - **Next:** đã dừng sau R2; R3 là phase kế tiếp. R13.3 vẫn cần ba lượt toàn bộ E2E xanh ổn định.
 
-### [2026-10-12] Codex — 2C-VERIFY-R1-R2 — kiểm định theo yêu cầu chủ dự án
-
-- **Kết luận:** R1 chưa thấy lỗi mới trong diff đã kiểm; R1.5 chỉ hoàn tất scope cục bộ. R2.1/R2.2/R2.4 chưa đạt nghiệm thu, chuyển REVIEW; 8 lỗi UI có source, bước tái hiện và browser evidence.
-- **Đã chạy:** lint/typecheck/build đạt; Vitest 1869 pass / 1 fail / 24 skip (lỗi cũ phụ thuộc tuần hiện tại, đối chứng Date 21/08 đạt 9/9); browser harness 77/92 pass; E2E chọn lọc app thật + Supabase local 27/30 pass, 3 fail bảng điểm. Baseline trước redesign: 1/3 pass, 2 fail do badge khoá/mở không cập nhật; lỗi hiện lại cột laptop của HEAD chưa phân loại dứt điểm. Chi tiết ở báo cáo.
-- **Tài liệu bổ sung:** đã đọc CT_NOIBO_MASTER_UI_UX_CONSTRAINTS_CODEX.md; chỉ áp nguyên tắc UI phù hợp CQ TNTT, không nhập branding/domain của hệ thống khác. Ma trận ràng buộc và bảo toàn nghiệp vụ trong báo cáo.
-- **File thay đổi:** WORKLOG + tài liệu tracking REDESIGN + báo cáo/harness/evidence độc lập ngoài repo app. **Không sửa source sản phẩm, không migration/RLS/production; E2E chỉ dùng fixture DB local.**
-- **Next:** khi tiếp tục sửa, ưu tiên QA-05 rồi QA-01/02/03/04 và QA-06/07/08. Phiên này **dừng sau kiểm định**, không sửa lỗi hoặc làm task mới, không commit/push; giữ nguyên thay đổi chưa commit của R2.12.
-
-Các entry cũ hơn: [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
+Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).

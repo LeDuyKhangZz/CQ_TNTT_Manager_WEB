@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -55,7 +56,7 @@ const BAPTISM: SacramentItem = {
 };
 
 function renderPanel(overrides: Partial<Parameters<typeof SacramentPanel>[0]> = {}) {
-  return render(
+  const view = render(
     <SacramentPanel
       studentId="student-1"
       studentName="Maria Phạm Thị Hạnh"
@@ -67,6 +68,7 @@ function renderPanel(overrides: Partial<Parameters<typeof SacramentPanel>[0]> = 
       {...overrides}
     />,
   );
+  return view;
 }
 
 beforeEach(() => {
@@ -99,6 +101,7 @@ describe("AC-F08-01 · sửa được bản ghi đã nhập", () => {
   it("thêm mới thì `id` RỖNG — đó là thứ phân biệt thêm với sửa", async () => {
     const user = userEvent.setup();
     renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: "Thêm bí tích" }));
     await user.click(screen.getByRole("button", { name: "Lưu bí tích" }));
     expect(lastPayload().get("id")).toBe("");
   });

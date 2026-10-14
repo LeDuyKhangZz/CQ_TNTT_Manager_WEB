@@ -140,12 +140,13 @@ export function Drawer({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          "drawer-enter relative flex h-full flex-col bg-surface shadow-md outline-none",
+          "drawer-enter relative flex max-h-[94dvh] self-end flex-col overflow-hidden rounded-t-[24px] border border-line bg-surface shadow-md outline-none md:h-full md:max-h-full md:rounded-none",
           DRAWER_PANEL_WIDTH_CLASSNAME,
           panelClassName,
         )}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
+        <div aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-line-strong md:hidden" />
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
           <div className="min-w-0 py-1">
             <h2 id={titleId} className="text-lg font-semibold text-ink">
               {title}
@@ -176,7 +177,7 @@ export function Drawer({
         {/* Vùng cuộn là ĐÂY, không phải cả panel: header ở trên đứng yên mà
             không cần `sticky` — mà `sticky` trong một panel `overflow-y-auto`
             là đúng cái bẫy R2.2 vừa gỡ ở vỏ ứng dụng. */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
+        <div className="safe-area-bottom min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">{children}</div>
       </div>
 
       {/* Đặt NGOÀI panel: nó không dựng gì cả, nhưng nằm trong panel là thêm

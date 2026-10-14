@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { PageContainer } from "@/components/layout/page-container";
@@ -35,24 +34,17 @@ export default async function AttendanceSessionPage({
 
       {/* R1.5 (redesign 2C, UX-09): các khối anh em từng đứng sát nhau 0px —
           `space-y-5` cho cả trang một nhịp dọc thống nhất. */}
-      <div className="space-y-5">
+      <div className="space-y-3">
       <FormMessage>{error}</FormMessage>
       {/* TB-08 — người mở buổi mà không nhận được quyền sửa phải được nói ngay,
           không phải tự suy ra từ việc thanh nút không xuất hiện. */}
       {notice ? <FormMessage tone="info">{notice}</FormMessage> : null}
 
-      <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={detail.state === "completed" ? "success" : "secondary"}>
               {SESSION_STATE_LABELS[detail.state]}
             </Badge>
-            {detail.finalizedAt ? (
-              <span className="text-xs text-ink-muted">
-                Chốt lúc {formatDateTimeVi(detail.finalizedAt)}
-                {detail.lockedAt ? ` · khóa lúc ${formatDateTimeVi(detail.lockedAt)}` : ""}
-              </span>
-            ) : null}
             {detail.unlockedAt ? (
               <Badge variant="warning">Đang mở khóa — chỉ Quản trị viên sửa được</Badge>
             ) : null}
@@ -64,17 +56,17 @@ export default async function AttendanceSessionPage({
               <Button type="submit" variant="outline" size="sm">Mở khóa</Button>
             </form>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+
+      {detail.finalizedAt ? <details className="text-xs text-ink-muted">
+        <summary className="w-fit cursor-pointer py-3">Thời gian chốt và khóa</summary>
+        <p>Chốt lúc {formatDateTimeVi(detail.finalizedAt)}{detail.lockedAt ? ` · Khóa lúc ${formatDateTimeVi(detail.lockedAt)}` : ""}</p>
+      </details> : null}
 
       {detail.isLocked && !detail.canEdit ? (
-        <Card>
-          <CardContent className="pt-6">
             <p className="text-sm text-ink-muted">
               Buổi này đã khóa. Chỉ Quản trị viên hệ thống mở khóa và sửa được.
             </p>
-          </CardContent>
-        </Card>
       ) : null}
 
       {/* TB-12 — mốc khóa tính từ LẦN CHỐT ĐẦU TIÊN và cố ý không bị đẩy lùi.
@@ -82,14 +74,10 @@ export default async function AttendanceSessionPage({
           là luật đúng, nhưng trước đợt này không màn hình nào nói ra, nên nó
           trông y hệt một lỗi "mở khóa không ăn". */}
       {detail.unlockedAt && detail.finalizedAt ? (
-        <Card>
-          <CardContent className="pt-6">
             <p className="text-sm text-ink-muted">
               Buổi này đang mở khóa cho Quản trị viên. Sau khi chốt lại, buổi sẽ khóa lại ngay vì mốc
               khóa tính từ lần chốt đầu tiên ({formatDateTimeVi(detail.finalizedAt)}).
             </p>
-          </CardContent>
-        </Card>
       ) : null}
 
       <AttendanceEditor

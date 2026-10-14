@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveShellPreference, type ShellPreferences } from "@/features/navigation/types";
 import { usePathname } from "next/navigation";
@@ -13,7 +12,7 @@ import { AcademicYearControl, AcademicYearViewBanner, type YearViewPresentation 
 import { AppHeader } from "./app-header";
 import { AppSidebar, type NavigationBadges } from "./app-sidebar";
 import { MobileBottomNavigation } from "./mobile-bottom-navigation";
-import { NavDrawer } from "./nav-drawer";
+import { MobileMenuSheet, type MobilePanel } from "./mobile-menu-sheet";
 
 /**
  * Vỏ ứng dụng.
@@ -53,14 +52,13 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [focusFeatures, setFocusFeatures] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(null);
+  const drawerOpen = mobilePanel !== null;
   const [collapsed, setCollapsed] = useState(preferences?.collapsed ?? false);
-  const [menuHintOpen, setMenuHintOpen] = useState(false);
-  const menuEncountered = useRef(preferences?.menuSeen ?? false);
   const desktopItems = getDesktopNavigation(viewer, myClass);
   const mobileItems = getMobileNavigation(viewer);
 
-  useEffect(() => setDrawerOpen(false), [pathname]);
+  useEffect(() => setMobilePanel(null), [pathname]);
   useEffect(() => {
     if (!focusFeatures || drawerOpen || pathname !== "/dashboard") return;
     // Run after the drawer restores its opener, including same-page hash links.
@@ -70,32 +68,17 @@ export function AppShell({
     });
     return () => cancelAnimationFrame(frame);
   }, [focusFeatures, drawerOpen, pathname]);
-  const showAllFeatures = () => { setDrawerOpen(false); setFocusFeatures(true); };
+  const showAllFeatures = () => { setMobilePanel(null); setFocusFeatures(true); };
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
     const desktop = window.matchMedia("(min-width: 1024px)");
-    const onChange = () => { if (desktop.matches) setDrawerOpen(false); };
+    const onChange = () => { if (desktop.matches) setMobilePanel(null); };
     desktop.addEventListener("change", onChange);
     return () => desktop.removeEventListener("change", onChange);
   }, []);
-  useEffect(() => {
-    if (!preferences?.key || menuEncountered.current || typeof window.matchMedia !== "function") return;
-    const mobile = window.matchMedia("(max-width: 1023px)");
-    const showOnce = () => {
-      if (!mobile.matches || menuEncountered.current) return;
-      menuEncountered.current = true;
-      saveShellPreference(preferences.key, "menu", true);
-      setMenuHintOpen(true);
-    };
-    const timer = setTimeout(showOnce, 800);
-    mobile.addEventListener("change", showOnce);
-    return () => { clearTimeout(timer); mobile.removeEventListener("change", showOnce); };
-  }, [preferences?.key]);
   const openMenu = () => {
-    menuEncountered.current = true;
     saveShellPreference(preferences?.key, "menu", true);
-    setMenuHintOpen(false);
-    setDrawerOpen(true);
+    setMobilePanel("menu");
   };
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -122,17 +105,7 @@ export function AppShell({
 
       <AppSidebar items={desktopItems} pathname={pathname} contextIndicator={contextIndicator} collapsed={collapsed} badges={navigationBadges} onShowAllFeatures={showAllFeatures} />
 
-      <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} label="Menu điều hướng">
-        <AppSidebar
-          items={desktopItems}
-          pathname={pathname}
-          contextIndicator={contextIndicator}
-          badges={navigationBadges}
-          mobile
-          onShowAllFeatures={showAllFeatures}
-          onClose={() => setDrawerOpen(false)}
-        />
-      </NavDrawer>
+      <MobileMenuSheet panel={mobilePanel} setPanel={setMobilePanel} viewer={viewer} pathname={pathname} myClass={myClass} badges={navigationBadges} />
 
       <div className={cn("min-h-screen", collapsed ? "lg:pl-[72px]" : "lg:pl-[264px]")}>
         <AppHeader
@@ -145,14 +118,10 @@ export function AppShell({
           onOpenMenu={openMenu}
           onToggleSidebar={toggleSidebar}
           sidebarCollapsed={collapsed}
-          menuOpen={drawerOpen}
+          menuOpen={mobilePanel === "menu"}
+          accountOpen={mobilePanel === "account"}
+          onOpenAccount={() => setMobilePanel("account")}
         />
-        {menuHintOpen ? <aside role="note" aria-label="Hướng dẫn menu"
-            className="flex items-center justify-between gap-2 border-b border-line bg-surface px-4 py-1 text-sm text-ink lg:hidden">
-            <span>Tất cả chức năng nằm trong Menu.</span>
-            <button type="button" aria-label="Ẩn hướng dẫn menu" onClick={() => setMenuHintOpen(false)}
-              className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-md hover:bg-surface-muted"><X className="h-4 w-4" aria-hidden="true" /></button>
-          </aside> : null}
         {/* Mốc `main` duy nhất của trang, và là đích của skip link. `tabIndex`
             -1 để focus thật sự nhảy vào đây, không chỉ cuộn tới.
             `PageContainer` cố ý KHÔNG còn là `<main>` — hai `main` lồng nhau
@@ -176,7 +145,7 @@ export function AppShell({
         </main>
       </div>
 
-      <MobileBottomNavigation items={mobileItems} pathname={pathname} />
+      <MobileBottomNavigation items={mobileItems} pathname={pathname} onOpenAccount={() => setMobilePanel("account")} accountOpen={mobilePanel === "account"} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { ActionSheet } from "@/components/ui/task-sheet";
 
 import { TabNav } from "@/components/ui/tab-nav";
 
@@ -312,16 +313,8 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
 
       {availableTargets.length > 0 ? (
-        <details className="rounded-md border border-line bg-surface">
-          <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-medium">Soạn thông báo</summary>
-        <Card className="border-0 border-t border-line rounded-none">
-          <CardHeader>
-            <CardTitle>Gửi thông báo</CardTitle>
-            <CardDescription>
-              Thông báo chỉ hiển thị trong hệ thống, không gửi SMS/email/Zalo và không hẹn giờ.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <ActionSheet title="Soạn thông báo" description="Gửi trong hệ thống.">
+            {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
             <form onSubmit={submit} className="grid gap-3 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-sm font-medium">Phạm vi</span>
@@ -411,9 +404,7 @@ export function NotificationCenter({ data }: { data: NotificationsPageData }) {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-        </details>
+        </ActionSheet>
       ) : null}
 
       {/*

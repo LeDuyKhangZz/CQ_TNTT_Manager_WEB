@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionSheet } from "@/components/ui/task-sheet";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -189,7 +191,7 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
   }
 
   return (
-    <div className="space-y-3 border-t border-line pt-3">
+    <ActionSheet title={active ? "Quản lý phân công" : "Phân công vào lớp"}><div className="space-y-3">
       {notice ? <FormMessage tone="success">{notice}</FormMessage> : null}
       {/* Hộp thoại Chuyển lớp GIỮ nguyên các ô đã điền khi lỗi và tự nêu câu lỗi
           bên trong, nên ở đây phải im — cùng một câu hiện hai chỗ là người dùng
@@ -384,6 +386,6 @@ export function StaffAssignmentPanel(props: StaffAssignmentPanelProps) {
           </div>
         </Dialog>
       ) : null}
-    </div>
+    </div></ActionSheet>
   );
 }

@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -266,6 +267,8 @@ describe("gradebook editor", () => {
   it("AC-09-01 — hệ số gợi ý lấy từ cấu hình năm học, không phải số cố định trong mã", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
+    fireEvent.click(screen.getByRole("button", { name: "Thêm cột điểm" }));
 
     expect(document.querySelector<HTMLInputElement>("#new-assessment-weight-quiz_15m")?.value).toBe("1.5");
 
@@ -276,6 +279,8 @@ describe("gradebook editor", () => {
   it("loại chưa có cấu hình thì rơi về lưới an toàn thay vì để ô trống", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
+    fireEvent.click(screen.getByRole("button", { name: "Thêm cột điểm" }));
     // `custom` không có trong `defaultWeights` của năm học này.
     await user.selectOptions(screen.getByLabelText("Loại"), "custom");
     expect(document.querySelector<HTMLInputElement>("#new-assessment-weight-custom")?.value).toBe("1");
@@ -348,6 +353,7 @@ describe("gradebook editor", () => {
   it("TB-M07-01 — cột ĐÃ có điểm chỉ được ẩn, và câu hỏi nói ra điểm vẫn còn", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     // Nhãn nút là thứ người dùng đọc trước khi bấm — nó phải khác hẳn "Xóa cột".
     await user.click(screen.getByRole("button", { name: "Ẩn cột" }));
@@ -373,6 +379,7 @@ describe("gradebook editor", () => {
       assessments: [{ ...DETAIL.assessments[0], scoredCount: 0 }],
     };
     render(<GradebookEditor detail={detail} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     expect(screen.getByText("Chưa có điểm")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Xóa cột" }));
@@ -394,6 +401,7 @@ describe("gradebook editor", () => {
   it("D-61 — ẩn cột xong có câu xác nhận, và nó KHÔNG nằm trong thẻ vừa biến mất", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     await user.click(screen.getByRole("button", { name: "Ẩn cột" }));
     const dialog = await screen.findByRole("dialog");
@@ -411,6 +419,7 @@ describe("gradebook editor", () => {
   it("huỷ hộp xác nhận thì KHÔNG request nào được gửi", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     await user.click(screen.getByRole("button", { name: "Ẩn cột" }));
     const dialog = await screen.findByRole("dialog");
@@ -502,6 +511,7 @@ describe("gradebook editor · nhận xét", () => {
 
   it("AC-05-01 — biểu mẫu mặc định là NỘI BỘ, không phải công khai", () => {
     render(<GradebookEditor detail={COMMENT_DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Nhận xét" }));
     const select = screen.getByLabelText("Mức hiển thị") as HTMLSelectElement;
     expect(select.value).toBe("staff_only");
     expect(screen.getByText(/phụ huynh và thiếu nhi không đọc được/i)).toBeInTheDocument();
@@ -510,6 +520,7 @@ describe("gradebook editor · nhận xét", () => {
   it("AC-05-01 — chọn 'Công khai' mới hiện cảnh báo, và cảnh báo nói ra hậu quả", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={COMMENT_DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Nhận xét" }));
 
     expect(screen.queryByText("Nội dung này sẽ hiện trên cổng phụ huynh/thiếu nhi.")).toBeNull();
     await user.selectOptions(screen.getByLabelText("Mức hiển thị"), "student_visible");
@@ -519,6 +530,7 @@ describe("gradebook editor · nhận xét", () => {
   it("mức hiển thị đang chọn là thứ được gửi lên, không phải mặc định của biểu mẫu", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={COMMENT_DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Nhận xét" }));
 
     await user.selectOptions(screen.getByLabelText("Mức hiển thị"), "student_visible");
     await user.type(screen.getByLabelText("Nội dung"), "Con tiến bộ");
@@ -533,6 +545,7 @@ describe("gradebook editor · nhận xét", () => {
 
   it("D-152 — nhận xét của người khác KHÔNG có nút Sửa/Xóa; của mình thì có", () => {
     render(<GradebookEditor detail={COMMENT_DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Nhận xét" }));
 
     // Đúng một cặp nút, thuộc về nhận xét `canModerate: true`.
     expect(screen.getAllByRole("button", { name: "Sửa" })).toHaveLength(1);
@@ -544,6 +557,7 @@ describe("gradebook editor · nhận xét", () => {
 
   it("bảng điểm đã khóa thì không còn nút sửa/xóa nhận xét nào", () => {
     render(<GradebookEditor detail={{ ...COMMENT_DETAIL, isLocked: true }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Nhận xét" }));
     expect(screen.queryByRole("button", { name: "Sửa" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Xóa" })).toBeNull();
   });
@@ -553,6 +567,7 @@ describe("gradebook editor · nhận xét", () => {
   it("nợ #1 — xóa nhận xét hỏi lại bằng hộp thoại, và nêu TÊN EM cùng tên người viết", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={COMMENT_DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Nhận xét" }));
 
     await user.click(screen.getByRole("button", { name: "Xóa" }));
 
@@ -582,6 +597,7 @@ describe("gradebook editor · M07-C · công bố tách khỏi khóa", () => {
 
   it("D-154 — bảng điểm đã khóa: nút 'Công bố' vẫn bấm được, các nút còn lại thì không", () => {
     render(<GradebookEditor detail={LOCKED} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     expect(screen.getByRole("button", { name: "Công bố" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
@@ -591,6 +607,7 @@ describe("gradebook editor · M07-C · công bố tách khỏi khóa", () => {
   it("D-154 — bấm 'Công bố' khi đã khóa vẫn gửi lệnh đi", async () => {
     const user = userEvent.setup();
     render(<GradebookEditor detail={LOCKED} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     await user.click(screen.getByRole("button", { name: "Công bố" }));
 
@@ -603,6 +620,7 @@ describe("gradebook editor · M07-C · công bố tách khỏi khóa", () => {
     const user = userEvent.setup();
     setAssessmentPublished.mockResolvedValueOnce({ ok: true as const, data: { changed: false } });
     render(<GradebookEditor detail={LOCKED} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     await user.click(screen.getByRole("button", { name: "Công bố" }));
 
@@ -642,12 +660,14 @@ describe("gradebook editor · M07-C · hiện lại cột đã ẩn", () => {
 
   it("không có cột ẩn nào thì mục 'Cột đã ẩn' KHÔNG chiếm chỗ", () => {
     render(<GradebookEditor detail={DETAIL} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
     expect(screen.queryByRole("heading", { name: "Cột đã ẩn" })).toBeNull();
   });
 
   it("nợ #21 — mục 'Cột đã ẩn' gập sẵn, mở ra rồi hiện lại được", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<GradebookEditor detail={HIDDEN} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     expect(screen.getByRole("heading", { name: "Cột đã ẩn" })).toBeInTheDocument();
     // Gập sẵn: tên cột chưa chiếm chỗ trong một trang vốn đã rất dài.
@@ -682,6 +702,7 @@ describe("gradebook editor · M07-C · hiện lại cột đã ẩn", () => {
       hiddenAssessments: [{ ...HIDDEN.hiddenAssessments[0], isPublished: true }],
     };
     render(<GradebookEditor detail={detail} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cột điểm" }));
 
     await user.click(screen.getByRole("button", { name: "Xem 1 cột đã ẩn" }));
     await user.click(screen.getByRole("button", { name: "Hiện lại" }));
@@ -723,6 +744,7 @@ describe("gradebook editor · M07-C · vòng đời Top 5", () => {
     render(<GradebookEditor detail={withLeaderboard({
       ...BASE_LEADERBOARD, isPublished: false, publishedAt: null, hasSnapshot: false, supersededCount: 0, entries: [],
     })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Top 5" }));
 
     expect(screen.getByText("Bản nháp")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Công bố snapshot" })).toBeInTheDocument();
@@ -734,6 +756,7 @@ describe("gradebook editor · M07-C · vòng đời Top 5", () => {
     render(<GradebookEditor detail={withLeaderboard({
       ...BASE_LEADERBOARD, isPublished: false, publishedAt: "2026-10-01T00:00:00Z", hasSnapshot: true, supersededCount: 0,
     })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Top 5" }));
 
     expect(screen.getByText("Đã chốt · đang ẩn")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Hiện lại bản đang có" })).toBeInTheDocument();
@@ -747,6 +770,7 @@ describe("gradebook editor · M07-C · vòng đời Top 5", () => {
     render(<GradebookEditor detail={withLeaderboard({
       ...BASE_LEADERBOARD, isPublished: false, publishedAt: "2026-10-01T00:00:00Z", hasSnapshot: true, supersededCount: 0,
     })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Top 5" }));
 
     await user.click(screen.getByRole("button", { name: "Hiện lại bản đang có" }));
 
@@ -760,6 +784,7 @@ describe("gradebook editor · M07-C · vòng đời Top 5", () => {
     render(<GradebookEditor detail={withLeaderboard({
       ...BASE_LEADERBOARD, isPublished: false, publishedAt: "2026-10-01T00:00:00Z", hasSnapshot: true, supersededCount: 2,
     })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Top 5" }));
 
     await user.click(screen.getByRole("button", { name: "Chốt lại danh sách" }));
 
@@ -778,6 +803,7 @@ describe("gradebook editor · M07-C · vòng đời Top 5", () => {
     render(<GradebookEditor detail={withLeaderboard({
       ...BASE_LEADERBOARD, isPublished: true, publishedAt: "2026-10-01T00:00:00Z", hasSnapshot: true, supersededCount: 2,
     })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Top 5" }));
 
     expect(screen.getByText("2 bản trước trong lịch sử")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ẩn khỏi cổng" })).toBeInTheDocument();
@@ -788,6 +814,7 @@ describe("gradebook editor · M07-C · vòng đời Top 5", () => {
     render(<GradebookEditor detail={withLeaderboard({
       ...BASE_LEADERBOARD, isPublished: false, publishedAt: null, hasSnapshot: false, supersededCount: 0, entries: [],
     })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Top 5" }));
 
     await user.click(screen.getByRole("button", { name: "Xóa bản nháp" }));
 

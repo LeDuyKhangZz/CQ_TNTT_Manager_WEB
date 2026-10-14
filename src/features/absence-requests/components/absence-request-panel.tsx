@@ -1,10 +1,11 @@
 "use client";
+import { ActionSheet } from "@/components/ui/task-sheet";
 
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, panelClassName } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, panelClassName } from "@/components/ui/card";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,7 @@ export function AbsenceRequestPanel({
   );
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(18rem,0.6fr)_minmax(0,1.4fr)]">
+    <div className="space-y-4">
       {students.length === 0 ? (
         <PortalEmptyState
           reason={childrenStatus === "no_children" ? "no_children" : "not_linked"}
@@ -91,12 +92,7 @@ export function AbsenceRequestPanel({
           className="min-h-full"
         />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gửi đơn mới</CardTitle>
-            <CardDescription>Xứ đoàn sinh hoạt thứ Năm và Chúa nhật.</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <ActionSheet title="Gửi đơn xin nghỉ" triggerLabel="Gửi đơn mới" description="Chọn thứ Năm hoặc Chúa nhật.">
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="absence-student">Thiếu nhi</Label>
@@ -138,8 +134,7 @@ export function AbsenceRequestPanel({
                 Gửi đơn
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </ActionSheet>
       )}
 
       {requests.length === 0 ? (

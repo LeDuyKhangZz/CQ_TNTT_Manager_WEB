@@ -54,7 +54,7 @@ describe("DashboardOverview — nhân sự đọc được chi tiết", () => {
 
   it("thẻ 'Cần quan tâm' nói số cảnh báo ngay ở phần mô tả", () => {
     render(<DashboardOverview data={dashboardData()} />);
-    expect(screen.getByText("12 em đang có cảnh báo chuyên cần.")).toBeInTheDocument();
+    expect(screen.getByText("12 em cần theo dõi chuyên cần")).toBeInTheDocument();
   });
 });
 
@@ -74,7 +74,7 @@ describe("D-170 — Thủ quỹ: đọc được SỐ, không đọc được T�
     expect(screen.queryByText("Không có em nào cần lưu ý trong phạm vi của bạn."))
       .not.toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
-    expect(screen.getByText(/danh sách tên từng em thuộc quyền của Ban điều hành/))
+    expect(screen.getByText(/Thủ quỹ chỉ xem số tổng hợp/))
       .toBeInTheDocument();
   });
 
@@ -165,7 +165,7 @@ describe("TB-03 — thiếu nhi", () => {
 
   it("có đường vào trang điểm danh ngay từ màn hình đầu tiên", () => {
     render(<DashboardOverview data={student} />);
-    expect(screen.getByRole("link", { name: "Mở trang điểm danh của tôi" }))
+    expect(screen.getByRole("link", { name: "Xem điểm danh" }))
       .toHaveAttribute("href", "/student/attendance");
   });
 });

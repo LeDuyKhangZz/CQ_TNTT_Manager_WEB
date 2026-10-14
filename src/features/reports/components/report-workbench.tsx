@@ -1,5 +1,6 @@
 "use client";
 
+import { TaskSheet } from "@/components/ui/task-sheet";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
@@ -56,6 +57,7 @@ export function ReportWorkbench({
   // của `LoadingProvider` — phải tự báo (`17` §3.4).
   const { beginNavigation } = useGlobalLoading();
   const [message, setMessage] = useState<Message>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [reportType, setReportType] = useState<ReportType>(data.filter.reportType);
   const [periodType, setPeriodType] = useState<ReportPeriod>(data.filter.periodType);
@@ -91,6 +93,7 @@ export function ReportWorkbench({
 
   function applyFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFilterOpen(false);
     const formData = new FormData(event.currentTarget);
     const params = reportFilterToSearchParams({
       reportType,
@@ -128,14 +131,9 @@ export function ReportWorkbench({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="pt-4">
-          {/* Đợt E — khối lọc tự chế. Trước đây bốn ô trong cùng một lưới có ô
-              đeo `<Label>` + `mt-1`, ô đeo `<span>` giả nhãn, ô có dòng giải
-              thích, ô không; và hai ô "khoá cứng" thay `Select` bằng một `<p>`
-              cao `h-control`. Mọi khác biệt ấy đổi chiều cao ⇒ lưới so le. Nay
-              cả sáu nhánh đi qua đúng một `FilterField`. */}
-          <form aria-label="Bộ lọc báo cáo" onSubmit={applyFilter} className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Button variant="outline" onClick={() => setFilterOpen(true)} aria-haspopup="dialog">Lọc báo cáo</Button>
+      <TaskSheet open={filterOpen} onClose={() => setFilterOpen(false)} title="Lọc báo cáo">
+          <form aria-label="Bộ lọc báo cáo" onSubmit={applyFilter} className="grid gap-3 sm:grid-cols-2">
             <FilterField label="Loại báo cáo" htmlFor="report-type">
               <Select
                 id="report-type"
@@ -198,7 +196,7 @@ export function ReportWorkbench({
             </FilterField>
             {scopeType !== "global" && lockedScopeOption ? (
               <FilterField
-                className="md:col-span-2"
+                className="sm:col-span-2"
                 label={scopeType === "sector" ? "Ngành" : "Lớp"}
                 htmlFor="scope-id-locked"
                 staticValue
@@ -212,7 +210,7 @@ export function ReportWorkbench({
             ) : null}
             {scopeType !== "global" && !lockedScopeOption ? (
               <FilterField
-                className="md:col-span-2"
+                className="sm:col-span-2"
                 label={`Chọn ${scopeType === "sector" ? "ngành" : "lớp"}`}
                 htmlFor="scope-id"
               >
@@ -229,13 +227,11 @@ export function ReportWorkbench({
                 </Select>
               </FilterField>
             ) : null}
-            <div className="md:col-span-2 xl:col-span-4">
+            <div className="sm:col-span-2">
               <Button type="submit">Xem báo cáo</Button>
             </div>
           </form>
-          <p className="mt-2 text-xs text-ink-muted">File tải về và bản chốt dùng đúng bộ lọc của báo cáo đang xem.</p>
-        </CardContent>
-      </Card>
+      </TaskSheet>
 
       {/* `role="status"` chứ không `alert`: đây là việc đã được xử lý xong và
           báo lại, không phải một lỗi đang chặn người dùng (TB-04 bước 3). */}

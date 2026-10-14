@@ -1,3 +1,5 @@
+import { SectionSwitcher } from "@/components/ui/section-switcher";
+import { ActionSheet } from "@/components/ui/task-sheet";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
@@ -56,7 +58,7 @@ export default async function PromotionsPage({
     <PageContainer>
       <PageHeader
         title="Lên lớp và chuyển lớp"
-        description="Đại diện lớp đề xuất; trưởng ngành xem xét và duyệt ghi danh cho năm học tiếp theo."
+        help="Đại diện lớp đề xuất; trưởng ngành xem xét và duyệt ghi danh cho năm học tiếp theo."
       />
 
       {!data.yearCode ? (
@@ -101,11 +103,6 @@ export default async function PromotionsPage({
             Ghi danh của năm học <span className="font-medium text-ink">{data.yearCode}</span>.
           </p>
 
-          <nav aria-label="Nội dung chuyển lớp" className="flex flex-wrap gap-x-4 border-b border-line text-sm">
-            <a href="#promotion-list" className="inline-flex min-h-11 items-center font-medium text-theme-accent-text hover:underline">Danh sách đề xuất</a>
-            <a href="#promotion-progress" className="inline-flex min-h-11 items-center text-ink-muted hover:underline">Tiến độ theo lớp</a>
-          </nav>
-
           {data.unknownClassFilter ? (
             // TO-BE 1 "Validation": lớp lạ thì hiện lại bộ chọn kèm thông báo,
             // KHÔNG `throw`. Câu chữ cố ý **không** phân biệt "lớp không tồn tại"
@@ -117,12 +114,12 @@ export default async function PromotionsPage({
             </FormMessage>
           ) : null}
 
-          <section id="promotion-list" aria-labelledby="promotion-list-heading" className="scroll-mt-20 space-y-3">
+          <SectionSwitcher label="Nội dung chuyển lớp" sections={[{ id: "list", label: "Đề xuất", content: <section id="promotion-list" aria-labelledby="promotion-list-heading" className="scroll-mt-20 space-y-3">
             <h2 id="promotion-list-heading" className="text-lg font-semibold">
               Danh sách đề xuất
             </h2>
 
-            <FilterBar
+            <ActionSheet title="Lọc danh sách chuyển lớp" triggerLabel={filtered ? "Bộ lọc · Đang lọc" : "Bộ lọc"}><FilterBar hideLegend className="border-0 p-0"
               legend="Lọc danh sách chuyển lớp"
               action="/promotions"
               resetHref={filtered ? "/promotions" : undefined}
@@ -160,16 +157,16 @@ export default async function PromotionsPage({
               <FilterField
                 label="Tìm tên thiếu nhi"
                 htmlFor="filter-promotion-search"
-                helper="Gõ không dấu cũng tìm được."
+
               >
                 <SearchInputControl
                   id="filter-promotion-search"
                   name="q"
                   defaultValue={effectiveCriteria.search}
-                  placeholder="Gõ không dấu cũng được"
+                  placeholder="Tên thiếu nhi"
                 />
               </FilterField>
-            </FilterBar>
+            </FilterBar></ActionSheet>
 
             {data.roster.length === 0 ? (
               <EmptyState
@@ -217,8 +214,7 @@ export default async function PromotionsPage({
                 buildHref={(target) => promotionsHref(effectiveCriteria, target)}
               />
             ) : null}
-          </section>
-          <PromotionProgress progress={data.progress} activeClassId={effectiveCriteria.classId} />
+          </section> }, { id: "progress", label: "Tiến độ theo lớp", content: <PromotionProgress progress={data.progress} activeClassId={effectiveCriteria.classId} /> }]} />
         </div>
       )}
     </PageContainer>

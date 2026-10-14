@@ -9,7 +9,7 @@ export default async function CommitteesPage() {
     <PageContainer>
       <PageHeader
         title="Ban"
-        description="Thành viên chỉ thấy Ban của mình; Trưởng ban và Phó ban đăng thông báo, lịch họp và công việc tuần."
+        help="Thành viên chỉ thấy Ban của mình; Trưởng ban và Phó ban đăng thông báo, lịch họp và công việc tuần."
       />
       <CommitteeList committees={data.committees} canManage={data.canManageCommittees} />
     </PageContainer>

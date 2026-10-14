@@ -1,5 +1,7 @@
 # 16 — NHẬT KÝ TRIỂN KHAI GIAI ĐOẠN 2B
 
+> **14/10/2026 — MOBILE-SHEETS-COPY-20261014:** implementation mobile xong: bottom sheet, form tác vụ riêng, giảm chữ/card, rà 14 vai trò. **2.028 unit đạt / 24 skip**, lint/typecheck/build đạt; browser **74 pass / 28 skip có chủ đích**, refinement cuối **9/9 pass**. Chuẩn bị commit/push, chưa ghi deployed. Không migration/RLS; R5–R13/UX-42/R13.3 và full E2E lịch sử giữ riêng. [Báo cáo và giới hạn](../MOBILE_SHEETS_2026-10-14.md).
+
 > **14/10/2026 — ANTI-AI-ERP-RELEASE-20261014 DONE:** source97b83c9 đã pushmain, Vercel success đúngSHA; smoke public production360/1366 và local43/43 đạt. Không migration/RLS. FullE2E/hydrationP2 chưa đóng. [Báo cáo phát hành](../ANTI_AI_ERP_2026-10-13.md).
 
 > **14/10/2026 — ANTI-AI-ERP-20261013:** hoàn tất thay đổi UI theo master anti-AI, giữ palette và toàn bộ quy tắc nghiệp vụ.2026unit pass/24skip; lint/typecheck/build đạt. Browser portal80/80, staff10width đạt; E2E laptop226pass/3fixturefail, rerun3/3đạt, full687 chưa hoàn tất. Chuẩn bị push/redeploy theo yêu cầu14/10; chưa dùng mốc deployed của R4 cho bản này. [Báo cáo/inventory/rollback](../ANTI_AI_ERP_2026-10-13.md).

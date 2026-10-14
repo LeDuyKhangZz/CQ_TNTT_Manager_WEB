@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 export function PageHeader({
   title,
   description,
+  help,
   action,
   toolbar,
   backHref,
@@ -28,6 +29,8 @@ export function PageHeader({
 }: {
   title: string;
   description?: string;
+  /** Optional instructions only. Keep scope, locks, errors and warnings visible. */
+  help?: React.ReactNode;
   action?: React.ReactNode;
   toolbar?: React.ReactNode;
   /** Địa chỉ trang cha. Bỏ trống ⇒ không hiện nút quay lại. */
@@ -50,6 +53,10 @@ export function PageHeader({
         ) : null}
         <h1 className="break-words text-xl font-semibold tracking-tight text-ink sm:text-2xl">{title}</h1>
         {description ? <p className="mt-1 max-w-3xl text-sm text-ink-muted">{description}</p> : null}
+        {help ? <details className="mt-1 max-w-3xl text-sm text-ink-muted">
+          <summary className="w-fit cursor-pointer py-3 font-medium text-theme-accent-text">Hướng dẫn</summary>
+          <div className="pb-2 leading-relaxed">{help}</div>
+        </details> : null}
       </div>
       {action ? <div className="flex min-w-0 flex-wrap items-center gap-2 sm:max-w-[50%]">{action}</div> : null}
     </div>

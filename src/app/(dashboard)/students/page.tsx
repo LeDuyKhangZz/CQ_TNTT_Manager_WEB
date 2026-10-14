@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Phone, Plus } from "lucide-react";
 import { getAcademicYearView } from "@/lib/academic-year/view";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -47,9 +47,9 @@ export default async function StudentsPage({ searchParams }: {
   const columns: DataTableColumn<StudentListItem>[] = [
     {
       key: "name", header: "Tên thánh & Họ tên", sortKey: feeScope ? undefined : "name",
-      cell: item => <span className="flex min-w-0 items-center gap-2 font-medium md:block">
-        <span className="min-w-0 truncate">{item.saintName} {item.fullName}</span>
-        <span className="shrink-0 text-2xs font-normal text-ink-muted md:hidden">{item.sectorName ?? item.className ?? "Chưa xếp lớp"}</span>
+      cell: item => <span className="block min-w-0 py-2 font-medium md:py-0">
+        <span className="hidden md:inline">{item.saintName} </span><span className="break-words">{item.fullName}</span>
+        <span className="mt-1 block text-xs font-normal text-ink-muted md:hidden">{item.className ?? "Chưa xếp lớp"}</span>
         {item.status !== "active" ? <span className="shrink-0 text-2xs font-normal md:hidden">{studentStatusLabel(item.status)}</span> : null}
         {item.hardshipFlag ? <span className="text-2xs md:hidden" aria-label="Hoàn cảnh khó khăn">★</span> : null}
       </span>,
@@ -67,9 +67,9 @@ export default async function StudentsPage({ searchParams }: {
     {
       key: "phone", header: "Điện thoại", label: "Liên lạc", hideable: true,
       className: "[&>div]:flex [&>div]:min-h-11 [&>div]:items-center [&>div]:gap-2 [&>div>span:first-child]:hidden",
-      cell: item => <><span className="shrink-0 text-2xs md:hidden">{item.className ?? "—"}</span><span className="min-w-0 truncate md:hidden" title={item.guardianName}>{item.guardianName}</span>{/\d/.test(item.guardianPhone)
-        ? <a href={`tel:${item.guardianPhone.replace(/[^+\d]/g, "")}`} className="ml-auto inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-sm text-theme-accent-text underline underline-offset-4 md:ml-0" aria-label={`Gọi ${item.guardianName}: ${item.guardianPhone}`}>{item.guardianPhone}</a>
-        : <span className="ml-auto whitespace-nowrap text-ink-muted md:ml-0">Chưa có SĐT</span>}</>,
+      cell: item => /\d/.test(item.guardianPhone)
+        ? <a href={`tel:${item.guardianPhone.replace(/[^+\d]/g, "")}`} className="relative z-[1] inline-flex h-11 min-w-11 items-center justify-center rounded-full bg-surface-muted text-theme-accent-text md:bg-transparent md:underline md:underline-offset-4" aria-label={`Gọi ${item.guardianName}: ${item.guardianPhone}`}><Phone className="h-4 w-4 md:hidden" aria-hidden="true" /><span className="hidden md:inline">{item.guardianPhone}</span></a>
+        : <span className="hidden text-ink-muted md:inline">Chưa có SĐT</span>,
 
     },
     {
@@ -113,13 +113,13 @@ export default async function StudentsPage({ searchParams }: {
         </>}
       </Toolbar>
       <div className="space-y-2">
-        <ToolbarSummary resetHref={filtered ? "/students" : undefined} resetLabel="Xoá bộ lọc">{totalItems} hồ sơ · {statusSummary}</ToolbarSummary>
+        <ToolbarSummary resetHref={filtered ? "/students" : undefined} resetLabel="Xoá bộ lọc">{totalItems} hồ sơ<span className={filtered ? "hidden md:inline" : undefined}> · {statusSummary}</span></ToolbarSummary>
         <DataTable tableId={tableId} caption="Danh sách thiếu nhi" hideCaption density="compact"
           columns={columns} rows={students} getRowKey={item => item.id} minWidth="880px"
           stickyHeader maxHeightClassName="md:max-h-[70vh]"
-          className="[&_tbody_tr]:gap-y-0 [&_tbody_tr]:py-0"
+          className="[&_tbody_tr]:gap-y-0 [&_tbody_tr]:py-1"
           rowHref={feeScope ? undefined : item => `/students/${item.id}`}
-          mobileRow={{ titleKey: "name", metaKeys: ["phone"] }}
+          mobileRow={{ titleKey: "name", trailingKey: "phone" }}
           sort={feeScope ? undefined : { key: criteria.sort, direction: criteria.direction,
             buildHref: (key, direction) => studentListHref({ ...criteria, sort: key === "class" ? "class" : "name", direction }, 1, defaultStatus) }}
           empty={<EmptyState bare variant="no-data"

@@ -59,7 +59,8 @@ export default async function AttendancePage({
     <PageContainer>
       <PageHeader
         title="Điểm danh"
-        description={`Năm học ${year.code} · khóa sau ${year.attendance_lock_days} ngày · phiên chỉnh sửa ${year.attendance_edit_lease_minutes} phút`}
+        description={`Năm học ${year.code}`}
+        help={`Buổi đã chốt khóa sau ${year.attendance_lock_days} ngày. Quyền chỉnh sửa được giữ ${year.attendance_edit_lease_minutes} phút và gia hạn khi bạn đang làm việc.`}
       />
 
       <FormMessage>{error}</FormMessage>
@@ -114,7 +115,7 @@ export default async function AttendancePage({
         <Card>
           <CardHeader>
             <CardTitle>Buổi gần đây</CardTitle>
-            <CardDescription>Các buổi trong phạm vi bạn được xem.</CardDescription>
+
           </CardHeader>
           <CardContent>
             {sessions.length === 0 ? (

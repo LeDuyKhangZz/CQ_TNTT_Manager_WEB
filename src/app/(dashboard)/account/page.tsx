@@ -1,3 +1,4 @@
+import { ActionSheet } from "@/components/ui/task-sheet";
 import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
@@ -56,7 +57,7 @@ export default async function AccountPage() {
     <PageContainer>
       <PageHeader
         title="Tài khoản"
-        description="Thông tin đăng nhập của bạn và hai thao tác cần dùng nhất."
+
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
@@ -93,18 +94,7 @@ export default async function AccountPage() {
         </Card>
 
         {ownContact ? (
-          <Card>
-            <CardHeader>
-              <CardTitle as="h2">Thông tin liên lạc của bạn</CardTitle>
-              <CardDescription>
-                Đây là phần bạn tự sửa được. Hồ sơ nhập từ sổ của xứ đoàn thường còn trống một
-                vài ô — điền vào đây là đủ, không cần nhờ ai.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OwnContactForm contact={ownContact} />
-            </CardContent>
-          </Card>
+          <div><ActionSheet title="Thông tin liên lạc" triggerLabel="Sửa thông tin liên lạc"><OwnContactForm contact={ownContact} /></ActionSheet></div>
         ) : null}
 
         <Card>

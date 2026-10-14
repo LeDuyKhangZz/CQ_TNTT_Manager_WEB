@@ -152,8 +152,8 @@ describe("Drawer điều hướng là dialog thật (D3.a)", () => {
 
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(dialog).toHaveAttribute("aria-label", "Menu điều hướng");
-    expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Đóng menu" }));
+    expect(dialog).toHaveAccessibleName("Chức năng");
+    expect(document.activeElement).toBe(dialog);
   });
 
   it("5: khoá cuộn body khi mở và trả lại đúng giá trị cũ khi đóng", () => {
@@ -204,7 +204,7 @@ describe("Drawer điều hướng là dialog thật (D3.a)", () => {
     expect(overlay?.tagName).toBe("DIV");
     // Bản cũ có một `<button aria-label="Đóng menu">` phủ kín màn hình, nên
     // trình đọc màn hình gặp hai nút cùng tên. Nay chỉ còn nút thật trong drawer.
-    expect(screen.getAllByRole("button", { name: "Đóng menu" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Đóng chức năng" })).toHaveLength(1);
   });
 
   it("bấm lớp phủ thì đóng drawer", () => {

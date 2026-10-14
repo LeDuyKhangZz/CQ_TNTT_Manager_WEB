@@ -1,4 +1,5 @@
 "use client";
+import { ActionSheet, TaskSheet, TaskFeedbackProvider } from "@/components/ui/task-sheet";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type FormEvent, type ReactNode } from "react";
@@ -115,6 +116,7 @@ export function CommitteeWorkspace({
   const activeItem = items.find(item => item.id === activeTab) ?? items[0];
 
   return (
+    <TaskFeedbackProvider value={message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}>
     <div className="space-y-4">
       {/* Vùng phản hồi thao tác: giữ trên cùng để mọi tab dùng chung một chỗ báo
           kết quả (D-61). `aria-live` để trình đọc màn hình đọc ngay khi có. */}
@@ -141,6 +143,7 @@ export function CommitteeWorkspace({
         pending={pending}
       />
     </div>
+    </TaskFeedbackProvider>
   );
 }
 
@@ -212,7 +215,8 @@ function OverviewPanel({ detail, pending, run }: PanelProps) {
 
           {detail.canManageMembers ? (
             editing ? (
-              <form onSubmit={submitEdit} className="grid gap-3 border-t border-line pt-4">
+              <TaskSheet open onClose={() => setEditing(false)} title="Sửa thông tin Ban">
+<form onSubmit={submitEdit} className="grid gap-3 border-t border-line pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-name">Tên Ban</Label>
                   <Input id="edit-name" name="name" required maxLength={120} defaultValue={committee.name} />
@@ -240,6 +244,7 @@ function OverviewPanel({ detail, pending, run }: PanelProps) {
                   <Button type="button" variant="outline" onClick={() => setEditing(false)} disabled={pending}>Hủy</Button>
                 </div>
               </form>
+</TaskSheet>
             ) : (
               <div className="border-t border-line pt-4">
                 <Button type="button" variant="outline" onClick={() => setEditing(true)}>Sửa thông tin Ban</Button>
@@ -282,7 +287,7 @@ function MembersPanel({ detail, pending, run, requestConfirm }: PanelProps) {
         {detail.members.length === 0 ? (
           <EmptyState
             title="Ban chưa có nhân sự"
-            description={`Ban ${detail.committee.name} chưa có ai. Thêm giáo lý viên bằng biểu mẫu bên dưới.`}
+            description={`Ban ${detail.committee.name} chưa có ai. Chọn Thêm thành viên để phân công.`}
           />
         ) : (
           <ul className="divide-y divide-line">
@@ -301,7 +306,8 @@ function MembersPanel({ detail, pending, run, requestConfirm }: PanelProps) {
         )}
 
         {detail.canManageMembers ? (
-          <form onSubmit={submitMember} className="grid gap-3 border-t border-line pt-4 md:grid-cols-3">
+          <ActionSheet title="Thêm thành viên">
+<form onSubmit={submitMember} className="grid gap-3 border-t border-line pt-4 md:grid-cols-3">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="add-staff">Thêm nhân sự</Label>
               <Select id="add-staff" name="staffProfileId" required placeholder="Chọn giáo lý viên" defaultValue="">
@@ -329,6 +335,7 @@ function MembersPanel({ detail, pending, run, requestConfirm }: PanelProps) {
               <Button type="submit" pending={pending}>Thêm vào Ban</Button>
             </div>
           </form>
+</ActionSheet>
         ) : null}
       </CardContent>
     </Card>
@@ -447,7 +454,8 @@ function AnnouncementsPanel({ detail, pending, run, requestConfirm }: PanelProps
       </CardHeader>
       <CardContent className="space-y-4">
         {detail.canWriteContent ? (
-          <form onSubmit={submitAnnouncement} className="grid gap-3">
+          <ActionSheet title="Đăng thông báo Ban">
+<form onSubmit={submitAnnouncement} className="grid gap-3">
             <div className="space-y-2">
               <Label htmlFor="announcement-title">Tiêu đề</Label>
               <Input id="announcement-title" name="title" required maxLength={200} />
@@ -458,6 +466,7 @@ function AnnouncementsPanel({ detail, pending, run, requestConfirm }: PanelProps
             </div>
             <div><Button type="submit" pending={pending}>Đăng thông báo</Button></div>
           </form>
+</ActionSheet>
         ) : null}
 
         {detail.announcements.length === 0 ? (
@@ -509,6 +518,7 @@ function MeetingsPanel({ detail, pending, run, requestConfirm }: PanelProps) {
   const committeeId = detail.committee.id;
   const [editing, setEditing] = useState<CommitteeMeeting | null>(null);
 
+  const [creating, setCreating] = useState(false);
   const now = Date.now();
   const upcoming = detail.meetings
     .filter((m) => new Date(m.startsAt).getTime() >= now)
@@ -535,7 +545,7 @@ function MeetingsPanel({ detail, pending, run, requestConfirm }: PanelProps) {
         note: String(data.get("note") ?? "") || null,
       }),
       editingId ? "Đã cập nhật lịch họp." : "Đã lưu lịch họp.",
-      { form, onSuccess: () => setEditing(null) },
+      { form, onSuccess: () => { setEditing(null); setCreating(false); } },
     );
   }
 
@@ -548,7 +558,10 @@ function MeetingsPanel({ detail, pending, run, requestConfirm }: PanelProps) {
         {detail.canWriteContent ? (
           // `key` theo bản đang sửa: đổi bản là React dựng lại form nên các ô
           // uncontrolled nạp đúng giá trị mới (cùng bài học với WeeklyPlanEditor).
-          <form key={editing?.id ?? "new"} onSubmit={submitMeeting} className="grid gap-3 md:grid-cols-2">
+          <>
+<Button onClick={() => { setEditing(null); setCreating(true); }}>Thêm lịch họp</Button>
+<TaskSheet open={creating || editing !== null} onClose={() => { setCreating(false); setEditing(null); }} title={editing ? "Sửa lịch họp" : "Thêm lịch họp"}>
+<form key={editing?.id ?? "new"} onSubmit={submitMeeting} className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="meeting-title">Nội dung buổi họp</Label>
               <Input id="meeting-title" name="title" required maxLength={200} defaultValue={editing?.title ?? ""} />
@@ -589,6 +602,7 @@ function MeetingsPanel({ detail, pending, run, requestConfirm }: PanelProps) {
               ) : null}
             </div>
           </form>
+</TaskSheet></>
         ) : null}
 
         {detail.meetings.length === 0 ? (

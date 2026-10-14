@@ -1,4 +1,5 @@
 "use client";
+import { ActionSheet } from "@/components/ui/task-sheet";
 
 import Link from "next/link";
 import { useActionState, useRef, useState, type FormEvent } from "react";
@@ -88,6 +89,7 @@ export function RosterRow({
   const closeFormRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);
   const [open, setOpen] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [pendingReason, setPendingReason] = useState<string>(CLOSE_ENROLLMENT_REASONS[0]);
 
   const paused = status === "paused";
@@ -140,8 +142,7 @@ export function RosterRow({
         </div>
 
         {canManage ? (
-          <details className="min-w-0">
-            <summary className="min-h-11 cursor-pointer py-3 text-sm text-ink-muted">Quản lý ghi danh</summary>
+          <ActionSheet title={`Ghi danh · ${studentName}`} triggerLabel="Quản lý ghi danh" onOpenChange={setManaging}>
           <div className="flex flex-wrap items-end gap-2 border-t border-line py-2">
             {paused ? (
               <form action={formAction}>
@@ -201,11 +202,12 @@ export function RosterRow({
             </form>
             )}
           </div>
-          </details>
+            {feedback ? <FormMessage tone={feedback.tone}>{feedback.text}</FormMessage> : null}
+          </ActionSheet>
         ) : null}
       </div>
 
-      {feedback ? (
+      {feedback && !managing ? (
         <FormMessage tone={feedback.tone} className="mt-2">
           {feedback.text}
         </FormMessage>

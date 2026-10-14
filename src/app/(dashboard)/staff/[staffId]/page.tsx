@@ -1,3 +1,4 @@
+import { ActionSheet } from "@/components/ui/task-sheet";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
@@ -76,6 +77,22 @@ export default async function StaffDetailPage({
       <PageHeader
         title={fullTitle}
         description={`${staff.staffCode} · Huấn luyện ${formationLabel(staff.formationLevel)}`}
+        action={canWrite ? <ActionSheet title="Sửa hồ sơ"><StaffProfileEditor
+                  id={staff.id}
+                  title={staff.title}
+                  saintName={staff.saintName}
+                  fullName={staff.fullName}
+                  phone={staff.phone}
+                  formationLevel={staff.formationLevel}
+                  serviceStatus={staff.serviceStatus}
+                  component={staff.component}
+                  dateOfBirth={staff.sensitive?.dateOfBirth ?? null}
+                  address={staff.sensitive?.address ?? null}
+                  email={staff.sensitive?.email ?? null}
+                  appointedRole={staff.appointment?.role ?? null}
+                  appointedSectorId={staff.appointment?.sectorId ?? null}
+                  sectors={detail.sectors}
+                /></ActionSheet> : null}
         backHref="/staff"
         backLabel="Danh sách nhân sự"
       />
@@ -86,7 +103,7 @@ export default async function StaffDetailPage({
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="space-y-5">
           <Card>
-            <CardHeader><CardTitle>Hồ sơ</CardTitle><CardDescription>Thông tin nhân sự và trạng thái phục vụ.</CardDescription></CardHeader>
+            <CardHeader><CardTitle>Hồ sơ</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p><span className="text-ink-muted">Danh xưng:</span> {TITLE_LABELS[staff.title] ?? staff.title}</p>
               {/* STAFF-COMP-001 — thành phần đứng ngay dưới danh xưng vì nó trả
@@ -129,7 +146,7 @@ export default async function StaffDetailPage({
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Phân công lớp</CardTitle><CardDescription>Mỗi người chỉ có một lớp đang phục vụ tại một thời điểm.</CardDescription></CardHeader>
+            <CardHeader><CardTitle>Phân công lớp</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {staff.assignmentHistory.length === 0 ? (
                 <p className="text-sm text-ink-muted">Chưa có phân công lớp nào.</p>
@@ -200,29 +217,7 @@ export default async function StaffDetailPage({
             />
           ) : null}
 
-          {canWrite ? (
-            <Card>
-              <CardHeader><CardTitle>Sửa hồ sơ</CardTitle><CardDescription>Cập nhật thông tin và trạng thái phục vụ.</CardDescription></CardHeader>
-              <CardContent>
-                <StaffProfileEditor
-                  id={staff.id}
-                  title={staff.title}
-                  saintName={staff.saintName}
-                  fullName={staff.fullName}
-                  phone={staff.phone}
-                  formationLevel={staff.formationLevel}
-                  serviceStatus={staff.serviceStatus}
-                  component={staff.component}
-                  dateOfBirth={staff.sensitive?.dateOfBirth ?? null}
-                  address={staff.sensitive?.address ?? null}
-                  email={staff.sensitive?.email ?? null}
-                  appointedRole={staff.appointment?.role ?? null}
-                  appointedSectorId={staff.appointment?.sectorId ?? null}
-                  sectors={detail.sectors}
-                />
-              </CardContent>
-            </Card>
-          ) : null}
+
 
           {/* D-106 — khối cuối cùng của cột, và đặt cuối là có chủ ý: thao tác
               không hoàn tác được thì không nằm cạnh những nút dùng hằng ngày. */}

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type {
   AttendanceRosterEntry,
@@ -41,6 +41,7 @@ vi.mock("@/features/attendance/server/actions", () => ({
 }));
 
 const { AttendanceEditor } = await import("@/features/attendance/components/attendance-editor");
+const { heartbeatAttendanceSession } = await import("@/features/attendance/server/actions");
 
 const ROSTER: AttendanceRosterEntry[] = [
   {
@@ -120,7 +121,7 @@ function rowButton(label: string) {
 }
 
 function column(label: string) {
-  return within(screen.getByRole("group", { name: label }));
+  return screen.getByRole("combobox", { name: label });
 }
 
 beforeEach(() => {
@@ -132,22 +133,21 @@ describe("attendance unsaved protection", () => {
     const user = userEvent.setup();
     renderEditor();
     expect(unloadIsBlocked()).toBe(false);
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }));
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "unexcused_absence");
     expect(unloadIsBlocked()).toBe(true);
-    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Có mặt" }));
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "present");
     expect(unloadIsBlocked()).toBe(false);
   });
 
   it("only clears dirty state after a successful save", async () => {
     const user = userEvent.setup();
     renderEditor();
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }));
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "unexcused_absence");
     saveAttendance.mockResolvedValueOnce({ ok: false, code: "CONFLICT", message: "Không lưu được." });
     await user.click(screen.getByRole("button", { name: "Lưu nháp" }));
     await screen.findByText("Không lưu được.");
     expect(unloadIsBlocked()).toBe(true);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Lưu nháp" })).toBeEnabled());
     await user.click(screen.getByRole("button", { name: "Lưu nháp" }));
     await screen.findByText("Đã lưu nháp.");
     await waitFor(() => expect(unloadIsBlocked()).toBe(false));
@@ -159,141 +159,61 @@ describe("attendance unsaved protection", () => {
     const saved = await saveAttendance.getMockImplementation()!({});
     let resolve!: (result: SaveAttendanceResult) => void;
     saveAttendance.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }));
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "unexcused_absence");
     await user.click(screen.getByRole("button", { name: "Lưu nháp" }));
-    await user.click(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Có mặt" }));
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "present");
     await act(async () => { resolve(saved); });
     expect(unloadIsBlocked()).toBe(true);
     view.rerender(editorElement({ roster: ROSTER.map((entry, index) => index === 0 ? { ...entry, massStatus: "unexcused_absence" } : entry) }));
-    expect(column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Có mặt" })).toBeChecked();
+    expect(column("Thánh lễ của Giuse Nguyễn Minh An")).toHaveValue("present");
     expect(unloadIsBlocked()).toBe(true);
   });
 
   it("syncs refreshed server values when the attendance draft is clean", () => {
     const view = renderEditor();
     view.rerender(editorElement({ roster: ROSTER.map((entry, index) => index === 0 ? { ...entry, massStatus: "unexcused_absence" } : entry) }));
-    expect(within(rowButton("Giuse Nguyễn Minh An")).getByLabelText("Thánh lễ: Vắng không phép")).toBeInTheDocument();
+    expect(column("Thánh lễ của Giuse Nguyễn Minh An")).toHaveValue("unexcused_absence");
     expect(unloadIsBlocked()).toBe(false);
   });
 });
 
-describe("D-143 — hàng gấp lại, chạm để mở", () => {
-  it("🔴 hàng gấp lại vẫn NÓI ĐỦ trạng thái cả hai cột", () => {
+describe("Mobile roster: direct controls and detail sheet", () => {
+  it("shows both saved statuses without opening a row", () => {
     renderEditor();
-
-    // Gấp mà giấu luôn kết quả thì người dùng phải mở từng em để kiểm — tệ hơn
-    // hẳn bản cũ. Chip mang tên cột đầy đủ trong `aria-label` vì "Lễ"/"GL" là
-    // chữ tắt cho mắt, không cho tai.
-    expect(within(rowButton("Phêrô Lê Văn Đức")).getByLabelText("Thánh lễ: Đi trễ"))
-      .toBeInTheDocument();
-    expect(within(rowButton("Phêrô Lê Văn Đức")).getByLabelText("Giáo lý: Có mặt"))
-      .toBeInTheDocument();
+    expect(column("Thánh lễ của Phêrô Lê Văn Đức")).toHaveValue("late");
+    expect(column("Giáo lý của Phêrô Lê Văn Đức")).toHaveValue("present");
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("chưa mở thì không có điều khiển nào được dựng", () => {
-    renderEditor();
-
-    expect(screen.queryByRole("group", { name: "Thánh lễ của Giuse Nguyễn Minh An" }))
-      .not.toBeInTheDocument();
-    expect(rowButton("Giuse Nguyễn Minh An")).toHaveAttribute("aria-expanded", "false");
-  });
-
-  it("mở rồi đóng lại được, và mỗi em độc lập", async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    expect(rowButton("Giuse Nguyễn Minh An")).toHaveAttribute("aria-expanded", "true");
-    expect(screen.queryByRole("group", { name: "Thánh lễ của Maria Trần Thị Ánh" }))
-      .not.toBeInTheDocument();
-
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    expect(screen.queryByRole("group", { name: "Thánh lễ của Giuse Nguyễn Minh An" }))
-      .not.toBeInTheDocument();
-  });
-
-  it("🔴 đóng hàng lại KHÔNG mất thứ vừa sửa", async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    await user.click(
-      column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }),
-    );
-    // Đóng lại — bản nháp sống ở state của editor, không sống trong DOM của hàng.
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    expect(within(rowButton("Giuse Nguyễn Minh An")).getByLabelText("Thánh lễ: Vắng không phép"))
-      .toBeInTheDocument();
-
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    expect(
-      column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }),
-    ).toBeChecked();
-  });
-});
-
-describe("D-142 — ba nút luôn hiện, hai nút còn lại sau '…'", () => {
-  it("mặc định đúng ba lựa chọn, và cả hai loại vắng đều ở mức một cú chạm", async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
+  it.each(["present", "unexcused_absence", "excused_absence", "late", "left_early"])("%s remains independent in both columns", async (status) => {
+    const user = userEvent.setup(); renderEditor();
     const mass = column("Thánh lễ của Giuse Nguyễn Minh An");
-
-    expect(mass.getAllByRole("radio")).toHaveLength(3);
-    expect(mass.getByRole("radio", { name: "Có mặt" })).toBeInTheDocument();
-    expect(mass.getByRole("radio", { name: "Vắng có phép" })).toBeInTheDocument();
-    expect(mass.getByRole("radio", { name: "Vắng không phép" })).toBeInTheDocument();
-    expect(mass.queryByRole("radio", { name: "Đi trễ" })).not.toBeInTheDocument();
+    const lesson = column("Giáo lý của Giuse Nguyễn Minh An");
+    expect(within(mass).getAllByRole("option")).toHaveLength(5);
+    await user.selectOptions(mass, status);
+    expect(mass).toHaveValue(status); expect(lesson).toHaveValue("present");
+    await user.selectOptions(mass, "late");
+    await user.selectOptions(lesson, status);
+    expect(mass).toHaveValue("late"); expect(lesson).toHaveValue(status);
   });
-
-  it("bấm '…' mở thêm Đi trễ và Về sớm", async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
+  it("closing and reopening details keeps both statuses and the internal note", async () => {
+    const user = userEvent.setup(); renderEditor();
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "unexcused_absence");
     await user.click(rowButton("Giuse Nguyễn Minh An"));
-    await user.click(screen.getByRole("button", { name: "… Thêm Đi trễ, Về sớm" }));
-
-    const mass = column("Thánh lễ của Giuse Nguyễn Minh An");
-    expect(mass.getAllByRole("radio")).toHaveLength(5);
-    expect(mass.getByRole("radio", { name: "Về sớm" })).toBeInTheDocument();
-  });
-
-  it("🔴 em ĐANG ở trạng thái phụ vẫn thấy ô của mình được chọn", async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
-    // Phêrô đang "Đi trễ" — một trạng thái nằm sau nút "…". Thiếu luật "trạng
-    // thái đang chọn luôn có mặt" thì hàng nút hiện KHÔNG ô nào được chọn, và
-    // nó trông hệt như dữ liệu vừa bị mất.
-    await user.click(rowButton("Phêrô Lê Văn Đức"));
-    const mass = column("Thánh lễ của Phêrô Lê Văn Đức");
-
-    expect(mass.getAllByRole("radio")).toHaveLength(4);
-    expect(mass.getByRole("radio", { name: "Đi trễ" })).toBeChecked();
-  });
-
-  it("nhãn ngắn trên màn hình, câu đầy đủ cho trình đọc màn hình", async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
+    await user.type(screen.getByRole("textbox", { name: /Ghi chú nội bộ của Giuse/ }), "Đã gọi gia đình");
+    await user.click(screen.getByRole("button", { name: "Xong" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(rowButton("Giuse Nguyễn Minh An"));
-    const radio = column("Thánh lễ của Giuse Nguyễn Minh An")
-      .getByRole("radio", { name: "Vắng không phép" });
-
-    expect(radio).toHaveAttribute("aria-label", "Vắng không phép");
-    expect(column("Thánh lễ của Giuse Nguyễn Minh An").getByText("Không phép")).toBeInTheDocument();
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: /Ghi chú nội bộ của Giuse/ })).toHaveValue("Đã gọi gia đình");
+    expect(column("Thánh lễ của Giuse Nguyễn Minh An")).toHaveValue("unexcused_absence");
   });
-
-  it("chế độ chỉ xem khoá cả nhóm nút bằng <fieldset disabled>", async () => {
-    const user = userEvent.setup();
-    renderEditor({ isEditor: false });
-
+  it("read-only disables both selects and notes", async () => {
+    const user = userEvent.setup(); renderEditor({ isEditor: false });
+    expect(column("Thánh lễ của Giuse Nguyễn Minh An")).toBeDisabled();
+    expect(column("Giáo lý của Giuse Nguyễn Minh An")).toBeDisabled();
     await user.click(rowButton("Giuse Nguyễn Minh An"));
-    expect(
-      column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Có mặt" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: /Ghi chú nội bộ của Giuse/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Lưu nháp" })).toBeNull();
   });
 });
 
@@ -315,7 +235,7 @@ describe("TB-09 — badge cảnh báo chuyên cần", () => {
 
     await user.click(rowButton("Phêrô Lê Văn Đức"));
     expect(
-      screen.getByText("Cảnh báo chuyên cần: Vắng lễ Chúa nhật nhiều buổi liên tiếp"),
+      screen.getByText("Vắng lễ Chúa nhật nhiều buổi liên tiếp"),
     ).toBeInTheDocument();
   });
 });
@@ -324,22 +244,19 @@ describe("U-11 — lọc và tìm ngay trên danh sách", () => {
   it("nhãn nút lọc mang con số của CẢ BUỔI", () => {
     renderEditor();
 
-    expect(screen.getByRole("radio", { name: "Tất cả (3)" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Đang vắng (0)" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Có đơn (1)" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Cảnh báo (1)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tất cả (3)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Đang vắng (0)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Có đơn (1)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cảnh báo (1)" })).toBeInTheDocument();
   });
 
   it("🔴 con số 'Đang vắng' cập nhật NGAY khi vừa đánh vắng, chưa cần bấm Lưu", async () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    await user.click(
-      column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }),
-    );
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "unexcused_absence");
 
-    expect(screen.getByRole("radio", { name: "Đang vắng (1)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Đang vắng (1)" })).toBeInTheDocument();
     expect(saveAttendance).not.toHaveBeenCalled();
   });
 
@@ -347,7 +264,7 @@ describe("U-11 — lọc và tìm ngay trên danh sách", () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(screen.getByRole("radio", { name: "Có đơn (1)" }));
+    await user.click(screen.getByRole("button", { name: "Có đơn (1)" }));
 
     expect(screen.getByRole("button", { name: /Maria Trần Thị Ánh/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Giuse Nguyễn Minh An/ })).not.toBeInTheDocument();
@@ -361,7 +278,7 @@ describe("U-11 — lọc và tìm ngay trên danh sách", () => {
     expect(screen.getByRole("button", { name: /Phêrô Lê Văn Đức/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Maria Trần Thị Ánh/ })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("radio", { name: "Có đơn (1)" }));
+    await user.click(screen.getByRole("button", { name: "Có đơn (1)" }));
     expect(screen.getByText(/Không có em nào khớp “duc” trong nhóm “Có đơn”/)).toBeInTheDocument();
   });
 
@@ -369,7 +286,7 @@ describe("U-11 — lọc và tìm ngay trên danh sách", () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(screen.getByRole("radio", { name: "Có đơn (1)" }));
+    await user.click(screen.getByRole("button", { name: "Có đơn (1)" }));
     await user.click(screen.getByRole("button", { name: "Lưu nháp" }));
 
     // Bộ lọc là chuyện của mắt. Gửi đi thiếu em nào là xóa trắng điểm danh của
@@ -397,10 +314,7 @@ describe("TB-03 — hộp xác nhận trước khi chốt", () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(rowButton("Giuse Nguyễn Minh An"));
-    await user.click(
-      column("Thánh lễ của Giuse Nguyễn Minh An").getByRole("radio", { name: "Vắng không phép" }),
-    );
+    await user.selectOptions(column("Thánh lễ của Giuse Nguyễn Minh An"), "unexcused_absence");
     await user.click(screen.getByRole("button", { name: "Hoàn tất điểm danh" }));
 
     const dialog = within(screen.getByRole("dialog"));
@@ -474,6 +388,26 @@ describe("U-17 / U-18 — thông báo nằm cạnh nút vừa bấm", () => {
 });
 
 describe("TB-05 — đồng hồ phiên chỉnh sửa", () => {
+  it("mất quyền sửa khóa thao tác, đóng xác nhận và giữ nháp chưa lưu", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(heartbeatAttendanceSession).mockResolvedValueOnce({ ok: false, code: "CONFLICT", message: "Buổi đã được tiếp quản." });
+      renderEditor();
+      fireEvent.change(column("Thánh lễ của Giuse Nguyễn Minh An"), { target: { value: "late" } });
+      fireEvent.click(rowButton("Giuse Nguyễn Minh An"));
+      fireEvent.change(screen.getByRole("textbox", { name: /Ghi chú nội bộ của Giuse/ }), { target: { value: "Còn ghi chú chưa lưu" } });
+      fireEvent.keyDown(document, { key: "Escape" });
+      fireEvent.click(screen.getByRole("button", { name: "Hoàn tất điểm danh" }));
+      await act(async () => vi.advanceTimersByTimeAsync(450_000));
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(column("Thánh lễ của Giuse Nguyễn Minh An")).toBeDisabled();
+      expect(column("Giáo lý của Giuse Nguyễn Minh An")).toBeDisabled();
+      expect(column("Thánh lễ của Giuse Nguyễn Minh An")).toHaveValue("late");
+      expect((screen.getByLabelText("Thay đổi chưa lưu của bạn") as HTMLTextAreaElement).value).toContain("Còn ghi chú chưa lưu");
+      expect(screen.queryByRole("button", { name: "Lưu nháp" })).toBeNull();
+      expect(saveAttendance).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
   it("hiện thời gian còn lại trong một vùng aria-live", async () => {
     renderEditor({ leaseExpiresAt: new Date(Date.now() + 12 * 60_000).toISOString() });
 

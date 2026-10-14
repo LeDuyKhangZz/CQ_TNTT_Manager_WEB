@@ -142,6 +142,7 @@ export function AttendanceEditor({
   // TB-05 — đồng hồ phiên chỉnh sửa và chuyện bị tiếp quản.
   const [leaseExpiry, setLeaseExpiry] = useState<string | null>(leaseExpiresAt);
   const [lostLease, setLostLease] = useState<string | null>(null);
+  const readOnly = !isEditor || lostLease !== null;
   // 🔴 `null` cho tới khi trang gắn xong: `Date.now()` lúc dựng ở máy chủ khác
   // với lúc dựng ở trình duyệt, và một con số phút chênh nhau là hydration
   // mismatch. Trước khi gắn xong thì không hiện đồng hồ — đúng hơn là hiện sai.
@@ -233,6 +234,7 @@ export function AttendanceEditor({
 
   const submit = useCallback(
     (finalize: boolean) => {
+      if (readOnly) return;
       setMessage(null);
       startTransition(async () => {
         const result = await saveAttendance({
@@ -271,7 +273,7 @@ export function AttendanceEditor({
         router.refresh();
       });
     },
-    [router, sessionId, staffDraft, students],
+    [readOnly, router, sessionId, staffDraft, students],
   );
 
   /**
@@ -310,10 +312,7 @@ export function AttendanceEditor({
 
   const toggleExpanded = useCallback((enrollmentId: string) => {
     setExpanded((current) => {
-      const next = new Set(current);
-      if (next.has(enrollmentId)) next.delete(enrollmentId);
-      else next.add(enrollmentId);
-      return next;
+      return current.has(enrollmentId) ? new Set<string>() : new Set([enrollmentId]);
     });
   }, []);
 
@@ -330,18 +329,15 @@ export function AttendanceEditor({
     });
   }, [router, sessionId]);
 
-  const readOnly = !isEditor;
-
   return (
-    <div className="space-y-5">
-      {readOnly ? (
-        <Card>
-          <CardContent className="space-y-3 pt-6">
+    <div className="space-y-4">
+      {readOnly && !lostLease ? (
+        <div className="space-y-2 border-b border-line pb-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-ink-muted">
                 {editorName
                   ? `${editorName} đang phụ trách buổi này. Bạn chỉ xem.`
-                  : "Bạn không giữ quyền chỉnh sửa buổi này."}
+                  : "Chỉ xem · Chưa nhận quyền sửa"}
               </p>
               {canTakeover ? (
                 <Button variant="outline" onClick={takeover} pending={pending}>
@@ -354,8 +350,7 @@ export function AttendanceEditor({
                 {message.text}
               </FormMessage>
             ) : null}
-          </CardContent>
-        </Card>
+        </div>
       ) : null}
 
       {/* TB-05 bước 4 / AC-F05-3 — bị tiếp quản thì phải được NÓI, và phần vừa
@@ -392,7 +387,7 @@ export function AttendanceEditor({
       ) : null}
 
       {/* AC-F05-4 / U-24 — hạn phiên chỉnh sửa, lấy từ giá trị máy chủ trả về. */}
-      {lease ? (
+      {lease && !readOnly ? (
         <p
           aria-live="polite"
           className={`text-sm ${lease.tone === "info" ? "text-ink-muted" : "text-warning"}`}
@@ -419,11 +414,7 @@ export function AttendanceEditor({
         <CardHeader>
           <CardTitle>Thiếu nhi</CardTitle>
           <CardDescription>
-            Mặc định tất cả có mặt — chỉ sửa những em vắng. Thánh lễ và Giáo lý ghi nhận riêng.
-            {/* D-75: nói một lần cho cả thẻ, ngay chỗ người dùng đọc trước khi
-                bắt đầu gõ. Ô nhập nhắc lại lần nữa bằng placeholder. */}
-            {" "}Ghi chú là ghi chú nội bộ — phụ huynh không nhìn thấy.
-            Đang vắng: Lễ {counters.massAbsent}, Giáo lý {counters.catechismAbsent} trên {counters.total} em.
+            {counters.total} em · Vắng lễ {counters.massAbsent} · Vắng giáo lý {counters.catechismAbsent}
             {/* D-140: nói ra con số, vì một danh sách ngắn hơn sĩ số mà không
                 giải thích thì trông y như hệ thống làm mất em. */}
             {pausedCount > 0
@@ -446,31 +437,29 @@ export function AttendanceEditor({
                   nào để canh thẳng hàng cùng. Ba tầng cố định sẽ chỉ thêm 48px
                   trống vào một thanh DÍNH — 7,5% chiều cao màn hình 360px, ngay
                   trong luồng mà tốc độ là lý do tồn tại của thiết kế. */}
-              <div className="sticky top-16 z-sticky space-y-2 rounded-md border border-line bg-surface p-2">
-                <SegmentedControl
-                  name="roster-filter"
-                  legend="Lọc danh sách thiếu nhi"
-                  hideLegend
-                  value={filter}
-                  onChange={(value) => setFilter(value as RosterFilter)}
-                  options={ROSTER_FILTERS.map((key) => ({
-                    value: key,
-                    label: `${ROSTER_FILTER_LABELS[key]} (${filterCounts[key]})`,
-                  }))}
-                />
+              <div className="sticky top-[68px] z-sticky space-y-2 border-b border-line bg-surface pb-2">
                 <SearchInput
                   label="Tìm thiếu nhi theo tên"
                   placeholder="Tìm tên em…"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  hint="Gõ không dấu cũng tìm được."
                 />
+                <div role="group" aria-label="Lọc danh sách thiếu nhi" className="grid grid-cols-4 gap-1">
+                  {ROSTER_FILTERS.map((key) => <button key={key} type="button" aria-pressed={filter === key} onClick={() => setFilter(key)}
+                    className={`min-h-11 rounded-md px-1 text-xs font-medium ${filter === key ? "bg-theme-tint text-theme-accent-text" : "text-ink-muted hover:bg-surface-muted"}`}>
+                    {ROSTER_FILTER_LABELS[key]} ({filterCounts[key]})
+                  </button>)}
+                </div>
+                <div className="grid grid-cols-[minmax(0,1fr)_84px_84px] gap-2 px-2 text-center text-xs text-ink-muted sm:grid-cols-[minmax(0,1fr)_112px_112px] sm:px-3">
+                  <span className="text-left">Họ tên</span><span>Thánh lễ</span><span>Giáo lý</span>
+                </div>
               </div>
+              <p className="text-xs text-ink-muted">Mặc định có mặt. Chạm ô để đổi; chạm tên để ghi chú.</p>
 
               {visibleRoster.length === 0 ? (
                 <p className="text-sm text-ink-muted">{emptyRosterMessage(filter, query)}</p>
               ) : (
-                <div className="divide-y divide-line overflow-hidden rounded-md border border-line">
+                <div>
                   {visibleRoster.map((entry) => {
                     const draft = students[entry.enrollmentId];
                     if (!draft) return null;
@@ -499,7 +488,6 @@ export function AttendanceEditor({
       <Card>
         <CardHeader>
           <CardTitle>Giáo lý viên</CardTitle>
-          <CardDescription>Điểm danh đội ngũ lớp trong cùng buổi.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {staff.length === 0 ? (
@@ -564,7 +552,7 @@ export function AttendanceEditor({
 
       {readOnly ? null : (
         // Đợt E V8 — thanh hành động dính đáy: chỉ đổi token, giữ nguyên sticky.
-        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] z-sticky space-y-2 rounded-md border border-line bg-surface p-3 lg:bottom-4">
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+4rem)] z-sticky space-y-2 border-t border-line bg-surface p-2 lg:bottom-0">
           {/* 🔴 U-17 — thông báo nằm TRONG thanh hành động, cạnh đúng cái nút
               vừa bấm. Bản cũ đặt nó ở đầu editor trong khi hai nút ở đáy màn
               hình: trên máy 360px với 50 em, hai chỗ ấy cách nhau hàng nghìn
@@ -578,19 +566,19 @@ export function AttendanceEditor({
               </FormMessage>
             ) : null}
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <div className="grid grid-cols-[1fr_1.4fr] gap-2 sm:flex sm:justify-end">
             <Button variant="outline" onClick={() => submit(false)} pending={pending}>
               Lưu nháp
             </Button>
-            <Button onClick={() => setConfirming(true)} disabled={pending}>
-              {isFinalized ? "Chốt lại" : "Hoàn tất điểm danh"}
+            <Button onClick={() => setConfirming(true)} disabled={pending} aria-label={isFinalized ? "Chốt lại" : "Hoàn tất điểm danh"}>
+              {isFinalized ? "Chốt lại" : "Hoàn tất"}
             </Button>
           </div>
         </div>
       )}
 
       <FinalizeConfirmDialog
-        open={confirming}
+        open={confirming && !readOnly}
         preview={preview}
         pending={pending}
         isRefinalize={isFinalized}

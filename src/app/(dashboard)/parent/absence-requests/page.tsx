@@ -11,7 +11,7 @@ export default async function AbsenceRequestsPage() {
     <PageContainer>
       <PageHeader
         title="Đơn xin nghỉ"
-        description="Báo trước cho giáo lý viên khi con không đến được. Đơn là lời báo, giáo lý viên vẫn là người điểm danh."
+        help="Báo trước cho giáo lý viên khi con không đến được. Đơn là lời báo, giáo lý viên vẫn là người điểm danh."
       />
       {/* M14 A-07 — đường vào hồ sơ từng con. Chỉ hiện khi có con: trường hợp
           tài khoản chưa gắn hồ sơ đã được thẻ "Gửi đơn mới" bên dưới nói rồi,
