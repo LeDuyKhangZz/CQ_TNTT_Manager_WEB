@@ -330,6 +330,34 @@ html { scroll-padding-top: 80px; scroll-padding-bottom: 96px; }
   }
 }
 
+/* Detail screens retain distinct reading sections on phones, too. This opt-in
+   leaves dense editors and ordinary workspace sections unchanged. */
+.workspace-content.detail-workspace .erp-card,
+.detail-workspace .content-section {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+.workspace-content.detail-workspace .erp-card-header { padding: 16px; }
+.workspace-content.detail-workspace .erp-card-content { padding: 0 16px 16px; }
+.workspace-content.detail-workspace .erp-card > .erp-card-content:first-child { padding-top: 16px; }
+.detail-workspace .content-section { padding: 16px; }
+.detail-workspace .content-section > div:first-child { padding-bottom: 12px; }
+
+[data-entity-table] [data-linked-row]:hover,
+[data-entity-table] [data-linked-row]:focus-within { background: var(--theme-tint); }
+[data-entity-table] [data-linked-row]:hover > td:first-child,
+[data-entity-table] [data-linked-row]:focus-within > td:first-child { background: var(--theme-tint); }
+@media (max-width: 767px) {
+  [data-mobile-cards] tbody { display: grid; gap: 8px; padding: 8px; }
+  [data-mobile-cards] [data-linked-row] {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    background: var(--bg-surface);
+  }
+}
+
 @keyframes drawer-enter-side {
   from {
     transform: translateX(100%);

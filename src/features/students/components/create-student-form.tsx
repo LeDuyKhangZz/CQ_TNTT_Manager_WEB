@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { EntityLink } from "@/components/ui/entity-link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -92,22 +93,22 @@ export function CreateStudentForm({
           <ul className="space-y-1 text-sm text-ink">
             {duplicates.map((item) => (
               <li key={item.student.id}>
-                <Link
+                <EntityLink
                   href={`/students/${item.student.id}`}
-                  className="font-medium underline underline-offset-4"
+                  label="Xem hồ sơ" ariaLabel={item.student.fullName}
                 >
-                  {item.student.fullName}
-                </Link>{" "}
-                <span className="text-ink-muted">
-                  — {item.student.studentCode} · {formatOptionalDateVi(item.student.dateOfBirth, "chưa có ngày sinh")}
+                  <p className="font-semibold">{item.student.fullName}</p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  {item.student.studentCode} · {formatOptionalDateVi(item.student.dateOfBirth, "chưa có ngày sinh")}
                   {item.student.className ? ` · ${item.student.className}` : " · chưa xếp lớp"} ·{" "}
                   {DUPLICATE_LEVEL_LABELS[item.level]}
-                </span>
+                </p>
+                </EntityLink>
               </li>
             ))}
           </ul>
           <p className="text-2xs text-ink-muted">
-            Nếu đúng là em đã có hồ sơ thì bấm vào tên ở trên để mở hồ sơ đó. Nếu là em
+            Nếu đúng là em đã có hồ sơ thì bấm vào thẻ ở trên để mở hồ sơ đó. Nếu là em
             khác thật thì bấm &ldquo;Vẫn tạo hồ sơ mới&rdquo;.
           </p>
           <input type="hidden" name="confirmDuplicate" value="1" />

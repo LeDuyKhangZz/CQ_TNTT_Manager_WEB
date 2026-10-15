@@ -7,12 +7,13 @@ import { cn } from "@/lib/utils";
 export type TabNavItem = { key: string; href: string; label: ReactNode; badge?: number };
 
 /** Navigation between server-rendered views: real links, not ARIA widget tabs. */
-export function TabNav({ items, activeKey, label, stickyMobile = true, className }: {
+export function TabNav({ items, activeKey, label, stickyMobile = true, className, layout = "scroll" }: {
   items: readonly TabNavItem[];
   activeKey: string;
   label: string;
   stickyMobile?: boolean;
   className?: string;
+  layout?: "scroll" | "wrap";
 }) {
   const navRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -32,10 +33,11 @@ export function TabNav({ items, activeKey, label, stickyMobile = true, className
   }, [activeKey]);
   if (!items.length) return null;
   return <nav ref={navRef} aria-label={label} data-tab-nav data-sticky={stickyMobile || undefined}
-    className={cn("flex min-w-0 gap-1 overflow-x-auto border-b border-line bg-page", stickyMobile && "sticky top-[68px] z-sticky md:static", className)}>
+    className={cn("min-w-0 gap-1", layout === "wrap" ? "grid grid-cols-3 rounded-lg border border-line bg-surface p-1 sm:flex sm:flex-wrap" : "flex overflow-x-auto border-b border-line bg-page", stickyMobile && "sticky top-[68px] z-sticky md:static", className)}>
     {items.map(item => <Link key={item.key} href={item.href} aria-current={item.key === activeKey ? "page" : undefined}
-      className={cn("inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm",
-        item.key === activeKey ? "border-theme-primary font-semibold text-theme-accent-text" : "border-transparent text-ink-muted hover:text-ink")}>
+      className={cn("inline-flex min-h-11 items-center gap-2 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring",
+        layout === "wrap" ? "justify-center rounded-md text-center sm:flex-1" : "shrink-0 whitespace-nowrap border-b-2",
+        item.key === activeKey ? "border-theme-primary bg-theme-tint font-semibold text-theme-accent-text" : "border-transparent text-ink-muted hover:bg-surface-muted hover:text-ink")}>
       {item.label}{item.badge === undefined ? null : <span className="tabular-nums text-xs">({item.badge})</span>}
     </Link>)}
   </nav>;

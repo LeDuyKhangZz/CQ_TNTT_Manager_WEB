@@ -53,7 +53,7 @@ export default async function StudentsPage({ searchParams }: {
         {item.status !== "active" ? <span className="shrink-0 text-2xs font-normal md:hidden">{studentStatusLabel(item.status)}</span> : null}
         {item.hardshipFlag ? <span className="text-2xs md:hidden" aria-label="Hoàn cảnh khó khăn">★</span> : null}
       </span>,
-      className: "leading-4 md:leading-normal md:min-w-56 [&>a]:block md:[&>a]:inline-flex md:[&>a]:min-h-11 [&>a]:items-center",
+      className: "leading-4 md:leading-normal md:min-w-56",
 
     },
     {
@@ -118,6 +118,7 @@ export default async function StudentsPage({ searchParams }: {
           columns={columns} rows={students} getRowKey={item => item.id} minWidth="880px"
           stickyHeader maxHeightClassName="md:max-h-[70vh]"
           className="[&_tbody_tr]:gap-y-0 [&_tbody_tr]:py-1"
+          rowActionLabel="Xem hồ sơ"
           rowHref={feeScope ? undefined : item => `/students/${item.id}`}
           mobileRow={{ titleKey: "name", trailingKey: "phone" }}
           sort={feeScope ? undefined : { key: criteria.sort, direction: criteria.direction,

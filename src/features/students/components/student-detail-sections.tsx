@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { EntityLink } from "@/components/ui/entity-link";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { getAcademicYearView } from "@/lib/academic-year/view";
 import { createClient } from "@/lib/supabase/server";
@@ -28,11 +28,11 @@ export async function StudentFamilyMembers({ studentId, guardianId }: { studentI
   if (error) return <DetailLoadError href={`/students/${studentId}?tab=family`} label="anh chị em cùng giám hộ" />;
   return <Section id="family-members" title="Anh chị em cùng người giám hộ" description="Chỉ hiển thị hồ sơ trong phạm vi bạn được phép xem.">
     {!data?.length ? <p className="text-sm text-ink-muted">Không có hồ sơ khác trong phạm vi của bạn.</p> :
-      <ul className="divide-y divide-line">{data.map(item => <li key={item.id}>
-        <Link href={`/students/${item.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-2 py-2 text-sm">
+      <ul className="space-y-2">{data.map(item => <li key={item.id}>
+        <EntityLink href={`/students/${item.id}`} label="Xem hồ sơ">
           <span className="font-medium text-theme-accent-text">{item.saint_name} {item.full_name}</span>
-          <span>{item.class_name ?? "Chưa xếp lớp"} · {studentStatusLabel(item.status ?? "active")}</span>
-        </Link>
+          <span className="mt-1 block text-xs text-ink-muted">{item.class_name ?? "Chưa xếp lớp"} · {studentStatusLabel(item.status ?? "active")}</span>
+        </EntityLink>
       </li>)}</ul>}
   </Section>;
 }

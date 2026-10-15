@@ -1,6 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "./checkbox";
 
@@ -149,6 +149,8 @@ export type DataTableProps<Row> = {
    * không tới được). Ô dữ liệu đầu vì thế **không được chứa link riêng**.
    */
   rowHref?: (row: Row) => string | null;
+  /** Visible instruction as well as an arrow; only shown for navigable rows. */
+  rowActionLabel?: string;
   /** Chân bảng (phân trang, đếm đã chọn) — component riêng làm ở R2.11. */
   footer?: React.ReactNode;
   className?: string;
@@ -277,6 +279,7 @@ export function DataTable<Row>({
   selection,
   mobileRow,
   rowHref,
+  rowActionLabel = "Xem chi tiết",
   footer,
   className,
 }: DataTableProps<Row>) {
@@ -313,6 +316,8 @@ export function DataTable<Row>({
     <div
       className={className}
       data-table-id={tableId}
+      data-entity-table={rowHref ? "" : undefined}
+      data-mobile-cards={rowHref && mobileRow ? "" : undefined}
       // R2.10: compact tokens inherit through the table and its controls.
       data-density={density === "compact" ? "compact" : undefined}
     >
@@ -446,6 +451,7 @@ export function DataTable<Row>({
                   return (
                     <tr
                       key={getRowKey(row, rowIndex)}
+                      data-linked-row={href ? "" : undefined}
                       aria-selected={isRowSelected ? selected : undefined}
                       className={cn(
                         rowHeight,
@@ -454,7 +460,7 @@ export function DataTable<Row>({
                         // các dòng sau là thông tin phụ có nhãn. Từ `md` trở
                         // lên quay lại đúng `table-row`.
                         mobileRow && CARD_ROW[layout],
-                        href && "relative",
+                        href && "group relative cursor-pointer focus-within:bg-theme-tint",
                         selected ? "bg-theme-tint" : "hover:bg-surface-muted",
                       )}
                     >
@@ -517,16 +523,22 @@ export function DataTable<Row>({
                             {href && isFirstData ? (
                               <Link
                                 href={href}
+                                prefetch={false}
+                                data-row-link
                                 className={cn(
-                                  "rounded-sm after:absolute after:inset-0 after:content-['']",
+                                  "flex min-h-11 items-center justify-between gap-3 rounded-sm text-theme-accent-text after:absolute after:inset-0 after:content-['']",
                                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring focus-visible:ring-offset-2",
                                 )}
                               >
-                                {column.cell(row)}
+                                <div className="min-w-0 flex-1">
+                                  {column.cell(row)}
+                                  <span aria-hidden="true" className="mt-1 block text-xs font-medium text-theme-accent-text md:hidden">{rowActionLabel}</span>
+                                </div>
+                                <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-theme-accent-text" />
                               </Link>
                             ) : (
                               <>
-                                {href ? <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0" /> : null}
+                                {href ? <Link href={href} prefetch={false} tabIndex={-1} aria-hidden="true" className="absolute inset-0" /> : null}
                                 <div className={cn(href && "pointer-events-none relative [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_input]:pointer-events-auto [&_label]:pointer-events-auto [&_select]:pointer-events-auto [&_summary]:pointer-events-auto [&_textarea]:pointer-events-auto")}>
                                   {mobileRow && role === "meta" && label ? (
                                     <span className="mr-1 md:hidden">{label}:</span>

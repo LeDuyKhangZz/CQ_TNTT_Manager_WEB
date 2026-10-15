@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/ui/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FilterField, filterFieldLabelRowClassName } from "@/components/ui/filter-bar";
 import { SearchInputControl } from "@/components/ui/search-input";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { formatDateVi, todayVi } from "@/lib/dates";
 import { academicYearNotice } from "@/features/academic-years/year-lifecycle";
 import { academicYearStatusLabel } from "@/features/academic-years/admin-feedback";
@@ -59,8 +60,8 @@ export default async function ClassDetailPage({
       : null;
 
   return (
-    <PageContainer data-density="compact">
-      <PageHeader
+    <PageContainer className="detail-workspace" data-density="compact">
+      <EntityHeader label="Thông tin lớp học" initials={classDetail.displayName.slice(0, 1)}
         title={classDetail.displayName}
         /* Trạng thái năm học đứng ngay trong phụ đề, không chỉ nằm trong dải cảnh
            báo: dải chỉ hiện khi năm khác `current`, còn câu này luôn có mặt. */
@@ -69,7 +70,8 @@ export default async function ClassDetailPage({
            liên kết chữ nhỏ ở góc phải, không đạt ngưỡng. */
         backHref="/classes"
         backLabel="Danh sách lớp"
-        action={
+        facts={<><span>{classDetail.historicalRosterCount !== undefined ? `${classDetail.historicalRosterCount} lượt ghi danh trong năm học` : summary.text}</span><span>Phòng sinh hoạt: <strong>{classDetail.meetingLocation || "Chưa ghi"}</strong></span></>}
+        chips={
           needsStatusBadge(classDetail.status) ? (
             <Badge variant={classStatusBadgeVariant(classDetail.status)}>
               {classStatusLabel(classDetail.status)}
@@ -102,7 +104,7 @@ export default async function ClassDetailPage({
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Card>
           <CardHeader>
-            <CardTitle>Danh sách thiếu nhi</CardTitle>
+            <CardTitle as="h2">Danh sách thiếu nhi</CardTitle>
             <CardDescription>{classDetail.historicalRosterCount !== undefined ? `${classDetail.historicalRosterCount} lượt ghi danh trong năm học` : summary.text}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -132,34 +134,19 @@ export default async function ClassDetailPage({
         <div className="space-y-5">
           <Card>
             <CardHeader>
-              <CardTitle>Đội ngũ lớp</CardTitle>
+              <CardTitle as="h2">Đội ngũ lớp</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {classDetail.team.length === 0 ? (
                 <p className="text-sm text-ink-muted">Chưa phân công nhân sự.</p>
               ) : (
                 classDetail.team.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
-                    {/*
-                      M04-C: mở thẳng hồ sơ người phụ trách — điểm trừ duy nhất của
-                      M04-F09 trong biên bản audit ("chưa link được vì
-                      /staff/[staffId] chưa tồn tại"). Không đọc được hồ sơ thì giữ
-                      chữ thường: một liên kết dẫn tới trang không tìm thấy còn tệ
-                      hơn không có liên kết.
-                    */}
-                    {item.staffProfileId ? (
-                      <Link
-                        href={`/staff/${item.staffProfileId}`}
-                        className="inline-flex min-h-11 items-center font-medium hover:underline"
-                      >
-                        {item.name}
-                      </Link>
-                    ) : (
-                      <span>{item.name}</span>
-                    )}
-                    <Badge variant={item.capacity === "representative" ? "success" : "secondary"}>
-                      {capacityLabels[item.capacity] ?? item.capacity}
-                    </Badge>
+                  item.staffProfileId ? <EntityLink key={item.id} href={`/staff/${item.staffProfileId}`} label="Xem hồ sơ">
+                    <p className="font-semibold" data-entity-name>{item.name}</p>
+                    <p className="mt-1 text-xs text-ink-muted">{capacityLabels[item.capacity] ?? item.capacity}</p>
+                  </EntityLink> : <div key={item.id} className="border-b border-line py-3 text-sm">
+                    <p className="font-medium">{item.name}</p>
+                    <p className="mt-1 text-xs text-ink-muted">{capacityLabels[item.capacity] ?? item.capacity}</p>
                   </div>
                 ))
               )}
@@ -178,7 +165,7 @@ export default async function ClassDetailPage({
           {canManageClass ? (
             <Card>
               <CardHeader>
-                <CardTitle>Cài đặt lớp</CardTitle>
+                <CardTitle as="h2">Cài đặt lớp</CardTitle>
                 <CardDescription>
                   Trạng thái, phòng sinh hoạt và ghi chú. Đóng lớp không kết thúc ghi danh đang mở.
                 </CardDescription>
@@ -197,7 +184,7 @@ export default async function ClassDetailPage({
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Cài đặt lớp</CardTitle>
+                <CardTitle as="h2">Cài đặt lớp</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <p>
@@ -221,7 +208,7 @@ export default async function ClassDetailPage({
           {canManage ? (
             <Card>
               <CardHeader>
-                <CardTitle>Ghi danh thiếu nhi</CardTitle>
+                <CardTitle as="h2">Ghi danh thiếu nhi</CardTitle>
                 <CardDescription>Mỗi em chỉ có một lớp đang mở trong năm học.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">

@@ -160,7 +160,7 @@ test.describe("M02-B · chi tiết lớp và cài đặt lớp", () => {
     await expect(page.getByRole("heading", { name: "Ghi danh thiếu nhi" })).toBeVisible();
     await expect(settingsForm(page)).toHaveCount(0);
     // Nhưng vẫn ĐỌC được cài đặt: ẩn cả sự thật thì họ không biết lớp mình họp ở đâu.
-    await expect(page.getByText("Phòng sinh hoạt:")).toBeVisible();
+    await expect(page.getByText("Phòng sinh hoạt:", { exact: true })).toBeVisible();
   });
 });
 
@@ -171,6 +171,7 @@ test.describe("M02-B · mốc kết thúc học kỳ 1 (D-71)", () => {
     await page.goto("/admin");
 
     const card = page.locator("div.rounded-md.border").filter({ hasText: SEEDED_YEAR_CODE }).first();
+    await card.getByRole("button", { name: "Sửa mốc học kỳ", exact: true }).click();
     const milestone = card.getByLabel("Ngày kết thúc học kỳ 1");
     await expect(milestone).toBeVisible();
 
@@ -190,6 +191,7 @@ test.describe("M02-B · mốc kết thúc học kỳ 1 (D-71)", () => {
 
     await page.reload();
     const cardAgain = page.locator("div.rounded-md.border").filter({ hasText: SEEDED_YEAR_CODE }).first();
+    await cardAgain.getByRole("button", { name: "Sửa mốc học kỳ", exact: true }).click();
     // Đợt C: hiển thị dd/MM/yyyy, ô ẩn giữ ISO.
     await expect(cardAgain.getByLabel("Ngày kết thúc học kỳ 1")).toHaveValue("15/01/2027");
 
@@ -200,6 +202,7 @@ test.describe("M02-B · mốc kết thúc học kỳ 1 (D-71)", () => {
     await expect(cardAgain.getByText("Đã xoá mốc kết thúc học kỳ 1")).toBeVisible({ timeout: 45_000 });
     await page.reload();
     const finalCard = page.locator("div.rounded-md.border").filter({ hasText: SEEDED_YEAR_CODE }).first();
+    await finalCard.getByRole("button", { name: "Sửa mốc học kỳ", exact: true }).click();
     await expect(finalCard.getByLabel("Ngày kết thúc học kỳ 1")).toHaveValue("");
   });
 });

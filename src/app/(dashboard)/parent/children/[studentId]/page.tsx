@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { buttonVariants } from "@/components/ui/button";
 import { AttendanceHistory } from "@/features/portal/components/attendance-history";
 import { getChildAttendancePageData } from "@/features/portal/server/queries";
@@ -19,8 +19,8 @@ export default async function ParentChildPage({
   if (!student) notFound();
 
   return (
-    <PageContainer>
-      <PageHeader
+    <PageContainer className="detail-workspace">
+      <EntityHeader
         title={student.label}
         description="Điểm danh Thánh lễ và Giáo lý của con."
         // AC-B6 — đường lùi về trang cha, vùng chạm 44px. Đợt B mới nối được

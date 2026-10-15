@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { FormPendingBridge } from "@/components/loading/form-pending-bridge";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { AttendanceEditor } from "@/features/attendance/components/attendance-editor";
 import { MEETING_TYPE_LABELS, SESSION_STATE_LABELS } from "@/features/attendance/constants";
 import { unlockAttendanceSessionFromForm } from "@/features/attendance/server/actions";
@@ -24,8 +24,8 @@ export default async function AttendanceSessionPage({
   if (!detail) notFound();
 
   return (
-    <PageContainer>
-      <PageHeader
+    <PageContainer className="detail-workspace">
+      <EntityHeader
         title={`${detail.className} — ${MEETING_TYPE_LABELS[detail.meetingType]}`}
         description={`Ngày ${formatDateVi(detail.attendanceDate)}`}
         backHref="/attendance"

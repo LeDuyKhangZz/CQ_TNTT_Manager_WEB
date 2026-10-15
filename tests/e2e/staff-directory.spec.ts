@@ -64,7 +64,7 @@ async function login(page: Page, username: string) {
  * ít nhất hai phần tử (thẻ + `<option>`) và Playwright báo strict mode violation.
  */
 function staffCards(page: Page) {
-  return page.locator('a[href^="/staff/"]');
+  return page.locator('[data-table-id="staff-directory"] [data-row-link]');
 }
 
 function cardFor(page: Page, name: string) {
@@ -104,12 +104,12 @@ test("D-108: mặc định ẩn người 'Đã nghỉ' và NÓI RA đang ẩn ba
     // The search scopes two known records; no service parameter means default.
     const fixtureUrl = `/staff?q=${encodeURIComponent(suffix)}`;
     await page.goto(fixtureUrl);
-    await expect(page.getByText("Đang ẩn", { exact: false })).toBeVisible();
+    await expect(page.getByText("hồ sơ đang ẩn.", { exact: false })).toBeVisible();
     await expect(cardFor(page, inactiveName)).toHaveCount(0);
     await expect(cardFor(page, pausedName)).toHaveCount(1);
 
     await page.getByLabel(/Tìm theo họ tên/).fill(pausedName);
-    await page.getByRole("button", { name: "Lọc", exact: true }).click();
+    await page.getByRole("button", { name: "Tìm nhân sự", exact: true }).click();
     await expect(cardFor(page, pausedName)).toHaveCount(1);
     await page.goto(fixtureUrl);
 
@@ -128,7 +128,7 @@ test("TB-M04-04: tìm được người theo tên KHÔNG DẤU và theo mã GLV"
   await page.goto("/staff");
 
   await page.getByLabel(/Tìm theo họ tên/).fill("tran xuan");
-  await page.getByRole("button", { name: "Lọc" }).click();
+  await page.getByRole("button", { name: "Tìm nhân sự", exact: true }).click();
   await expect(page).toHaveURL(/[?&]q=/);
   await expect(cardFor(page, "Trần Xuân Đoàn")).toHaveCount(1);
   await expect(staffCards(page)).toHaveCount(1);
@@ -141,7 +141,8 @@ test("TB-M04-04: tìm được người theo tên KHÔNG DẤU và theo mã GLV"
 test("AC-M04-06: trình độ huấn luyện hiện bằng tiếng Việt, không phải NONE", async ({ page }) => {
   await login(page, "GLV901");
   await page.goto("/staff");
-  await expect(page.getByText("Huấn luyện Chưa qua huấn luyện").first()).toBeVisible();
+  await staffCards(page).first().click();
+  await expect(page.getByRole("region", { name: "Hồ sơ", exact: true }).getByText("Chưa qua huấn luyện", { exact: true })).toBeVisible();
   await expect(page.getByText("NONE")).toHaveCount(0);
 });
 
@@ -164,6 +165,8 @@ test("phân trang: bộ lọc được mang theo sang trang 2 và địa chỉ c
 });
 
 test("D-110: Super Admin thấy tên đăng nhập, Xứ đoàn trưởng thì KHÔNG", async ({ page }) => {
+  // Account columns are the desktop view; phones show only account warnings.
+  await page.setViewportSize({ width: 1366, height: 768 });
   await login(page, "KHANG.NHO");
   await page.goto("/staff?q=GLV913");
   await expect(page.getByText("Đã có GLV913")).toBeVisible();
@@ -177,12 +180,14 @@ test("D-110: Super Admin thấy tên đăng nhập, Xứ đoàn trưởng thì K
 test("D-110: cảnh báo '⚠ Chưa gán vai trò' hiện cho cả Xứ đoàn trưởng", async ({ page }) => {
   await login(page, "GLV901");
   await page.goto("/staff?q=GLV918");
-  await expect(page.getByText("⚠ Chưa gán vai trò")).toBeVisible();
+  await expect(page.getByText("⚠ Chưa gán vai trò").filter({ visible: true })).toBeVisible();
 });
 
 test("TB-M04-03: trùng số điện thoại thì cảnh báo và GIỮ dữ liệu đã gõ, không chặn cứng", async ({ page }) => {
   await login(page, "GLV901");
   await page.goto("/staff");
+  await page.getByRole("link", { name: "Thêm nhân sự", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Thêm nhân sự", exact: true })).toBeVisible();
 
   // `exact: true` bắt buộc: nhãn của ô tìm kiếm là "Tìm theo họ tên, tên thánh,
   // mã GLV hoặc số điện thoại", mà `getByLabel` mặc định khớp CHUỖI CON không

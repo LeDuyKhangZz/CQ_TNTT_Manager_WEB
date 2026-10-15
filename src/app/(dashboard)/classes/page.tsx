@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { DataTable } from "@/components/ui/data-table";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,42 +18,16 @@ import { getClassesPageData, type ClassCard } from "@/features/classes/server/qu
 /** Keep each branch's theme while making class counts and assignments comparable. */
 function ClassDirectory({ items, label }: { items: ClassCard[]; label: string }) {
   return (
-    <table className="w-full text-left text-sm" aria-label={label}>
-      <thead className="hidden border-b border-line bg-surface-muted text-ink-muted md:table-header-group">
-        <tr>
-          <th scope="col" className="w-1/4 px-3 py-2 font-medium">Lớp</th>
-          <th scope="col" className="px-3 py-2 text-right font-medium">Sĩ số</th>
-          <th scope="col" className="px-3 py-2 font-medium">GLV đại diện</th>
-          <th scope="col" className="px-3 py-2 text-right font-medium">GLV/Dự trưởng</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-line">
-        {items.map((item) => (
-          <tr key={item.id} className="grid grid-cols-2 items-center px-3 py-2 hover:bg-surface-muted md:table-row md:p-0">
-            <td className="col-span-2 min-w-0 md:px-3 md:py-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Link href={`/classes/${item.id}`} prefetch={false} className="inline-flex min-h-11 items-center font-medium text-ink underline-offset-4 hover:underline">
-                  {item.displayName}
-                </Link>
-                {needsStatusBadge(item.status) ? (
-                  <Badge variant={classStatusBadgeVariant(item.status)}>{classStatusLabel(item.status)}</Badge>
-                ) : null}
-              </div>
-            </td>
-            <td className="tabular-nums md:px-3 md:py-2 md:text-right">
-              <span className="text-ink-muted md:hidden">Sĩ số: </span>{item.studentCount}
-              {item.pausedCount > 0 ? <span className="block text-xs text-ink-muted">{item.pausedCount} tạm nghỉ</span> : null}
-            </td>
-            <td className="col-span-2 row-start-3 min-w-0 break-words py-1 text-ink-muted md:px-3 md:py-2 md:text-ink">
-              <span className="md:hidden">GLV đại diện: </span>{item.representative}
-            </td>
-            <td className="col-start-2 row-start-2 text-right tabular-nums md:px-3 md:py-2">
-              <span className="text-ink-muted md:hidden">GLV/Dự trưởng: </span>{item.staffCount}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable caption={label} hideCaption density="compact" rows={items}
+      getRowKey={(item) => item.id} rowHref={(item) => `/classes/${item.id}`} rowActionLabel="Xem lớp học"
+      minWidth="640px" mobileRow={{ titleKey: "class", trailingKey: "count", metaKeys: ["representative", "staff"] }}
+      columns={[
+        { key: "class", header: "Lớp", cell: (item) => <div className="flex flex-wrap items-center gap-2"><span className="font-semibold text-ink">{item.displayName}</span>{needsStatusBadge(item.status) ? <Badge variant={classStatusBadgeVariant(item.status)}>{classStatusLabel(item.status)}</Badge> : null}</div> },
+        { key: "count", header: "Sĩ số", numeric: true, cell: (item) => <><span className="text-xs text-ink-muted md:hidden">Sĩ số: </span>{item.studentCount}{item.pausedCount > 0 ? <span className="block text-xs text-ink-muted">{item.pausedCount} tạm nghỉ</span> : null}</> },
+        { key: "representative", header: "GLV đại diện", cell: (item) => item.representative },
+        { key: "staff", header: "GLV/Dự trưởng", numeric: true, cell: (item) => item.staffCount },
+      ]}
+    />
   );
 }
 

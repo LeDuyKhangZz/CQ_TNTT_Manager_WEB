@@ -54,9 +54,9 @@ export default async function ReportSnapshotsPage({
       header: "Báo cáo",
       cell: (row: ReportSnapshotListItem) => (
         <div className="min-w-0">
-          <Link href={`/reports/snapshots/${row.id}`} className="font-medium hover:underline">
+          <span className="font-semibold text-ink">
             {REPORT_TYPE_LABELS[row.reportType]}
-          </Link>
+          </span>
           <p className="text-xs text-ink-muted">
             {formatDateVi(row.periodStart)} – {formatDateVi(row.periodEnd)}
             {row.academicYearCode ? ` · Năm học ${row.academicYearCode}` : ""}
@@ -180,11 +180,14 @@ export default async function ReportSnapshotsPage({
       ) : (
         <>
           <DataTable
+            rowHref={(row) => `/reports/snapshots/${row.id}`}
             caption={`Bản chốt ${totalItems > 0 ? `(${totalItems} bản)` : ""} — cột Người chốt và Mã kiểm tra ẩn trên màn hình hẹp.`}
             columns={columns}
             rows={items}
             getRowKey={(row) => row.id}
-            minWidthClassName="min-w-[720px]"
+            minWidth="720px"
+            stickyFirstColumn={false}
+            mobileRow={{ titleKey: "title", metaKeys: ["scope"], actionsKey: "actions" }}
           />
           <Pagination
             page={page}

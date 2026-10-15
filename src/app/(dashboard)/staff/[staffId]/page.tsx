@@ -1,10 +1,12 @@
+import { DetailField, DetailFields } from "@/components/layout/detail-fields";
+import { Section } from "@/components/ui/section";
 import { ActionSheet } from "@/components/ui/task-sheet";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Panel } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { getStaffDetail } from "@/features/staff/server/queries";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { StaffAccountPanel } from "@/features/staff/components/staff-account-panel";
@@ -25,7 +27,7 @@ import {
 import { UUID_PATTERN } from "@/lib/validation/uuid";
 
 function formatDate(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "Chưa có thông tin";
   const [y, m, d] = value.split("-");
   return d && m && y ? `${d}/${m}/${y}` : value;
 }
@@ -73,11 +75,15 @@ export default async function StaffDetailPage({
   const errorMessage = error ? (ERRORS[error] ?? null) : null;
 
   return (
-    <PageContainer>
-      <PageHeader
+    <PageContainer className="detail-workspace">
+      <EntityHeader
+        label="Hồ sơ huynh trưởng / giáo lý viên"
+        initials={staff.fullName.trim().split(/\s+/).slice(-2).map(part => part[0]).join("")}
         title={fullTitle}
-        description={`${staff.staffCode} · Huấn luyện ${formationLabel(staff.formationLevel)}`}
-        action={canWrite ? <ActionSheet title="Sửa hồ sơ"><StaffProfileEditor
+        description={staff.staffCode}
+        chips={<><Badge variant={componentBadgeVariant(staff.component)}>{componentLabel(staff.component)}</Badge><Badge variant={staff.serviceStatus === "active" ? "success" : "secondary"}>{SERVICE_LABELS[staff.serviceStatus] ?? staff.serviceStatus}</Badge></>}
+        facts={<><span>Phân công hiện tại: <strong>{staff.activeAssignment?.className ?? "Chưa phân lớp"}</strong></span>{staff.phone ? <a href={"tel:" + staff.phone.replace(/[^+\d]/g, "")} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline">Gọi {staff.phone}</a> : null}</>}
+        actions={canWrite ? [<ActionSheet key="edit" title="Sửa hồ sơ"><StaffProfileEditor
                   id={staff.id}
                   title={staff.title}
                   saintName={staff.saintName}
@@ -92,7 +98,7 @@ export default async function StaffDetailPage({
                   appointedRole={staff.appointment?.role ?? null}
                   appointedSectorId={staff.appointment?.sectorId ?? null}
                   sectors={detail.sectors}
-                /></ActionSheet> : null}
+                /></ActionSheet>] : []}
         backHref="/staff"
         backLabel="Danh sách nhân sự"
       />
@@ -100,53 +106,33 @@ export default async function StaffDetailPage({
       {notice ? <div className="mb-4"><FormMessage tone="success">{notice}</FormMessage></div> : null}
       {errorMessage ? <div className="mb-4"><FormMessage tone="danger">{errorMessage}</FormMessage></div> : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div className="space-y-5">
-          <Card>
-            <CardHeader><CardTitle>Hồ sơ</CardTitle></CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p><span className="text-ink-muted">Danh xưng:</span> {TITLE_LABELS[staff.title] ?? staff.title}</p>
-              {/* STAFF-COMP-001 — thành phần đứng ngay dưới danh xưng vì nó trả
-                  lời câu người đọc hỏi trước tiên: người này LÀ GÌ. Không phải
-                  quyền (quyền ở khối Tài khoản) và không phải tư cách trong lớp
-                  (ở khối Phân công). */}
-              <p className="flex items-center gap-2">
-                <span className="text-ink-muted">Thành phần:</span>
-                <Badge variant={componentBadgeVariant(staff.component)} icon={false}>
-                  {componentLabel(staff.component)}
-                </Badge>
-              </p>
-              {/* BDH-2025-002 — chức vụ theo SỔ, đứng ngay dưới thành phần vì nó
-                  là câu hỏi kế tiếp: người này giữ chức gì trong xứ đoàn. Chỉ
-                  hiện khi sổ có ghi; hồ sơ không nằm trong Ban Điều Hành thì
-                  thêm một dòng "—" chỉ làm loãng khối. Đây KHÔNG phải quyền —
-                  quyền nằm ở khối "Tài khoản đăng nhập", và chính khối ấy cảnh
-                  báo khi hai bên lệch nhau. */}
-              {staff.appointment ? (
-                <p>
-                  <span className="text-ink-muted">Chức vụ bổ nhiệm:</span>{" "}
-                  {ROLE_LABELS[staff.appointment.role]}
-                  {staff.appointment.sectorName ? ` · ${staff.appointment.sectorName}` : ""}
-                </p>
-              ) : null}
-              {/* IMP-BULK-002 — nói thẳng "chưa có" thay vì để trống sau dấu hai
-                  chấm: một ô trống trông y hệt một lỗi hiển thị. */}
-              <p><span className="text-ink-muted">Số điện thoại:</span> {staff.phone ?? "chưa có"}</p>
-              <p className="flex items-center gap-2"><span className="text-ink-muted">Trạng thái phục vụ:</span> <Badge variant={staff.serviceStatus === "active" ? "success" : "secondary"}>{SERVICE_LABELS[staff.serviceStatus] ?? staff.serviceStatus}</Badge></p>
-              {staff.sensitive ? (
-                <>
-                  <p><span className="text-ink-muted">Ngày sinh:</span> {formatDate(staff.sensitive.dateOfBirth)}</p>
-                  <p><span className="text-ink-muted">Địa chỉ:</span> {staff.sensitive.address || "—"}</p>
-                  <p><span className="text-ink-muted">Email:</span> {staff.sensitive.email || "—"}</p>
-                </>
-              ) : (
-                <p className="text-ink-muted">Thông tin liên hệ riêng tư chỉ hiển thị cho vai trò quản trị.</p>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <Section id="staff-profile" title="Hồ sơ">
+          <DetailFields>
+            <DetailField label="Danh xưng">{TITLE_LABELS[staff.title] ?? staff.title}</DetailField>
+            <DetailField label="Tên thánh">{staff.saintName}</DetailField>
+            <DetailField label="Họ tên">{staff.fullName}</DetailField>
+            <DetailField label="Huấn luyện">{formationLabel(staff.formationLevel)}</DetailField>
+            {staff.appointment ? <DetailField label="Chức vụ bổ nhiệm" wide>{ROLE_LABELS[staff.appointment.role]}{staff.appointment.sectorName ? ` · ${staff.appointment.sectorName}` : ""}</DetailField> : null}
+          </DetailFields>
+        </Section>
+        <Section id="staff-contact" title="Thông tin liên hệ">
+          <DetailFields>
+            <DetailField label="Số điện thoại">{staff.phone ? <a href={"tel:" + staff.phone.replace(/[^+\d]/g, "")} className="inline-flex min-h-11 items-center text-theme-accent-text underline">{staff.phone}</a> : null}</DetailField>
+            {staff.sensitive ? <>
+              <DetailField label="Ngày sinh">{formatDate(staff.sensitive.dateOfBirth)}</DetailField>
+              <DetailField label="Email" wide>{staff.sensitive.email}</DetailField>
+              <DetailField label="Địa chỉ" wide>{staff.sensitive.address}</DetailField>
+            </> : null}
+          </DetailFields>
+          {!staff.sensitive ? <p className="text-sm text-ink-muted">Thông tin liên hệ riêng tư chỉ hiển thị cho vai trò quản trị.</p> : null}
+        </Section>
+      </div>
 
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
           <Card>
-            <CardHeader><CardTitle>Phân công lớp</CardTitle></CardHeader>
+            <CardHeader><CardTitle as="h2">Phân công lớp</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {staff.assignmentHistory.length === 0 ? (
                 <p className="text-sm text-ink-muted">Chưa có phân công lớp nào.</p>
@@ -224,7 +210,7 @@ export default async function StaffDetailPage({
           {detail.canDelete ? (
             <Card>
               <CardHeader>
-                <CardTitle>Xóa hồ sơ</CardTitle>
+                <CardTitle as="h2">Xóa hồ sơ</CardTitle>
                 <CardDescription>Chỉ xóa được hồ sơ tạo nhầm, chưa dùng vào việc gì.</CardDescription>
               </CardHeader>
               <CardContent>

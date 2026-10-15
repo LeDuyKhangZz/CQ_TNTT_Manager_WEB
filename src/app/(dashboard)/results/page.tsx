@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
@@ -40,11 +39,12 @@ export default async function ResultsPage() {
                 hideCaption
                 density="compact"
                 rows={data.classes}
+                rowHref={(item) => `/results/${item.id}`}
                 getRowKey={(item) => item.id}
                 minWidth="560px"
                 mobileRow={{ titleKey: "class", trailingKey: "status", metaKeys: ["assessments", "access"] }}
                 columns={[
-                  { key: "class", header: "Lớp", cell: (item) => <Link href={`/results/${item.id}`} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline-offset-4 hover:underline">{item.displayName}</Link> },
+                  { key: "class", header: "Lớp", cell: (item) => <span className="font-semibold text-ink">{item.displayName}</span> },
                   { key: "assessments", header: "Cột điểm", numeric: true, cell: (item) => item.assessmentCount },
                   { key: "status", header: "Trạng thái", cell: (item) => <Badge variant={item.isLocked ? "secondary" : "outline"}>{item.isLocked ? "Đã khóa" : "Đang mở"}</Badge> },
                   { key: "access", header: "Quyền thao tác", cell: (item) => <span className="text-ink-muted">{item.canGrade ? "Có quyền nhập điểm" : "Chỉ xem"}</span> },

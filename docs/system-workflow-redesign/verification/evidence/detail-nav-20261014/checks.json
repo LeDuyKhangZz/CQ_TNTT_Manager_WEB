@@ -1,0 +1,23 @@
+{
+  "browser": {
+    "startTime": "2026-10-14T08:47:47.258Z",
+    "duration": 265586.588,
+    "expected": 117,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "browserAfterMenuPolish": {
+    "startTime": "2026-10-15T06:28:38.041Z",
+    "duration": 153902.73299999998,
+    "expected": 51,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "unit": {
+    "passed": 2033,
+    "skipped": 24
+  },
+  "production": "pending"
+}

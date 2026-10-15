@@ -337,13 +337,15 @@ export function ReportWorkbench({
           ) : (
             <ul className="divide-y divide-line">
               {data.snapshots.map((snapshotRow) => (
-                <li key={snapshotRow.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <li key={snapshotRow.id} className="relative flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-3 hover:bg-theme-tint focus-within:ring-2 focus-within:ring-theme-ring">
                   <div className="min-w-0">
                     <Link
                       href={`/reports/snapshots/${snapshotRow.id}`}
-                      className="text-sm font-medium hover:underline"
+                      prefetch={false}
+                      className="text-sm font-medium after:absolute after:inset-0 after:content-[''] hover:underline"
                     >
                       {snapshotRow.title}
+                      <span aria-hidden="true" className="mt-1 block text-xs text-theme-accent-text">Xem chi tiết →</span>
                     </Link>
                     <p className="text-xs text-ink-muted">
                       Chốt lúc {formatDateTimeVi(snapshotRow.generatedAt)} · mã kiểm tra{" "}
@@ -351,7 +353,7 @@ export function ReportWorkbench({
                     </p>
                   </div>
                   <a
-                    className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                    className={cn(buttonVariants({ variant: "outline", size: "sm" }), "relative")}
                     href={`/reports/snapshots/${snapshotRow.id}/export?format=xlsx`}
                   >
                     Tải bản chốt

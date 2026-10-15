@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import Link from "next/link";
+import { EntityLink } from "@/components/ui/entity-link";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { FormMessage } from "@/components/ui/form-message";
@@ -78,21 +78,22 @@ export function StaffCreateForm() {
           <ul className="space-y-1 text-sm text-ink">
             {state.duplicates.map((item) => (
               <li key={item.id}>
-                <Link
+                <EntityLink
                   href={`/staff/${item.id}`}
-                  className="font-medium underline underline-offset-4"
+                  label="Xem hồ sơ"
+                  ariaLabel={`${item.saintName ? item.saintName + " " : ""}${item.fullName}`}
                 >
+                  <p className="font-semibold">
                   {item.saintName ? `${item.saintName} ` : ""}
                   {item.fullName}
-                </Link>{" "}
-                <span className="text-ink-muted">
-                  — {item.staffCode} · {item.phone} · {duplicateReasonLabel(item.reason)}
-                </span>
+                  </p>
+                  <p className="mt-1 text-xs text-ink-muted">{item.staffCode} · {item.phone} · {duplicateReasonLabel(item.reason)}</p>
+                </EntityLink>
               </li>
             ))}
           </ul>
           <p className="text-2xs text-ink-muted">
-            Nếu đúng là người đã có hồ sơ thì bấm vào tên ở trên để mở hồ sơ đó. Nếu là người
+            Nếu đúng là người đã có hồ sơ thì bấm vào thẻ ở trên để mở hồ sơ đó. Nếu là người
             khác thật thì bấm &ldquo;Vẫn tạo hồ sơ mới&rdquo;.
           </p>
           {/* Cờ xác nhận đi kèm biểu mẫu ở pha hai. Là `<input type="hidden">`

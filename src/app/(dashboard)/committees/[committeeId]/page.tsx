@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { CommitteeWorkspace } from "@/features/committees/components/committee-workspace";
 import { getCommitteeDetail } from "@/features/committees/server/queries";
 import { EquipmentBoard } from "@/features/equipment/components/equipment-board";
@@ -29,8 +29,8 @@ export default async function CommitteeDetailPage({
   const canOperateEquipment = detail.committee.myPosition !== null || detail.canManageMembers;
 
   return (
-    <PageContainer>
-      <PageHeader
+    <PageContainer className="detail-workspace">
+      <EntityHeader
         title={detail.committee.name}
         description={detail.committee.description ?? undefined}
         backHref="/committees"

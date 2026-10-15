@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
@@ -94,13 +95,14 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
                 {isStaff ? (data.kpis.warnedStudentCount > 0 ? "Chưa có danh sách chi tiết." : "Không có cảnh báo chuyên cần.") : "Không có nhắc nhở."}
               </p>
             ) : (
-              <ul className="divide-y divide-line">
+              <ul className="space-y-2">
                 {data.atRisk.map((student) => (
                   <li key={student.studentId}>
                     <Link
                       href={atRiskHref(data.audience, student.studentId)}
                       aria-label={student.displayName}
-                      className="flex min-h-11 flex-col gap-1 rounded-sm py-2 text-sm hover:bg-surface-muted"
+                      prefetch={false}
+                      className="relative flex min-h-11 flex-col gap-1 rounded-lg border border-line bg-surface py-3 pl-3 pr-9 text-sm hover:border-theme-primary hover:bg-theme-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring"
                     >
                       <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                         <span className="min-w-0 break-words font-medium text-theme-accent-text">{student.displayName}</span>
@@ -110,6 +112,7 @@ export function DashboardOverview({ data }: { data: DashboardData }) {
                         {student.reasons.join(", ")}
                         {student.weightedAverage !== null ? ` · TB ${student.weightedAverage}` : ""}
                       </span>
+                      <ChevronRight aria-hidden="true" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-accent-text" />
                     </Link>
                   </li>
                 ))}

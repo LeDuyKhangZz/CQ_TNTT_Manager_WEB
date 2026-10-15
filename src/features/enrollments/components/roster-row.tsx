@@ -2,6 +2,7 @@
 import { ActionSheet } from "@/components/ui/task-sheet";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useActionState, useRef, useState, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,11 +118,12 @@ export function RosterRow({
       từng em. Bản cũ là một chồng `<div>` nên người dùng bàn phím không biết mình
       đang ở đâu trong danh sách.
     */
-    <li className="border-b border-line py-2 last:border-b-0">
+    <li data-entity-row className="relative mb-2 rounded-lg border border-line bg-surface p-3 hover:border-theme-primary hover:bg-theme-tint focus-within:ring-2 focus-within:ring-theme-ring [&_summary]:relative [&_summary]:z-[1]">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/students/${studentId}`} prefetch={false} className="inline-flex min-h-11 items-center break-words text-sm font-medium hover:underline">
-            {studentName}
+        <div className="min-w-0 flex-1">
+          <Link href={`/students/${studentId}`} prefetch={false} className="flex min-h-11 items-center justify-between gap-3 break-words text-sm font-semibold after:absolute after:inset-0 after:rounded-lg after:content-[''] focus-visible:outline-none">
+            <span>{studentName}<span aria-hidden="true" className="mt-1 block text-xs font-medium text-theme-accent-text">Xem hồ sơ</span></span>
+            <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-theme-accent-text" />
           </Link>
           {/*
             Điều cấm thứ 5 — không dùng màu làm tín hiệu duy nhất: huy hiệu mang

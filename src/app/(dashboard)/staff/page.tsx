@@ -1,3 +1,4 @@
+import { DataTable } from "@/components/ui/data-table";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -163,63 +164,28 @@ export default async function StaffPage({
                   }
                 />
               ) : (
-                <table className="w-full text-left text-sm" aria-label="Danh sách nhân sự">
-                  <thead className="hidden border-b border-line bg-surface-muted text-ink-muted md:table-header-group">
-                    <tr>
-                      <th scope="col" className="px-3 py-2 font-medium">Họ tên / Thành phần</th>
-                      <th scope="col" className="px-3 py-2 font-medium">Liên hệ / Huấn luyện</th>
-                      <th scope="col" className="px-3 py-2 font-medium">Phân công</th>
-                      <th scope="col" className="px-3 py-2 font-medium">Phục vụ / Tài khoản</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                {staff.map((item) => {
-                  const account = staffAccountBadge(
-                    { hasAccount: item.hasAccount, username: item.username, hasActiveRole: item.hasActiveRole },
-                    visibility,
-                  );
-                  return (
-                    <tr key={item.id} className="grid gap-1 py-3 md:table-row md:py-0">
-                        <td className="min-w-0 md:px-3 md:py-2">
-                          {/* 🔴 `prefetch={false}` là BẮT BUỘC, không phải tinh
-                              chỉnh. Mặc định Next tải trước mọi `<Link>` lọt vào
-                              khung nhìn: 10 thẻ ⇒ 10 lượt dựng `/staff/[id]`
-                              cùng lúc, mỗi lượt là mấy truy vấn cộng một RPC
-                              đếm lý do chặn xóa. Trình duyệt chỉ mở 6 kết nối
-                              một lúc, nên lượt tải của chính cú bấm "Trang 2"
-                              xếp hàng sau chúng và bị huỷ (`ERR_ABORTED`) —
-                              người dùng bấm số trang mà trang đứng yên. Đo được
-                              bằng E2E: rớt lặp lại ở 1366px, và nhật ký mạng cho
-                              thấy đúng 10 lượt `/staff/<uuid>?_rsc=` chen trước.
-                              Người dùng mở nhiều nhất MỘT hồ sơ, nên tải trước
-                              chín cái còn lại là trả giá để không dùng. */}
-                          <Link href={`/staff/${item.id}`} prefetch={false} className="inline-flex min-h-11 items-center break-words font-medium text-ink underline-offset-4 hover:underline">
-                            <span className="md:hidden">{item.fullName}</span><span className="hidden md:inline">{staffDisplayName(item)}</span>
-                          </Link>
-                          <p className="hidden text-sm text-ink-muted md:block">
-                            {item.staffCode} · {componentLabel(item.component)}
-                          </p>
-                          <p className="text-xs text-ink-muted md:hidden">{item.assignment ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}` : "Chưa phân lớp"}{item.serviceStatus !== "active" ? ` · ${serviceLabel(item.serviceStatus)}` : ""}</p>
-                          {account.tone === "warning" ? <span className="mt-1 block text-xs text-warning md:hidden">{account.text}</span> : null}
-                        </td>
-                        <td className="hidden md:table-cell md:px-3 md:py-2">
-                          <p>{item.phone ?? "Chưa có SĐT"}</p>
-                          <p className="text-xs text-ink-muted">Huấn luyện {formationLabel(item.formationLevel)}</p>
-                        </td>
-                        <td className="hidden md:table-cell md:px-3 md:py-2">
-                            {item.assignment
-                              ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}`
-                              : "Chưa phân lớp"}
-                        </td>
-                        <td className="hidden md:table-cell md:px-3 md:py-2">
-                          <p>{serviceLabel(item.serviceStatus)}</p>
-                          {account.tone === "warning" ? <Badge variant="warning">{account.text}</Badge> : <p className="text-xs text-ink-muted">{account.text}</p>}
-                        </td>
-                    </tr>
-                  );
-                })}
-                  </tbody>
-                </table>
+                <DataTable
+                  caption="Danh sách nhân sự" hideCaption density="compact" tableId="staff-directory"
+                  rows={staff} getRowKey={(item) => item.id} rowHref={(item) => `/staff/${item.id}`}
+                  rowActionLabel="Xem hồ sơ" minWidth="780px" mobileRow={{ titleKey: "name" }}
+                  columns={[
+                    { key: "name", header: "Họ tên / Thành phần", cell: (item) => {
+                      const account = staffAccountBadge({ hasAccount: item.hasAccount, username: item.username, hasActiveRole: item.hasActiveRole }, visibility);
+                      return <>
+                        <span className="block break-words font-semibold text-ink"><span className="md:hidden">{item.fullName}</span><span className="hidden md:inline">{staffDisplayName(item)}</span></span>
+                        <span className="hidden text-xs text-ink-muted md:block">{item.staffCode} · {componentLabel(item.component)}</span>
+                        <span className="mt-1 block text-xs text-ink-muted md:hidden">{item.assignment ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}` : "Chưa phân lớp"}{item.serviceStatus !== "active" ? ` · ${serviceLabel(item.serviceStatus)}` : ""}</span>
+                        {account.tone === "warning" ? <span className="mt-1 block text-xs text-warning md:hidden">{account.text}</span> : null}
+                      </>;
+                    } },
+                    { key: "contact", header: "Liên hệ / Huấn luyện", cell: (item) => <><p>{item.phone ?? "Chưa có SĐT"}</p><p className="text-xs text-ink-muted">Huấn luyện {formationLabel(item.formationLevel)}</p></> },
+                    { key: "assignment", header: "Phân công", cell: (item) => item.assignment ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}` : "Chưa phân lớp" },
+                    { key: "account", header: "Phục vụ / Tài khoản", cell: (item) => {
+                      const account = staffAccountBadge({ hasAccount: item.hasAccount, username: item.username, hasActiveRole: item.hasActiveRole }, visibility);
+                      return <><p>{serviceLabel(item.serviceStatus)}</p>{account.tone === "warning" ? <Badge variant="warning">{account.text}</Badge> : <p className="text-xs text-ink-muted">{account.text}</p>}</>;
+                    } },
+                  ]}
+                />
               )}
 
               <Pagination

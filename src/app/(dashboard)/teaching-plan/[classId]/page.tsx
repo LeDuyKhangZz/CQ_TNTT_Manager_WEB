@@ -1,7 +1,7 @@
 import { TabNav } from "@/components/ui/tab-nav";
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { TeachingPlanEditor } from "@/features/teaching-plans/components/teaching-plan-editor";
 import { getTeachingPlanDetail } from "@/features/teaching-plans/server/queries";
 
@@ -18,8 +18,8 @@ export default async function TeachingPlanDetailPage({
   const view = query.view === "calendar" ? "calendar" : "list";
 
   return (
-    <PageContainer>
-      <PageHeader
+    <PageContainer className="detail-workspace">
+      <EntityHeader
         title={`Giáo án ${detail.className}`}
         description={`Năm học ${detail.academicYearCode} · ${detail.canManage ? "Có quyền chỉnh sửa" : "Chỉ xem"}`}
         backHref="/teaching-plan"

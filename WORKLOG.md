@@ -50,14 +50,14 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **RESTORE-LUCE-LOADING-20261014 — đã khôi phục và phát hành — Codex — 2026-10-14.** Nối lại 4 ảnh Luce/kho Lời Chúa cho cả auth và dashboard, cửa sổ giữa màn hình, ảnh lắc lư và ba chấm; ảnh/câu không lặp liền kề.
-- **2.033 unit đạt / 24 skip**, lint/typecheck/build đạt; E2E loading cuối **6/6** trên 360/768/1366, chuyển động thường/giảm chuyển động, cả đăng nhập và điều hướng. Không migration/DB/RLS/quyền.
-- **IMPORT-NH2025-20261014 đã nhập phần đủ căn cứ**, bản sửa bảng điểm source `04c58fd` đã phát hành: 758 thiếu nhi, 18.659 ô điểm, 6 Trưởng Ban, 39 địa chỉ bổ sung; đối soát 21/21.
-- Dữ liệu năm học còn thiếu/mâu thuẫn và điểm danh Giáo lý chưa nhập native được liệt kê trong báo cáo Excel ngoài Git. Full E2E lịch sử và R5–R13/UX-42/R13.3 giữ backlog riêng.
+- **DETAIL-NAV-AFFORDANCE-20261014 — triển khai/kiểm tra xong, chờ phát hành — Codex — 2026-10-14.** Thiết kế lại hồ sơ thiếu nhi/nhân sự/lớp, header chi tiết thống nhất; các hàng/thẻ có dấu hiệu mở và vùng bấm toàn khối, giữ tác vụ riêng.
+- **2.033 unit đạt / 24 skip**, lint/typecheck/build đạt; browser **117/117**, kiểm lại **51/51** sau chỉnh menu cuối, trên 360/768/1366: vùng bấm, bàn phím, no-JS, tác vụ riêng, quyền, phân trang, tạo hồ sơ/ghi danh, Luce. Không migration/RLS/quyền hoặc dữ liệu production.
+- **RESTORE-LUCE-LOADING-20261014 đã phát hành** source `82c05b0`, giữ trong bản sửa mới; **IMPORT-NH2025-20261014** đã nhập phần đủ căn cứ, đối soát 21/21.
+- Thiếu/mâu thuẫn dữ liệu năm học và điểm danh Giáo lý chưa nhập native tiếp tục theo báo cáo Excel ngoài Git; full E2E lịch sử/R5–R13/UX-42/R13.3 giữ backlog riêng.
 
 ## ➡️ VIỆC TIẾP THEO
 
-Source `82c05b0` đã lên production; Vercel success đúng SHA, smoke Luce/Lời Chúa 4/4. Người dùng tải lại trang để nhận bản mới. Các thiếu sót dữ liệu năm học tiếp tục theo báo cáo Excel đã bàn giao; không đổi mô hình điểm danh trong task giao diện này.
+Commit/push DETAIL-NAV-AFFORDANCE-20261014 theo AGENTS §10; xác minh Vercel đúng SHA và smoke production. Backlog dữ liệu theo báo cáo đã bàn giao.
 
 ## ⛔ BLOCKERS
 
@@ -159,6 +159,14 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-14] Codex — DETAIL-NAV-AFFORDANCE-20261014 — hồ sơ và hàng mở chi tiết
+- **Làm được:** tên trong danh sách có mũi tên/nhãn xem hồ sơ, nền/viền/hover/focus và bấm toàn hàng; dùng link thật không JS. Áp dụng thiếu nhi/nhân sự/lớp, giáo án, kết quả, điểm danh, Ban, nhập Excel, báo cáo và các danh sách con. Giữ `prefetch=false`, tác vụ ghi danh/điện thoại/xuất độc lập.
+- **Bố cục:** nhận diện/lớp/trạng thái/liên hệ ở đầu; nhóm thông tin và tác vụ rõ; sáu mục thiếu nhi hiện đủ trên mobile; thông tin ngắn hai cột. Các trang chi tiết dùng chung header và khối nội dung; giữ Luce/Lời Chúa.
+- **Đã test:** lint/typecheck/build đạt; 2.033 unit pass / 24 skip; browser 117/117, sau chỉnh menu cuối kiểm lại 51/51, ba viewport 360/768/1366. Ghi rõ các lượt trước, lỗi cột cố định che nút xuất trên mobile và locator cũ trong [báo cáo](docs/system-workflow-redesign/DETAIL_NAV_2026-10-14.md). Không gọi full E2E toàn hệ thống xanh.
+- **File thay đổi:** UI shared, danh sách/trang chi tiết và kiểm thử tương ứng; log/ảnh fixture local lưu `backups/detail-nav-20261014` ngoài Git, ảnh chọn lọc trong verification/evidence.
+- **Migration/data impact:** không SQL/migration/RLS/server action/dependency mới; browser dùng dữ liệu local, fixture do test tạo được dọn theo ID. Không thay dữ liệu production.
+- **Next:** phát hành đúng SHA và smoke public production; chưa báo đã lên web trước khi xác minh.
+
 ### [2026-10-14] Codex — RESTORE-LUCE-LOADING-20261014 — khôi phục loading theo yêu cầu
 - **Nguyên nhân:** commit anti-AI `97b83c9` bỏ ảnh/câu khỏi overlay, truyền hai mảng rỗng vào provider ở cả auth/dashboard và bỏ preload ảnh. Tài sản gốc vẫn còn.
 - **Làm được:** khôi phục ảnh Luce, một câu Lời Chúa có nguồn, ba chấm và chuyển động đã có; nạp trước ảnh kế tiếp, giữ chọn ngẫu nhiên không lặp liền kề. Giữ ngưỡng hiện 0 ms, tối thiểu 250 ms, failsafe 30 giây, không chặn chuột/cướp focus. Không khôi phục whole-page Suspense từng che nội dung SSR khi thiếu JavaScript.
@@ -200,15 +208,6 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Đã test:** source đã đạt lint/typecheck/build, 2.028 unit / 24 skip; browser 74 pass / 28 skip có chủ đích, refinement 9/9. Smoke production riêng như trên; không khẳng định full E2E hay authenticated production CRUD đã đạt.
 - **Next:** người dùng xem và phản hồi qua preview 3150 đang mở. Backlog và giới hạn kiểm tra giữ nguyên trong báo cáo.
 
-### [2026-10-14] Codex — MOBILE-SHEETS-COPY-20261014 — bố cục mobile và preview trực tiếp
-- **Làm được:** menu/account bottom sheet theo ảnh; giảm chữ và khung card; danh sách thiếu nhi gọn; điểm danh hai cột trạng thái trực tiếp, ghi chú trong sheet; thay form cuối trang/anchor bằng sheet hoặc chuyển mục tại chỗ ở các module. Preview Chromium 390×844 có Fast Refresh, QA chạy browser riêng.
-- **File thay đổi:** shared UI/layout, presentation pages/components trong `src`, test hồi quy và [báo cáo/inventory](docs/system-workflow-redesign/MOBILE_SHEETS_2026-10-14.md).
-- **Migration/data impact:** không migration/API/RLS/dependency; không reset/seed DB hay thay mật khẩu production. E2E mới kiểm giao diện/read-only với tài khoản local.
-- **Đã test:** lint/typecheck/build đạt; unit 2.028 pass / 0 fail / 24 skip; Playwright R3 navigation + mobile workspaces 74 pass / 28 skip có chủ đích. Sau tinh chỉnh bộ lọc, bản build cuối 9/9 pass. Không cộng rerun hay gọi full E2E lịch sử xanh.
-- **Độc lập theo AGENTS §9:** verifier kiểm 59 guard/drawer test và browser/harness; lỗi mất lease vẫn cho lưu và hydration thay node mất nháp đã sửa, xác minh lại. Hai lượt verifier timeout do HMR không tính pass.
-- **Quyết định mới:** yêu cầu người dùng cấm nút cuộn tới form cuối trang, ưu tiên bottom sheet, ít chữ trên điện thoại; giữ quy định màu/nghiệp vụ. Không tự đóng backlog R5–R13/UX-42/R13.3.
-- **Phát hành:** source `4bb4d42` đã push main; Vercel và smoke production đạt theo task MOBILE-SHEETS-RELEASE-20261014. Giữ preview trực tiếp; giới hạn thực tế và rollback trong báo cáo.
-
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
 
 Archive: [MOBILE-NAV-GROUPS-20261014](docs/worklog-archive-before-nav-groups-2026-10-14.md).
@@ -216,3 +215,5 @@ Archive: [MOBILE-NAV-GROUPS-20261014](docs/worklog-archive-before-nav-groups-202
 Archive: [Trước IMPORT-NH2025-20261014](docs/worklog-archive-before-import-2026-10-14.md).
 
 Archive: [Trước RESTORE-LUCE-LOADING-20261014](docs/worklog-archive-before-luce-2026-10-14.md).
+
+Archive: [Trước DETAIL-NAV-AFFORDANCE-20261014](docs/worklog-archive-before-detail-nav-2026-10-14.md).

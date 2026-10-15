@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { EntityLink } from "@/components/ui/entity-link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -392,7 +392,7 @@ export function BatchRowEditor({
                           ) : null}
 
                           {matched ? (
-                            <div className="rounded-md border border-line-strong bg-surface p-3 text-sm">
+                            <EntityLink href={`/students/${matched.id}`} label="Xem hồ sơ" ariaLabel={`Mở hồ sơ ${matched.studentCode} để đối chiếu`}>
                               <p className="font-medium">Hồ sơ đã có trong hệ thống</p>
                               <p className="text-ink-muted">
                                 {matched.studentCode} · {matched.fullName} · sinh{" "}
@@ -407,13 +407,10 @@ export function BatchRowEditor({
                                   ? ""
                                   : " — phải khôi phục hồ sơ trước khi ghép được."}
                               </p>
-                              <Link
-                                href={`/students/${matched.id}`}
-                                className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-theme-accent-text underline underline-offset-4"
-                              >
+                              <p className="mt-1 text-sm font-medium text-theme-accent-text">
                                 Mở hồ sơ {matched.studentCode} để đối chiếu
-                              </Link>
-                            </div>
+                              </p>
+                            </EntityLink>
                           ) : null}
 
                           {commitMessage ? (

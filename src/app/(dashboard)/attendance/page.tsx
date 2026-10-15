@@ -126,11 +126,12 @@ export default async function AttendancePage({
                 hideCaption
                 density="compact"
                 rows={sessions}
+                rowHref={(session) => `/attendance/${session.id}`}
                 getRowKey={(session) => session.id}
                 minWidth="560px"
                 mobileRow={{ titleKey: "class", trailingKey: "status", metaKeys: ["date", "editor", "absent"] }}
                 columns={[
-                  { key: "class", header: "Lớp", cell: (session) => <Link href={`/attendance/${session.id}`} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline-offset-4 hover:underline">{session.className}</Link> },
+                  { key: "class", header: "Lớp", cell: (session) => <span className="font-semibold text-ink">{session.className}</span> },
                   { key: "date", header: "Ngày · buổi", cell: (session) => <div className="whitespace-nowrap"><span className="tabular-nums">{formatDateVi(session.attendanceDate)}</span><span className="block text-xs text-ink-muted">{MEETING_TYPE_LABELS[session.meetingType]}</span></div> },
                   { key: "status", header: "Trạng thái", cell: (session) => <Badge variant={session.state === "completed" ? "success" : "secondary"}>{SESSION_STATE_LABELS[session.state]}</Badge> },
                   { key: "absent", header: "Em vắng", numeric: true, cell: (session) => <span className={session.absentCount > 0 ? "font-medium text-warning" : "text-ink-muted"}>{session.absentCount}</span> },

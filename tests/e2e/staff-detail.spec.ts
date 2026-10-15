@@ -85,7 +85,7 @@ test("người không phải Super Admin không thấy khối 'Tài khoản đă
   await login(page, "GLV901");
   await openFirstStaffDetail(page);
 
-  await expect(page.getByText(/Ngày sinh/).first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Thông tin liên hệ", exact: true }).getByText("Ngày sinh", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tài khoản đăng nhập" })).toHaveCount(0);
 });
 
@@ -94,7 +94,7 @@ test("Super Admin thấy khối 'Tài khoản đăng nhập' trên hồ sơ GLV 
   await openFirstStaffDetail(page);
 
   await expect(page.getByRole("heading", { name: "Tài khoản đăng nhập" })).toBeVisible();
-  await expect(page.getByText(/Ngày sinh/).first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Thông tin liên hệ", exact: true }).getByText("Ngày sinh", { exact: true })).toBeVisible();
   // Trang chi tiết ở bản đầy đủ nhất (hồ sơ nhạy cảm + phân công + tài khoản +
   // sửa hồ sơ) không được tràn ngang, kể cả 360px.
   await expectNoHorizontalOverflow(page);
@@ -127,7 +127,7 @@ test("từ đội ngũ lớp mở được hồ sơ Giáo lý viên (M04-F09)", 
   // bên là `/staff` (không có dấu gạch chéo cuối) nên không lọt vào phép chọn.
   const staffLink = page.locator('a[href^="/staff/"]').first();
   await expect(staffLink).toBeVisible();
-  const name = (await staffLink.textContent())?.trim() ?? "";
+  const name = (await staffLink.locator("[data-entity-name]").textContent())?.trim() ?? "";
   expect(name.length, "tên người phụ trách phải đọc được, không phải dấu gạch").toBeGreaterThan(1);
   expect(name).not.toBe("—");
 

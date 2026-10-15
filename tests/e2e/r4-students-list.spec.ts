@@ -130,8 +130,10 @@ test("creation forms live in a drawer and Escape keeps applied filters", async (
   await expect(drawer.getByRole("form", { name: "Thêm thiếu nhi", exact: true })).toBeVisible();
   await expect.poll(() => drawer.evaluate(element => element.getAnimations().length)).toBe(0);
   const bounds = await drawer.boundingBox();
-  expect(bounds!.y).toBe(0);
-  expect(bounds!.height).toBe(page.viewportSize()!.height);
+  expect(bounds!.y).toBeGreaterThanOrEqual(0);
+  expect(bounds!.y + bounds!.height).toBeCloseTo(page.viewportSize()!.height, 0);
+  expect(bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  if (page.viewportSize()!.width >= 768) expect(bounds!.y).toBe(0);
   await drawer.getByRole("link", { name: "Quay lại", exact: true }).click();
   await page.getByRole("link", { name: "Thêm người giám hộ", exact: true }).click();
   await expect(page.getByRole("form", { name: "Thêm người giám hộ", exact: true })).toBeVisible();

@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/ui/entity-link";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -60,9 +61,9 @@ function BatchCard({ batch }: { batch: BatchSummary }) {
 
   return (
     <li>
-      <Link
+      <EntityLink
         href={`/imports/${batch.id}`}
-        className="block px-4 py-3 transition-colors hover:bg-surface-muted"
+        className="rounded-none border-0"
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
           <p className="break-all font-medium">{batch.filename}</p>
@@ -82,7 +83,7 @@ function BatchCard({ batch }: { batch: BatchSummary }) {
           {batch.cancelledAt ? ` · huỷ ${formatDateTimeVi(batch.cancelledAt)}` : ""}
           {batch.rawPurgedAt ? " · đã xoá dữ liệu thô" : ""}
         </p>
-      </Link>
+      </EntityLink>
     </li>
   );
 }

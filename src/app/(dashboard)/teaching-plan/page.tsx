@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { PageContainer } from "@/components/layout/page-container";
@@ -65,11 +64,12 @@ export default async function TeachingPlanPage() {
             hideCaption
             density="compact"
             rows={data.classes}
+                rowHref={(item) => `/teaching-plan/${item.id}`}
             getRowKey={(item) => item.id}
             minWidth="640px"
             mobileRow={{ titleKey: "class", metaKeys: ["plan", "items", "access"] }}
             columns={[
-              { key: "class", header: "Lớp", cell: (item) => <Link href={`/teaching-plan/${item.id}`} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline-offset-4 hover:underline">{item.displayName}</Link> },
+              { key: "class", header: "Lớp", cell: (item) => <span className="font-semibold text-ink">{item.displayName}</span> },
               { key: "plan", header: "Kế hoạch giảng dạy", cell: (item) => <span className="break-words">{item.planTitle ?? "Chưa có kế hoạch giảng dạy"}</span> },
               { key: "items", header: "Số mục", numeric: true, cell: (item) => item.planId ? item.itemCount : "Chưa tạo" },
               { key: "access", header: "Quyền thao tác", cell: (item) => <span className="text-ink-muted">{item.canManage ? "Bạn có quyền chỉnh sửa" : "Chỉ xem"}</span> },

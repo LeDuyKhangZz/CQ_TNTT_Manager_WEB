@@ -1,3 +1,5 @@
+import { DetailField, DetailFields } from "@/components/layout/detail-fields";
+import { EntityLink } from "@/components/ui/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TabNav } from "@/components/ui/tab-nav";
@@ -50,8 +52,8 @@ export default async function StudentDetailPage({ params, searchParams }: {
     profile:"Cập nhật hồ sơ", guardian:"Người giám hộ", status:"Trạng thái hồ sơ", enroll:"Ghi danh vào lớp", health:"Sức khỏe",
   };
 
-  return <PageContainer className="space-y-5">
-    <EntityHeader title={studentName} description={"Mã thiếu nhi " + student.studentCode} backHref="/students" backLabel="Danh sách thiếu nhi"
+  return <PageContainer className="detail-workspace space-y-5">
+    <EntityHeader label="Hồ sơ thiếu nhi" initials={student.fullName.trim().split(/\s+/).slice(-2).map(part => part[0]).join("")} title={studentName} description={"Mã thiếu nhi " + student.studentCode} backHref="/students" backLabel="Danh sách thiếu nhi"
       chips={<>
         <Badge variant="secondary">{className ? "Lớp " + className : "Chưa xếp lớp"}</Badge>
         <Badge variant={student.status === "active" ? "success" : "secondary"}>{studentStatusLabel(student.status)}</Badge>
@@ -64,24 +66,41 @@ export default async function StudentDetailPage({ params, searchParams }: {
         <Link key="edit" href={panelHref("profile")} className={buttonVariants()}>Sửa hồ sơ</Link>,
         <Link key="enroll" href={enrollableClasses.length ? tabHref("history") + "&panel=enroll" : tabHref("history")} className={buttonVariants({variant:"outline"})}>Lớp & Ghi danh</Link>,
       ] : []}
-      more={canWrite ? <Dropdown label="Thao tác khác" align="end">
+      more={canWrite ? <Dropdown label="Thao tác khác" align="start" className="sm:[&>[role=menu]]:left-auto sm:[&>[role=menu]]:right-0">
         <DropdownLink href={panelHref("status")}>Đổi trạng thái hồ sơ</DropdownLink>
       </Dropdown> : undefined} />
-    <TabNav label="Thông tin thiếu nhi" activeKey={activeTab}
+    <TabNav layout="wrap" stickyMobile={false} label="Thông tin thiếu nhi" activeKey={activeTab}
       items={tabs.map(item => ({...item,href:tabHref(item.key)}))} />
 
-    {activeTab === "overview" ? <Section id="student-overview" title="Thông tin cá nhân">
-      <dl className="grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
-        {[
-          ["Tên thánh",student.saintName],["Họ tên",student.fullName],["Giới tính",genderLabel(student.gender)],
-          ["Ngày sinh",formatOptionalDateVi(student.dateOfBirth,"Chưa có")],
-          ["Bổn mạng",formatOptionalDateVi(student.patronFeastDate,"Chưa có")],
-          ["Điện thoại",student.phone ?? "Chưa có"],["Địa chỉ",student.address ?? "Chưa có"],["Ghi chú",student.generalNotes ?? "Chưa có"],
-        ].map(([label,value]) => <div key={label}><dt className="text-ink-muted">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words font-medium">{value}</dd></div>)}
-      </dl>
-      <StudentAttendanceOverview studentId={student.id} />
-      <Link href={tabHref("attendance")} className="inline-flex min-h-11 items-center font-medium text-theme-accent-text underline">Xem chuyên cần và cảnh báo vắng</Link>
-    </Section> : null}
+    {activeTab === "overview" ? <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <Section id="student-overview" title="Thông tin cá nhân">
+        <DetailFields>
+          <DetailField label="Tên thánh">{student.saintName}</DetailField>
+          <DetailField label="Họ tên">{student.fullName}</DetailField>
+          <DetailField label="Giới tính">{genderLabel(student.gender)}</DetailField>
+          <DetailField label="Ngày sinh">{formatOptionalDateVi(student.dateOfBirth,"Chưa có")}</DetailField>
+          <DetailField label="Bổn mạng">{formatOptionalDateVi(student.patronFeastDate,"Chưa có")}</DetailField>
+          <DetailField label="Ghi chú" wide>{student.generalNotes}</DetailField>
+        </DetailFields>
+      </Section>
+      <div className="space-y-4">
+        <Section id="student-contact" title="Liên hệ">
+          <DetailFields className="grid-cols-1">
+            <DetailField label="Điện thoại của em">{student.phone ? <a href={"tel:" + student.phone.replace(/[^+\d]/g, "")} className="inline-flex min-h-11 items-center text-theme-accent-text underline">{student.phone}</a> : null}</DetailField>
+            <DetailField label="Địa chỉ">{student.address}</DetailField>
+          </DetailFields>
+          <EntityLink href={tabHref("family")} label="Xem gia đình">
+            <p className="text-xs text-ink-muted">Người giám hộ</p>
+            <p className="mt-1 font-semibold">{guardian?.fullName ?? "Chưa gán người giám hộ"}</p>
+          </EntityLink>
+        </Section>
+        <StudentAttendanceOverview studentId={student.id} />
+        <EntityLink href={tabHref("attendance")}>
+          <p className="font-semibold">Chuyên cần</p>
+          <p className="mt-1 text-xs text-ink-muted">Xem chuyên cần và cảnh báo vắng</p>
+        </EntityLink>
+      </div>
+    </div> : null}
 
     {activeTab === "family" ? <div className="space-y-6">
       <Section id="student-guardian" title="Người giám hộ" description="Liên lạc khi em cần giúp đỡ giữa buổi học."

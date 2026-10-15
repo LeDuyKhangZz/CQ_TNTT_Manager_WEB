@@ -44,13 +44,14 @@ export function ChildrenLinks({
         </CardHeader>
       )}
       <CardContent className={hideHeading ? "pt-4 sm:pt-5" : undefined}>
-        <ul className="divide-y divide-line">
+        <ul className="space-y-2">
           {students.map((child) => (
             <li key={child.id}>
               {/* `min-h-11`: hàng này là vùng chạm thật trên máy 360px (AGENTS §8). */}
               <Link
                 href={`/parent/children/${child.id}`}
-                className="flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2 text-sm font-medium text-ink hover:bg-surface-muted"
+                prefetch={false}
+                className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-line bg-surface p-3 text-sm font-medium text-ink hover:border-theme-primary hover:bg-theme-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring"
               >
                 <span className="min-w-0 break-words">{child.label}</span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden="true" />

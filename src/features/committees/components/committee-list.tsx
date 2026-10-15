@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { EntityLink } from "@/components/ui/entity-link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +18,9 @@ type Message = { tone: "success" | "danger"; text: string } | null;
 
 function CommitteeCard({ committee }: { committee: CommitteeSummary }) {
   return (
-    <li className="grid gap-2 px-4 py-3 lg:grid-cols-[minmax(12rem,1fr)_minmax(16rem,1.5fr)_auto] lg:gap-4">
+    <li><EntityLink href={`/committees/${committee.id}`} className="rounded-none border-0"><div className="grid gap-2 lg:grid-cols-[minmax(12rem,1fr)_minmax(16rem,1.5fr)_auto] lg:gap-4">
           <div className="min-w-0">
-            <Link href={`/committees/${committee.id}`} prefetch={false} className="inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline">{committee.name}</Link>
+            <p className="font-semibold">{committee.name}</p>
             <p className="text-sm text-ink-muted">
               {committee.memberCount} thành viên
               {committee.managesEquipment ? " · Quản lý kho thiết bị" : ""}
@@ -49,7 +49,7 @@ function CommitteeCard({ committee }: { committee: CommitteeSummary }) {
           {committee.myPosition ? <p>{COMMITTEE_POSITION_LABELS[committee.myPosition]}</p> : null}
           {!committee.isActive ? <Badge variant="secondary">Ngưng hoạt động</Badge> : <p>Đang hoạt động</p>}
         </div>
-    </li>
+    </div></EntityLink></li>
   );
 }
 

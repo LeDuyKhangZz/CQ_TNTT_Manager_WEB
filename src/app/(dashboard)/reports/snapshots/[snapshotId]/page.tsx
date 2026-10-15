@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
@@ -43,8 +43,8 @@ export default async function ReportSnapshotPage({
   }));
 
   return (
-    <PageContainer>
-      <PageHeader
+    <PageContainer className="detail-workspace">
+      <EntityHeader
         title={snapshot.title}
         description={`${snapshot.scopeLabel ?? ""} · ${formatDateVi(snapshot.periodStart)} – ${formatDateVi(snapshot.periodEnd)}`}
         backHref="/reports/snapshots"

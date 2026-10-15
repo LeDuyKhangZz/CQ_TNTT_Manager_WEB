@@ -8,7 +8,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
+import { EntityHeader } from "@/components/layout/entity-header";
 import { formatDateTimeVi } from "@/lib/dates";
 import { BatchActions } from "@/features/imports/components/batch-actions";
 import { BatchRowEditor } from "@/features/imports/components/batch-row-editor";
@@ -64,8 +64,8 @@ export default async function ImportBatchPage({
   const filtered = hasActiveRowFilter(criteria);
 
   return (
-    <PageContainer>
-      <PageHeader
+    <PageContainer className="detail-workspace">
+      <EntityHeader
         title={batch.filename}
         description={`${batch.totalRows} dòng · hợp lệ ${batch.validRows} · cảnh báo ${batch.warningRows} · lỗi ${batch.errorRows}`}
         backHref="/imports"
