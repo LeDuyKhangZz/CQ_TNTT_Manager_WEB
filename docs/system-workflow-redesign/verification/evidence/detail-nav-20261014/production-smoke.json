@@ -1,0 +1,23 @@
+{
+  "base": "https://cq-tntt-manager-web.vercel.app",
+  "checkedAt": "2026-10-15T06:36:26.530Z",
+  "results": [
+    {
+      "width": 360,
+      "login": 200,
+      "overflow": false,
+      "detailStyles": true,
+      "runtimeErrors": 0,
+      "writes": 0
+    },
+    {
+      "width": 1366,
+      "login": 200,
+      "overflow": false,
+      "detailStyles": true,
+      "runtimeErrors": 0,
+      "writes": 0
+    }
+  ],
+  "limitation": "Authenticated profiles verified locally; public production smoke only."
+}

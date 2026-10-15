@@ -29,7 +29,7 @@ Lượt đầu: lint/typecheck/build đạt, 2.033 unit pass / 24 skip; browser 
 
 **Lint/typecheck/build đạt; 2.033 unit pass / 24 skip; browser 117/117 đạt, kiểm lại 51/51 sau chỉnh menu cuối**, gồm bấm khoảng trống thật, Enter, gọi điện, ghi danh, không JavaScript, sáu mục hồ sơ, quyền GLV/Thủ quỹ/Super Admin và loading, trên 360/768/1366. Log/ảnh thử nghiệm dùng fixture local lưu ngoài Git tại `backups/detail-nav-20261014`.
 
-Không coi các lượt này là full E2E toàn hệ thống. Backlog R5–R13/UX-42/R13.3 và các thiếu sót nhập dữ liệu năm học giữ nguyên. Production chưa xác minh ở thời điểm ghi bản này.
+Không coi các lượt này là full E2E toàn hệ thống. Backlog R5–R13/UX-42/R13.3 và các thiếu sót nhập dữ liệu năm học giữ nguyên.
 
 Hoàn tất kiểm chứng ngày 15/10/2026. Lượt cuối sửa menu “Thao tác khác”: tránh bị header cắt và tràn khỏi mép màn hình điện thoại; bổ sung kiểm tra mở menu và sheet trạng thái. Build lại rồi chạy 51/51 bài trong detail-navigation, staff-detail, r4-student-workflows và loading-overlay, không retry/skip.
 
@@ -38,3 +38,11 @@ Lượt chạy sau build bị ngắt vì Docker Desktop chưa chạy (`ECONNREFU
 Lượt mở rộng đã phát hiện lỗi thật: cột tên cố định che nút Excel trên màn hình hẹp. Đã đổi kho báo cáo sang card-row trên mobile và bỏ sticky tên ở bảng này; kiểm lại bấm xuất độc lập. Các bài cũ cũng được nối đúng entry hiện hành: mở sheet tạo nhân sự/mốc học kỳ, tìm bằng nút Tìm nhân sự, chọn vùng đọc hồ sơ, kiểm bottom sheet theo mép dưới thay vì bắt full-height. Giữ nguyên các assertion nghiệp vụ và kiểm tra quyền.
 
 Ảnh fixture local: [nhân sự 360](verification/evidence/detail-nav-20261014/staff-list-360.png), [hồ sơ nhân sự 360](verification/evidence/detail-nav-20261014/staff-detail-360.png), [thiếu nhi 360](verification/evidence/detail-nav-20261014/student-detail-360.png), [hồ sơ nhân sự 1366](verification/evidence/detail-nav-20261014/staff-detail-1366.png), [lớp 1366](verification/evidence/detail-nav-20261014/class-detail-1366.png).
+
+## Phát hành — 15/10/2026
+
+Source `117362caeb8cf7fb936cfafc8b3208d51818fd3e` đã push `main`; trạng thái Vercel **success** cho đúng commit. Website: [https://cq-tntt-manager-web.vercel.app](https://cq-tntt-manager-web.vercel.app).
+
+Smoke public trên 360 và 1366: `/login` HTTP 200, ô đăng nhập hiển thị, stylesheet có các marker của bản sửa, không tràn ngang hoặc lỗi JavaScript. Chặn mọi POST trong lượt smoke; không thử mật khẩu hoặc thay dữ liệu production. Hồ sơ sau đăng nhập được kiểm trong môi trường local với tài khoản và fixture thử nghiệm; không gọi smoke public là kiểm tra trực tiếp mọi hồ sơ production.
+
+Chứng cứ: [deployment](verification/evidence/detail-nav-20261014/production-deployment.json), [smoke](verification/evidence/detail-nav-20261014/production-smoke.json), [kết quả kiểm thử](verification/evidence/detail-nav-20261014/checks.json). Lệnh: `npm run lint`, `npm run typecheck`, `npm test`; `node scripts/run-e2e.mjs` tự build bằng Next production với Supabase local trước bộ browser. Lượt cuối dùng lại đúng build vừa tạo (`CQ_E2E_DIST_DIR=.next-detail-release`) sau khi Docker hoạt động lại.

@@ -1,0 +1,13 @@
+{
+  "source": "117362caeb8cf7fb936cfafc8b3208d51818fd3e",
+  "state": "success",
+  "statuses": [
+    {
+      "context": "Vercel",
+      "state": "success",
+      "description": "Deployment has completed",
+      "url": "https://vercel.com/khanglebomba/cq-tntt-manager-web/ADQGstCBAJwnKtkgVJJMuCvJhcdR",
+      "updated_at": "2026-10-15T06:34:53Z"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # 16 — NHẬT KÝ TRIỂN KHAI GIAI ĐOẠN 2B
 
-> **15/10/2026 — ☑ DETAIL-NAV-AFFORDANCE-20261014:** sửa bố cục hồ sơ và mở chi tiết bằng cả hàng/thẻ theo phản hồi chủ dự án. Lint/typecheck/build đạt; 2.033 unit pass / 24 skip; browser 117/117, kiểm lại 51/51 sau chỉnh menu cuối trên 360/768/1366, gồm no-JS, tác vụ riêng, quyền và Luce. Không migration/RLS/quyền/dữ liệu production. Đang phát hành, chưa xác minh production. [Báo cáo](../DETAIL_NAV_2026-10-14.md).
+> **15/10/2026 — ☑ DETAIL-NAV-AFFORDANCE-20261014:** sửa bố cục hồ sơ và mở chi tiết bằng cả hàng/thẻ theo phản hồi chủ dự án. Lint/typecheck/build đạt; 2.033 unit pass / 24 skip; browser 117/117, kiểm lại 51/51 sau chỉnh menu cuối trên 360/768/1366, gồm no-JS, tác vụ riêng, quyền và Luce. Không migration/RLS/quyền/dữ liệu production. Đã phát hành source `117362c`, Vercel success đúng SHA và public smoke 360/1366 đạt ngày 15/10/2026. [Báo cáo](../DETAIL_NAV_2026-10-14.md).
 
 > **14/10/2026 — RESTORE-LUCE-LOADING-20261014:** khôi phục loading Luce + câu Lời Chúa ngẫu nhiên theo phản hồi chủ dự án; nối lại nguồn ảnh/câu ở auth/dashboard và preload. Lint/typecheck/build đạt, 2.033 unit pass / 24 skip; E2E cuối 6/6 (360/768/1366 × thường/giảm chuyển động). Không DB/RLS/quyền. Source `82c05b0` đã push main, Vercel success đúng SHA; smoke ảnh/câu production 4/4 đạt.
 

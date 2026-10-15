@@ -50,14 +50,14 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **DETAIL-NAV-AFFORDANCE-20261014 — triển khai/kiểm tra xong, chờ phát hành — Codex — 2026-10-14.** Thiết kế lại hồ sơ thiếu nhi/nhân sự/lớp, header chi tiết thống nhất; các hàng/thẻ có dấu hiệu mở và vùng bấm toàn khối, giữ tác vụ riêng.
+- **DETAIL-NAV-AFFORDANCE-20261014 — đã phát hành — Codex — 2026-10-15; source `117362c`.** Thiết kế lại hồ sơ thiếu nhi/nhân sự/lớp, header chi tiết thống nhất; các hàng/thẻ có dấu hiệu mở và vùng bấm toàn khối, giữ tác vụ riêng.
 - **2.033 unit đạt / 24 skip**, lint/typecheck/build đạt; browser **117/117**, kiểm lại **51/51** sau chỉnh menu cuối, trên 360/768/1366: vùng bấm, bàn phím, no-JS, tác vụ riêng, quyền, phân trang, tạo hồ sơ/ghi danh, Luce. Không migration/RLS/quyền hoặc dữ liệu production.
 - **RESTORE-LUCE-LOADING-20261014 đã phát hành** source `82c05b0`, giữ trong bản sửa mới; **IMPORT-NH2025-20261014** đã nhập phần đủ căn cứ, đối soát 21/21.
 - Thiếu/mâu thuẫn dữ liệu năm học và điểm danh Giáo lý chưa nhập native tiếp tục theo báo cáo Excel ngoài Git; full E2E lịch sử/R5–R13/UX-42/R13.3 giữ backlog riêng.
 
 ## ➡️ VIỆC TIẾP THEO
 
-Commit/push DETAIL-NAV-AFFORDANCE-20261014 theo AGENTS §10; xác minh Vercel đúng SHA và smoke production. Backlog dữ liệu theo báo cáo đã bàn giao.
+DETAIL-NAV-AFFORDANCE-20261014 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; các hạng mục R5–R13/UX-42/R13.3 vẫn theo kế hoạch riêng, không nằm trong lượt sửa này.
 
 ## ⛔ BLOCKERS
 
@@ -165,7 +165,7 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Đã test:** lint/typecheck/build đạt; 2.033 unit pass / 24 skip; browser 117/117, sau chỉnh menu cuối kiểm lại 51/51, ba viewport 360/768/1366. Ghi rõ các lượt trước, lỗi cột cố định che nút xuất trên mobile và locator cũ trong [báo cáo](docs/system-workflow-redesign/DETAIL_NAV_2026-10-14.md). Không gọi full E2E toàn hệ thống xanh.
 - **File thay đổi:** UI shared, danh sách/trang chi tiết và kiểm thử tương ứng; log/ảnh fixture local lưu `backups/detail-nav-20261014` ngoài Git, ảnh chọn lọc trong verification/evidence.
 - **Migration/data impact:** không SQL/migration/RLS/server action/dependency mới; browser dùng dữ liệu local, fixture do test tạo được dọn theo ID. Không thay dữ liệu production.
-- **Next:** phát hành đúng SHA và smoke public production; chưa báo đã lên web trước khi xác minh.
+- **Phát hành 15/10/2026:** source `117362caeb8cf7fb936cfafc8b3208d51818fd3e`, Vercel success đúng SHA; public smoke 360/1366 đạt, `/login` HTTP 200, CSS mới đã có, không tràn ngang/runtime error. Các hồ sơ đăng nhập được kiểm local bằng E2E, không ghi dữ liệu production. Chứng cứ trong báo cáo task.
 
 ### [2026-10-14] Codex — RESTORE-LUCE-LOADING-20261014 — khôi phục loading theo yêu cầu
 - **Nguyên nhân:** commit anti-AI `97b83c9` bỏ ảnh/câu khỏi overlay, truyền hai mảng rỗng vào provider ở cả auth/dashboard và bỏ preload ảnh. Tài sản gốc vẫn còn.

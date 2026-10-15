@@ -19,5 +19,13 @@
     "passed": 2033,
     "skipped": 24
   },
-  "production": "pending"
+  "production": {
+    "source": "117362caeb8cf7fb936cfafc8b3208d51818fd3e",
+    "deployment": "success",
+    "publicSmokeWidths": [
+      360,
+      1366
+    ],
+    "authenticatedProfiles": "local E2E only"
+  }
 }
