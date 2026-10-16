@@ -39,7 +39,7 @@ Không đổi server action, phân quyền, migration/RLS hoặc dữ liệu pro
 
 ## Phát hành
 
-Chưa xác minh production. Chỉ cập nhật sau khi push, Vercel đúng SHA thành công và smoke URL chính đạt.
+**RESPONSIVE-FEEDBACK-RELEASE-20261016:** source `04fd353cf384569dcea1b3fb525a00b6011a473c` đã push main, Vercel success đúng SHA. Smoke `https://cq-tntt-manager-web.vercel.app/login` ở 360/1366 đạt: HTTP 200, CSS thẻ chuyển lớp mới có mặt, token padding desktop đo được 8px 16px, không tràn ngang/runtime error. Chặn POST trong trình duyệt smoke; không đăng nhập/ghi production. Các luồng có đăng nhập được kiểm trên build local. [Bằng chứng phát hành](verification/evidence/responsive-feedback-20261016/release.json).
 
 ## Ảnh và bằng chứng
 

@@ -1,0 +1,47 @@
+{
+  "task": "RESPONSIVE-FEEDBACK-RELEASE-20261016",
+  "deployment": {
+    "source": "04fd353cf384569dcea1b3fb525a00b6011a473c",
+    "state": "success",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "description": "Deployment has completed",
+        "url": "https://vercel.com/khanglebomba/cq-tntt-manager-web/39D84tiX2r41891kPeAfrqjTfyUp",
+        "updated_at": "2026-10-16T09:14:50Z"
+      }
+    ]
+  },
+  "smoke": {
+    "base": "https://cq-tntt-manager-web.vercel.app",
+    "checkedAt": "2026-10-16T09:16:09.050Z",
+    "results": [
+      {
+        "width": 360,
+        "login": 200,
+        "overflow": false,
+        "responsiveStyles": true,
+        "runtimeErrors": 0,
+        "writes": 0,
+        "padding": {
+          "top": 0,
+          "right": 12
+        }
+      },
+      {
+        "width": 1366,
+        "login": 200,
+        "overflow": false,
+        "responsiveStyles": true,
+        "runtimeErrors": 0,
+        "writes": 0,
+        "padding": {
+          "top": 8,
+          "right": 16
+        }
+      }
+    ],
+    "limitation": "Authenticated profiles verified locally; public production smoke only."
+  }
+}

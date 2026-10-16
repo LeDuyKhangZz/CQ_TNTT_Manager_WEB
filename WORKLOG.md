@@ -50,7 +50,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **RESPONSIVE-FEEDBACK-20261016 — implementation xong, đang phát hành — Codex — 2026-10-16.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
+- **RESPONSIVE-FEEDBACK-20261016 — đã phát hành — Codex — 2026-10-16; source `04fd353`.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
 - **2.037 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **147/147, 0 skip, 0 flaky**, ba viewport 360/768/1366. Rà 14 trang chính, tác vụ liên quan, lưu thành viên local, quyền, toàn hàng và Luce. Không migration/RLS/quyền/dữ liệu production.
 - **DETAIL-NAV-AFFORDANCE-20261014** đã phát hành source `117362c`; **RESTORE-LUCE-LOADING-20261014** source `82c05b0`, giữ trong bản sửa này.
 - **IMPORT-NH2025-20261014** đã nhập phần đủ căn cứ, đối soát 21/21; thiếu/mâu thuẫn dữ liệu và điểm danh Giáo lý chưa nhập native theo báo cáo Excel ngoài Git.
@@ -58,7 +58,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-RESPONSIVE-FEEDBACK-RELEASE-20261016: commit/push bản đã kiểm tra, xác minh Vercel đúng SHA và smoke URL production. Backlog dữ liệu và R5–R13/UX-42/R13.3 giữ riêng.
+RESPONSIVE-FEEDBACK-20261016 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng. Không còn bước phát hành của bản sửa này.
 
 ## ⛔ BLOCKERS
 
@@ -166,8 +166,8 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Đã test:** lint/typecheck/build đạt; 2.037 unit pass / 24 skip, unit picker sau chỉnh cuối 4/4; E2E cuối 147/147 (0 skip, 0 flaky) trên 360/768/1366. Các lượt lỗi/dừng và giới hạn ghi trong báo cáo; không gọi full E2E lịch sử xanh.
 - **Migration/data impact:** không SQL/migration/RLS/quyền/server action mới, không ghi production. Browser thêm rồi dọn thành viên fixture local theo ID.
 - **Quyết định mới:** yêu cầu chủ dự án ưu tiên dễ đọc desktop và bỏ bảng nhãn lặp mobile, ghi đè mật độ compact cũ tại những điểm này; áp skill ui-ux-pro-max theo yêu cầu.
-- **Blocker/rủi ro:** chưa xác minh trên profile lưu mật khẩu cá nhân; bản sửa đã kiểm xóa/gõ lại/đổi lọc/mở sheet/tải lại bằng browser mới. Chờ xác minh production.
-- **Next action:** RESPONSIVE-FEEDBACK-RELEASE-20261016 — push, theo dõi Vercel và public smoke.
+- **Blocker/rủi ro:** chưa xác minh trên profile lưu mật khẩu cá nhân; bản sửa đã kiểm xóa/gõ lại/đổi lọc/mở sheet/tải lại bằng browser mới. Đã xác minh Vercel và public smoke; giới hạn profile lưu mật khẩu cá nhân giữ nguyên.
+- **Phát hành / RESPONSIVE-FEEDBACK-RELEASE-20261016:** source `04fd353cf384569dcea1b3fb525a00b6011a473c`; Vercel success đúng SHA, public smoke 360/1366 đạt (login 200, CSS mới, padding desktop 8px 16px, không tràn/runtime error). Không đăng nhập/ghi production. Bằng chứng trong báo cáo; backlog giữ riêng.
 
 ### [2026-10-14] Codex — DETAIL-NAV-AFFORDANCE-20261014 — hồ sơ và hàng mở chi tiết
 - **Làm được:** tên trong danh sách có mũi tên/nhãn xem hồ sơ, nền/viền/hover/focus và bấm toàn hàng; dùng link thật không JS. Áp dụng thiếu nhi/nhân sự/lớp, giáo án, kết quả, điểm danh, Ban, nhập Excel, báo cáo và các danh sách con. Giữ `prefetch=false`, tác vụ ghi danh/điện thoại/xuất độc lập.

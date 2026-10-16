@@ -23,7 +23,8 @@
   "limitations": [
     "Existing integration skips retained",
     "Not the full historical E2E suite",
-    "No personal saved-credential browser profile available",
-    "Production verification pending"
-  ]
+    "No personal saved-credential browser profile available"
+  ],
+  "productionSource": "04fd353cf384569dcea1b3fb525a00b6011a473c",
+  "productionSmoke": "2/2 public viewport checks; authenticated UI verified locally"
 }
