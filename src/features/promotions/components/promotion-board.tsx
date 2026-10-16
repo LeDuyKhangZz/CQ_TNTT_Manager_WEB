@@ -61,7 +61,6 @@ import { tableScrollFrameClassName } from "@/components/ui/data-table";
 type Message = { tone: "success" | "error"; text: string } | null;
 
 const CELL = "block px-0 py-1 md:table-cell md:px-3 md:py-2 md:align-middle";
-const MOBILE_LABEL = "mr-2 inline-block min-w-24 text-xs font-medium text-ink-muted md:hidden";
 
 function statusBadge(item: PromotionRosterItem) {
   if (!item.review) return <Badge variant="outline">Chưa đề xuất</Badge>;
@@ -647,10 +646,10 @@ function PromotionRow({
     : "—";
 
   return (
-    <>
-      <tr className="block border-b border-line px-4 py-3 md:table-row md:px-0 md:py-0">
+    <tbody className="promotion-person" data-promotion-person>
+      <tr className={cn("grid grid-cols-[minmax(0,1fr)] gap-x-2 gap-y-1 md:table-row md:border-b md:border-line", hasSelectColumn && "grid-cols-[44px_minmax(0,1fr)]")}>
         {hasSelectColumn ? (
-          <td className={cn(CELL, "md:w-10")}>
+          <td className={cn(CELL, "col-start-1 row-start-1 row-end-5 md:w-12")}>
             {selectable ? (
               // Vùng chạm 44px ở **mọi** cỡ màn (`11` §5), không chỉ trên điện
               // thoại: dòng của bảng vốn đã cao hơn thế nhờ nút "Chi tiết", nên
@@ -661,36 +660,30 @@ function PromotionRow({
                 // Nhãn nêu TÊN EM: 25 ô tick giống hệt nhau thì trình đọc màn
                 // hình không nói lên được ô nào là của ai.
                 aria-label={`Chọn ${item.studentName} cho lượt đề xuất hàng loạt`}
-                labelClassName="flex"
-              >
-                <span className={cn(MOBILE_LABEL, "m-0")}>Chọn</span>
-              </Checkbox>
+                labelClassName="flex min-w-11 justify-center"
+              />
             ) : null}
           </td>
         ) : null}
-        <td className={cn(CELL, "font-medium")}>
-          <span className={MOBILE_LABEL}>Thiếu nhi</span>
+        <td className={cn(CELL, "min-w-0 break-words text-base font-semibold md:text-sm", hasSelectColumn && "col-start-2")}>
           {item.studentName}
         </td>
-        <td className={CELL}>
-          <span className={MOBILE_LABEL}>Lớp</span>
+        <td className={cn(CELL, "text-ink-muted", hasSelectColumn && "col-start-2")}>
           {item.className}
         </td>
-        <td className={CELL}>
-          <span className={MOBILE_LABEL}>Đề xuất</span>
+        <td className={cn(CELL, !item.review && "hidden md:table-cell", hasSelectColumn && "col-start-2")}>
           {proposalText}
         </td>
-        <td className={CELL}>
-          <span className={MOBILE_LABEL}>Trạng thái</span>
+        <td className={cn(CELL, hasSelectColumn && "col-start-2")}>
           {statusBadge(item)}
         </td>
-        <td className={cn(CELL, "md:text-right")}>
+        <td className={cn(CELL, "col-span-full mt-2 border-t border-line pt-2 md:mt-0 md:border-t-0 md:pt-2 md:text-right")}>
           <button
             type="button"
             onClick={onToggle}
             aria-expanded={expanded}
             aria-controls={panelId}
-            className="inline-flex min-h-11 items-center gap-1 rounded-md px-3 text-sm font-medium text-ink hover:bg-surface-muted"
+            className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-md px-3 text-sm font-medium text-theme-accent-text hover:bg-theme-tint md:w-auto"
           >
             {expanded ? (
               <ChevronDown className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
@@ -707,13 +700,13 @@ function PromotionRow({
         </td>
       </tr>
       {expanded ? (
-        <tr id={panelId} className="block border-b border-line md:table-row">
+        <tr id={panelId} className="mt-2 block border-t border-line md:table-row md:border-b">
           <td colSpan={hasSelectColumn ? 6 : 5} className="block p-0 md:table-cell">
             <PromotionDetailPanel item={item} targets={targets} />
           </td>
         </tr>
       ) : null}
-    </>
+    </tbody>
   );
 }
 
@@ -996,8 +989,8 @@ export function PromotionBoard({
         />
       ) : null}
 
-      <div className={tableScrollFrameClassName}>
-        <table className="w-full border-collapse text-sm md:min-w-[44rem]">
+      <div className={cn(tableScrollFrameClassName, "max-md:overflow-visible max-md:border-0 max-md:bg-transparent")}>
+        <table className="promotion-roster w-full border-collapse text-sm md:min-w-[44rem]">
           <caption className="sr-only">
             Danh sách thiếu nhi và trạng thái đề xuất chuyển lớp. Mở &quot;Chi tiết&quot; của một em
             để tạo đề xuất hoặc duyệt.
@@ -1026,7 +1019,6 @@ export function PromotionBoard({
               </th>
             </tr>
           </thead>
-          <tbody>
             {roster.map((item) => (
               <PromotionRow
                 key={item.enrollmentId}
@@ -1042,7 +1034,6 @@ export function PromotionBoard({
                 onSelectChange={(checked) => toggleOne(item.enrollmentId, checked)}
               />
             ))}
-          </tbody>
         </table>
       </div>
     </div>

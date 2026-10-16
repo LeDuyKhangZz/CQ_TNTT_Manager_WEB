@@ -21,7 +21,6 @@ import { formatDateTimeVi, formatDateVi, toDateTimeLocalVi } from "@/lib/dates";
 import {
   COMMITTEE_POSITIONS,
   COMMITTEE_POSITION_LABELS,
-  MAX_ACTIVE_COMMITTEES_PER_STAFF,
   type CommitteePosition,
 } from "../constants";
 import {
@@ -38,6 +37,7 @@ import {
 } from "../server/actions";
 import type { CommitteeDetail, CommitteeMeeting, CommitteeMember } from "../server/queries";
 import { WeeklyPlanEditor, type WeeklyPlanDraft } from "./weekly-plan-editor";
+import { CommitteeMemberForm } from "./committee-member-form";
 import { useGlobalPending } from "@/components/loading/loading-provider";
 
 type ActionResult = { ok: boolean; message?: string };
@@ -306,36 +306,9 @@ function MembersPanel({ detail, pending, run, requestConfirm }: PanelProps) {
         )}
 
         {detail.canManageMembers ? (
-          <ActionSheet title="Thêm thành viên">
-<form onSubmit={submitMember} className="grid gap-3 border-t border-line pt-4 md:grid-cols-3">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="add-staff">Thêm nhân sự</Label>
-              <Select id="add-staff" name="staffProfileId" required placeholder="Chọn giáo lý viên" defaultValue="">
-                {detail.staffOptions.map((staff) => (
-                  <option
-                    key={staff.id}
-                    value={staff.id}
-                    disabled={staff.activeCommitteeCount >= MAX_ACTIVE_COMMITTEES_PER_STAFF}
-                  >
-                    {staff.displayName}
-                    {staff.activeCommitteeCount >= MAX_ACTIVE_COMMITTEES_PER_STAFF ? " — đã đủ hai Ban" : ""}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="add-position">Chức vụ</Label>
-              <Select id="add-position" name="position" defaultValue="member">
-                {COMMITTEE_POSITIONS.map((position) => (
-                  <option key={position} value={position}>{COMMITTEE_POSITION_LABELS[position]}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="md:col-span-3">
-              <Button type="submit" pending={pending}>Thêm vào Ban</Button>
-            </div>
-          </form>
-</ActionSheet>
+          <ActionSheet title="Thêm thành viên" description="Tìm tên hoặc lọc theo ngành, lớp để chọn nhân sự.">
+            <CommitteeMemberForm staff={detail.staffOptions} pending={pending} onSubmit={submitMember} />
+          </ActionSheet>
         ) : null}
       </CardContent>
     </Card>

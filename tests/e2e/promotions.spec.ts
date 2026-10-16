@@ -63,8 +63,9 @@ test.describe("TO-BE 1 · bảng tiến độ theo lớp", () => {
     await login(page, GROUP_LEADER);
   });
 
-  test("AC-12: trang mở ra có bảng tiến độ với đủ bốn cột trạng thái", async ({ page }) => {
+  test("AC-12: mục Tiến độ theo lớp có đủ bốn cột trạng thái", async ({ page }) => {
     await page.goto("/promotions");
+    await page.getByRole("button", { name: "Tiến độ theo lớp", exact: true }).click();
     const progress = page.getByRole("table", { name: /Số thiếu nhi theo từng trạng thái/ });
     await expect(progress).toBeVisible({ timeout: 20_000 });
     // 🔴 Kiểm bằng CHỮ chứ không bằng vai trò `columnheader`, và đó không phải
@@ -79,6 +80,7 @@ test.describe("TO-BE 1 · bảng tiến độ theo lớp", () => {
 
   test("bảng tiến độ nêu ĐÚNG TÊN LỚP, không phải một con số trần", async ({ page }) => {
     await page.goto("/promotions");
+    await page.getByRole("button", { name: "Tiến độ theo lớp", exact: true }).click();
     const progress = page.getByRole("table", { name: /Số thiếu nhi theo từng trạng thái/ });
     await expect(progress.getByRole("link", { name: SEEDED_CLASS })).toBeVisible({ timeout: 20_000 });
   });
@@ -94,6 +96,7 @@ test.describe("TO-BE 1 · bảng tiến độ theo lớp", () => {
     page,
   }) => {
     await page.goto("/promotions");
+    await page.getByRole("button", { name: "Tiến độ theo lớp", exact: true }).click();
     const progress = page.getByRole("table", { name: /Số thiếu nhi theo từng trạng thái/ });
     const row = progress.getByRole("row").filter({ hasText: SEEDED_CLASS });
     await expect(row).toBeVisible({ timeout: 20_000 });
@@ -112,6 +115,7 @@ test.describe("TO-BE 1 · lọc, tìm, phân trang", () => {
     page,
   }) => {
     await page.goto("/promotions");
+    await page.getByRole("button", { name: "Bộ lọc", exact: true }).click();
     const filters = page.getByRole("group", { name: "Lọc danh sách chuyển lớp" });
     await filters.getByLabel("Lớp", { exact: true }).selectOption({ label: SEEDED_CLASS });
     await filters.getByLabel("Trạng thái").selectOption("not_proposed");
@@ -158,6 +162,7 @@ test.describe("TO-BE 1 · lọc, tìm, phân trang", () => {
     await expect(page.getByText(/không nằm trong phạm vi bạn phụ trách/)).toBeVisible({
       timeout: 20_000,
     });
+    await page.getByRole("button", { name: "Tiến độ theo lớp", exact: true }).click();
     await expect(page.getByRole("table", { name: /Số thiếu nhi theo từng trạng thái/ })).toBeVisible();
   });
 
@@ -168,6 +173,7 @@ test.describe("TO-BE 1 · lọc, tìm, phân trang", () => {
     await expect(page.getByRole("heading", { name: "Lên lớp và chuyển lớp" })).toBeVisible({
       timeout: 20_000,
     });
+    await page.getByRole("button", { name: "Tiến độ theo lớp", exact: true }).click();
     await expect(page.getByRole("table", { name: /Số thiếu nhi theo từng trạng thái/ })).toBeVisible();
   });
 
@@ -205,6 +211,7 @@ test.describe("panel chi tiết", () => {
   test("Trưởng ngành Ấu thấy lớp ngành mình và KHÔNG thấy lớp ngành khác", async ({ page }) => {
     await login(page, SECTOR_LEADER_AU);
     await page.goto("/promotions");
+    await page.getByRole("button", { name: "Tiến độ theo lớp", exact: true }).click();
     const progress = page.getByRole("table", { name: /Số thiếu nhi theo từng trạng thái/ });
     await expect(progress).toBeVisible({ timeout: 20_000 });
     await expect(progress.getByRole("link", { name: SEEDED_CLASS })).toBeVisible();

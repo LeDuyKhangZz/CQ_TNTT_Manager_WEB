@@ -50,14 +50,15 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **DETAIL-NAV-AFFORDANCE-20261014 — đã phát hành — Codex — 2026-10-15; source `117362c`.** Thiết kế lại hồ sơ thiếu nhi/nhân sự/lớp, header chi tiết thống nhất; các hàng/thẻ có dấu hiệu mở và vùng bấm toàn khối, giữ tác vụ riêng.
-- **2.033 unit đạt / 24 skip**, lint/typecheck/build đạt; browser **117/117**, kiểm lại **51/51** sau chỉnh menu cuối, trên 360/768/1366: vùng bấm, bàn phím, no-JS, tác vụ riêng, quyền, phân trang, tạo hồ sơ/ghi danh, Luce. Không migration/RLS/quyền hoặc dữ liệu production.
-- **RESTORE-LUCE-LOADING-20261014 đã phát hành** source `82c05b0`, giữ trong bản sửa mới; **IMPORT-NH2025-20261014** đã nhập phần đủ căn cứ, đối soát 21/21.
-- Thiếu/mâu thuẫn dữ liệu năm học và điểm danh Giáo lý chưa nhập native tiếp tục theo báo cáo Excel ngoài Git; full E2E lịch sử/R5–R13/UX-42/R13.3 giữ backlog riêng.
+- **RESPONSIVE-FEEDBACK-20261016 — implementation xong, đang phát hành — Codex — 2026-10-16.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
+- **2.037 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **147/147, 0 skip, 0 flaky**, ba viewport 360/768/1366. Rà 14 trang chính, tác vụ liên quan, lưu thành viên local, quyền, toàn hàng và Luce. Không migration/RLS/quyền/dữ liệu production.
+- **DETAIL-NAV-AFFORDANCE-20261014** đã phát hành source `117362c`; **RESTORE-LUCE-LOADING-20261014** source `82c05b0`, giữ trong bản sửa này.
+- **IMPORT-NH2025-20261014** đã nhập phần đủ căn cứ, đối soát 21/21; thiếu/mâu thuẫn dữ liệu và điểm danh Giáo lý chưa nhập native theo báo cáo Excel ngoài Git.
+- Full E2E lịch sử/R5–R13/UX-42/R13.3 giữ backlog riêng. Autofill chưa kiểm trên profile Chrome/extension cá nhân của chủ dự án.
 
 ## ➡️ VIỆC TIẾP THEO
 
-DETAIL-NAV-AFFORDANCE-20261014 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; các hạng mục R5–R13/UX-42/R13.3 vẫn theo kế hoạch riêng, không nằm trong lượt sửa này.
+RESPONSIVE-FEEDBACK-RELEASE-20261016: commit/push bản đã kiểm tra, xác minh Vercel đúng SHA và smoke URL production. Backlog dữ liệu và R5–R13/UX-42/R13.3 giữ riêng.
 
 ## ⛔ BLOCKERS
 
@@ -159,6 +160,15 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-10-16] Codex — RESPONSIVE-FEEDBACK-20261016 — sửa bốn phản hồi mobile/laptop
+- **Làm được:** thẻ chuyển lớp mobile bỏ nhãn cột lặp, tách từng em và tác vụ; tăng padding desktop dùng chung và khoảng dòng nhân sự; tách form tìm kiếm/mật khẩu để giảm autofill nhầm; bộ chọn thành viên Ban có tìm tên không dấu, ngành/lớp, giữ lựa chọn và vùng cuộn riêng.
+- **File thay đổi:** globals/staff, promotion-board, account-admin-panel, committee-member-form/workspace/query; unit và E2E tương ứng; tracking/báo cáo/ảnh fixture. [Báo cáo](docs/system-workflow-redesign/RESPONSIVE_FEEDBACK_2026-10-16.md).
+- **Đã test:** lint/typecheck/build đạt; 2.037 unit pass / 24 skip, unit picker sau chỉnh cuối 4/4; E2E cuối 147/147 (0 skip, 0 flaky) trên 360/768/1366. Các lượt lỗi/dừng và giới hạn ghi trong báo cáo; không gọi full E2E lịch sử xanh.
+- **Migration/data impact:** không SQL/migration/RLS/quyền/server action mới, không ghi production. Browser thêm rồi dọn thành viên fixture local theo ID.
+- **Quyết định mới:** yêu cầu chủ dự án ưu tiên dễ đọc desktop và bỏ bảng nhãn lặp mobile, ghi đè mật độ compact cũ tại những điểm này; áp skill ui-ux-pro-max theo yêu cầu.
+- **Blocker/rủi ro:** chưa xác minh trên profile lưu mật khẩu cá nhân; bản sửa đã kiểm xóa/gõ lại/đổi lọc/mở sheet/tải lại bằng browser mới. Chờ xác minh production.
+- **Next action:** RESPONSIVE-FEEDBACK-RELEASE-20261016 — push, theo dõi Vercel và public smoke.
+
 ### [2026-10-14] Codex — DETAIL-NAV-AFFORDANCE-20261014 — hồ sơ và hàng mở chi tiết
 - **Làm được:** tên trong danh sách có mũi tên/nhãn xem hồ sơ, nền/viền/hover/focus và bấm toàn hàng; dùng link thật không JS. Áp dụng thiếu nhi/nhân sự/lớp, giáo án, kết quả, điểm danh, Ban, nhập Excel, báo cáo và các danh sách con. Giữ `prefetch=false`, tác vụ ghi danh/điện thoại/xuất độc lập.
 - **Bố cục:** nhận diện/lớp/trạng thái/liên hệ ở đầu; nhóm thông tin và tác vụ rõ; sáu mục thiếu nhi hiện đủ trên mobile; thông tin ngắn hai cột. Các trang chi tiết dùng chung header và khối nội dung; giữ Luce/Lời Chúa.
@@ -201,13 +211,6 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Quyết định mới:** yêu cầu người dùng 14/10 bỏ danh mục khỏi trang chủ và khôi phục nhóm chức năng; quyền và nghiệp vụ giữ nguyên.
 - **Phát hành:** source `c943863` đã push main; Vercel và smoke production đạt theo AUTO-RELEASE-POLICY-20261014. R5–R13/UX-42/R13.3 giữ backlog riêng.
 
-### [2026-10-14] Codex — MOBILE-SHEETS-RELEASE-20261014 — xác nhận production
-- **Làm được:** source `4bb4d42` đã push `main`; Vercel success đúng SHA; kiểm tra URL công khai ở 360/1366px đạt. CSS mobile mới đã được phục vụ; login HTTP 200, không overflow/pageerror, dashboard chưa đăng nhập chuyển về login.
-- **File thay đổi:** hồ sơ release, WORKLOG, ba tài liệu tracking và lưu trữ nhật ký; không thay source sản phẩm trong commit release.
-- **Migration/data impact:** không có. KHANG.NHO giữ mật khẩu hiện có; không chạy form ghi dữ liệu production.
-- **Đã test:** source đã đạt lint/typecheck/build, 2.028 unit / 24 skip; browser 74 pass / 28 skip có chủ đích, refinement 9/9. Smoke production riêng như trên; không khẳng định full E2E hay authenticated production CRUD đã đạt.
-- **Next:** người dùng xem và phản hồi qua preview 3150 đang mở. Backlog và giới hạn kiểm tra giữ nguyên trong báo cáo.
-
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
 
 Archive: [MOBILE-NAV-GROUPS-20261014](docs/worklog-archive-before-nav-groups-2026-10-14.md).
@@ -217,3 +220,5 @@ Archive: [Trước IMPORT-NH2025-20261014](docs/worklog-archive-before-import-20
 Archive: [Trước RESTORE-LUCE-LOADING-20261014](docs/worklog-archive-before-luce-2026-10-14.md).
 
 Archive: [Trước DETAIL-NAV-AFFORDANCE-20261014](docs/worklog-archive-before-detail-nav-2026-10-14.md).
+
+Archive: [Trước RESPONSIVE-FEEDBACK-20261016](docs/worklog-archive-before-responsive-feedback-2026-10-16.md).

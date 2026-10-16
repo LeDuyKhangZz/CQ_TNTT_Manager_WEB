@@ -173,16 +173,16 @@ export default async function StaffPage({
                       const account = staffAccountBadge({ hasAccount: item.hasAccount, username: item.username, hasActiveRole: item.hasActiveRole }, visibility);
                       return <>
                         <span className="block break-words font-semibold text-ink"><span className="md:hidden">{item.fullName}</span><span className="hidden md:inline">{staffDisplayName(item)}</span></span>
-                        <span className="hidden text-xs text-ink-muted md:block">{item.staffCode} · {componentLabel(item.component)}</span>
+                        <span className="mt-1 hidden text-xs text-ink-muted md:block">{item.staffCode} · {componentLabel(item.component)}</span>
                         <span className="mt-1 block text-xs text-ink-muted md:hidden">{item.assignment ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}` : "Chưa phân lớp"}{item.serviceStatus !== "active" ? ` · ${serviceLabel(item.serviceStatus)}` : ""}</span>
                         {account.tone === "warning" ? <span className="mt-1 block text-xs text-warning md:hidden">{account.text}</span> : null}
                       </>;
                     } },
-                    { key: "contact", header: "Liên hệ / Huấn luyện", cell: (item) => <><p>{item.phone ?? "Chưa có SĐT"}</p><p className="text-xs text-ink-muted">Huấn luyện {formationLabel(item.formationLevel)}</p></> },
+                    { key: "contact", header: "Liên hệ / Huấn luyện", cell: (item) => <div className="space-y-1"><p>{item.phone ?? "Chưa có SĐT"}</p><p className="text-xs text-ink-muted">Huấn luyện: {formationLabel(item.formationLevel)}</p></div> },
                     { key: "assignment", header: "Phân công", cell: (item) => item.assignment ? `${item.assignment.className} · ${CAPACITY_SHORT_LABELS[item.assignment.capacity] ?? item.assignment.capacity}` : "Chưa phân lớp" },
                     { key: "account", header: "Phục vụ / Tài khoản", cell: (item) => {
                       const account = staffAccountBadge({ hasAccount: item.hasAccount, username: item.username, hasActiveRole: item.hasActiveRole }, visibility);
-                      return <><p>{serviceLabel(item.serviceStatus)}</p>{account.tone === "warning" ? <Badge variant="warning">{account.text}</Badge> : <p className="text-xs text-ink-muted">{account.text}</p>}</>;
+                      return <div className="space-y-1"><p>{serviceLabel(item.serviceStatus)}</p>{account.tone === "warning" ? <Badge variant="warning">{account.text}</Badge> : <p className="text-xs text-ink-muted">{account.text}</p>}</div>;
                     } },
                   ]}
                 />

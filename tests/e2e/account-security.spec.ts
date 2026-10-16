@@ -75,10 +75,10 @@ test("xóa tài khoản: hộp thoại gõ lại tên, nút khóa tới khi gõ 
 
   // Lọc danh sách còn đúng tài khoản GLV910 (không phải Super Admin).
   await page.getByPlaceholder("Tìm theo tên hoặc tên đăng nhập").fill("GLV910");
-  await page.locator("summary").filter({ hasText: /Quản lý tài khoản GLV910/i }).click();
+  await page.getByRole("button", { name: "Quản lý", exact: true }).click();
   await page.getByRole("button", { name: "Xóa tài khoản" }).first().click();
 
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: "Xóa tài khoản đăng nhập", exact: true });
   await expect(dialog).toBeVisible();
   const confirm = dialog.getByRole("button", { name: "Xóa tài khoản" });
   await expect(confirm).toBeDisabled();
@@ -118,5 +118,5 @@ test("biểu mẫu tạo tài khoản ở /admin chỉ còn vai trò không gắ
   expect(labels).not.toContain("Giáo lý viên lớp");
 
   // Bỏ một đường đi thì phải chỉ đường thay thế.
-  await expect(page.getByRole("link", { name: "mở Danh sách nhân sự" })).toHaveAttribute("href", "/staff");
+  await expect(page.getByRole("link", { name: "Danh sách nhân sự", exact: true })).toHaveAttribute("href", "/staff");
 });

@@ -2,6 +2,9 @@ import "server-only";
 
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
+import { getAcademicYearView } from "@/lib/academic-year/view";
+import { todayVi } from "@/lib/dates";
+import { AppError } from "@/lib/errors";
 import type { AuthContext } from "@/lib/auth/types";
 import type { CommitteePosition } from "../constants";
 import { canManageCommittees, canWriteCommitteeContent } from "./permissions";
@@ -62,6 +65,10 @@ export interface StaffOption {
   id: string;
   displayName: string;
   activeCommitteeCount: number;
+  classId: string | null;
+  className: string | null;
+  sectorId: string | null;
+  sectorName: string | null;
 }
 
 export interface CommitteeDetail {
@@ -208,20 +215,36 @@ export async function getCommitteeDetail(committeeId: string): Promise<Committee
   // kèm số Ban đang giữ để UI cảnh báo trước giới hạn hai Ban (D-47).
   let staffOptions: StaffOption[] = [];
   if (manageMembers) {
-    const [{ data: staffData }, { data: activeMemberships }] = await Promise.all([
-      supabase.from("staff_profiles").select("id, saint_name, full_name").order("full_name"),
+    const [staffResult, membershipResult, { year, readOnly }] = await Promise.all([
+      supabase.from("staff_profiles").select("id, saint_name, full_name, class_staff_assignments(class_id, starts_on, ends_on, is_active, classes(display_name, academic_year_id, grade_levels(sectors(id, name))))").order("full_name"),
       supabase.from("committee_memberships").select("staff_profile_id").eq("is_active", true),
+      getAcademicYearView(),
     ]);
+    if (staffResult.error || membershipResult.error) throw new AppError("CONFLICT", "Không thể tải nhân sự để thêm vào Ban. Vui lòng thử lại.");
+    const staffData = staffResult.data;
+    const activeMemberships = membershipResult.data;
     const inCommittee = new Set(members.map((item) => item.staffProfileId));
+    const today = todayVi();
     staffOptions = (staffData ?? [])
       .filter((staff) => !inCommittee.has(staff.id))
-      .map((staff) => ({
-        id: staff.id,
-        displayName: staffDisplayName(staff),
-        activeCommitteeCount: (activeMemberships ?? []).filter(
-          (item) => item.staff_profile_id === staff.id,
-        ).length,
-      }));
+      .map((staff) => {
+        const assignment = (staff.class_staff_assignments ?? [])
+          .filter((item) => item.classes?.academic_year_id === year?.id &&
+            (readOnly || (item.is_active && !item.ends_on && item.starts_on <= today)))
+          .sort((a, b) => b.starts_on.localeCompare(a.starts_on))[0];
+        const sector = assignment?.classes?.grade_levels?.sectors;
+        return {
+          id: staff.id,
+          displayName: staffDisplayName(staff),
+          classId: assignment?.class_id ?? null,
+          className: assignment?.classes?.display_name ?? null,
+          sectorId: sector?.id ?? null,
+          sectorName: sector?.name ?? null,
+          activeCommitteeCount: (activeMemberships ?? []).filter(
+            (item) => item.staff_profile_id === staff.id,
+          ).length,
+        };
+      });
   }
 
   return {

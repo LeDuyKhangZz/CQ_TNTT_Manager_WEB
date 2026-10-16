@@ -172,6 +172,12 @@ html { scroll-padding-top: 80px; scroll-padding-bottom: 96px; }
   --cell-pad: 0 12px;
 }
 
+/* Desktop directories need breathing room around multi-line records. Keep
+   phone card padding independent from desktop table density. */
+@media (min-width: 768px) {
+  [data-density="compact"] { --cell-pad: 8px 16px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
 :root {
     --duration-fast: 0ms;
@@ -349,6 +355,15 @@ html { scroll-padding-top: 80px; scroll-padding-bottom: 96px; }
 [data-entity-table] [data-linked-row]:hover > td:first-child,
 [data-entity-table] [data-linked-row]:focus-within > td:first-child { background: var(--theme-tint); }
 @media (max-width: 767px) {
+  .promotion-roster { display: block; }
+  .promotion-roster > .promotion-person {
+    display: block;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-surface);
+  }
   [data-mobile-cards] tbody { display: grid; gap: 8px; padding: 8px; }
   [data-mobile-cards] [data-linked-row] {
     border: 1px solid var(--border);

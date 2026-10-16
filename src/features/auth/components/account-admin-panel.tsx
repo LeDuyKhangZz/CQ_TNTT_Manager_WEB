@@ -181,7 +181,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
               Danh sách nhân sự
             </Link>
           </div>
-          <form action={provision} className="space-y-4">
+          <form action={provision} autoComplete="off" className="space-y-4">
             <FormPendingBridge />
             <div className="space-y-2">
               <Label htmlFor="account-role">Vai trò</Label>
@@ -240,6 +240,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
               🔴 Nhãn của hai ô chọn giữ **nguyên văn** "Lọc theo vai trò" /
               "Lọc theo trạng thái": `account-security.spec.ts:106` tìm ô "Vai
               trò" bằng `exact: true` đúng vì trên trang còn ô này. */}
+          <form role="search" aria-label="Tìm trong danh sách tài khoản" autoComplete="off" onSubmit={(event) => event.preventDefault()}>
           <fieldset className="min-w-0 border-0 p-0">
             <legend className="mb-3 text-sm font-semibold text-ink">Lọc danh sách tài khoản</legend>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
@@ -252,6 +253,12 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                 <Input
                   id="account-search"
                   type="search"
+                  name="directory-query"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  data-1p-ignore
+                  data-lpignore="true"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Tìm theo tên hoặc tên đăng nhập"
@@ -272,6 +279,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
               </FilterField>
             </div>
           </fieldset>
+          </form>
 
           <p className="text-sm text-ink-muted" role="status">
             {paged.total === 0
@@ -297,13 +305,13 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                 {canManage ? (
                   <ActionSheet title={`Tài khoản ${account.username}`} triggerLabel="Quản lý">
                     {message ? <p role="status" className="mb-3 text-sm">{message}</p> : null}
-                  <div className="max-w-3xl space-y-3 border-t border-line pt-3">
+                  <form autoComplete="off" aria-label={`Chỉnh tài khoản ${account.username}`} onSubmit={(event) => event.preventDefault()} className="max-w-3xl space-y-3 border-t border-line pt-3">
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      <Input aria-label={`Tên đăng nhập ${account.displayName}`} value={usernames[account.id] ?? account.username} onChange={(event) => setUsernames((current) => ({ ...current, [account.id]: event.target.value }))} />
+                      <Input name="managed-username" autoComplete="off" aria-label={`Tên đăng nhập ${account.displayName}`} value={usernames[account.id] ?? account.username} onChange={(event) => setUsernames((current) => ({ ...current, [account.id]: event.target.value }))} />
                       <Button type="button" variant="outline" onClick={() => updateUsername(account.id, account.username)}>Lưu tên đăng nhập</Button>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      <Input aria-label={`Mật khẩu mới ${account.displayName}`} type="password" minLength={8} placeholder="Mật khẩu mới, ít nhất 8 ký tự" value={passwords[account.id] ?? ""} onChange={(event) => setPasswords((current) => ({ ...current, [account.id]: event.target.value }))} />
+                      <Input name="managed-new-password" autoComplete="new-password" aria-label={`Mật khẩu mới ${account.displayName}`} type="password" minLength={8} placeholder="Mật khẩu mới, ít nhất 8 ký tự" value={passwords[account.id] ?? ""} onChange={(event) => setPasswords((current) => ({ ...current, [account.id]: event.target.value }))} />
                       <Button type="button" variant="outline" onClick={() => setPassword(account.id)}>Đặt mật khẩu</Button>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -311,7 +319,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                       {account.status === "active" ? <Button type="button" size="sm" variant="danger" onClick={() => setStatus(account.id, "disabled")}>Vô hiệu hóa</Button> : <Button type="button" size="sm" onClick={() => setStatus(account.id, "active")}>Kích hoạt</Button>}
                       <Button type="button" size="sm" variant="danger" onClick={() => openDelete(account)}>Xóa tài khoản</Button>
                     </div>
-                  </div>
+                  </form>
                   </ActionSheet>
                 ) : <p className="mt-3 text-xs text-ink-muted">Tài khoản Super Admin không được sửa/xóa qua danh sách này.</p>}
               </div>
