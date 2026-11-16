@@ -50,6 +50,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+- **REDEPLOY-20261116 — đang phát hành — Codex — 2026-11-16.** Redeploy production theo yêu cầu sau ảnh `504 MIDDLEWARE_INVOCATION_TIMEOUT`; giữ nguyên mã ứng dụng từ `ade6428`. Lint/typecheck đạt; 2.037 unit pass / 24 skip; build đạt. Chờ Vercel đúng SHA và smoke sau phát hành.
 - **RESPONSIVE-FEEDBACK-20261016 — đã phát hành — Codex — 2026-10-16; source `04fd353`.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
 - **2.037 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **147/147, 0 skip, 0 flaky**, ba viewport 360/768/1366. Rà 14 trang chính, tác vụ liên quan, lưu thành viên local, quyền, toàn hàng và Luce. Không migration/RLS/quyền/dữ liệu production.
 - **DETAIL-NAV-AFFORDANCE-20261014** đã phát hành source `117362c`; **RESTORE-LUCE-LOADING-20261014** source `82c05b0`, giữ trong bản sửa này.
@@ -58,7 +59,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-RESPONSIVE-FEEDBACK-20261016 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng. Không còn bước phát hành của bản sửa này.
+REDEPLOY-20261116: theo dõi Vercel đúng SHA và kiểm tra `/classes` trên production; chưa có phiên đăng nhập để tái hiện lỗi người dùng. RESPONSIVE-FEEDBACK-20261016 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng. Không còn bước phát hành của bản sửa này.
 
 ## ⛔ BLOCKERS
 
@@ -160,6 +161,14 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-11-16] Codex — REDEPLOY-20261116 — redeploy production theo yêu cầu
+- **Làm được:** kiểm tra `main` khớp local `ade64289d5420a3ffcc43db24fb36be37751e72c`; kích hoạt Git → Vercel bằng commit nhật ký, giữ nguyên mã ứng dụng và cấu hình.
+- **File thay đổi:** `WORKLOG.md`; bằng chứng kiểm tra lưu ngoài Git trong `../backups/redeploy-20261116-*`.
+- **Migration/data impact:** không có; không thay môi trường, mật khẩu, quyền hoặc dữ liệu production.
+- **Đã test:** `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test` (138 file pass / 6 skip; 2.037 test pass / 24 skip), `npm.cmd run build` đạt. Trước redeploy: `/login` 200; `/classes` và `/dashboard` 307 về login, không `x-vercel-error`.
+- **Blocker/rủi ro:** chưa tái hiện 504 với phiên người dùng; smoke công khai không xác minh được truy cập có đăng nhập. Chưa tuyên bố đã sửa nguyên nhân timeout.
+- **Next action:** đợi Vercel đúng commit thành công, smoke trình duyệt 360/1366 và ghi kết quả thật; backlog cũ giữ nguyên.
+
 ### [2026-10-16] Codex — RESPONSIVE-FEEDBACK-20261016 — sửa bốn phản hồi mobile/laptop
 - **Làm được:** thẻ chuyển lớp mobile bỏ nhãn cột lặp, tách từng em và tác vụ; tăng padding desktop dùng chung và khoảng dòng nhân sự; tách form tìm kiếm/mật khẩu để giảm autofill nhầm; bộ chọn thành viên Ban có tìm tên không dấu, ngành/lớp, giữ lựa chọn và vùng cuộn riêng.
 - **File thay đổi:** globals/staff, promotion-board, account-admin-panel, committee-member-form/workspace/query; unit và E2E tương ứng; tracking/báo cáo/ảnh fixture. [Báo cáo](docs/system-workflow-redesign/RESPONSIVE_FEEDBACK_2026-10-16.md).
@@ -202,14 +211,6 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Đã test:** bản UI đã có lint/typecheck/build đạt, 2.028 unit pass / 24 skip, 55 browser pass / 2 skip. Smoke production riêng 360/1366 HTTP 200, CSS bố cục sinh nhật mới, không overflow/pageerror; dashboard chưa đăng nhập chuyển về login. `git diff --check` đạt.
 - **Quyết định mới:** yêu cầu trực tiếp của user 14/10 biến việc tự phát hành từ “được phép” thành bắt buộc sau task sửa code hoàn tất. Chỉ stage file thuộc task; giữ nguyên năm file `nav-*.json` có sẵn ngoài task.
 - **Next:** người dùng xem production; task sau tiếp tục áp quy tắc tự phát hành. Backlog/giới hạn cũ giữ nguyên.
-
-### [2026-10-14] Codex — MOBILE-NAV-GROUPS-20261014 — sửa theo ba ảnh phản hồi
-- **Làm được:** bỏ khối Tất cả chức năng khỏi dashboard; sinh nhật/bổn mạng luôn xếp ngày dưới tên ở mobile, hai cột từ 640px; chia menu thành danh mục sau khi lọc quyền, tìm kiếm theo tên/nhóm. Desktop mở cùng danh mục trong dialog, giữ fallback no-JS đóng mặc định.
-- **File thay đổi:** 8 file sản phẩm dashboard/shell/navigation, 2 file E2E, tracking và [báo cáo/ảnh](docs/system-workflow-redesign/MOBILE_NAV_GROUPS_2026-10-14.md).
-- **Migration/data impact:** không migration/RLS/API/dependency; không ghi dữ liệu nghiệp vụ. Browser dùng tài khoản local, hình học sinh nhật dùng fixture tên giả trong DOM.
-- **Đã test:** lint/typecheck/build đạt; 2.028 unit pass / 24 skip; Playwright cuối 55 pass / 2 skip có chủ đích, 14 role × ba viewport + geometry 12 độ rộng và 0/1/5/20/100 dòng. Lượt đầu 39 pass / 16 fail / 2 skip do hai lỗi harness, đã sửa và chạy lại toàn nhóm; không cộng lượt cũ vào lượt cuối.
-- **Quyết định mới:** yêu cầu người dùng 14/10 bỏ danh mục khỏi trang chủ và khôi phục nhóm chức năng; quyền và nghiệp vụ giữ nguyên.
-- **Phát hành:** source `c943863` đã push main; Vercel và smoke production đạt theo AUTO-RELEASE-POLICY-20261014. R5–R13/UX-42/R13.3 giữ backlog riêng.
 
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
 
