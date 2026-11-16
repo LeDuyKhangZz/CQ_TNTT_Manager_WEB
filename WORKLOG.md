@@ -50,7 +50,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **REDEPLOY-20261116 — redeploy thành công — Codex — 2026-11-16; source `c069e82`.** Vercel success đúng SHA; public smoke 360/1366 đạt 2/2, `/classes` chuyển về login 200, không lỗi runtime/overflow. Giữ nguyên mã ứng dụng từ `ade6428`; lint/typecheck/build đạt, 2.037 unit pass / 24 skip. Chưa xác minh phiên đăng nhập của người dùng.
+- **REDEPLOY-20261116 — đã khôi phục backend — Codex — 2026-11-16.** Redeploy `c069e82` chưa giải quyết 504; xác nhận Supabase `cq-tntt-manager` bị `INACTIVE`, DNS NXDOMAIN. Resume project hiện có → `ACTIVE_HEALTHY`; Auth/Data API 200. Browser 4/4 đạt (360/1366 × chưa đăng nhập/cookie hết hạn giả lập), 1,3–2,0 giây; chưa kiểm phiên đăng nhập thật của người dùng. Không sửa mã ứng dụng.
 - **RESPONSIVE-FEEDBACK-20261016 — đã phát hành — Codex — 2026-10-16; source `04fd353`.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
 - **2.037 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **147/147, 0 skip, 0 flaky**, ba viewport 360/768/1366. Rà 14 trang chính, tác vụ liên quan, lưu thành viên local, quyền, toàn hàng và Luce. Không migration/RLS/quyền/dữ liệu production.
 - **DETAIL-NAV-AFFORDANCE-20261014** đã phát hành source `117362c`; **RESTORE-LUCE-LOADING-20261014** source `82c05b0`, giữ trong bản sửa này.
@@ -59,7 +59,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-REDEPLOY-20261116 đã redeploy và public smoke đạt; nếu người dùng vẫn gặp timeout sau đăng nhập thì tiếp tục điều tra phiên xác thực/Supabase, chưa kết luận nguyên nhân đã được sửa. RESPONSIVE-FEEDBACK-20261016 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng. Không còn bước phát hành của bản sửa này.
+REDEPLOY-20261116 đã khôi phục Supabase từ trạng thái tạm dừng và kiểm tra Auth/Data API cùng cookie hết hạn. Người dùng tải lại `/classes`, đăng nhập lại nếu được yêu cầu. Nếu tái phát, kiểm trạng thái Supabase và request có cookie; smoke chưa đăng nhập không đủ kết luận backend khỏe. Backlog dữ liệu, R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng.
 
 ## ⛔ BLOCKERS
 
@@ -161,14 +161,17 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
-### [2026-11-16] Codex — REDEPLOY-20261116 — redeploy production theo yêu cầu
+### [2026-11-16] Codex — REDEPLOY-20261116 — redeploy và khôi phục Supabase bị tạm dừng
+- **Điều tra sau phản hồi vẫn lỗi:** Management API xác nhận project `hvcfhlaubnukeoutxiuq` / `cq-tntt-manager` là `INACTIVE`; Google và Cloudflare DNS cùng NXDOMAIN. Middleware `getUser()` chờ refresh qua dịch vụ không hoạt động; smoke anonymous trước đó không đi qua nhánh này. Chưa xác nhận lý do project bị tạm dừng.
+- **Khắc phục vận hành:** gọi API resume paused project `/v1/projects/{ref}/restore`, không chọn bản backup/PITR, không reset DB. Trạng thái đi từ `INACTIVE` → `COMING_UP` → `ACTIVE_HEALTHY`; giữ nguyên project/cấu hình/credentials và mã ứng dụng.
+- **Kiểm tra sau khôi phục:** `/auth/v1/health` 200 (420ms), đọc `classes` với anon/RLS 200 (292ms); browser 4/4 đạt trên 360/1366 × anonymous/expired-invalid, về login HTTP 200 trong 1,3–2,0 giây, không pageerror, giá trị cookie không hợp lệ được xóa. Lượt đầu harness hiểu nhầm cookie rỗng là phiên còn tồn tại; đã kiểm Set-Cookie và sửa điều kiện kiểm giá trị rỗng, chạy lại toàn nhóm 4/4. Bằng chứng `../backups/supabase-resume-smoke-20261116.json`. Không đăng nhập thay người dùng, không ghi dữ liệu nghiệp vụ; không chạy lại unit/build vì không sửa mã ứng dụng.
 - **Làm được:** kiểm tra `main` khớp local `ade64289d5420a3ffcc43db24fb36be37751e72c`; kích hoạt Git → Vercel bằng commit nhật ký, giữ nguyên mã ứng dụng và cấu hình.
 - **File thay đổi:** `WORKLOG.md`; bằng chứng kiểm tra lưu ngoài Git trong `../backups/redeploy-20261116-*`.
 - **Migration/data impact:** không có; không thay môi trường, mật khẩu, quyền hoặc dữ liệu production.
 - **Đã test:** `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test` (138 file pass / 6 skip; 2.037 test pass / 24 skip), `npm.cmd run build` đạt. Trước redeploy: `/login` 200; `/classes` và `/dashboard` 307 về login, không `x-vercel-error`.
-- **Blocker/rủi ro:** chưa tái hiện 504 với phiên người dùng; smoke công khai không xác minh được truy cập có đăng nhập. Chưa tuyên bố đã sửa nguyên nhân timeout.
+- **Blocker/rủi ro:** backend đã phục hồi; chưa xác minh phiên đăng nhập thật của người dùng. Không thay middleware để che việc backend dừng, không nâng gói hay thêm lịch tự động.
 - **Kết quả phát hành:** source `c069e82d9858eadc645c1ea8060480754cc7e5d7`; Vercel success tại `https://vercel.com/khanglebomba/cq-tntt-manager-web/8mz9BzTXKwWysbEGfYKpQDbVYfUi`. Smoke sau phát hành 2/2 (360/1366), `/classes` → `/login?next=%2Fclasses`, HTTP 200, không overflow/pageerror. Bằng chứng: `../backups/redeploy-20261116-deployment.json` và `../backups/redeploy-20261116-smoke.json`.
-- **Next action:** người dùng tải lại và kiểm tra phiên đăng nhập; nếu tái phát thì điều tra log middleware/Auth. Backlog cũ giữ nguyên.
+- **Next action:** người dùng tải lại và đăng nhập lại nếu được yêu cầu; khi tái phát kiểm trạng thái Supabase trước, kèm nhánh cookie refresh. Backlog cũ giữ nguyên.
 
 ### [2026-10-16] Codex — RESPONSIVE-FEEDBACK-20261016 — sửa bốn phản hồi mobile/laptop
 - **Làm được:** thẻ chuyển lớp mobile bỏ nhãn cột lặp, tách từng em và tác vụ; tăng padding desktop dùng chung và khoảng dòng nhân sự; tách form tìm kiếm/mật khẩu để giảm autofill nhầm; bộ chọn thành viên Ban có tìm tên không dấu, ngành/lớp, giữ lựa chọn và vùng cuộn riêng.
