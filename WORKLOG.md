@@ -50,7 +50,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **REDEPLOY-20261116 — đang phát hành — Codex — 2026-11-16.** Redeploy production theo yêu cầu sau ảnh `504 MIDDLEWARE_INVOCATION_TIMEOUT`; giữ nguyên mã ứng dụng từ `ade6428`. Lint/typecheck đạt; 2.037 unit pass / 24 skip; build đạt. Chờ Vercel đúng SHA và smoke sau phát hành.
+- **REDEPLOY-20261116 — redeploy thành công — Codex — 2026-11-16; source `c069e82`.** Vercel success đúng SHA; public smoke 360/1366 đạt 2/2, `/classes` chuyển về login 200, không lỗi runtime/overflow. Giữ nguyên mã ứng dụng từ `ade6428`; lint/typecheck/build đạt, 2.037 unit pass / 24 skip. Chưa xác minh phiên đăng nhập của người dùng.
 - **RESPONSIVE-FEEDBACK-20261016 — đã phát hành — Codex — 2026-10-16; source `04fd353`.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
 - **2.037 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **147/147, 0 skip, 0 flaky**, ba viewport 360/768/1366. Rà 14 trang chính, tác vụ liên quan, lưu thành viên local, quyền, toàn hàng và Luce. Không migration/RLS/quyền/dữ liệu production.
 - **DETAIL-NAV-AFFORDANCE-20261014** đã phát hành source `117362c`; **RESTORE-LUCE-LOADING-20261014** source `82c05b0`, giữ trong bản sửa này.
@@ -59,7 +59,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-REDEPLOY-20261116: theo dõi Vercel đúng SHA và kiểm tra `/classes` trên production; chưa có phiên đăng nhập để tái hiện lỗi người dùng. RESPONSIVE-FEEDBACK-20261016 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng. Không còn bước phát hành của bản sửa này.
+REDEPLOY-20261116 đã redeploy và public smoke đạt; nếu người dùng vẫn gặp timeout sau đăng nhập thì tiếp tục điều tra phiên xác thực/Supabase, chưa kết luận nguyên nhân đã được sửa. RESPONSIVE-FEEDBACK-20261016 đã hoàn tất và phát hành. Backlog dữ liệu theo báo cáo đã bàn giao; R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng. Không còn bước phát hành của bản sửa này.
 
 ## ⛔ BLOCKERS
 
@@ -167,7 +167,8 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Migration/data impact:** không có; không thay môi trường, mật khẩu, quyền hoặc dữ liệu production.
 - **Đã test:** `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test` (138 file pass / 6 skip; 2.037 test pass / 24 skip), `npm.cmd run build` đạt. Trước redeploy: `/login` 200; `/classes` và `/dashboard` 307 về login, không `x-vercel-error`.
 - **Blocker/rủi ro:** chưa tái hiện 504 với phiên người dùng; smoke công khai không xác minh được truy cập có đăng nhập. Chưa tuyên bố đã sửa nguyên nhân timeout.
-- **Next action:** đợi Vercel đúng commit thành công, smoke trình duyệt 360/1366 và ghi kết quả thật; backlog cũ giữ nguyên.
+- **Kết quả phát hành:** source `c069e82d9858eadc645c1ea8060480754cc7e5d7`; Vercel success tại `https://vercel.com/khanglebomba/cq-tntt-manager-web/8mz9BzTXKwWysbEGfYKpQDbVYfUi`. Smoke sau phát hành 2/2 (360/1366), `/classes` → `/login?next=%2Fclasses`, HTTP 200, không overflow/pageerror. Bằng chứng: `../backups/redeploy-20261116-deployment.json` và `../backups/redeploy-20261116-smoke.json`.
+- **Next action:** người dùng tải lại và kiểm tra phiên đăng nhập; nếu tái phát thì điều tra log middleware/Auth. Backlog cũ giữ nguyên.
 
 ### [2026-10-16] Codex — RESPONSIVE-FEEDBACK-20261016 — sửa bốn phản hồi mobile/laptop
 - **Làm được:** thẻ chuyển lớp mobile bỏ nhãn cột lặp, tách từng em và tác vụ; tăng padding desktop dùng chung và khoảng dòng nhân sự; tách form tìm kiếm/mật khẩu để giảm autofill nhầm; bộ chọn thành viên Ban có tìm tên không dấu, ngành/lớp, giữ lựa chọn và vùng cuộn riêng.
