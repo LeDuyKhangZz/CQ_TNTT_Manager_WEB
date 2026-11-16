@@ -50,7 +50,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-- **ADMIN-PASSWORD-RESET-20261116 — kiểm thử xong, đang phát hành — Codex — 2026-11-16.** SA reset người khác kể cả SA khác; dialog xác nhận/mật khẩu tạm. Lint/typecheck/build đạt; 2.071 unit pass / 24 skip; E2E JWT local 3/3. Reviewer độc lập 29/29, không có lỗi chặn phát hành.
+- **ADMIN-PASSWORD-RESET-20261116 — đã phát hành source `71c06a8` — Codex — 2026-11-16.** SA reset người khác kể cả SA khác; dialog xác nhận/mật khẩu tạm. Lint/typecheck/build đạt; 2.071 unit pass / 24 skip; E2E JWT local 3/3. Reviewer độc lập 29/29, không có lỗi chặn phát hành.
 - **REDEPLOY-20261116 — đã khôi phục backend — Codex — 2026-11-16.** Redeploy `c069e82` chưa giải quyết 504; xác nhận Supabase `cq-tntt-manager` bị `INACTIVE`, DNS NXDOMAIN. Resume project hiện có → `ACTIVE_HEALTHY`; Auth/Data API 200. Browser 4/4 đạt (360/1366 × chưa đăng nhập/cookie hết hạn giả lập), 1,3–2,0 giây; chưa kiểm phiên đăng nhập thật của người dùng. Không sửa mã ứng dụng.
 - **RESPONSIVE-FEEDBACK-20261016 — đã phát hành — Codex — 2026-10-16; source `04fd353`.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
 - **2.037 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **147/147, 0 skip, 0 flaky**, ba viewport 360/768/1366. Rà 14 trang chính, tác vụ liên quan, lưu thành viên local, quyền, toàn hàng và Luce. Không migration/RLS/quyền/dữ liệu production.
@@ -59,7 +59,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-ADMIN-PASSWORD-RESET-20261116: push main, xác minh Vercel đúng SHA và smoke production. Dùng KHANG.NHO → Quản trị → Tài khoản → MR.DAT → Đặt lại mật khẩu. Backlog cũ giữ nguyên.
+ADMIN-PASSWORD-RESET-20261116 đã phát hành và smoke production đạt. Dùng KHANG.NHO → Quản trị → Tài khoản → MR.DAT → Đặt lại mật khẩu. Backlog cũ giữ nguyên.
 
 ## ⛔ BLOCKERS
 
@@ -167,7 +167,8 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Đã test:** lint/typecheck/build đạt; npm test 2.071 pass / 24 skip (140 file pass / 6 skip); E2E 3/3 trên 360/768/1366: JWT local thật, reset SA khác, mật khẩu cũ bị từ chối, mật khẩu tạm buộc đổi, audit đúng actor không chứa password, non-SA bị từ chối /admin. Fixture mới được dọn bằng ID. Một matcher UI test không tương thích Vitest đã sửa đúng API rồi toàn suite đạt.
 - **Xác minh độc lập:** agent verify_password_reset theo AGENTS §9: 29/29 server-action tests và typecheck đạt, không có lỗi phân quyền chặn phát hành; kiểm tất cả non-SA, target sai/tự reset, lỗi profile/Auth và bảo vệ các thao tác SA khác.
 - **Giới hạn:** audit vẫn best-effort như cũ; lỗi Auth sau ghi cờ để lại must_change_password=true. Không dùng phiên thật production để test reset. Full E2E lịch sử và backlog cũ giữ nguyên.
-- **Next:** commit/push và smoke production trước khi báo đã phát hành.
+- **Phát hành:** source `71c06a82e8d36d20577e4501ee2e1a6cfcf04a6a`; Vercel success tại https://vercel.com/khanglebomba/cq-tntt-manager-web/7oSjJaBAMLDDWprAitviF3RCY8ix. Login/asset production 200, admin anonymous 307 về login. Bằng chứng ngoài Git: `../backups/password-reset-production-smoke.json`. Lượt smoke đầu giả định hash bundle local giống Vercel nhận 404; kiểm lại asset từ HTML production đạt, không dùng hash local để kết luận deployment.
+- **Next:** dùng KHANG.NHO để đặt lại MR.DAT trực tiếp trên web; chưa thay mật khẩu thật bằng công cụ ngoài web.
 
 ### [2026-11-16] Codex — REDEPLOY-20261116 — redeploy và khôi phục Supabase bị tạm dừng
 - **Điều tra sau phản hồi vẫn lỗi:** Management API xác nhận project `hvcfhlaubnukeoutxiuq` / `cq-tntt-manager` là `INACTIVE`; Google và Cloudflare DNS cùng NXDOMAIN. Middleware `getUser()` chờ refresh qua dịch vụ không hoạt động; smoke anonymous trước đó không đi qua nhánh này. Chưa xác nhận lý do project bị tạm dừng.

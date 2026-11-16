@@ -1,6 +1,6 @@
 # 08 — Phase Plan
 
-> **16/11/2026 — ☑ ADMIN-PASSWORD-RESET-20261116:** Super Admin đặt lại mật khẩu người khác, kể cả SA khác; nút trực tiếp, xác nhận, trạng thái chờ, sao chép mật khẩu tạm và bắt buộc đổi lần đăng nhập tiếp theo. Giữ chặn tự reset/đổi tên/vai trò/khóa/xóa SA. Lint/typecheck/build đạt; 2.071 unit pass / 24 skip; E2E local 3/3 (360/768/1366) dùng JWT thật. Reviewer độc lập: 29/29, không có lỗi phân quyền chặn phát hành. Không migration/RLS/dữ liệu production. Đang phát hành.
+> **16/11/2026 — ☑ ADMIN-PASSWORD-RESET-20261116:** Super Admin đặt lại mật khẩu người khác, kể cả SA khác; nút trực tiếp, xác nhận, trạng thái chờ, sao chép mật khẩu tạm và bắt buộc đổi lần đăng nhập tiếp theo. Giữ chặn tự reset/đổi tên/vai trò/khóa/xóa SA. Lint/typecheck/build đạt; 2.071 unit pass / 24 skip; E2E local 3/3 (360/768/1366) dùng JWT thật. Reviewer độc lập: 29/29, không có lỗi phân quyền chặn phát hành. Không migration/RLS/dữ liệu production. Đã phát hành source `71c06a8`; Vercel success đúng SHA, production login/asset 200, admin chưa đăng nhập 307 về login. Luồng có đăng nhập kiểm trên local.
 
 > **16/11/2026 — ☑ REDEPLOY-20261116 / khôi phục backend:** redeploy không giải quyết 504 vì Supabase `cq-tntt-manager` bị `INACTIVE`, DNS NXDOMAIN. Resume project hiện có → `ACTIVE_HEALTHY`; Auth/Data API 200; browser 4/4 đạt (360/1366 × anonymous/cookie hết hạn giả lập), không timeout. Không sửa mã ứng dụng/migration/quyền/dữ liệu nghiệp vụ. Chưa kiểm phiên đăng nhập thật của người dùng. Chi tiết trong `WORKLOG.md`.
 
