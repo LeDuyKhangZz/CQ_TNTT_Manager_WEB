@@ -94,7 +94,7 @@
 
 ### Quản trị account đã có
 
-1. Super Admin có thể đổi username hoặc đặt mật khẩu mới cho account không phải Super Admin; mật khẩu mới luôn bật lại `must_change_password`.
+1. Super Admin có thể đổi username cho account không phải Super Admin. Theo **ADMIN-PASSWORD-RESET-20261116**, được đặt lại mật khẩu cho tài khoản khác, kể cả Super Admin khác; không tự reset qua quản trị. Mật khẩu mới luôn bật lại `must_change_password`. Tại Quản trị → Tài khoản, bấm **Đặt lại mật khẩu**, xác nhận đúng người, sao chép mật khẩu tạm trong hộp thoại và bàn giao; đóng hộp thoại sẽ bỏ mật khẩu khỏi giao diện. Đổi mật khẩu của chính mình dùng `/change-password`.
 2. Đổi username phải đồng bộ cả email alias nội bộ của Supabase Auth và `profiles.username`.
 3. Super Admin có thể xóa account không phải Super Admin sau bước xác nhận.
 4. Xóa account giữ nguyên hồ sơ `staff_profiles`/`guardians`/`students` và đặt liên kết `profile_id` về `null`.

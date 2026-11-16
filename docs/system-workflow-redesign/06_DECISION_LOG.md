@@ -1,5 +1,7 @@
 # 06 — Nhật ký quyết định (chốt sau Giai đoạn 1)
 
+> **ADMIN-PASSWORD-RESET-20261116 — chủ dự án yêu cầu 16/11/2026:** Super Admin được đặt lại mật khẩu người khác, kể cả Super Admin khác (MR.DAT). Ngoại lệ này chỉ mở thao tác mật khẩu; không mở quyền tạo SA/đổi tên/vai trò/khóa/xóa SA. Tự đổi mật khẩu dùng luồng cá nhân. Luôn yêu cầu đổi mật khẩu tạm và ghi nhật ký không chứa mật khẩu.
+
 > **Ngày chốt: 2026-07-23.** Người chốt: chủ dự án.
 > Đây là **nguồn sự thật** cho mọi quyết định phát sinh từ audit Giai đoạn 1.
 > Quyết định ở đây **ghi đè** mọi mô tả cũ trong `docs/` và `WORKLOG.md`.

@@ -50,16 +50,16 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+- **ADMIN-PASSWORD-RESET-20261116 — kiểm thử xong, đang phát hành — Codex — 2026-11-16.** SA reset người khác kể cả SA khác; dialog xác nhận/mật khẩu tạm. Lint/typecheck/build đạt; 2.071 unit pass / 24 skip; E2E JWT local 3/3. Reviewer độc lập 29/29, không có lỗi chặn phát hành.
 - **REDEPLOY-20261116 — đã khôi phục backend — Codex — 2026-11-16.** Redeploy `c069e82` chưa giải quyết 504; xác nhận Supabase `cq-tntt-manager` bị `INACTIVE`, DNS NXDOMAIN. Resume project hiện có → `ACTIVE_HEALTHY`; Auth/Data API 200. Browser 4/4 đạt (360/1366 × chưa đăng nhập/cookie hết hạn giả lập), 1,3–2,0 giây; chưa kiểm phiên đăng nhập thật của người dùng. Không sửa mã ứng dụng.
 - **RESPONSIVE-FEEDBACK-20261016 — đã phát hành — Codex — 2026-10-16; source `04fd353`.** Thẻ chuyển lớp mobile; giãn bảng laptop; tách form tìm tài khoản khỏi mật khẩu; chọn thành viên Ban có tìm tên/ngành/lớp và vùng cuộn riêng.
 - **2.037 unit đạt / 24 skip**, lint/typecheck/build đạt; browser cuối **147/147, 0 skip, 0 flaky**, ba viewport 360/768/1366. Rà 14 trang chính, tác vụ liên quan, lưu thành viên local, quyền, toàn hàng và Luce. Không migration/RLS/quyền/dữ liệu production.
 - **DETAIL-NAV-AFFORDANCE-20261014** đã phát hành source `117362c`; **RESTORE-LUCE-LOADING-20261014** source `82c05b0`, giữ trong bản sửa này.
 - **IMPORT-NH2025-20261014** đã nhập phần đủ căn cứ, đối soát 21/21; thiếu/mâu thuẫn dữ liệu và điểm danh Giáo lý chưa nhập native theo báo cáo Excel ngoài Git.
-- Full E2E lịch sử/R5–R13/UX-42/R13.3 giữ backlog riêng. Autofill chưa kiểm trên profile Chrome/extension cá nhân của chủ dự án.
 
 ## ➡️ VIỆC TIẾP THEO
 
-REDEPLOY-20261116 đã khôi phục Supabase từ trạng thái tạm dừng và kiểm tra Auth/Data API cùng cookie hết hạn. Người dùng tải lại `/classes`, đăng nhập lại nếu được yêu cầu. Nếu tái phát, kiểm trạng thái Supabase và request có cookie; smoke chưa đăng nhập không đủ kết luận backend khỏe. Backlog dữ liệu, R5–R13/UX-42/R13.3 và full E2E lịch sử theo kế hoạch riêng.
+ADMIN-PASSWORD-RESET-20261116: push main, xác minh Vercel đúng SHA và smoke production. Dùng KHANG.NHO → Quản trị → Tài khoản → MR.DAT → Đặt lại mật khẩu. Backlog cũ giữ nguyên.
 
 ## ⛔ BLOCKERS
 
@@ -96,7 +96,7 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 | D-25 | Nếu staff là guardian, giữ role staff và có mục Con của tôi. |
 | D-26 | Student account từ ngành Ấu Nhi. |
 | D-27 | Username: student CQxxxx; staff GLVxxx; guardian phone; password tạm ngắn 8 ký tự và force change. |
-| D-28 | Super Admin đổi username/đặt password/xóa account role khác, không xem password hiện tại; không sửa/xóa account SA. Xóa account giữ hồ sơ nghiệp vụ và bỏ link. Guardian/student account bắt buộc link hồ sơ tương ứng; mọi role GLV bắt buộc link staff profile, role lớp còn phải đúng assignment. |
+| D-28 | Super Admin đổi username/đặt password/xóa account role khác, không xem password hiện tại; không sửa/xóa account SA (ngoại lệ 16/11/2026: đặt lại mật khẩu SA khác được phép). Xóa account giữ hồ sơ nghiệp vụ và bỏ link. Guardian/student account bắt buộc link hồ sơ tương ứng; mọi role GLV bắt buộc link staff profile, role lớp còn phải đúng assignment. |
 | D-29 | Attendance chỉ thứ Năm và Chúa nhật. |
 | D-30 | Mỗi attendance record có Mass và Catechism độc lập. |
 | D-31 | Default mọi em present; chỉ sửa ngoại lệ. |
@@ -161,6 +161,14 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-11-16] Codex — ADMIN-PASSWORD-RESET-20261116
+- **Làm được:** mở riêng reset/set password cho SA khác theo yêu cầu mới; server guard SA, chặn tự reset và giữ bảo vệ các thao tác khác. Nút trực tiếp, dialog có danh tính/xác nhận/chờ/lỗi, chống bấm lặp; mật khẩu tạm chỉ ở dialog, có sao chép và xóa khi đóng. Cờ bắt buộc đổi ghi trước Auth, kiểm đúng một hàng.
+- **File thay đổi:** auth actions/queries/AccountAdminPanel, 3 unit suites và E2E; workflow/permission/decision/tracking. Không migration/RLS hoặc dữ liệu production. MR.DAT chưa bị đổi bằng công cụ ngoài web; người dùng nhận mật khẩu tạm qua nút mới.
+- **Đã test:** lint/typecheck/build đạt; npm test 2.071 pass / 24 skip (140 file pass / 6 skip); E2E 3/3 trên 360/768/1366: JWT local thật, reset SA khác, mật khẩu cũ bị từ chối, mật khẩu tạm buộc đổi, audit đúng actor không chứa password, non-SA bị từ chối /admin. Fixture mới được dọn bằng ID. Một matcher UI test không tương thích Vitest đã sửa đúng API rồi toàn suite đạt.
+- **Xác minh độc lập:** agent verify_password_reset theo AGENTS §9: 29/29 server-action tests và typecheck đạt, không có lỗi phân quyền chặn phát hành; kiểm tất cả non-SA, target sai/tự reset, lỗi profile/Auth và bảo vệ các thao tác SA khác.
+- **Giới hạn:** audit vẫn best-effort như cũ; lỗi Auth sau ghi cờ để lại must_change_password=true. Không dùng phiên thật production để test reset. Full E2E lịch sử và backlog cũ giữ nguyên.
+- **Next:** commit/push và smoke production trước khi báo đã phát hành.
+
 ### [2026-11-16] Codex — REDEPLOY-20261116 — redeploy và khôi phục Supabase bị tạm dừng
 - **Điều tra sau phản hồi vẫn lỗi:** Management API xác nhận project `hvcfhlaubnukeoutxiuq` / `cq-tntt-manager` là `INACTIVE`; Google và Cloudflare DNS cùng NXDOMAIN. Middleware `getUser()` chờ refresh qua dịch vụ không hoạt động; smoke anonymous trước đó không đi qua nhánh này. Chưa xác nhận lý do project bị tạm dừng.
 - **Khắc phục vận hành:** gọi API resume paused project `/v1/projects/{ref}/restore`, không chọn bản backup/PITR, không reset DB. Trạng thái đi từ `INACTIVE` → `COMING_UP` → `ACTIVE_HEALTHY`; giữ nguyên project/cấu hình/credentials và mã ứng dụng.
@@ -207,14 +215,6 @@ Dữ liệu nguồn còn thiếu: giới tính/ngày sinh/địa chỉ/liên l�
 - **Giới hạn:** nguồn chỉ điểm danh Giáo lý; 25.095 dấu có ngày và 530 dấu ngày hỏng nằm trong báo cáo, chưa nhập native vì schema bắt buộc trạng thái Thánh lễ. Không tự đoán các ô trống, điểm mâu thuẫn, hồ sơ thiếu hoặc lịch dạy; không tạo ghi danh năm sau. Tổng kết DB lưu hai số lẻ, số gốc và công thức lưu trong ghi chú/báo cáo. Không publish điểm.
 - **Phát hành / IMPORT-NH2025-RELEASE-20261014:** source `04c58fd` đã push main; Vercel success đúng SHA. Smoke công khai 360/1366: login 200, không overflow/pageerror, bảng điểm chưa đăng nhập chuyển về login. [Bằng chứng](docs/system-workflow-redesign/verification/evidence/import-nh2025-20261014/release.json). Chưa chạy authenticated CRUD production qua trình duyệt.
 - **Next:** bổ sung dữ liệu còn thiếu theo báo cáo Excel 15 sheet ngoài repo; không coi toàn bộ năm học đã đủ dữ liệu.
-
-### [2026-10-14] Codex — AUTO-RELEASE-POLICY-20261014 — quy tắc thường trực và phát hành bản UI
-- **Làm được:** AGENTS §10, WORKLOG/D-55 và deployment runbook yêu cầu tự kiểm tra, commit, push và xác minh production sau mỗi task sửa code; không hỏi lại trừ user yêu cầu riêng chưa phát hành. Đã commit/push bản sửa UI `c94386354fa7f24cff0615a0d5f9aa52c50515b7`, Vercel success đúng SHA.
-- **File thay đổi:** AGENTS, WORKLOG, runbook, tài liệu tracking/báo cáo và bằng chứng release; không sửa thêm source sản phẩm ở task này.
-- **Migration/data impact:** không có; không đổi mật khẩu, seed hoặc submit dữ liệu production.
-- **Đã test:** bản UI đã có lint/typecheck/build đạt, 2.028 unit pass / 24 skip, 55 browser pass / 2 skip. Smoke production riêng 360/1366 HTTP 200, CSS bố cục sinh nhật mới, không overflow/pageerror; dashboard chưa đăng nhập chuyển về login. `git diff --check` đạt.
-- **Quyết định mới:** yêu cầu trực tiếp của user 14/10 biến việc tự phát hành từ “được phép” thành bắt buộc sau task sửa code hoàn tất. Chỉ stage file thuộc task; giữ nguyên năm file `nav-*.json` có sẵn ngoài task.
-- **Next:** người dùng xem production; task sau tiếp tục áp quy tắc tự phát hành. Backlog/giới hạn cũ giữ nguyên.
 
 Các entry cũ hơn: [bản lưu trước mobile](docs/worklog-archive-before-mobile-2026-10-14.md) · [bản lưu trước anti-AI](docs/worklog-archive-before-anti-ai-2026-10-14.md) · [bản lưu trước R4 cuối](docs/worklog-archive-before-r4-final-2026-10-13.md).
 

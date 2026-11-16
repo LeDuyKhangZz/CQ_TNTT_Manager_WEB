@@ -79,7 +79,7 @@ async function guardAccountAdmin(): Promise<AuthContext> {
  * `try`: mọi nhánh chặn ở đây trả kết quả lỗi cho người dùng, không phải chuyển
  * trang. Giả định caller đã `guardAccountAdmin()` xong ở ngoài `try`.
  */
-async function loadManageableAccount(actor: AuthContext, profileIdInput: string) {
+async function loadManageableAccount(actor: AuthContext, profileIdInput: string, operation: "manage" | "password" = "manage") {
   const profileId = accountIdSchema.parse(profileIdInput);
   if (profileId === actor.profileId) {
     throw new AppError("CONFLICT", "Không thể sửa hoặc xóa tài khoản đang đăng nhập.");
@@ -92,7 +92,9 @@ async function loadManageableAccount(actor: AuthContext, profileIdInput: string)
     .maybeSingle();
   if (error || !data) throw new AppError("RESOURCE_NOT_FOUND");
   const assignments = data.role_assignments as Array<{ role: string; is_active: boolean }>;
-  if (assignments.some((assignment) => assignment.is_active && assignment.role === "super_admin")) {
+  // ADMIN-PASSWORD-RESET-20261116: chỉ thao tác mật khẩu được phép nhắm tới SA khác.
+  // Đổi tên/vai trò/trạng thái/xóa vẫn dùng mặc định "manage" và bị chặn như cũ.
+  if (operation !== "password" && assignments.some((assignment) => assignment.is_active && assignment.role === "super_admin")) {
     throw new AppError("FORBIDDEN", "Không thể quản trị tài khoản Super Admin bằng thao tác này.");
   }
   return { admin, profileId, username: data.username as string };
@@ -599,12 +601,14 @@ export async function assignPrimaryRole(input: AssignPrimaryRoleInput): Promise<
 export async function adminResetPassword(profileIdInput: string): Promise<AuthActionResult<{ temporaryPassword: string }>> {
   const actor = await guardAccountAdmin();
   try {
-    const { admin, profileId, username } = await loadManageableAccount(actor, profileIdInput);
+    const { admin, profileId, username } = await loadManageableAccount(actor, profileIdInput, "password");
     const temporaryPassword = generateTemporaryPassword();
+    // Chốt cờ trước khi đổi Auth: lỗi ghi hồ sơ không được để mật khẩu tạm
+    // đăng nhập mà bỏ qua bước đổi mật khẩu. select/single kiểm đúng một bản ghi.
+    const { error: profileError } = await admin.from("profiles").update({ must_change_password: true }).eq("id", profileId).select("id").single();
+    if (profileError) throw new AppError("CONFLICT", "Chưa thể yêu cầu đổi mật khẩu. Mật khẩu chưa được đặt lại.");
     const { error: authError } = await admin.auth.admin.updateUserById(profileId, { password: temporaryPassword });
     if (authError) throw new AppError(authError.status === 404 ? "RESOURCE_NOT_FOUND" : "CONFLICT");
-    const { error: profileError } = await admin.from("profiles").update({ must_change_password: true }).eq("id", profileId);
-    if (profileError) throw new AppError("CONFLICT");
     await recordAccountAudit(admin, {
       actorProfileId: actor.profileId,
       actorUsername: actor.username,
@@ -622,15 +626,15 @@ export async function adminResetPassword(profileIdInput: string): Promise<AuthAc
 export async function adminSetPassword(profileIdInput: string, passwordInput: string): Promise<AuthActionResult> {
   const actor = await guardAccountAdmin();
   try {
-    const { admin, profileId, username } = await loadManageableAccount(actor, profileIdInput);
+    const { admin, profileId, username } = await loadManageableAccount(actor, profileIdInput, "password");
     const password = adminPasswordSchema.parse(passwordInput);
-    const { error: authError } = await admin.auth.admin.updateUserById(profileId, { password });
-    if (authError) throw new AppError(authError.status === 404 ? "RESOURCE_NOT_FOUND" : "VALIDATION_ERROR", "Mật khẩu mới chưa được chấp nhận.");
     const { error: profileError } = await admin
       .from("profiles")
       .update({ must_change_password: true })
-      .eq("id", profileId);
+      .eq("id", profileId).select("id").single();
     if (profileError) throw new AppError("CONFLICT");
+    const { error: authError } = await admin.auth.admin.updateUserById(profileId, { password });
+    if (authError) throw new AppError(authError.status === 404 ? "RESOURCE_NOT_FOUND" : "VALIDATION_ERROR", "Mật khẩu mới chưa được chấp nhận.");
     await recordAccountAudit(admin, {
       actorProfileId: actor.profileId,
       actorUsername: actor.username,

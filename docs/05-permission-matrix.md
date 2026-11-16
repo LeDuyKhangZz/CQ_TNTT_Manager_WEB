@@ -139,6 +139,7 @@
 Được mọi thao tác, gồm:
 
 - Tạo/sửa/khóa/xóa account không phải Super Admin; xóa account không xóa hồ sơ nghiệp vụ.
+- **ADMIN-PASSWORD-RESET-20261116 (yêu cầu chủ dự án):** riêng đặt lại mật khẩu được áp dụng cho mọi tài khoản khác, kể cả Super Admin khác. Chỉ Super Admin đang hoạt động được thực hiện; không tự reset qua quản trị. Luôn bật `must_change_password` và ghi audit không chứa mật khẩu. Không mở quyền đổi username/vai trò/khóa/xóa Super Admin.
 - Đổi username.
 - Reset password.
 - Gán role/scope.
@@ -310,7 +311,8 @@ Tên UI = role + sector.
 | Archive student | SA/global-write |
 | Tạo account | SA |
 | Reset password | SA |
-| Đổi username/đặt password account không phải SA | SA |
+| Đổi username account không phải SA | SA |
+| Đặt lại password người khác, kể cả SA khác | SA; bắt buộc đổi mật khẩu lần đăng nhập tiếp theo |
 | Xóa account không phải SA | SA; giữ hồ sơ nghiệp vụ và bỏ link account |
 | Claim attendance | Staff assigned class |
 | Takeover attendance | Staff assigned class sau lease |

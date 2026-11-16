@@ -1,7 +1,7 @@
 "use client";
 import { ActionSheet } from "@/components/ui/task-sheet";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,12 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
   const [usernames, setUsernames] = useState<Record<string, string>>({});
   const [passwords, setPasswords] = useState<Record<string, string>>({});
+  const [resetTarget, setResetTarget] = useState<AccountSummary | null>(null);
+  const [resetPending, setResetPending] = useState(false);
+  const resetInFlight = useRef(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState<string | null>(null);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
 
   // TB-06 (F09): lọc + phân trang danh sách tài khoản.
   const [search, setSearch] = useState("");
@@ -107,13 +113,49 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
     router.refresh();
   }
 
-  async function resetPassword(profileId: string) {
+  function openReset(account: AccountSummary) {
     setMessage(null);
     setTemporaryPassword(null);
-    const result = await adminResetPassword(profileId);
-    if (!result.ok) return setMessage(result.message);
-    setTemporaryPassword(result.data.temporaryPassword);
-    setMessage("Đã đặt mật khẩu tạm mới. Tài khoản phải đổi mật khẩu khi đăng nhập.");
+    setResetError(null);
+    setResetPasswordValue(null);
+    setCopyMessage(null);
+    setResetTarget(account);
+  }
+
+  function closeReset() {
+    if (resetInFlight.current) return;
+    setResetTarget(null);
+    setResetPasswordValue(null);
+    setResetError(null);
+    setCopyMessage(null);
+  }
+
+  async function confirmReset() {
+    if (!resetTarget || resetInFlight.current || resetPasswordValue) return;
+    resetInFlight.current = true;
+    setResetPending(true);
+    setResetError(null);
+    try {
+      const result = await adminResetPassword(resetTarget.id);
+      if (!result.ok) { setResetError(result.message); return; }
+      setResetPasswordValue(result.data.temporaryPassword);
+      router.refresh();
+    } catch {
+      setResetError("Chưa nhận được kết quả. Kiểm tra kết nối trước khi thử lại.");
+    } finally {
+      resetInFlight.current = false;
+      setResetPending(false);
+    }
+  }
+
+  async function copyResetPassword() {
+    if (!resetPasswordValue) return;
+    try {
+      await navigator.clipboard.writeText(resetPasswordValue);
+      setCopyMessage("Đã sao chép mật khẩu tạm.");
+    } catch {
+      setCopyMessage("Không thể sao chép tự động. Bạn có thể chọn và sao chép mật khẩu bên trên.");
+    }
   }
 
   async function setPassword(profileId: string) {
@@ -229,7 +271,7 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
       </ActionSheet>
 
       <Card>
-        <CardHeader><CardTitle>Tài khoản hiện có</CardTitle><CardDescription>Chỉ tài khoản không phải Super Admin mới sửa hoặc xóa được tại đây.</CardDescription></CardHeader>
+        <CardHeader><CardTitle>Tài khoản hiện có</CardTitle><CardDescription>Super Admin có thể đặt lại mật khẩu cho người khác, kể cả Super Admin khác.</CardDescription></CardHeader>
         <CardContent className="space-y-4">
           {/* Đợt E — khối lọc tự chế, và là ví dụ rõ nhất của "lệch tùm lum":
               ô tìm có `<Label>` nhưng `sr-only` **không chiếm chỗ**, hai ô chọn
@@ -302,6 +344,13 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                     <Badge variant={status.variant}>{status.label}</Badge>
                   </div>
                 </div>
+                <div className="mt-3 mb-2">
+                  {account.id === options.currentProfileId ? (
+                    <Link href="/change-password" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-2">Đổi mật khẩu của tôi</Link>
+                  ) : (
+                    <Button type="button" variant="outline" onClick={() => openReset(account)} aria-label={`Đặt lại mật khẩu ${account.username}`}>Đặt lại mật khẩu</Button>
+                  )}
+                </div>
                 {canManage ? (
                   <ActionSheet title={`Tài khoản ${account.username}`} triggerLabel="Quản lý">
                     {message ? <p role="status" className="mb-3 text-sm">{message}</p> : null}
@@ -315,13 +364,12 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
                       <Button type="button" variant="outline" onClick={() => setPassword(account.id)}>Đặt mật khẩu</Button>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button type="button" size="sm" variant="outline" onClick={() => resetPassword(account.id)}>Tạo mật khẩu ngẫu nhiên</Button>
                       {account.status === "active" ? <Button type="button" size="sm" variant="danger" onClick={() => setStatus(account.id, "disabled")}>Vô hiệu hóa</Button> : <Button type="button" size="sm" onClick={() => setStatus(account.id, "active")}>Kích hoạt</Button>}
                       <Button type="button" size="sm" variant="danger" onClick={() => openDelete(account)}>Xóa tài khoản</Button>
                     </div>
                   </form>
                   </ActionSheet>
-                ) : <p className="mt-3 text-xs text-ink-muted">Tài khoản Super Admin không được sửa/xóa qua danh sách này.</p>}
+                ) : <p className="mt-3 text-xs text-ink-muted">Không thể đổi tên, vô hiệu hóa hoặc xóa tài khoản Super Admin tại đây.</p>}
               </div>
             );
           })}
@@ -335,6 +383,34 @@ export function AccountAdminPanel({ options }: { options: AccountAdminOptions })
           ) : null}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={resetTarget !== null}
+        onClose={closeReset}
+        title="Đặt lại mật khẩu"
+        description={resetTarget ? <>Tài khoản <strong>{resetTarget.username}</strong> — {resetTarget.displayName}.</> : null}
+        footer={resetPasswordValue ? (
+          <>
+            <Button variant="outline" onClick={copyResetPassword}>Sao chép mật khẩu</Button>
+            <Button onClick={closeReset}>Đã lưu mật khẩu</Button>
+          </>
+        ) : (
+          <>
+            <Button variant="outline" onClick={closeReset} disabled={resetPending}>Hủy</Button>
+            <Button onClick={confirmReset} pending={resetPending}>Xác nhận đặt lại</Button>
+          </>
+        )}
+      >
+        {resetPasswordValue ? (
+          <div role="status" className="space-y-3">
+            <p>Đã đặt lại mật khẩu. Người dùng phải đổi mật khẩu ở lần đăng nhập tiếp theo.</p>
+            <p className="text-sm text-ink-muted">Mật khẩu tạm chỉ hiển thị tại đây. Hãy sao chép và bàn giao trước khi đóng.</p>
+            <code className="block select-all break-all rounded-md border border-line bg-surface-alt p-3 text-lg font-semibold">{resetPasswordValue}</code>
+            {copyMessage ? <p className="text-sm">{copyMessage}</p> : null}
+          </div>
+        ) : <p>Mật khẩu hiện tại sẽ được thay bằng mật khẩu tạm ngẫu nhiên. Người dùng phải đổi mật khẩu ở lần đăng nhập tiếp theo.</p>}
+        {resetError ? <p role="alert" className="mt-3 text-sm text-danger">{resetError}</p> : null}
+      </Dialog>
 
       <Dialog
         open={deleteTarget !== null}

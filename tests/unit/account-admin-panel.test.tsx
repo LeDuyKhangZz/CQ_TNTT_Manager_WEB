@@ -30,6 +30,7 @@ vi.mock("@/features/auth/server/actions", () => ({
 const { AccountAdminPanel } = await import("@/features/auth/components/account-admin-panel");
 
 const OPTIONS: AccountAdminOptions = {
+  currentProfileId: "current-admin",
   accounts: [
     {
       id: "profile-1",

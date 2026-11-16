@@ -18,6 +18,7 @@ export interface AccountSummary {
 }
 
 export interface AccountAdminOptions {
+  currentProfileId: string;
   accounts: AccountSummary[];
   /**
    * Vai trò biểu mẫu `/admin` còn cấp được (D-111) — do MÁY CHỦ quyết theo vai
@@ -52,6 +53,7 @@ export async function getAccountAdminOptions(): Promise<AccountAdminOptions> {
   }>;
 
   return {
+    currentProfileId: context.profileId,
     accounts: profiles.map((profile) => ({
       id: profile.id,
       username: profile.username,
